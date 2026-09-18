@@ -46,7 +46,12 @@
   --right-panel-width:    300px;
   --statusbar-height:     32px;
   --page-strip-height:    120px;
-  --mobile-nav-height:    58px;
+  --mobile-nav-height:    54px;
+  /* The phone's whole bottom chrome: the verb row + the nav row. Every fixed
+     surface that has to sit ABOVE the dock (sheets, popovers, toasts) measures
+     from this one number, so there is no second place to keep it in step. */
+  --dock-verbs-height:    50px;
+  --dock-height:          104px;
 }
 
 /* ── LIGHT THEME ──────────────────────────────────────────── */
@@ -191,7 +196,19 @@ html, body {
 }
 /* Ensure toolbar content cannot wrap to a second row */
 .toolbar > * { flex-shrink: 0; }
-.toolbar .toolbar-left { min-width: 0; }
+/* The three clusters used to carry `style="display:flex…"` inline, which no
+   media query can override — the phone layout could not hide them, and that is
+   why the "compact" phone toolbar still painted a full row of buttons. Layout
+   belongs in the sheet that the breakpoints also live in. */
+.toolbar .toolbar-left {
+  display: flex; align-items: center; gap: 12px;
+  flex: 1 1 0; min-width: 0; overflow: hidden;
+}
+.toolbar .toolbar-center,
+.toolbar .toolbar-right { display: flex; align-items: center; gap: 8px; }
+.toolbar .toolbar-mark { display: flex; align-items: center; gap: 6px; user-select: none; flex-shrink: 0; }
+.toolbar .toolbar-center > .btn,
+.toolbar .toolbar-catalog-btn { display: flex; align-items: center; gap: 5px; }
 .toolbar .toolbar-project-name {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -761,6 +778,10 @@ html, body {
   background: var(--color-surface);
 }
 .tab-bar::-webkit-scrollbar { height: 3px; }
+/* One design open = no tabs rendered, but the bar kept its 34px and its border
+   — an empty stripe between the formula bar and the canvas that read as a
+   glitch on a phone and as waste on a desktop. */
+.tab-bar:empty { display: none; }
 
 .tab-item {
   display: flex;
@@ -871,6 +892,30 @@ html, body {
   inset: 0;
   z-index: 10;
 }
+
+/* ── VIEW MODE DRESSING ───────────────────────────────────── */
+/* Payload and Preview are full-screen views. The visual canvas stays LAID OUT
+   beneath them — its size is what fitToScreen measures on the way back, and a
+   display:none canvas measures 0×0 and returns at the wrong zoom — but it
+   stops painting, because its rulers (z-index 29/30) sat on top of the Monaco
+   container (z-index 10): the YAML was read through a tick-marked grid with
+   the vertical ruler over its line numbers. */
+/* The PANES, not their container: ViewportLayoutManager renames .viewport-area
+   to .viewport-layout, and the Monaco container is a child of that same
+   element — hiding it took the YAML editor with it. */
+#app[data-mode='payload'] .viewport-pane,
+#app[data-mode='preview'] .viewport-pane { visibility: hidden; }
+#app[data-mode='payload'] .align-toolbar,
+#app[data-mode='preview'] .align-toolbar { display: none; }
+/* The page strip switches the CANVAS page. In Payload every page is already in
+   the text, and in Preview the report scrolls through all of them — in both it
+   is 120px of dead chrome under a view that wants the height. */
+#app[data-mode='payload'] #page-strip-section,
+#app[data-mode='preview'] #page-strip-section { display: none !important; }
+/* Same for the formula bar: it names and edits the selected LAYER, and neither
+   of these views has a selection. */
+#app[data-mode='payload'] .formula-bar,
+#app[data-mode='preview'] .formula-bar { display: none; }
 
 /* ── RULER UNIT BUTTON (status bar) ───────────────────────── */
 .sb-ruler-unit {
@@ -1238,6 +1283,7 @@ button:focus:not(:focus-visible) { outline: none; }
   transition: background .1s, color .1s;
 }
 .align-btn:hover { background: var(--color-border); color: var(--color-text); }
+.align-btn svg { display: block; }
 /* Fix #1 — inactive buttons must not be clickable */
 .align-btn.inactive {
   opacity: 0.3;
@@ -2270,8 +2316,11 @@ button:focus:not(:focus-visible) { outline: none; }
 .mob-toolstrip { display: none; }
 /* The popovers are built once, for every viewport, and only ever shown on a
    phone — without this base rule they render as a stray block at the end of
-   the tablet and desktop layouts. */
-.mob-pop { display: none; }
+   the tablet and desktop layouts. The dock and its More sheet are built once
+   for the same reason, and the sheet lives INSIDE the toolbar (see
+   mobile-dock.ts), where a stray block is a "More ✕" sitting in the desktop
+   toolbar — which is exactly what it did without this line. */
+.mob-pop, .mobile-dock, .dock-more { display: none; }
 /* Toolbar overflow is a phone affordance — the desktop toolbar has the room. */
 .toolbar-more, .toolbar-more-menu { display: none; }
 /* Labelled, because a phone has no hover: an unlabelled icon row is a guessing
@@ -2408,7 +2457,9 @@ button:focus:not(:focus-visible) { outline: none; }
    secondary controls moved out the strip fits on one line at 360px.
    Mouse-driven windows keep the full toolbar at any width: hiding controls
    behind a sheet only pays for itself when every target must be 44px. */
-@media (max-width: 1023px) and (pointer: coarse) {
+/* Tablet only. A phone's toolbar carries no controls at all — they live in the
+   bottom dock — so its ⋯ sheet would be an empty sheet. */
+@media (min-width: 768px) and (max-width: 1023px) and (pointer: coarse) {
   .toolbar-more {
     display: inline-flex; align-items: center; justify-content: center;
     min-width: 44px; min-height: 44px; font-size: 18px; line-height: 1;
@@ -2434,80 +2485,16 @@ button:focus:not(:focus-visible) { outline: none; }
   .toolbar-more-menu .mode-btn { flex: 1; min-height: 48px; }
 }
 
-/* ── ONE-HANDED REACH LAYER (phones) ──────────────────────── */
-/* Floating, so it costs no layout: the design never shrinks to make room.
-   See one-hand.ts for the reach argument behind the geometry. */
-.oh-fab, .oh-arc { display: none; }
-
-@media (max-width: 767px) and (pointer: coarse) {
-  .oh-fab {
-    display: flex;
-    position: fixed;
-    align-items: center;
-    justify-content: center;
-    width: 52px; height: 52px;
-    border-radius: 50%;
-    border: 1px solid var(--color-border-strong);
-    background: color-mix(in srgb, var(--color-surface-2) 88%, transparent);
-    backdrop-filter: blur(12px);
-    color: var(--color-text);
-    font-size: 20px;
-    z-index: 240;
-    touch-action: none;          /* it is a drag handle, not a scroll surface */
-    transition: transform 0.16s ease, background 0.16s ease;
-  }
-  .oh-fab.open { transform: rotate(45deg); background: var(--color-primary); color: #fff; }
-
-  .oh-arc { display: block; position: fixed; inset: 0; pointer-events: none; z-index: 239; }
-  .oh-arc.open { pointer-events: none; }
-
-  .oh-item {
-    position: fixed;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 1px;
-    width: 48px; height: 48px;
-    padding: 0;
-    border-radius: 50%;
-    border: 1px solid var(--color-border-strong);
-    background: color-mix(in srgb, var(--color-surface-2) 92%, transparent);
-    backdrop-filter: blur(12px);
-    color: var(--color-text);
-    /* Closed: collapsed onto the anchor and genuinely not rendered. `opacity:0`
-       alone leaves a 19px hit-tested box behind (scale shrinks the measured
-       rect), which reads as an undersized touch target to anything auditing
-       the page — and it would be one, if it were tappable. */
-    opacity: 0;
-    visibility: hidden;
-    transform: scale(0.4);
-    pointer-events: none;
-    transition: opacity 0.14s ease, transform 0.14s ease, visibility 0.14s;
-  }
-  .oh-arc.open .oh-item {
-    opacity: 1;
-    visibility: visible;
-    transform: scale(1);
-    pointer-events: auto;
-  }
-  .oh-glyph { font-size: 17px; line-height: 1; }
-  /* Labelled, for the same reason the phone nav is: no hover, no tooltips. */
-  .oh-label { font-size: 8px; line-height: 1; color: var(--color-text-muted); }
-
-  /* Out of the way of anything already open. */
-  .oh-hidden .oh-fab, .oh-hidden .oh-arc { display: none; }
-}
-
 /* ── RESPONSIVE — PHONE (<768px, coarse pointer) ─────────── */
 /* Canvas fills the screen, panels become bottom sheets. Gated on the pointer
    for the same reason as the tablet block above — see it for the argument. */
 @media (max-width: 767px) and (pointer: coarse) {
   #app {
     grid-template-columns: 1fr;
-    /* toolbar row is `auto` so it can grow to a second line on narrow phones
-       instead of clipping its controls. statusbar row is `auto` too so its
-       safe-area padding (home indicator) can grow it. */
+    /* Four rows, and only two of them are chrome: a slim title bar on top and
+       the dock at the bottom. The formula row collapses to nothing when there
+       is no selection (see .formula-bar below), so an unselected canvas gets
+       the whole middle of the screen. */
     grid-template-rows: auto auto 1fr auto;
     grid-template-areas:
       "toolbar"
@@ -2519,109 +2506,217 @@ button:focus:not(:focus-visible) { outline: none; }
        screen — "the editor is cropped". dvh follows the visible viewport. */
     height: 100dvh;
   }
-  /* The zoom/status bar is the BOTTOM-MOST element — pad it above the iOS
-     home indicator / Android gesture bar (env() needs viewport-fit=cover,
-     set in index.html). */
-  .status-bar {
-    height: auto;
-    min-height: var(--statusbar-height);
+
+  /* ── THE DOCK OWNS THE BOTTOM ────────────────────────────
+     Everything you press is here, in two rows: verbs, then places. The old
+     build had a fixed nav bar AND a fixed status bar at the bottom, offset
+     from each other by hand — they overlapped by 13px and the status bar's
+     last two buttons ran off the right edge. One flow-laid container cannot
+     do either. */
+  .mobile-dock {
+    grid-area: statusbar;
+    display: flex;
+    flex-direction: column;
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border);
     padding-bottom: env(safe-area-inset-bottom, 0px);
+    z-index: 200;
+  }
+  .dock-verbs {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    gap: 2px;
+    padding: 0 4px;
+    height: var(--dock-verbs-height);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .dock-btn {
+    flex: 1 1 0;
+    min-width: 0;
+    height: 44px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    color: var(--color-text);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+  }
+  .dock-btn:active { background: color-mix(in srgb, var(--color-primary) 18%, transparent); }
+  .dock-btn[hidden] { display: none; }
+  /* Fit zooms the CANVAS. With the canvas not on screen it is a button that
+     does nothing you can see. (Play, Present and Export all still mean
+     something in Payload — they open over it.) */
+  #app[data-mode='payload'] .dock-btn[data-dock='fit'],
+  #app[data-mode='preview'] .dock-btn[data-dock='fit'] { display: none; }
+  .dock-glyph { display: flex; align-items: center; justify-content: center; }
+  .dock-label {
+    font-size: 9px; font-weight: 600; line-height: 1;
+    color: var(--color-text-muted);
+    max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  /* The status bar's own contents are mirrored by the dock (Fit) or adopted by
+     the More sheet (grid, snap, units, resize), so the bar itself has nothing
+     left to show. Zoom is a pinch on a phone, not a pair of buttons. */
+  .status-bar { display: none; }
+
+  /* The More sheet — the controls you reach for occasionally, full-width and
+     labelled, because a phone has no hover to explain an icon. */
+  .dock-more {
+    position: fixed;
+    left: 0; right: 0;
+    bottom: calc(var(--dock-height) + env(safe-area-inset-bottom, 0px));
+    max-height: 64vh;
+    display: none;
+    flex-direction: column;
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    z-index: 240;
+  }
+  .dock-more.open { display: flex; }
+  .dock-more-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 8px 8px 16px;
+    font-size: 13px; font-weight: 700;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .dock-more-close {
+    min-width: 44px; min-height: 44px;
+    background: none; border: none; color: var(--color-text-muted); font-size: 16px;
+  }
+  .dock-more-body {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    padding: 12px 12px 16px;
+    overflow-y: auto;
+  }
+  .dock-more-body > * {
+    flex: 1 1 100%;
+    min-height: 48px;
+    justify-content: flex-start;
+    font-size: 14px;
+  }
+  /* Adopted controls arrive icon-only (that is how they read in a 24px status
+     bar). In a sheet you opened on purpose they get their words back — and they
+     pair up two to a row, because a toggle is not worth a full-width row and
+     the sheet should not need scrolling to reach the last of them. */
+  .dock-more-body [data-dock-label] {
+    flex: 1 1 calc(50% - 4px);
+    display: inline-flex; align-items: center;
+    gap: 10px; padding: 0 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-2);
+    color: var(--color-text);
+  }
+  .dock-more-body [data-dock-label]::after {
+    content: attr(data-dock-label);
+    font-size: 14px; font-weight: 600;
+  }
+  .dock-more-body .sb-btn.active,
+  .dock-more-body .sb-btn[aria-pressed='true'] {
+    border-color: var(--color-primary); color: var(--color-primary);
+  }
+  .dock-more-body [data-action] span,
+  .dock-more-body .toolbar-catalog-btn span { display: inline !important; }
+  .dock-more-body .toolbar-theme-select { max-width: none; width: 100%; font-size: 14px; padding: 0 10px; }
+  .dock-more-body .mode-toggle { display: flex; }
+  .dock-more-body .mode-btn { flex: 1; min-height: 48px; }
+  .dock-more-body .sb-ruler-unit { width: 100%; padding: 0 12px; }
+
+  /* ── THE TOP BAR IS A TITLE, NOT A TOOLBAR ───────────────
+     Every button it held now lives in the dock, which fires the originals — so
+     they stay in the DOM, unpainted, and the bar keeps only what tells you
+     which file you are in. */
+  .toolbar {
+    height: 40px;
+    min-height: 0;
+    padding: 0 12px;
+    gap: 8px;
+    flex-wrap: nowrap;
+    /* Visible, deliberately: the More sheet is a position:fixed child of this
+       bar (see mobile-dock.ts), and the only thing that needed clipping — the
+       design's name — clips itself. */
+    overflow: visible;
+  }
+  .toolbar .toolbar-center { display: none; }
+  /* The right cluster stays IN THE LAYOUT with all of its buttons hidden, and
+     collapses to nothing. It cannot be display:none — the Export menu is its
+     descendant, and a display:none ancestor takes the menu with it however
+     fixed the menu's own position is. That is why tapping Export on a phone
+     did nothing at all: the dock fired the real button, the button opened a
+     sheet that could not be rendered. */
+  .toolbar .toolbar-right { gap: 0; width: 0; overflow: hidden; }
+  .toolbar .toolbar-right > .btn,
+  .toolbar .toolbar-right > select,
+  .toolbar .toolbar-right .export-group > .btn { display: none; }
+  .toolbar .toolbar-left { flex: 1 1 auto; min-width: 0; gap: 8px; }
+  .toolbar .toolbar-left strong { display: none; }
+  .toolbar .toolbar-left > span:nth-child(2) { display: none; }
+  .toolbar .toolbar-project-name {
+    display: block;
+    font-size: 13px; font-weight: 600;
+    color: var(--color-text);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
 
-  /* The activity bars move into the Panels popover; the formula bar stays —
-     it names the selected layer and edits its value, and "which layer am I on"
-     is the question a phone user asks most. Compact, one line. */
+  /* The activity bars move into the Panels popover. */
   .activity-bar, .r-activity-bar { display: none; }
   /* The canvas handles its own pinch/pan (touch-gestures.ts); letting the
      browser scroll or zoom on top of that makes both feel broken. */
   .canvas-area, .canvas-viewport, .viewport-pane { touch-action: none; }
-  .formula-bar { height: 44px; padding: 0 8px; gap: 6px; }
-  .formula-bar .fb-input { min-height: 40px; }
+  /* The formula bar earns its 44px only when it has something to say. With no
+     selection it held one grey sentence across the top of the screen; now it
+     is not there, and the canvas starts 44px higher. */
+  .formula-bar { height: 44px; padding: 0 10px; gap: 8px; }
+  .formula-bar .fb-input { min-height: 40px; font-size: 12px; min-width: 0; }
   .formula-bar .fb-prefix { display: none; }
-  .formula-bar .fb-input { font-size: 12px; min-width: 0; }
   .formula-bar-resize-handle { display: none; }
+  #app.no-selection .formula-bar { display: none; }
 
-  /* Compact toolbar on mobile. The New/Add Page buttons used to push the
-     Visual/Payload toggle + undo/redo/Export cluster off the clipped right
-     edge. Fix: hide secondary chrome, collapse the icon buttons to icon-only,
-     and let the toolbar WRAP to a second row so every control stays visible —
-     nothing cropped, nothing hidden behind a non-obvious scroll. */
-  .toolbar {
-    padding: 4px 6px;
-    gap: 4px 6px;
-    min-width: 0;
-    height: auto;
-    min-height: var(--toolbar-height);
-    flex-wrap: wrap;
-    overflow: visible;
-    justify-content: flex-start;
-  }
-  .toolbar .toolbar-project-name { display: none; }
-  .toolbar .toolbar-left > span:nth-child(2) { display: none; } /* hide divider */
-  .toolbar .toolbar-left strong { display: none; } /* hide "Folio" wordmark, keep icon */
-  /* The theme picker is a real design control, not chrome — keep it, just
-     narrow. Hiding it was the difference between "compact" and "nerfed". */
-  .toolbar .toolbar-theme-select { max-width: 116px; font-size: 12px; }
-  .toolbar .mode-toggle button { padding: 5px 8px; font-size: 12px; }
-  .toolbar .btn, .toolbar .btn-sm { padding-left: 8px; padding-right: 8px; }
-  /* Icon-only: drop the labels on New / Add Page / Catalog to keep the toolbar
-     to a single row on most phones. */
-  .toolbar [data-action="new-design"] span,
-  .toolbar [data-action="add-page"] span,
-  .toolbar .toolbar-catalog-btn span { display: none; }
-  .toolbar .toolbar-center > span { display: none; } /* the New|Catalog divider */
-  /* Clusters + the centre's own buttons may wrap rather than overflow. */
-  .toolbar .toolbar-left,
-  .toolbar .toolbar-center,
-  .toolbar .toolbar-right { flex-wrap: wrap; min-width: 0; }
-  .toolbar .toolbar-center { gap: 4px 6px; }
+  /* A phone's page strip shows the deck, it is not the deck's editor: 120px of
+     thumbnails against an 844px screen was a seventh of the device. */
+  #page-strip-section { height: 88px; }
+  #page-strip-section .page-strip-content { padding-top: 0; }
+  #page-strip-section .panel-resize-handle--y { display: none; }
+  /* The strip element carries an inline min-height: 80px + 8px padding, which
+     is taller than the section that holds it — the thumbnails were clipped by
+     their own container. */
+  #page-strip-section .page-strip { min-height: 0; padding: 6px 8px; }
 
-  /* Status bar: only essential controls on mobile, no overflow */
-  .status-bar { padding: 0 4px; gap: 0; }
-  .status-pages { display: none; }
-  .sb-info { display: none; }
-
-  /* Mobile bottom nav bar — sits above the statusbar, which now grows by
-     the safe-area inset, so the offset must include it too. */
+  /* The nav is the dock's second row now, not a bar of its own. It is a flow
+     child of .mobile-dock: nothing to position, nothing to offset, nothing to
+     overlap. */
   .mobile-nav {
     display: flex;
-    position: fixed;
-    bottom: calc(var(--statusbar-height) + env(safe-area-inset-bottom, 0px));
-    left: 0; right: 0;
+    position: static;
     height: var(--mobile-nav-height);
-    background: var(--color-surface);
-    border-top: 1px solid var(--color-border);
-    z-index: 200;
+    background: transparent;
+    border-top: none;
     align-items: center;
     justify-content: space-around;
-    padding: 0 8px;
+    padding: 0 6px 4px;
     gap: 4px;
   }
-
-  /* Reserve space above mobile nav in status bar */
-  .status-bar { z-index: 210; }
-
-  /* The fixed bottom nav paints over the last 52px of the canvas column —
-     harmless for the zoomable canvas, but the page strip is bottom-anchored
-     UI: its thumb labels and "+" button were hidden behind the nav. Clear it. */
-  #page-strip-section { margin-bottom: var(--mobile-nav-height); }
 
   /* Sheets FLOAT over the canvas. They used to shrink the canvas pane and
      trigger a re-fit, which dropped a poster from 29% to 12% zoom the moment
      you opened Layers. The canvas now keeps its size and its zoom; if the
      selection ends up behind a sheet the view pans (see revealSelectionAbove).
-     Translucency + blur keep the design readable behind the sheet. */
-  .left-panel, .properties-panel {
-    background: color-mix(in srgb, var(--color-surface) 88%, transparent);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-  }
+     OPAQUE, though: the translucent version was unreadable in practice — layer
+     names sat on top of a headline and a row of page thumbnails, and no amount
+     of blur fixes text over text. The backdrop dims the design instead. */
+  .left-panel, .properties-panel { background: var(--color-surface); }
 
   /* Left panel — bottom sheet */
   .left-panel {
     display: flex !important;
     position: fixed;
-    bottom: calc(var(--mobile-nav-height) + var(--statusbar-height) + env(safe-area-inset-bottom, 0px));
+    bottom: calc(var(--dock-height) + env(safe-area-inset-bottom, 0px));
     left: 0; right: 0;
     height: var(--sheet-h, 38vh);
     width: auto !important;
@@ -2638,8 +2733,8 @@ button:focus:not(:focus-visible) { outline: none; }
      actually available between the toolbar and the bottom nav, so no detent
      can ever reach behind the chrome. */
   .left-panel, .properties-panel {
-    max-height: calc(100dvh - var(--toolbar-height) - var(--mobile-nav-height)
-                     - var(--statusbar-height) - env(safe-area-inset-bottom, 0px) - 8px);
+    max-height: calc(100dvh - 40px - var(--dock-height)
+                     - env(safe-area-inset-bottom, 0px) - 8px);
   }
   .left-panel.mob-open { transform: translateY(0); }
   /* A closed sheet sits below a tall bottom offset, so translateY(110%) no
@@ -2654,7 +2749,7 @@ button:focus:not(:focus-visible) { outline: none; }
   .properties-panel {
     display: flex !important;
     position: fixed;
-    bottom: calc(var(--mobile-nav-height) + var(--statusbar-height) + env(safe-area-inset-bottom, 0px));
+    bottom: calc(var(--dock-height) + env(safe-area-inset-bottom, 0px));
     left: 0; right: 0;
     height: var(--sheet-h, 38vh);
     z-index: 195;
@@ -2694,6 +2789,13 @@ button:focus:not(:focus-visible) { outline: none; }
   /* Hide the minimap previewer on mobile — bottom-sheet panels don't
      have room for it and it duplicates canvas-pan controls. */
   .properties-panel .minimap-container { display: none; }
+
+  /* The "No selection" hero is a 130px illustration of the fact that you have
+     not tapped anything, and it sat on top of the document facts you opened the
+     sheet to read. One line, and the facts move up into view. */
+  .prop-empty-hero { padding: 12px 16px 10px; }
+  .prop-empty-icon { display: none; }
+  .prop-empty-hint { font-size: 11px; }
 
   /* Touch targets. A phone has no hover and no pixel-precise pointer, so every
      control a finger is meant to hit clears 44px — the toolbar, the mode
@@ -2737,13 +2839,14 @@ button:focus:not(:focus-visible) { outline: none; }
   .mob-pop {
     position: fixed;
     left: 0; right: 0;
-    bottom: calc(var(--mobile-nav-height) + var(--statusbar-height) + env(safe-area-inset-bottom, 0px));
+    bottom: calc(var(--dock-height) + env(safe-area-inset-bottom, 0px));
     max-height: 62vh;
     display: none;
     flex-direction: column;
-    background: color-mix(in srgb, var(--color-surface) 94%, transparent);
-    backdrop-filter: blur(18px);
-    -webkit-backdrop-filter: blur(18px);
+    /* Opaque, like the sheets: the translucent version let the panel behind it
+       print through its own labels — "Tools" read over a headline and a table
+       of document properties at once. */
+    background: var(--color-surface);
     border-top: 1px solid var(--color-border-strong);
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
     z-index: 240;
@@ -2759,13 +2862,16 @@ button:focus:not(:focus-visible) { outline: none; }
     min-width: 44px; min-height: 44px;
     background: none; border: none; color: var(--color-text-muted); font-size: 16px;
   }
+  /* Four to a row, not three: thirteen tools at 96px ran five rows deep and
+     covered the design they are for. 78px still clears the 44px touch floor by
+     a wide margin. */
   .mob-pop-grid {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(78px, 1fr));
     gap: 6px; padding: 10px; overflow-y: auto;
   }
   .mob-pop-item {
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: 6px; min-height: 72px; padding: 8px 4px;
+    gap: 5px; min-height: 64px; padding: 8px 4px;
     background: var(--color-surface-2); border: 1px solid var(--color-border);
     border-radius: var(--radius-md); color: var(--color-text);
     font-size: 11px; font-weight: 600;
@@ -2775,16 +2881,11 @@ button:focus:not(:focus-visible) { outline: none; }
   .mob-pop-icon svg { width: 20px; height: 20px; }
   .mob-pop-label { text-align: center; line-height: 1.2; }
 
-  /* The align toolbar is 468px of buttons: at 390px it hung 39px off BOTH
-     edges of the canvas. Pin it to the canvas width and let it scroll. */
-  .align-toolbar {
-    left: 4px; right: 4px;
-    transform: none;
-    max-width: none;
-    overflow-x: auto;
-    justify-content: flex-start;
-  }
-  .align-toolbar.align-toolbar--hidden { transform: translateY(-4px); }
+  /* No floating align bar on a phone. It is a SECOND surface for the same
+     selection the HUD already serves, it sits at the TOP of the canvas (where
+     nothing you press belongs) and it covers the design while you work on it.
+     Every one of its ten actions is in the HUD's "More" menu, in words. */
+  .align-toolbar { display: none; }
 }
 
 /* ── TIMELINE PANEL ───────────────────────────────────────── */

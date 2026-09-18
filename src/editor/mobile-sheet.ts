@@ -113,9 +113,20 @@ export function wireMobileSheets(container: HTMLElement, opts: SheetOptions): vo
     return [...navBtns].find(b => b.dataset['mob'] === name);
   }
 
+  /** A popover replaces whatever is open, and OWNS the nav highlight while it
+   *  is up. Without this the bar still lit "Props" with the Tools grid on
+   *  screen, and the sheet it covered stayed open underneath it. */
+  const claimNav = (name: string): void => {
+    for (const p of [leftPanel, rightPanel]) p.classList.remove('mob-open');
+    container.classList.remove('sheet-open', 'sheet-dim');
+    backdrop.classList.add('active');
+    navBtns.forEach(b => b.classList.toggle('active', b.dataset['mob'] === name));
+  };
+
   const openPanelsPop = (): void => {
-    if (panelsPop.isOpen) { panelsPop.close(); return; }
+    if (panelsPop.isOpen) { closeAll(); return; }
     toolsPop.close();
+    claimNav('panels');
     panelsPop.open(collectPanelEntries(container), {
       isActive: e => e.source.classList.contains('active'),
       onPick: (e) => {
@@ -128,8 +139,9 @@ export function wireMobileSheets(container: HTMLElement, opts: SheetOptions): vo
   };
 
   const openToolsPop = (): void => {
-    if (toolsPop.isOpen) { toolsPop.close(); return; }
+    if (toolsPop.isOpen) { closeAll(); return; }
     panelsPop.close();
+    claimNav('tools');
     toolsPop.open(collectToolEntries(container), { isActive: e => e.source.classList.contains('active') });
   };
 

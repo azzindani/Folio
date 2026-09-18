@@ -73,7 +73,32 @@ export abstract class CanvasBase {
     this.buildRulers();
   }
 
+  /**
+   * Rulers are a MOUSE affordance, so a phone does not get them.
+   *
+   * They cost 40px of a 390px screen on two edges and buy nothing: you cannot
+   * read a tick against a finger, and the design is placed by dragging it, not
+   * by measuring off an edge. The unit badge that went with them lives in the
+   * dock's More sheet.
+   */
+  protected rulersOn(): boolean {
+    return !(window.matchMedia?.('(max-width: 767px) and (pointer: coarse)').matches ?? false);
+  }
+
+  /** The viewport's offset inside .canvas-area — 0 once the rulers are off.
+   *  Every screen-coordinate calculation reads this, never RULER_SIZE. */
+  protected rulerOffset(): number {
+    return this.rulersOn() ? RULER_SIZE : 0;
+  }
+
   protected buildRulers(): void {
+    if (!this.rulersOn()) {
+      // Still constructed, because updateRulers() and the resize path write to
+      // them unconditionally — they are simply never in the layout.
+      this.rulerH = document.createElement('canvas');
+      this.rulerV = document.createElement('canvas');
+      return;
+    }
     // Corner box
     const corner = document.createElement('div');
     corner.className = 'ruler-corner';
@@ -106,6 +131,7 @@ export abstract class CanvasBase {
   }
 
   protected updateRulers(): void {
+    if (!this.rulersOn()) return;
     const { zoom = 1, panX = 0, panY = 0, rulerUnit = 'px' } = this.state.get();
     const containerW = this.container.clientWidth  - RULER_SIZE;
     const containerH = this.container.clientHeight - RULER_SIZE;
@@ -381,8 +407,13 @@ export abstract class CanvasBase {
     if (!design) return;
 
     const containerRect = this.container.getBoundingClientRect();
-    const scaleX = (containerRect.width - 80) / design.document.width;
-    const scaleY = (containerRect.height - 80) / design.document.height;
+    // The breathing room around a fitted design is a PROPORTION of the space,
+    // not a flat 80px: on a 1400px desktop 80px is 6% and looks right, on a
+    // 390px phone it is 20% of the screen thrown away on either side, which is
+    // most of why a phone showed a stamp of the design floating in black.
+    const pad = (extent: number): number => Math.min(80, Math.max(16, extent * 0.06)) * 2;
+    const scaleX = (containerRect.width - pad(containerRect.width)) / design.document.width;
+    const scaleY = (containerRect.height - pad(containerRect.height)) / design.document.height;
     const zoom = Math.min(scaleX, scaleY, 1);
 
     this.state.batch(() => {
@@ -401,8 +432,8 @@ export abstract class CanvasBase {
     const { zoom = 1, panX = 0, panY = 0 } = this.state.get();
     const bbox = (svgEl as SVGGraphicsElement).getBBox?.() ?? { x: layer.x ?? 0, y: layer.y ?? 0, width: layer.width ?? 100, height: 24 };
 
-    const left = bbox.x * zoom + panX + RULER_SIZE;
-    const top  = bbox.y * zoom + panY + RULER_SIZE;
+    const left = bbox.x * zoom + panX + this.rulerOffset();
+    const top  = bbox.y * zoom + panY + this.rulerOffset();
     const w    = Math.max(bbox.width * zoom, 80);
     const h    = Math.max(bbox.height * zoom, 24);
 
@@ -468,15 +499,15 @@ export abstract class CanvasBase {
     const preview = document.createElement('div');
     preview.className = 'guide-preview';
     preview.style.cssText = axis === 'h'
-      ? `position:absolute;left:${RULER_SIZE}px;right:0;height:1px;background:#6c5ce7;pointer-events:none;z-index:150;top:${e.clientY - vpRect.top + RULER_SIZE}px`
-      : `position:absolute;top:${RULER_SIZE}px;bottom:0;width:1px;background:#6c5ce7;pointer-events:none;z-index:150;left:${e.clientX - vpRect.left + RULER_SIZE}px`;
+      ? `position:absolute;left:${this.rulerOffset()}px;right:0;height:1px;background:#6c5ce7;pointer-events:none;z-index:150;top:${e.clientY - vpRect.top + this.rulerOffset()}px`
+      : `position:absolute;top:${this.rulerOffset()}px;bottom:0;width:1px;background:#6c5ce7;pointer-events:none;z-index:150;left:${e.clientX - vpRect.left + this.rulerOffset()}px`;
     this.container.appendChild(preview);
 
     const onMove = (me: PointerEvent) => {
       if (axis === 'h') {
-        preview.style.top = `${me.clientY - vpRect.top + RULER_SIZE}px`;
+        preview.style.top = `${me.clientY - vpRect.top + this.rulerOffset()}px`;
       } else {
-        preview.style.left = `${me.clientX - vpRect.left + RULER_SIZE}px`;
+        preview.style.left = `${me.clientX - vpRect.left + this.rulerOffset()}px`;
       }
     };
 

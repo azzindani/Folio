@@ -3,7 +3,6 @@
 import { type ToolId } from './state';
 import { widthToSpan, computeInsertIndex, insertIndicatorRect } from './flow-edit';
 import type { Layer } from '../schema/types';
-import { RULER_SIZE } from './canvas-draw';
 import { CanvasBase } from './canvas-base';
 import { linearEndpoints, angleFromDrag, radialCenter, radialRadiusPoint, radiusFromDrag } from './gradient-handles';
 
@@ -105,8 +104,8 @@ export abstract class CanvasInteractions extends CanvasBase {
     const vpRect = this.container.getBoundingClientRect();
 
     // Center in screen coordinates (accounting for ruler offset)
-    const cx = vpRect.left + RULER_SIZE + ((bbox.x + bbox.width / 2) * zoom + panX);
-    const cy = vpRect.top  + RULER_SIZE + ((bbox.y + bbox.height / 2) * zoom + panY);
+    const cx = vpRect.left + this.rulerOffset() + ((bbox.x + bbox.width / 2) * zoom + panX);
+    const cy = vpRect.top  + this.rulerOffset() + ((bbox.y + bbox.height / 2) * zoom + panY);
 
     // Angle tooltip
     const tip = document.createElement('div');
@@ -614,8 +613,8 @@ export abstract class CanvasInteractions extends CanvasBase {
     if (!layer || layer.locked) return;
     const { zoom, panX, panY } = this.state.get();
     const vpRect = this.container.getBoundingClientRect();
-    const cx = vpRect.left + RULER_SIZE + ((bbox.x + bbox.width / 2) * zoom + panX);
-    const cy = vpRect.top + RULER_SIZE + ((bbox.y + bbox.height / 2) * zoom + panY);
+    const cx = vpRect.left + this.rulerOffset() + ((bbox.x + bbox.width / 2) * zoom + panX);
+    const cy = vpRect.top + this.rulerOffset() + ((bbox.y + bbox.height / 2) * zoom + panY);
     let started = false;
 
     const onMove = (me: PointerEvent): void => {
@@ -625,8 +624,8 @@ export abstract class CanvasInteractions extends CanvasBase {
       if (kind === 'p1' || kind === 'p2') {
         fill.angle = angleFromDrag(dx, dy, kind);
       } else if (kind === 'center') {
-        fill.cx = Math.max(0, Math.min(100, Math.round(((me.clientX - (vpRect.left + RULER_SIZE + panX)) / zoom - bbox.x) / bbox.width * 100)));
-        fill.cy = Math.max(0, Math.min(100, Math.round(((me.clientY - (vpRect.top + RULER_SIZE + panY)) / zoom - bbox.y) / bbox.height * 100)));
+        fill.cx = Math.max(0, Math.min(100, Math.round(((me.clientX - (vpRect.left + this.rulerOffset() + panX)) / zoom - bbox.x) / bbox.width * 100)));
+        fill.cy = Math.max(0, Math.min(100, Math.round(((me.clientY - (vpRect.top + this.rulerOffset() + panY)) / zoom - bbox.y) / bbox.height * 100)));
       } else {
         fill.radius = radiusFromDrag(dx / zoom, bbox.width);
       }

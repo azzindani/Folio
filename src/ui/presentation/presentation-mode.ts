@@ -152,8 +152,12 @@ export class PresentationMode {
 
   private scaleSlide(slide: HTMLElement, design: DesignSpec): void {
     const { width, height } = design.document;
-    const vw = window.innerWidth  - 40;
-    const vh = window.innerHeight - 80;
+    // A presentation is meant to fill the screen. The flat 40/80 inset spent
+    // 10% of a 390px phone on margin no one asked for, on the one screen whose
+    // whole job is showing the design as large as it goes.
+    const phone = window.innerWidth < 768;
+    const vw = window.innerWidth  - (phone ? 0 : 40);
+    const vh = window.innerHeight - (phone ? 56 : 80);
     const scale = Math.min(vw / width, vh / height, 1);
     const sw = Math.round(width  * scale);
     const sh = Math.round(height * scale);

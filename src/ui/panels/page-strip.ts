@@ -23,6 +23,19 @@ export class PageStrip {
       align-items: center; min-height: 80px;
     `;
     this.container.appendChild(this.strip);
+
+    // Thumbnails are sized from the strip's height, and the first render often
+    // happens while the section is still display:none (height 0) — so re-render
+    // when the real height arrives, and again if the strip is dragged taller.
+    if (typeof ResizeObserver !== 'undefined') {
+      let last = 0;
+      new ResizeObserver(() => {
+        const h = this.container.clientHeight;
+        if (Math.abs(h - last) < 4) return;
+        last = h;
+        if (h > 0) this.render();
+      }).observe(this.container);
+    }
   }
 
   private onStateChange(state: EditorState, changedKeys: (keyof EditorState)[]): void {
@@ -45,8 +58,13 @@ export class PageStrip {
     this.strip.style.display = 'flex';
     this.strip.innerHTML = '';
 
+    // Thumbnails are sized to the strip, not to a constant. A fixed 72px width
+    // made a 4:5 page 108px tall, which a phone's 84px strip cut through the
+    // middle of the label — you could see the deck but not read which page you
+    // were on.
+    const avail = Math.max(48, this.container.clientHeight || this.strip.clientHeight || 120);
     design.pages.forEach((page, index) => {
-      const thumb = this.createThumbnail(page, index, index === currentPageIndex, design.document.width, design.document.height);
+      const thumb = this.createThumbnail(page, index, index === currentPageIndex, design.document.width, design.document.height, avail);
       this.strip.appendChild(thumb);
     });
 
@@ -64,9 +82,14 @@ export class PageStrip {
     this.strip.appendChild(addBtn);
   }
 
-  private createThumbnail(page: Page, index: number, active: boolean, docW: number, docH: number): HTMLElement {
-    const THUMB_W = 72;
+  private createThumbnail(page: Page, index: number, active: boolean, docW: number, docH: number, avail = 120): HTMLElement {
+    const LABEL_H = 18;
     const aspect = docH / (docW || 1);
+    // Fit the tallest thumbnail the strip can hold (its own height less the
+    // label, the 2px border pair and the content's padding), then clamp the
+    // width so a 16:9 page cannot stretch into a banner.
+    const maxThumbH = Math.max(28, avail - LABEL_H - 12);
+    const THUMB_W = Math.round(Math.min(96, Math.max(40, maxThumbH / (aspect || 1))));
     const THUMB_H = Math.round(THUMB_W * aspect);
 
     const wrapper = document.createElement('div');
@@ -75,7 +98,7 @@ export class PageStrip {
       border: 2px solid ${active ? 'var(--color-primary)' : 'var(--color-border)'};
       border-radius: var(--radius-sm);
       ${active ? 'box-shadow: 0 0 0 2px var(--color-primary);' : ''}
-      width: ${THUMB_W}px; height: ${THUMB_H + 18}px;
+      width: ${THUMB_W}px; height: ${THUMB_H + LABEL_H}px;
       background: var(--color-surface-2);
       display: flex; flex-direction: column; overflow: hidden;
     `;
@@ -110,7 +133,7 @@ export class PageStrip {
     // Page label
     const label = document.createElement('div');
     label.style.cssText = `
-      height: 18px; line-height: 18px; font-size: 9px; text-align: center;
+      height: ${LABEL_H}px; line-height: ${LABEL_H}px; font-size: 9px; text-align: center;
       color: var(--color-text-muted); white-space: nowrap; overflow: hidden;
       text-overflow: ellipsis; padding: 0 4px; flex-shrink: 0;
       background: var(--color-surface);

@@ -1,15 +1,19 @@
-// Folio editor — phone toolbar overflow.
+// Folio editor — TOUCH TABLET toolbar overflow (768–1023px, coarse pointer).
 //
-// Everything in the toolbar matters, so nothing is dropped on a phone: it just
-// wrapped to three rows and ate ~100px of canvas. The less-used half moves into
-// a "⋯" sheet instead, leaving one row of what you touch constantly (mode
-// switch, undo/redo, Export).
+// A tablet keeps its top toolbar: there is room for it, and the thumb reaches
+// the top edge of a device held in two hands. It just cannot hold everything at
+// 44px targets, so the less-used half moves into a "⋯" sheet.
+//
+// A PHONE does not come through here. There, every control lives at the bottom
+// (mobile-dock.ts) and the top bar carries the design's name and nothing else —
+// two modules must never fight over the same nodes, so the media queries are
+// disjoint by construction: this one starts where the phone one stops.
 //
 // The controls are MOVED, not re-created. ToolbarManager delegates clicks from
 // the .toolbar element and holds a change listener on the theme <select>, so
 // the menu lives inside .toolbar and the original nodes keep every binding they
 // had. A marker node per control restores the desktop order exactly.
-import { TOUCH_LAYOUT_MQ } from './breakpoints';
+import { TABLET_LAYOUT_MQ } from './breakpoints';
 
 /** Controls that move into the sheet, in the order they appear there. */
 const OVERFLOW = [
@@ -81,10 +85,11 @@ export function wireMobileToolbarOverflow(container: HTMLElement): void {
     if (!(e.target as HTMLElement).closest('.toolbar-more-menu, .toolbar-more')) close();
   });
 
-  // Touch tablets need this too: at 768px the toolbar wrapped to a second row
-  // and spent 95px of a 1024px screen on chrome. A narrowed desktop window is
-  // excluded — it can hit a 28px button, so hiding controls only costs it.
-  const mq = window.matchMedia(TOUCH_LAYOUT_MQ);
+  // Tablets only: at 768px the toolbar wrapped to a second row and spent 95px
+  // of a 1024px screen on chrome. A narrowed desktop window is excluded — it
+  // can hit a 28px button, so hiding controls only costs it — and so is a
+  // phone, whose controls belong to the dock.
+  const mq = window.matchMedia(TABLET_LAYOUT_MQ);
   const apply = (): void => {
     if (mq.matches) {
       for (const m of moved) if (m.el.parentElement !== menu) menu?.appendChild(m.el);

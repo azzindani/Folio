@@ -1,4 +1,5 @@
 import { type StateManager, type EditorState } from '../../editor/state';
+import { chromeIcon } from '../../editor/chrome-icons';
 import {
   alignLeft, alignRight, alignTop, alignBottom,
   alignCenterH, alignCenterV, distributeH, distributeV,
@@ -12,18 +13,21 @@ interface AlignAction {
   minSelect: number;
 }
 
+// One mark per action. The previous set spent three Unicode arrows on ten
+// buttons — "align left" and "align right" were the same ↔ — so the only way to
+// tell them apart was a tooltip, which a touchscreen never shows.
 const ACTIONS: AlignAction[] = [
-  { icon: '&#x2194;', title: 'Align left edges',   fn: alignLeft,    minSelect: 2 },
-  { icon: '&#x21C6;', title: 'Center horizontal',  fn: alignCenterH, minSelect: 2 },
-  { icon: '&#x2194;', title: 'Align right edges',  fn: alignRight,   minSelect: 2 },
-  { icon: '&#x2195;', title: 'Align top edges',    fn: alignTop,     minSelect: 2 },
-  { icon: '&#x21C5;', title: 'Center vertical',    fn: alignCenterV, minSelect: 2 },
-  { icon: '&#x2195;', title: 'Align bottom edges', fn: alignBottom,  minSelect: 2 },
-  { icon: '&#x2194;', title: 'Distribute horizontally', fn: distributeH, minSelect: 3 },
-  { icon: '&#x2195;', title: 'Distribute vertically',   fn: distributeV, minSelect: 3 },
+  { icon: chromeIcon('align-left', 17),     title: 'Align left edges',   fn: alignLeft,    minSelect: 2 },
+  { icon: chromeIcon('align-center-h', 17), title: 'Center horizontal',  fn: alignCenterH, minSelect: 2 },
+  { icon: chromeIcon('align-right', 17),    title: 'Align right edges',  fn: alignRight,   minSelect: 2 },
+  { icon: chromeIcon('align-top', 17),      title: 'Align top edges',    fn: alignTop,     minSelect: 2 },
+  { icon: chromeIcon('align-center-v', 17), title: 'Center vertical',    fn: alignCenterV, minSelect: 2 },
+  { icon: chromeIcon('align-bottom', 17),   title: 'Align bottom edges', fn: alignBottom,  minSelect: 2 },
+  { icon: chromeIcon('dist-h', 17),         title: 'Distribute horizontally', fn: distributeH, minSelect: 3 },
+  { icon: chromeIcon('dist-v', 17),         title: 'Distribute vertically',   fn: distributeV, minSelect: 3 },
   // Single-selection transforms
-  { icon: '&#x21C6;', title: 'Flip horizontal (Shift+H)', fn: flipHorizontal, minSelect: 1 },
-  { icon: '&#x21C5;', title: 'Flip vertical (Shift+V)',   fn: flipVertical,   minSelect: 1 },
+  { icon: chromeIcon('flip-h', 17), title: 'Flip horizontal (Shift+H)', fn: flipHorizontal, minSelect: 1 },
+  { icon: chromeIcon('flip-v', 17), title: 'Flip vertical (Shift+V)',   fn: flipVertical,   minSelect: 1 },
 ];
 
 export class AlignToolbar {
@@ -58,15 +62,15 @@ export class AlignToolbar {
     const toolbar = document.createElement('div');
     toolbar.className = 'align-toolbar';
 
-    const labels = ['⬤▏', '⬤┃', '▕⬤', '▔⬤', '⬤━', '⬤▁', '⇐⇒', '⇑⇓', '⇄', '⇅'];
-
-    ACTIONS.forEach((action, i) => {
+    ACTIONS.forEach((action) => {
       const btn = document.createElement('button');
       btn.className = 'align-btn';
       btn.title = action.title;
-      btn.textContent = labels[i] ?? '·';
-      btn.style.fontFamily = 'var(--font-mono)';
-      btn.style.fontSize = '10px';
+      btn.setAttribute('aria-label', action.title);
+      // The icon, not a box-drawing approximation of one. The old labels
+      // ("⬤▏", "▔⬤") rendered as grey dots and dashes at 10px — ten buttons
+      // that all looked like the same smudge.
+      btn.innerHTML = action.icon;
       btn.addEventListener('click', () => {
         const count = this.state.get().selectedLayerIds.length;
         if (count < action.minSelect) return;

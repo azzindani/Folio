@@ -6,7 +6,7 @@ import { applyFill } from './fill-renderer';
 import { applyEffects } from './effects-renderer';
 
 import { encodeQR } from './qr/encode';
-import { applyCommonAttributes, applyStroke, normalizeStroke, normalizePadding, escHtml, foPreview, numOr } from './layer-renderers-shared';
+import { applyCommonAttributes, applyStroke, normalizeStroke, normalizePadding, escHtml, foPreview, numOr, resolveRadii, roundedRectPath } from './layer-renderers-shared';
 
 export function renderGroup(
   layer: GroupLayer,
@@ -100,10 +100,17 @@ export function renderAutoLayout(
   g.setAttribute('data-layer-id', layer.id);
 
   if (layer.fill && layer.fill.type !== 'none') {
-    const bg = createSVGElement('rect', { x, y, width: w, height: h });
-    if (typeof layer.radius === 'number') {
-      bg.setAttribute('rx', String(layer.radius));
-      bg.setAttribute('ry', String(layer.radius));
+    // Same normalisation as a rect: a container written with the CSS array form
+    // (`radius: [12, 12, 0, 0]`) used to drop its corners silently, and only a
+    // plain number was honoured at all. Per-corner needs a path, not a rect.
+    const r = layer.radius !== undefined ? resolveRadii(layer.radius, w, h) : null;
+    const uniform = !r || (r.tl === r.tr && r.tr === r.br && r.br === r.bl);
+    const bg = uniform
+      ? createSVGElement('rect', { x, y, width: w, height: h })
+      : createSVGElement('path', { d: roundedRectPath(x, y, w, h, r) });
+    if (r && uniform && r.tl > 0) {
+      bg.setAttribute('rx', String(r.tl));
+      bg.setAttribute('ry', String(r.tl));
     }
     // x/y so a noise fill's sibling rect lands on THIS container — without an
     // origin it was built at 0,0 and grained the top-left of the canvas.

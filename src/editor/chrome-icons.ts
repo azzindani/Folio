@@ -50,6 +50,32 @@ const paths: Record<string, string> = {
   trash: '<path d="M4.5 6.8h15M9.5 6.8V5a1.5 1.5 0 0 1 1.5-1.5h2A1.5 1.5 0 0 1 14.5 5v1.8"/><path d="M6.5 6.8 7.4 19a1.8 1.8 0 0 0 1.8 1.7h5.6a1.8 1.8 0 0 0 1.8-1.7l.9-12.2"/><path d="M10.4 10.4v6.2M13.6 10.4v6.2"/>',
   'arrow-left': '<path d="M19.5 12h-14M11 5.5 4.5 12l6.5 6.5"/>',
   'arrow-up': '<path d="M12 19.5v-14M5.5 12 12 5.5l6.5 6.5"/>',
+  // Bottom-dock set. Drawn as strokes like the rest, so a 20px icon in the dock
+  // reads at the same weight as an 16px one in the activity bar.
+  play: '<path d="M7.5 4.8v14.4L19.5 12 7.5 4.8Z"/>',
+  pause: '<path d="M9 5v14M15 5v14"/>',
+  undo: '<path d="M4 9.5h10a5 5 0 0 1 0 10h-5"/><path d="M7.5 5.5 3.5 9.5l4 4"/>',
+  redo: '<path d="M20 9.5H10a5 5 0 0 0 0 10h5"/><path d="M16.5 5.5l4 4-4 4"/>',
+  present: '<rect x="3" y="4.5" width="18" height="12" rx="1.8"/><path d="M12 16.5v3M8.5 19.5h7"/>',
+  more: '<circle cx="5.5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="18.5" cy="12" r="1.4"/>',
+  fit: '<rect x="3.5" y="5.5" width="17" height="13" rx="1.6"/><path d="M8.5 9.5h7v5h-7z"/>',
+  grid: '<path d="M3.5 9.5h17M3.5 14.5h17M9.5 3.5v17M14.5 3.5v17"/>',
+  snap: '<circle cx="12" cy="12" r="3.2"/><path d="M12 3v3.4M12 17.6V21M3 12h3.4M17.6 12H21"/>',
+  page: '<rect x="4.5" y="3.5" width="15" height="17" rx="1.6"/><path d="M8.5 8.5h7M8.5 12h7M8.5 15.5h4"/>',
+  // Align / distribute / flip. Ten actions used to share three Unicode arrows
+  // (↔ for BOTH "align left" and "align right"), which is unreadable with a
+  // tooltip and worse without one — a phone has no hover at all. The edge the
+  // action aligns TO is the heavy line; the two bars are what moves.
+  'align-left': '<path d="M3.5 3.5v17" stroke-width="2"/><rect x="6.5" y="6" width="12" height="4" rx="1"/><rect x="6.5" y="14" width="7.5" height="4" rx="1"/>',
+  'align-center-h': '<path d="M12 3.5v17" stroke-width="2"/><rect x="6" y="6" width="12" height="4" rx="1"/><rect x="8.2" y="14" width="7.5" height="4" rx="1"/>',
+  'align-right': '<path d="M20.5 3.5v17" stroke-width="2"/><rect x="5.5" y="6" width="12" height="4" rx="1"/><rect x="10" y="14" width="7.5" height="4" rx="1"/>',
+  'align-top': '<path d="M3.5 3.5h17" stroke-width="2"/><rect x="6" y="6.5" width="4" height="12" rx="1"/><rect x="14" y="6.5" width="4" height="7.5" rx="1"/>',
+  'align-center-v': '<path d="M3.5 12h17" stroke-width="2"/><rect x="6" y="6" width="4" height="12" rx="1"/><rect x="14" y="8.2" width="4" height="7.5" rx="1"/>',
+  'align-bottom': '<path d="M3.5 20.5h17" stroke-width="2"/><rect x="6" y="5.5" width="4" height="12" rx="1"/><rect x="14" y="10" width="4" height="7.5" rx="1"/>',
+  'dist-h': '<path d="M3.5 4.5v15M20.5 4.5v15" stroke-width="2"/><rect x="10" y="7" width="4" height="10" rx="1"/>',
+  'dist-v': '<path d="M4.5 3.5h15M4.5 20.5h15" stroke-width="2"/><rect x="7" y="10" width="10" height="4" rx="1"/>',
+  'flip-h': '<path d="M12 3v18" stroke-dasharray="2 2.5"/><path d="M9.5 6.5 4 12l5.5 5.5V6.5Z"/><path d="M14.5 6.5 20 12l-5.5 5.5V6.5Z"/>',
+  'flip-v': '<path d="M3 12h18" stroke-dasharray="2 2.5"/><path d="M6.5 9.5 12 4l5.5 5.5H6.5Z"/><path d="M6.5 14.5 12 20l5.5-5.5H6.5Z"/>',
 };
 
 /** Inline monoline SVG for editor chrome. Unknown names return the name so a
