@@ -67,6 +67,8 @@ export class MotionPlayer {
   get playing(): boolean { return this.isPlaying; }
   /** True while the player is writing a frame — listeners that redraw on edits can skip it. */
   get posing(): boolean { return this.writing; }
+  /** True while a frame is on the canvas instead of the design as authored. */
+  get isPosed(): boolean { return this.baseline !== null; }
 
   /** Every row's time on the scene clock; null until the sampler has loaded. */
   rows(): Map<string, RowTiming> | null { return this.currentPlan()?.rows ?? null; }

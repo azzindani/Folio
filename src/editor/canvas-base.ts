@@ -193,9 +193,13 @@ export abstract class CanvasBase {
     const layers = [...(design?.layers ?? []), ...(design?.pages ?? []).flatMap(p => p.layers ?? [])];
     const css = generateDesignAnimationCSS(map, layers);
     if (!css) return;
+    // A <style> inside an inline SVG is global to the document, and the Layers
+    // panel rows and timeline tracks carry data-layer-id too — so a pulse on a
+    // dot swelled its row in both panels. Only elements inside an <svg> are layers.
+    const scoped = css.replace(/(^|[\s,{}])\[data-layer-id=/g, '$1svg [data-layer-id=');
     const style = document.createElementNS('http://www.w3.org/2000/svg', 'style');
     style.setAttribute('data-folio-animations', '');
-    style.textContent = css;
+    style.textContent = scoped;
     svg.insertBefore(style, svg.firstChild);
   }
 

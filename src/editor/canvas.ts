@@ -16,6 +16,7 @@ export class CanvasManager extends CanvasInteractions {
   /** Where to get the layers as AUTHORED, when something is posing them.
    *  Without it the trail is measured from a moving layer and crawls. */
   private authoredLayers: (() => Layer[]) | null = null;
+  private isPosed: (() => boolean) | null = null;
 
   constructor(container: HTMLElement, state: StateManager) {
     super();
@@ -204,6 +205,13 @@ export class CanvasManager extends CanvasInteractions {
     this.paintMotionTrails();
   }
 
+  /** While this answers true the player's pose IS the frame: the canvas leaves
+   *  out its animation CSS, whose `transform` would beat the pose's transform
+   *  attribute and replay from 0 on every render. */
+  setPosedSource(fn: (() => boolean) | null): void {
+    this.isPosed = fn;
+  }
+
   /** Draw every animated layer's path in design coordinates, scaled with the
    *  artwork by the overlay's own 100%×100% box. */
   paintMotionTrails(): void {
@@ -276,7 +284,7 @@ export class CanvasManager extends CanvasInteractions {
     // animations actually play. Empty animations map = no-op (no style
     // node added). Re-runs on every render so live animation panel edits
     // also take effect.
-    this.injectAnimationCSS(svg);
+    if (!this.isPosed?.()) this.injectAnimationCSS(svg);
 
     // Atomic swap — no blank white frame between renders
     if (this.currentSVG && this.currentSVG.parentElement === this.svgContainer) {

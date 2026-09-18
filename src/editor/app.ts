@@ -224,6 +224,7 @@ export class EditorApp extends EditorAppBase {
       // pose is on screen — so it stays put while the scene plays, and can be
       // switched on mid-playback.
       this.canvas.setAuthoredLayerSource(() => this.motionPlayer.authoredLayers());
+      this.canvas.setPosedSource(() => this.motionPlayer.isPosed);
     }
 
     // Color scheme panel (inside colors tab)
