@@ -93,4 +93,19 @@ describe('timeline editing — the gestures', () => {
     input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
     expect(state.get().design?.markers).toEqual({ hook: 0, reveal: 3000 });
   });
+
+  it('adds a marker at the playhead from the + button, clear of any label', () => {
+    const state = new StateManager();
+    state.set('design', { _protocol: 'design/v1', document: { width: 100, height: 100 }, layers: [] } as unknown as DesignSpec, false);
+    const body = document.createElement('div');
+    body.innerHTML = markerStripHTML({}, 10000);
+    document.body.appendChild(body);
+    bindTimelineEdits(body, { state, duration: () => 10000, playhead: () => 4200, rows: () => null,
+      markers: () => markersOf(state.get().design, 0), preview: () => undefined, seek: () => undefined });
+    (body.querySelector('.tl-marker-add') as HTMLElement).click();
+    const input = body.querySelector('.tl-marker-input') as HTMLInputElement;
+    expect(input.value).toBe('shot1');
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    expect(state.get().design?.markers).toEqual({ shot1: 4200 });
+  });
 });
