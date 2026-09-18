@@ -42,7 +42,6 @@ import { MotionPlayer } from './motion-player';
 import type { SceneStage } from '../ui/scene-stage/scene-stage';
 import { ColorSchemePanelManager } from '../ui/panels/color-scheme-panel';
 import type { AssetPanelManager } from '../ui/panels/asset-panel';
-import { wireMobileSheets } from './mobile-sheet';
 import { shellMarkup } from './app-shell';
 
 /** Find a layer by id at any depth — groups nest, and the selection is by id. */
@@ -397,14 +396,19 @@ export abstract class EditorAppBase {
   }
 
   protected wireMobileNav(): void {
-    wireMobileSheets(this.container, {
+    // Bottom sheets, the nav and both popovers are touch-only chrome. A mouse
+    // desktop never shows any of it, and the main entry chunk sits within a KB
+    // of its 500KB budget — so it loads on a coarse pointer, like the gestures
+    // and the selection HUD do.
+    if (!(window.matchMedia?.('(pointer: coarse)').matches ?? false)) return;
+    void import('./mobile-sheet').then(({ wireMobileSheets }) => wireMobileSheets(this.container, {
       // Sheets float OVER the canvas now — nothing to re-lay out. Re-fitting
       // here is what used to drop the design from 29% to 12% the moment you
       // opened Layers; the zoom you picked is yours to keep.
       openPalette: () => this.commandPalette?.open?.(),
       openAssets: () => { void this.showAssetLibrary(); },
       revealSelection: (visibleBottom) => this.revealSelectionAbove(visibleBottom),
-    });
+    }));
   }
 
   /**

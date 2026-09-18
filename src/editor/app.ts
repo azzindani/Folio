@@ -1,7 +1,6 @@
 import { StateManager } from './state';
 import { MotionPlayer } from './motion-player';
 import { CanvasManager } from './canvas';
-import { setAssetUrlResolver } from '../renderer/render-context';
 import { PayloadEditor } from './payload-editor';
 import { ToolbarManager } from '../ui/toolbar/toolbar';
 import { LayerPanelManager } from '../ui/panels/layer-panel';
@@ -24,13 +23,12 @@ import { KeyboardManager } from './keyboard';
 import { parseDesign, serializeYAML } from '../schema/parser';
 import { validateDesignSpec } from '../schema/validator';
 import type { DesignSpec, ThemeSpec } from '../schema/types';
-import { ensureDesignFonts, loadProjectFonts } from '../styles/font-loader';
+import { ensureDesignFonts } from '../styles/font-loader';
 import { fileWatcher } from '../fs/file-watcher';
 import { BUILTIN_THEMES } from '../themes/builtin';
 import { TabBarManager } from '../ui/tabs/tab-bar';
 import { ViewportLayoutManager } from '../ui/viewport/viewport-layout';
 import { AutoSaveManager } from './auto-save';
-import { assetUrl } from './asset-url';
 import { ColorPaletteManager } from '../ui/panels/color-palette';
 import { ComponentLibraryManager } from '../ui/panels/component-library';
 import { AnimationPanel } from '../ui/panels/animation-panel';
@@ -40,12 +38,12 @@ import { ColorSchemePanelManager } from '../ui/panels/color-scheme-panel';
 import { resolveStyleRefs } from './style-refs';
 import { EditorAppBase } from './app-base';
 import { wireMobileToolbarOverflow } from './mobile-toolbar';
-import { wireMobileDock } from './mobile-dock';
 import { SAMPLE_DESIGN } from './sample-design';
 import { makeBlankDesign } from './blank-design';
 import { canvasResizeDialog, type CanvasDocSpec } from '../ui/dialogs/canvas-resize';
 import { wireContextMenuLazily } from './context-menu-lazy';
 import { wireRightPanelTabs } from './rpanel-tabs';
+import { wireProjectAssets, type ProjectAssetHost } from './project-assets';
 
 export class EditorApp extends EditorAppBase {
   /** Path (relative to the projects dir) of the design when it was opened from
@@ -109,9 +107,13 @@ export class EditorApp extends EditorAppBase {
     );
     // After the toolbar exists — both MOVE its controls, so they have nothing to
     // collect while buildLayout's .toolbar is still empty. Disjoint media
-    // queries (tablet / phone), so only one ever holds a given node.
+    // queries (tablet / phone), so only one ever holds a given node. The dock
+    // is phone-only and loads on a coarse pointer: in the desktop bundle, which
+    // sits within a KB of its 500KB budget, it is dead weight.
     wireMobileToolbarOverflow(this.container);
-    wireMobileDock(this.container);
+    if (window.matchMedia?.('(pointer: coarse)').matches) {
+      void import('./mobile-dock').then(m => m.wireMobileDock(this.container));
+    }
     // After bindRightPanelTabs (in buildLayout's wiring) — the rail's node is
     // MOVED here, and every binding on it has to already exist.
     wireRightPanelTabs(this.container);
@@ -387,45 +389,18 @@ export class EditorApp extends EditorAppBase {
     }
   }
 
-  /** Server-backed design: route relative image srcs through the authed
-   *  project-files mount, and turn image DROPS into project-asset uploads
-   *  (plain file + src:"assets/images/…", not base64 inside the YAML). */
+  /** Server-backed design: the project's assets, fonts and image drops.
+   *  The work lives in project-assets.ts; this hands it what it borrows. */
   private wireProjectAssets(designRel: string): void {
-    const project = designRel.split('/')[0];
-    if (!project) return;
-    setAssetUrlResolver((src) => assetUrl(project, src));
-    void this.openAssetPanel(project, this.readEditorToken() ?? null);
-    void this.loadProjectFonts(project);
-    this.imageImport.setUploader(async (name, blob) => {
-      const token = this.readEditorToken();
-      try {
-        const r = await fetch(`/__project_files/${encodeURIComponent(project)}/assets/images/${encodeURIComponent(name)}`, {
-          method: 'POST', credentials: 'include', body: blob,
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        });
-        if (!r.ok) return null;
-        const j = await r.json() as { ok?: boolean; asset?: { path?: string } };
-        return j.ok && j.asset?.path ? j.asset.path : null;
-      } catch { return null; }
-    });
+    wireProjectAssets(this.assetHost(), designRel);
   }
 
-  /** Register the project's uploaded TTF/OTF families with the FontFace API so
-   *  the live editor renders them (matching resvg raster + vector PDF, which
-   *  read the same files server-side). Best-effort — a listing failure just
-   *  leaves the editor on fallback fonts. */
-  private async loadProjectFonts(project: string): Promise<void> {
-    try {
-      const token = this.readEditorToken();
-      const r = await fetch(`/__project_files/${encodeURIComponent(project)}/__assets`, {
-        credentials: 'include', headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-      if (!r.ok) return;
-      const j = await r.json() as { ok?: boolean; assets?: Array<{ path: string; kind: string }> };
-      const fonts = (j.assets ?? []).filter(a => a.kind === 'fonts');
-      if (fonts.length === 0) return;
-      loadProjectFonts(fonts, (p) => assetUrl(project, p));
-    } catch { /* offline / unauthed — fallback fonts are fine */ }
+  private assetHost(): ProjectAssetHost {
+    return {
+      readToken: () => this.readEditorToken(),
+      imageImport: this.imageImport,
+      openAssetPanel: (project, token) => { void this.openAssetPanel(project, token); },
+    };
   }
 
   setActiveFileHandle(handle: FileSystemFileHandle, content: string): void {
