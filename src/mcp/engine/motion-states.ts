@@ -177,9 +177,11 @@ function pushLoop(frames: Frame[], from: number, until: number, preset: MotionPr
       }
     }
   }
-  // The frame the loop ends on starts a rest, not more of the loop.
+  // The frame the loop ends on starts a rest, not more of the loop. A spin ends
+  // at 360°: held there, it lands on the rest angle in one step instead of
+  // tweening a full turn backwards to it (found live on a 2 s spin).
   const end = frames[frames.length - 1];
-  if (end) delete end.ambient;
+  if (end) { delete end.ambient; if (gap) end.hold = true; }
   return cycles;
 }
 

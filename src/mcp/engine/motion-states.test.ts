@@ -81,6 +81,13 @@ describe('compileStates — a state that rests in a loop', () => {
     expect(rot(2600)).toBeGreaterThan(200);
   });
 
+  it('lands a finished spin on its rest angle in one step, never a turn backwards', () => {
+    const c = compileStates(card, [{ at: 0, state: { loop: 'spin', loop_ms: 1000 } }, { at: 3500, state: { dx: 40 }, duration: 300 }], 5000);
+    const rot = (t: number): number => valuesAt(c.animation, t)['rotation'] as number;
+    expect(rot(3300)).toBeCloseTo(360);          // three passes end at 3002; held there
+    expect(rot(4000) % 360).toBeCloseTo(0);
+  });
+
   it('says so when the loop has no room for one pass', () => {
     const c = compileStates(card, [{ at: 0, state: { loop: 'float' } }, { at: 1000, state: { dx: 10 } }], 3000);
     expect(c.notes.join(' ')).toContain('no room for one whole pass');
