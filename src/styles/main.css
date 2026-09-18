@@ -2548,17 +2548,29 @@ button:focus:not(:focus-visible) { outline: none; }
   }
   .dock-btn:active { background: color-mix(in srgb, var(--color-primary) 18%, transparent); }
   .dock-btn[hidden] { display: none; }
-  /* Fit zooms the CANVAS. With the canvas not on screen it is a button that
-     does nothing you can see. (Play, Present and Export all still mean
-     something in Payload — they open over it.) */
-  #app[data-mode='payload'] .dock-btn[data-dock='fit'],
-  #app[data-mode='preview'] .dock-btn[data-dock='fit'] { display: none; }
   .dock-glyph { display: flex; align-items: center; justify-content: center; }
   .dock-label {
     font-size: 9px; font-weight: 600; line-height: 1;
     color: var(--color-text-muted);
     max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
+  /* The view switch: one grouped control at the head of the verb row, so it
+     reads as "which view" rather than three more actions. The current view is
+     filled; the other two are plain. Flat — the editor chrome has no shadows. */
+  .dock-modes {
+    flex: 3 1 0;
+    min-width: 0;
+    display: flex;
+    gap: 2px;
+    padding: 2px;
+    margin-right: 4px;
+    border-radius: var(--radius-md);
+    background: var(--color-surface-2);
+    border: 1px solid var(--color-border);
+  }
+  .dock-mode { height: 40px; border-radius: 6px; }
+  .dock-mode.active { background: var(--color-primary); color: #fff; }
+  .dock-mode.active .dock-label { color: #fff; }
   /* The status bar's own contents are mirrored by the dock (Fit) or adopted by
      the More sheet (grid, snap, units, resize), so the bar itself has nothing
      left to show. Zoom is a pinch on a phone, not a pair of buttons. */
@@ -2624,8 +2636,6 @@ button:focus:not(:focus-visible) { outline: none; }
   .dock-more-body [data-action] span,
   .dock-more-body .toolbar-catalog-btn span { display: inline !important; }
   .dock-more-body .toolbar-theme-select { max-width: none; width: 100%; font-size: 14px; padding: 0 10px; }
-  .dock-more-body .mode-toggle { display: flex; }
-  .dock-more-body .mode-btn { flex: 1; min-height: 48px; }
   .dock-more-body .sb-ruler-unit { width: 100%; padding: 0 12px; }
 
   /* ── THE TOP BAR IS A TITLE, NOT A TOOLBAR ───────────────

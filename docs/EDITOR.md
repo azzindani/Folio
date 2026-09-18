@@ -47,17 +47,20 @@ MCP tool. Works on desktop, tablet, and phone widths.
 ### 2.0 On a phone
 
 Everything you press lives at the bottom, in one **dock**
-(`src/editor/mobile-dock.ts`): a verb row — Undo · Redo · Play · Fit · Present ·
-Export · More — over the place row — Layers · Props · Tools · Panels · Find. The
-top bar is a title (the design's name), nothing pressable. **More** holds the
-occasional controls: the Visual / Payload / Preview switch, New, Add Page,
-Catalog, Library, theme, grid, snap, ruler units and canvas resize. Each dock
-button fires the real control, so the phone and the desktop cannot drift.
+(`src/editor/mobile-dock.ts`): a top row with the **Visual | Payload | Preview**
+view switch and Undo · Redo · Play · Export · More, over the place row — Layers ·
+Props · Tools · Panels · Find. The current view is lit; switching view closes
+whatever sheet was open over the old one. The top bar is a title (the design's
+name), nothing pressable. **More** holds the occasional controls: New, Add Page,
+Catalog, Library, theme, Fit to screen, Present, grid, snap, ruler units and
+canvas resize. Each dock button fires the real control, so the phone and the
+desktop cannot drift.
 
 There is one **Play**: a deck (two pages or more) plays every page on the scene
 stage, transitions and sound included; a single page plays its own keyframes on
-the canvas (`app.playPiece()`; Space does the same). The status bar's screen
-icon is **Present** — full-screen pages you click through, a different verb.
+the canvas (`app.playPiece()`; Space does the same). **Present** (the status
+bar's screen icon; in More on a phone) is full-screen pages you click through —
+a different verb.
 
 Phones get no rulers, the formula bar only while something is selected, and an
 88px page strip. Sheets name the panel they hold and close from their title bar.

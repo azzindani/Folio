@@ -62,6 +62,7 @@ const paths: Record<string, string> = {
   grid: '<path d="M3.5 9.5h17M3.5 14.5h17M9.5 3.5v17M14.5 3.5v17"/>',
   snap: '<circle cx="12" cy="12" r="3.2"/><path d="M12 3v3.4M12 17.6V21M3 12h3.4M17.6 12H21"/>',
   page: '<rect x="4.5" y="3.5" width="15" height="17" rx="1.6"/><path d="M8.5 8.5h7M8.5 12h7M8.5 15.5h4"/>',
+  eye: '<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/>',
   // Align / distribute / flip. Ten actions used to share three Unicode arrows
   // (↔ for BOTH "align left" and "align right"), which is unreadable with a
   // tooltip and worse without one — a phone has no hover at all. The edge the
