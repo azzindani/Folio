@@ -60,9 +60,9 @@ export interface HealRound {
 }
 
 /** Every page's layers, tagged. */
-function surfaces(design: DesignSpec): { pageId?: string; layers: Layer[] }[] {
-  if (design.pages?.length) return design.pages.map(p => ({ pageId: p.id, layers: p.layers ?? [] }));
-  return [{ layers: design.layers ?? [] }];
+function surfaces(design: DesignSpec): { pageId?: string; layers: Layer[]; world?: DesignSpec['world'] }[] {
+  if (design.pages?.length) return design.pages.map(p => ({ pageId: p.id, layers: p.layers ?? [], world: p.world }));
+  return [{ layers: design.layers ?? [], world: design.world }];
 }
 
 /** Diagnose the whole design, page by page. */
@@ -70,7 +70,7 @@ function diagnoseAll(design: DesignSpec): (Finding & { page?: string })[] {
   const W = design.document?.width ?? 1080, H = design.document?.height ?? 1080;
   const out: (Finding & { page?: string })[] = [];
   for (const s of surfaces(design)) {
-    for (const f of analyzeLayers(s.layers, W, H)) out.push(s.pageId ? { ...f, page: s.pageId } : f);
+    for (const f of analyzeLayers(s.layers, W, H, s.world)) out.push(s.pageId ? { ...f, page: s.pageId } : f);
   }
   return out;
 }

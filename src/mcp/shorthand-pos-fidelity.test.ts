@@ -34,3 +34,16 @@ describe('every layer type reports the box it was given', () => {
     });
   }
 });
+
+describe('a group keeps clip: true', () => {
+  // Found live: a hand-built data sheet scrolled its rows inside a clip group,
+  // the flag was dropped on expansion and the rows ran out past the window.
+  it('carries the flag the renderer clips by, and leaves unclipped groups alone', () => {
+    const [clipped, plain] = expandShorthandLayers([
+      { id: 'win', type: 'group', pos: [100, 100, 400, 300], clip: true, layers: [{ id: 'rows', type: 'rect', pos: [100, 100, 400, 900], fill: '#000' }] },
+      { id: 'grp', type: 'group', pos: [0, 0, 10, 10], layers: [] },
+    ]) as unknown as Array<Record<string, unknown>>;
+    expect(clipped?.['clip']).toBe(true);
+    expect(plain).not.toHaveProperty('clip');
+  });
+});

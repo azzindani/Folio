@@ -505,7 +505,7 @@ export function addLayers(args: {
   writeYAML(dPath, spec);
   progress.push(pOk(`Added ${incoming.length} layer(s)`, incoming.map(l => l.id).join(', ')));
 
-  const lint = lintComposition(activeLayers, spec.document.width, spec.document.height);
+  const lint = lintComposition(activeLayers, spec.document.width, spec.document.height, (spec.pages ?? []).find(pg => pg.layers === activeLayers)?.world ?? spec.world);
   // Quality critic — advisory; only when the page looks "complete" (the full
   // poster has been composed, not a 2-layer partial), so we guide, not nag.
   const review = activeLayers.length >= 6

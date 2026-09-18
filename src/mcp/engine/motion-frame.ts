@@ -57,13 +57,21 @@ interface Pose {
 const num = (v: unknown): number | undefined => (typeof v === 'number' ? v : undefined);
 const str = (v: unknown): string | undefined => (typeof v === 'string' && v ? v : undefined);
 
-/** Geometry of every layer that carries a track, after sampling. */
-function animatedPoses(original: Layer[], resolved: Layer[]): Pose[] {
+/**
+ * Geometry of every animated layer ON SCREEN at t, after sampling: in full
+ * while it is off its authored pose, by id once it rests there (its geometry
+ * is then what the caller wrote). Found live on a 260-layer continuous scene:
+ * listing every animated layer, off-window ones included, made one frame
+ * reply ~38K tokens, nearly all of it layers not even in the frame.
+ */
+function animatedPoses(original: Layer[], resolved: Layer[]): { poses: Pose[]; at_rest: string[] } {
   const out: Pose[] = [];
+  const atRest: string[] = [];
   const walk = (o: Layer[], r: Layer[]): void => {
     o.forEach((ol, i) => {
       const rl = r[i] as (Layer & Record<string, unknown>) | undefined;
-      if (!rl) return;
+      // Outside its in/out window (or hidden) a layer is not in the frame, nor is anything inside it.
+      if (!rl || rl['visible'] === false) return;
       // A layer travelling a motion_path is animated too. Reporting only
       // keyframed layers left the numbers empty for a design whose whole motion
       // was a path — the render moved, the readout said nothing moved, and the
@@ -80,14 +88,19 @@ function animatedPoses(original: Layer[], resolved: Layer[]): Pose[] {
         // box, so the readout adds the sampled pose back onto the authored box.
         const pose = rl[FRAME_POSE] as FramePose | undefined;
         const r2 = (v: number): number => Math.round(v * 100) / 100;
+        const plus3 = (v: number | undefined): number | undefined => (v === undefined ? undefined : Math.round(v * 1000) / 1000);
         const plus = (a: number | undefined, b: number | undefined): number | undefined =>
           (a === undefined ? undefined : r2(a + (b ?? 0)));
         const turned = pose?.rotation ? r2((num(rl['rotation']) ?? 0) + pose.rotation) : num(rl['rotation']);
-        out.push({
+        const moved = Boolean(pose && (pose.dx !== 0 || pose.dy !== 0 || pose.scale_x !== 1 || pose.scale_y !== 1
+          || pose.skew_x !== 0 || pose.skew_y !== 0 || pose.rotation));
+        const faded = (num(rl['opacity']) ?? 1) !== (num((ol as unknown as Record<string, unknown>)['opacity']) ?? 1);
+        if (!moved && !faded && dash === undefined && rl['stroke_dashoffset'] === undefined) atRest.push(ol.id);
+        else out.push({
           id: ol.id,
           x: plus(num(rl['x']), pose?.dx), y: plus(num(rl['y']), pose?.dy),
           width: num(rl['width']), height: num(rl['height']),
-          opacity: num(rl['opacity']), rotation: turned,
+          opacity: plus3(num(rl['opacity'])), rotation: turned,
           ...(pose && (pose.dx !== 0 || pose.dy !== 0) ? { offset: [r2(pose.dx), r2(pose.dy)] as [number, number] } : {}),
           ...(pose && (pose.scale_x !== 1 || pose.scale_y !== 1) ? { scale: [r2(pose.scale_x), r2(pose.scale_y)] as [number, number] } : {}),
           ...(pose && (pose.skew_x !== 0 || pose.skew_y !== 0) ? { skew: [r2(pose.skew_x), r2(pose.skew_y)] as [number, number] } : {}),
@@ -102,7 +115,7 @@ function animatedPoses(original: Layer[], resolved: Layer[]): Pose[] {
     });
   };
   walk(original, resolved);
-  return out;
+  return { poses: out, at_rest: atRest };
 }
 
 export function renderFrame(args: FrameArgs): ToolResult {
@@ -140,13 +153,14 @@ export function renderFrame(args: FrameArgs): ToolResult {
       fs.writeFileSync(args.output_path, png);
     }
 
-    const poses = animatedPoses(layers, renderSpec.layers ?? []);
+    const { poses, at_rest } = animatedPoses(layers, renderSpec.layers ?? []);
     progress.push(pOk(`Rendered t=${t}ms`, `${png.length} bytes @ ${scale}× · scene is ${sceneMs}ms`));
     if (t > sceneMs) progress.push(pInfo('Past the end', `t=${t}ms is after the last motion finishes at ${sceneMs}ms — this is the resting pose.`));
 
     return okResult(op, {
       design_path: dPath, t, scene_ms: sceneMs, scale, bytes: png.length,
       poses,
+      ...(at_rest.length ? { at_rest } : {}),
       ...(args.output_path ? { output_path: args.output_path } : {}),
       ...(assetNotes.length ? { notes: assetNotes } : {}),
       progress,

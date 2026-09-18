@@ -72,16 +72,17 @@ export function collectFindings(
   pageId?: string,
 ): PageFinding[] {
   const W = spec.document?.width ?? 1080, H = spec.document?.height ?? 1080;
-  const run = (layers: Layer[] | undefined, page?: string): PageFinding[] =>
-    analyzeLayers(layers ?? [], W, H).map(f => (page ? { ...f, page } : f));
+  const run = (layers: Layer[] | undefined, page?: string, world?: DesignSpec['world']): PageFinding[] =>
+    analyzeLayers(layers ?? [], W, H, world).map(f => (page ? { ...f, page } : f));
 
   const findings: PageFinding[] = [];
   if (pageId && spec.pages) {
-    findings.push(...run(spec.pages.find(p => p.id === pageId)?.layers, pageId));
+    const page = spec.pages.find(p => p.id === pageId);
+    findings.push(...run(page?.layers, pageId, page?.world));
   } else if (spec.pages) {
-    for (const page of spec.pages) findings.push(...run(page.layers, page.id));
+    for (const page of spec.pages) findings.push(...run(page.layers, page.id, page.world));
   } else {
-    findings.push(...run(spec.layers));
+    findings.push(...run(spec.layers, undefined, spec.world));
   }
 
   // Unresolvable image srcs (blank in exports) + distortion/upscale.

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { Layer } from '../schema/types';
-import { normalizeTextAliases } from './engine-finalize-geom';
+import { normalizeTextAliases, flattenRelativeGroups } from './engine-finalize-geom';
 
 describe('flat text styling is put where the renderer reads it', () => {
   const text = (extra: Record<string, unknown>): Layer =>
@@ -36,5 +36,30 @@ describe('flat text styling is put where the renderer reads it', () => {
     const g = { id: 'g', type: 'auto_layout', align: 'stretch' } as unknown as Layer;
     normalizeTextAliases([g]);
     expect((g as unknown as Record<string, unknown>)['align']).toBe('stretch');
+  });
+});
+
+describe('flattenRelativeGroups — a path does not vote', () => {
+  const g = (layers: unknown[]): Layer =>
+    ({ id: 'sheet', type: 'group', x: 900, y: 200, width: 400, height: 300, layers } as unknown as Layer);
+  const text = { id: 'rows', type: 'text', x: 920, y: 222, width: 360, height: 200, content: { type: 'plain', value: 'a' } };
+  const lines = { id: 'lines', type: 'path', d: 'M900 272H1300M900 322H1300', stroke: { color: '#eee', width: 2 } };
+
+  // Found live: a hand-built data sheet whose ruled lines were a path. The path
+  // has no x/y, read as 0,0 — "before the group origin" — and the rows text was
+  // shifted by the group offset, once per enclosing group.
+  it('leaves absolute children alone when a sibling is a path', () => {
+    const outer = { id: 'clip', type: 'group', x: 900, y: 200, width: 400, height: 300, layers: [g([lines, { ...text }])] } as unknown as Layer;
+    expect(flattenRelativeGroups([outer])).toBe(0);
+    const inner = (outer as unknown as { layers: Array<{ layers: Array<Record<string, unknown>> }> }).layers[0];
+    expect(inner?.layers[1]).toMatchObject({ x: 920, y: 222 });
+  });
+
+  it('still bakes a genuinely relative group, and fits its box to the placed children only', () => {
+    const rel = g([lines, { ...text, x: 20, y: 22 }]);
+    expect(flattenRelativeGroups([rel])).toBe(1);
+    const o = rel as unknown as { x: number; y: number; layers: Array<Record<string, unknown>> };
+    expect(o.layers[1]).toMatchObject({ x: 920, y: 222 });
+    expect({ x: o.x, y: o.y }).toEqual({ x: 920, y: 222 });
   });
 });

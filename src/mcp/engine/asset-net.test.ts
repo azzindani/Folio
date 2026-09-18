@@ -127,23 +127,24 @@ describe('httpBytes — a slow download is not a dead one', () => {
     });
   }
 
+  // Margins are 10×: under a full parallel suite a timer can fire tens of ms late.
   it('keeps going past the timeout while bytes keep arriving', async () => {
-    process.env['FOLIO_ASSET_NET_TIMEOUT'] = '60';
-    trickle(8, 25);                                   // 200 ms in all, never 60 ms without a chunk
+    process.env['FOLIO_ASSET_NET_TIMEOUT'] = '1000';
+    trickle(12, 100);                                 // 1.2 s in all, never 1 s without a chunk
     const got = await httpBytes('https://cdn.freesound.org/a.mp3', 1000);
-    expect(got.buffer.length).toBe(80);
+    expect(got.buffer.length).toBe(120);
     expect(got.contentType).toBe('audio/mpeg');
   });
 
   it('gives up on a stream that goes quiet, and says which host', async () => {
-    process.env['FOLIO_ASSET_NET_TIMEOUT'] = '60';
+    process.env['FOLIO_ASSET_NET_TIMEOUT'] = '300';
     trickle(2, 10, true);
     await expect(httpBytes('https://cdn.freesound.org/b.mp3', 1000)).rejects.toThrow(/cdn\.freesound\.org sent nothing/);
   });
 
   it('still caps the whole download', async () => {
-    process.env['FOLIO_ASSET_NET_TIMEOUT'] = '60';
-    process.env['FOLIO_ASSET_NET_MAX_MS'] = '100';
+    process.env['FOLIO_ASSET_NET_TIMEOUT'] = '1000';
+    process.env['FOLIO_ASSET_NET_MAX_MS'] = '300';
     trickle(50, 20);
     await expect(httpBytes('https://cdn.freesound.org/c.mp3', 10000)).rejects.toBeInstanceOf(NetError);
   });

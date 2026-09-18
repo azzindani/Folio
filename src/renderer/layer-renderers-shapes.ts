@@ -361,6 +361,13 @@ export function renderText(layer: TextLayer, svg: SVGSVGElement): SVGElement {
       if (alignVal) textEl.setAttribute('text-anchor', anchor);
       textEl.setAttribute('fill', textColor);
       applyTypography(textEl, style);
+      // SVG collapses runs of spaces, so columns set in a mono face with spaces
+      // ("order_id  date") drew single-spaced and lost their alignment. Keep
+      // them — only where there is a run to keep, so no other text moves.
+      if (lines.some(l => /\s\s|^\s|\t/.test(l))) {
+        textEl.setAttributeNS('http://www.w3.org/XML/1998/namespace', 'xml:space', 'preserve');
+        textEl.style.setProperty('white-space', 'pre');
+      }
 
       if (lines.length > 1) {
         for (let i = 0; i < lines.length; i++) {

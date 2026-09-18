@@ -189,6 +189,8 @@ export interface ShorthandLayer {
   flip_v?: boolean;
   visible?: boolean;
   locked?: boolean;
+  /** group: clip the children to the group's box (a track matte, a scrolling window). */
+  clip?: boolean;
   fill?: string | Fill;
   stroke?: string | { color: string; width: number };
   radius?: number;

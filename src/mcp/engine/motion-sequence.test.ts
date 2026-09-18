@@ -252,9 +252,22 @@ describe('animation(op:frame)', () => {
     expect(poses[0].id).toBe('a');
     expect(poses[0].y).toBeCloseTo(130, 3);  // 80 + 50 displaced at t=0
     expect(poses[0].opacity).toBe(0);
+    // Landed: its geometry is what was authored, so it is named, not measured.
     const end = renderFrame({ design_path: p, t: 1000 });
-    expect((end['poses'] as Array<{ y?: number }>)[0].y).toBeCloseTo(80, 3);
+    expect(end['poses']).toEqual([]);
+    expect(end['at_rest']).toEqual(['a']);
     expect(end['_attachments']).toHaveLength(1);
+  });
+
+  it('leaves out what is not in the frame — a layer before its in point, and everything inside it', () => {
+    const p = flat();
+    sequenceMotion({ design_path: p, steps: [{ preset: 'rise', layer_ids: ['a'], duration: 1000, distance: 50 }] });
+    const s = yaml.load(fs.readFileSync(p, 'utf8')) as { layers: Array<Record<string, unknown>> };
+    (s.layers.find(l => l['id'] === 'a') as Record<string, unknown>)['in'] = 500;
+    fs.writeFileSync(p, yaml.dump(s));
+    const r = renderFrame({ design_path: p, t: 200 });
+    expect(r['poses']).toEqual([]);
+    expect(r).not.toHaveProperty('at_rest');
   });
 
   it('refuses when nothing is animated', () => {
