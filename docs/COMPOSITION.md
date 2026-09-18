@@ -141,6 +141,11 @@ engine and MCP surface are live.
 flattens them onto the scene clock once per page, and the flipbook, the SVG export,
 the durations and `op:timeline` all read that result — so the two players cannot disagree.
 
+**Authoring order** (learned live): world first with `op:camera world` and no shots →
+the whole scene in ONE `add_layers` call inside a `locked:true` group (layers of a
+continuous scene overlap on purpose; the layout rescue would push them apart) →
+`op:storyboard` → `op:precomp` / `op:link` → `op:camera` shots → `op:lint`.
+
 **Open.** The editor (in/out bars, a shot strip, hiding layers outside their window
 while scrubbing); the editor's own HTML export still builds CSS from the unresolved
 tree; loops inside a storyboard need their own layer; `motion_path` ignores precomp clocks.

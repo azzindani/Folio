@@ -67,6 +67,15 @@ export function cameraMotion(args: CameraArgs): ToolResult {
   const spec = readYAML<DesignSpec>(dPath);
   const scoped = resolveScope(spec, args.page_id);
   if ('error' in scoped) return errResult(op, scoped.error, 'Check page_id.');
+  // A world on its own, before any shot: declared first, content can be laid out
+  // past the canvas edge without the off-canvas rescue pulling it back.
+  if (args.shots === undefined && isBox(args.world)) {
+    const bak = snapshot(dPath);
+    worldHost(spec, scoped.page).world = args.world;
+    writeYAML(dPath, spec);
+    return okResult(op, { design_path: dPath, world: args.world,
+      progress: [pOk('World set', `${args.world.width}×${args.world.height} at ${args.world.x},${args.world.y} — lay content out across it; add shots when it is placed`)] }, bak);
+  }
   const shots = parseShots(args.shots, { markers: readMarkers(spec, scoped.page), layers: scoped.scope });
   if (typeof shots === 'string') return errResult(op, shots, 'e.g. shots:[{t:0, target:"all"}, {t:"problem", target:"stat", padding:80}, {t:3000, target:"all"}]');
   const W = spec.document?.width ?? 1080, H = spec.document?.height ?? 1080;
