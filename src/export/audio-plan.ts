@@ -41,8 +41,12 @@ export type SoundDurations = Record<string, number | undefined>;
 const num = (v: unknown, fallback: number): number => (typeof v === 'number' && Number.isFinite(v) ? v : fallback);
 const secs = (ms: number): string => `${(ms / 1000).toFixed(1)}s`;
 
+/** A design track that goes quiet before the piece ends, and what to say if nothing else plays on. */
+interface EarlyEnd { end: number; note: string }
+
 function placeClip(
   raw: AudioTrack | AudioCue, id: string, start: number, total: number, durations: SoundDurations, notes: string[], scene?: string,
+  early?: EarlyEnd[],
 ): SoundClip | null {
   const src = typeof raw.src === 'string' ? raw.src.trim() : '';
   if (!src) { notes.push(`Sound "${id}" has no src, so it was left out.`); return null; }
@@ -71,11 +75,11 @@ function placeClip(
     notes.push(`Looping sound "${id}" stops dead at ${secs(total)} — fade_out (e.g. 800) ends it softly.`);
   }
   if (!scene && !loop && rest !== undefined && start + rest < total) {
-    notes.push(`Track "${id}" runs out at ${secs(start + rest)}; the last ${secs(total - start - rest)} of the piece has no music. loop:true repeats it.`);
+    early?.push({ end: start + rest, note: `Track "${id}" runs out at ${secs(start + rest)}; the last ${secs(total - start - rest)} of the piece has no music. loop:true repeats it.` });
   }
   // Live: a bed given duration = the piece's length went silent 3.6 s early once the scenes grew, and nothing said so.
   if (!scene && asked !== undefined && start + length < total && (loop || rest === undefined || asked < rest)) {
-    notes.push(`Track "${id}" stops at ${secs(start + length)} because duration is ${Math.round(asked)}ms; the last ${secs(total - start - length)} of the piece has no music. Set duration to ${Math.round(total - start)}, or leave it out to play to the end.`);
+    early?.push({ end: start + length, note: `Track "${id}" stops at ${secs(start + length)} because duration is ${Math.round(asked)}ms; the last ${secs(total - start - length)} of the piece has no music. Set duration to ${Math.round(total - start)}, or leave it out to play to the end.` });
   }
   if (rest === undefined && asked === undefined && !loop) {
     notes.push(`The length of "${src}" is not known here, so "${id}" is planned to the end of the piece.`);
@@ -86,16 +90,26 @@ function placeClip(
   };
 }
 
+/** Whether any clip is sounding at piece time t — a track that ends where nothing else plays opens a gap. */
+function soundingAt(clips: SoundClip[], t: number): boolean {
+  return clips.some(c => c.start_ms <= t && c.start_ms + c.length_ms > t);
+}
+
 /** Every sound of the piece as clips on its timeline, with what a listener would notice. */
 export function planSound(spec: DesignSpec, timeline: SoundTimeline, durations: SoundDurations = {}): SoundPlan {
   const notes: string[] = [];
   const clips: SoundClip[] = [];
   const total = Math.max(0, timeline.total_ms);
+  // A track that ends early only leaves the piece quiet if nothing else plays on
+  // to the end. Found live: a poster's twelve half-second whooshes and pops,
+  // under a bed that ran the whole piece, each drew "the last 52 s has no music".
+  const early: EarlyEnd[] = [];
   (spec.audio ?? []).forEach((track, i) => {
     const id = typeof track.id === 'string' && track.id ? track.id : `track-${i + 1}`;
-    const clip = placeClip(track, id, Math.max(0, num(track.start_time, 0)), total, durations, notes);
+    const clip = placeClip(track, id, Math.max(0, num(track.start_time, 0)), total, durations, notes, undefined, early);
     if (clip) clips.push(clip);
   });
+  for (const e of early) if (!soundingAt(clips, e.end + 1)) notes.push(e.note);
   for (const scene of timeline.scenes) {
     const page = (spec.pages ?? []).find(p => p.id === scene.page_id);
     (page?.audio_cues ?? []).forEach((cue, j) => {

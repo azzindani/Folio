@@ -243,6 +243,9 @@ function expandShorthandLayer(sh: ShorthandLayer): Layer {
       return {
         ...base,
         type: 'group',
+        // Found live: dropped here, so a scrolling window's rows ran out past
+        // its frame — the renderer has clipped a `clip: true` group all along.
+        ...(sh.clip === true ? { clip: true } : {}),
         // Route children through the full pipeline (coerce → normalize aliases →
         // infer type → ids → visible defaults), so nested layers get the same
         // small-model robustness as top-level ones.

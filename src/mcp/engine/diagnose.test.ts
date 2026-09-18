@@ -146,3 +146,14 @@ describe('analyzeLayers — serialized-spec leak (patch-fumble safety net)', () 
     expect(codes([bg, textV('ok', 'Renewables: the fastest-growing source of new power worldwide in 2024.')])).not.toContain('serialized_spec');
   });
 });
+
+describe('analyzeLayers — a camera world', () => {
+  it('reports nothing off-canvas for a scene laid out across the world, nested or not', () => {
+    const scene = { id: 'scene', type: 'group', z: 1, locked: true, x: 0, y: -540, width: 5760, height: 3240, layers: [
+      { id: 'zoneC', type: 'text', z: 2, x: 3960, y: 96, width: 1680, height: 140, content: { type: 'plain', value: 'Far right' }, style: { font_size: 60 } },
+    ] } as unknown as Layer;
+    const world = { x: 0, y: -540, width: 5760, height: 3240 };
+    expect(analyzeLayers([scene], 1920, 1080).some(f => f.code === 'off_canvas')).toBe(true);
+    expect(analyzeLayers([scene], 1920, 1080, world).filter(f => f.code === 'off_canvas')).toEqual([]);
+  });
+});

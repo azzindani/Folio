@@ -47,3 +47,15 @@ describe('clip_rect on any layer — the wipe', () => {
     expect(svg).toMatch(/<g clip-path="url\(#cliprect-[^"]+\)"/);
   });
 });
+
+describe('text keeps its runs of spaces', () => {
+  // Found live: a data table set in a mono face with spaces between columns
+  // drew single-spaced — SVG collapses whitespace — and lost its alignment.
+  const text = (id: string, value: string, y: number) => ({ id, type: 'text', z: 1, x: 0, y, width: 400, height: 40,
+    content: { type: 'plain', value }, style: { font_family: 'JetBrains Mono', font_size: 20 } });
+  it('preserves a run where there is one, and leaves ordinary text as it was', () => {
+    const svg = renderToSVGString(spec([text('cols', 'id    date', 0), text('plain', 'one two', 50)] as never));
+    expect(svg).toMatch(/<text[^>]*xml:space="preserve"[^>]*>id {4}date<\/text>/);
+    expect(svg).toMatch(/<text(?![^>]*xml:space)[^>]*>one two<\/text>/);
+  });
+});

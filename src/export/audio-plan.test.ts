@@ -30,6 +30,15 @@ describe('planSound', () => {
     expect(short.notes.join(' ')).toMatch(/runs out at 6\.0s; the last 4\.0s/);
   });
 
+  it('says nothing of a short cue while other sound plays on, and still flags a bed that runs out under late cues', () => {
+    const cues = [{ id: 'bed', src: 'bed.mp3', fade_out: 500 }, { id: 'whoosh', src: 'w.mp3', start_time: 2000 }, { id: 'pop', src: 'w.mp3', start_time: 9000 }];
+    const covered = planSound(deck({ audio: cues }), timeline, { 'bed.mp3': 60_000, 'w.mp3': 500 });
+    expect(covered.notes.join(' ')).not.toMatch(/runs out/);
+    const bedShort = planSound(deck({ audio: cues }), timeline, { 'bed.mp3': 5000, 'w.mp3': 500 });
+    expect(bedShort.notes.join(' ')).toMatch(/"bed" runs out at 5\.0s/);
+    expect(bedShort.notes.join(' ')).not.toMatch(/"whoosh" runs out/);
+  });
+
   it('notes a track whose duration stops it before the piece ends', () => {
     const early = planSound(deck({ audio: [{ id: 'm', src: 'a.mp3', duration: 7000, fade_out: 800 }] }), timeline, { 'a.mp3': 60_000 });
     expect(early.notes.join(' ')).toMatch(/stops at 7\.0s because duration is 7000ms; the last 3\.0s .*Set duration to 10000/);

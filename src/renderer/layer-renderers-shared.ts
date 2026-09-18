@@ -78,7 +78,10 @@ export function plainTextLayout(
   const isUpper = style.text_transform === 'uppercase'
     || (value.length > 2 && value === value.toUpperCase() && /[A-Z]/.test(value));
   let factor = isMono ? 0.60 : 0.52;
-  if (isUpper) factor += 0.06;
+  // A monospace face gives every glyph the same advance, capitals included:
+  // widening caps there wrapped a row of month initials ("J    F … D") one
+  // character early and dropped the last label onto a line of its own.
+  if (isUpper && !isMono) factor += 0.06;
   const tracking = typeof style.letter_spacing === 'number' ? style.letter_spacing : 0;
   const perChar = factor === 0.52 ? undefined : fontSize * factor + Math.max(0, tracking);
   const width = typeof box.width === 'number' ? box.width : undefined;

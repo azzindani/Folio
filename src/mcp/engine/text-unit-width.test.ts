@@ -44,3 +44,16 @@ describe('unitWidth', () => {
     }
   });
 });
+
+describe('monospace capitals are no wider than any other monospace glyph', () => {
+  // Found live: month initials set in a mono face, spaced to sit under chart
+  // points, wrapped one character early because caps were widened.
+  it('keeps a row of mono initials that fits its box on one line', () => {
+    const style = { font_family: 'JetBrains Mono', font_size: 23.33, font_weight: 700 };
+    const row = 'J    F    M    A    M    J    J    A    S    O    N    D';   // 56 chars × 14 px = 784
+    expect(plainTextLayout(row, style as never, { x: 0, y: 0, width: 860 }).lines).toHaveLength(1);
+    // A sans headline in capitals still gets the wider estimate.
+    const sans = plainTextLayout('ABCD EFGHIJ', { font_family: 'Inter', font_size: 100 } as never, { width: 560 });   // 11 × 58 px > 560
+    expect(sans.lines.length).toBeGreaterThan(1);
+  });
+});

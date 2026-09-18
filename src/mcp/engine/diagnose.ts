@@ -6,7 +6,7 @@
 
 import type { Layer } from '../../schema/types';
 import { findFlatTextStyle } from '../../schema/validator';
-import { lintComposition, reviewComposition } from './design-lint';
+import { lintComposition, reviewComposition, type Stage } from './design-lint';
 import { lintAiSlop } from './ai-slop-lint';
 import { findTextOverflows } from './text-measure';
 
@@ -70,13 +70,15 @@ const FULL_BG = (b: Box, W: number, H: number): boolean => b.w * b.h >= W * H * 
 const SIZED = new Set(['rect', 'image', 'icon', 'ellipse', 'circle', 'group', 'chart', 'kpi_card', 'path', 'text', 'qrcode', 'polygon']);
 
 // ── geometry checks ─────────────────────────────────────────
-function geometryFindings(layers: Layer[], W: number, H: number): Finding[] {
+function geometryFindings(layers: Layer[], W: number, H: number, world?: Stage): Finding[] {
   const out: Finding[] = [];
   const bs = boxes(layers).filter(b => SIZED.has(b.type));
+  // A camera world is laid out past the canvas on purpose: measure against it.
+  const st = world ?? { x: 0, y: 0, width: W, height: H };
 
   // Off-canvas.
   for (const b of bs) {
-    if (b.x < -4 || b.y < -4 || b.x + b.w > W + 4 || b.y + b.h > H + 4) {
+    if (b.x < st.x - 4 || b.y < st.y - 4 || b.x + b.w > st.x + st.width + 4 || b.y + b.h > st.y + st.height + 4) {
       out.push({
         code: 'off_canvas', severity: 'error', layer_id: b.id,
         message: `"${b.id}" extends outside the ${W}×${H} canvas (x:${Math.round(b.x)} y:${Math.round(b.y)} w:${Math.round(b.w)} h:${Math.round(b.h)}) — it will be clipped.`,
@@ -88,7 +90,7 @@ function geometryFindings(layers: Layer[], W: number, H: number): Finding[] {
   // Off-canvas CONTENT nested inside a group — the case a box-level check misses
   // entirely. Always an error: clipped content is lost, never a style choice.
   for (const b of contentDescendants(layers)) {
-    const over = Math.max(-b.x, -b.y, b.x + b.w - W, b.y + b.h - H);
+    const over = Math.max(st.x - b.x, st.y - b.y, b.x + b.w - (st.x + st.width), b.y + b.h - (st.y + st.height));
     if (over <= 8) continue;
     const lost = Math.round(Math.min(100, (over / Math.max(1, Math.min(b.w, b.h))) * 100));
     out.push({
@@ -192,12 +194,12 @@ function geometryFindings(layers: Layer[], W: number, H: number): Finding[] {
 }
 
 /** Run all diagnostics over a page's layers. */
-export function analyzeLayers(layers: Layer[], W: number, H: number): Finding[] {
-  const out = geometryFindings(layers, W, H);
+export function analyzeLayers(layers: Layer[], W: number, H: number, world?: Stage): Finding[] {
+  const out = geometryFindings(layers, W, H, world);
   // Fold composition lint (render-correctness) as warnings/errors. Skip the
   // overflow note — geometryFindings already emits a richer text_overflow
   // finding for it (folding both double-reports the same problem).
-  for (const note of lintComposition(layers, W, H)) {
+  for (const note of lintComposition(layers, W, H, world)) {
     if (/spills ~\d+px/.test(note)) continue;
     out.push({ code: 'composition', severity: 'warning', message: note });
   }

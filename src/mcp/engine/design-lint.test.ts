@@ -112,3 +112,16 @@ describe('reviewComposition (quality critic)', () => {
     expect(notes.some(n => /crowds the edge/.test(n))).toBe(true);
   });
 });
+
+describe('lintComposition — a camera world', () => {
+  const bg = { id: 'bg', type: 'rect', z: 0, x: 0, y: 0, width: 1920, height: 1080, fill: '#fff' } as unknown as Layer;
+  const far = { id: 'zone3', type: 'rect', z: 1, x: 3900, y: 1200, width: 800, height: 400, fill: '#000' } as unknown as Layer;
+  const world = { x: 0, y: -540, width: 5760, height: 3240 };
+
+  it('leaves content the camera travels to alone, and still flags what leaves the world', () => {
+    expect(lintComposition([bg, far], 1920, 1080).join()).toContain('outside the 1920x1080 canvas');
+    expect(lintComposition([bg, far], 1920, 1080, world).join()).not.toContain('zone3');
+    const lost = { ...far, id: 'lost', x: 5500 } as unknown as Layer;
+    expect(lintComposition([bg, lost], 1920, 1080, world).join()).toContain('outside the 5760x3240 camera world');
+  });
+});

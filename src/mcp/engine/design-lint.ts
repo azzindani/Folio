@@ -83,7 +83,15 @@ const OPAQUE_BACKDROP = new Set(['image', 'chart', 'video', 'mermaid', 'code', '
 const SIZED = new Set(['rect', 'image', 'icon', 'ellipse', 'group', 'chart', 'kpi_card']);
 
 /** Returns human-readable composition notes (empty = clean). */
-export function lintComposition(layers: Layer[], canvasW: number, canvasH: number): string[] {
+/** A camera world (animation op:camera world): the area a piece is laid out over, larger than the canvas. */
+export interface Stage { x: number; y: number; width: number; height: number }
+
+/**
+ * `world` is the page's camera world when it has one. Content past the canvas
+ * edge but inside the world is the point of a world — the camera travels to
+ * it — so the off-canvas check measures against the world instead.
+ */
+export function lintComposition(layers: Layer[], canvasW: number, canvasH: number, world?: Stage): string[] {
   const notes: string[] = [];
   const z = (l: Layer): number => (typeof l.z === 'number' ? l.z : 0);
 
@@ -153,13 +161,15 @@ export function lintComposition(layers: Layer[], canvasW: number, canvasH: numbe
     }
   }
 
-  // 3. Off-canvas sized layers.
+  // 3. Off-canvas sized layers (off-WORLD when the page declares one).
+  const st = world ?? { x: 0, y: 0, width: canvasW, height: canvasH };
+  const where = world ? `${world.width}x${world.height} camera world` : `${canvasW}x${canvasH} canvas`;
   for (const l of layers) {
     if (!SIZED.has(l.type)) continue;
     const r = rectOf(l);
     if (!r) continue;
-    if (r.x < -4 || r.y < -4 || r.x + r.w > canvasW + 4 || r.y + r.h > canvasH + 4) {
-      notes.push(`layer "${l.id}" extends outside the ${canvasW}x${canvasH} canvas (x:${Math.round(r.x)} y:${Math.round(r.y)} w:${Math.round(r.w)} h:${Math.round(r.h)}) — it will be clipped.`);
+    if (r.x < st.x - 4 || r.y < st.y - 4 || r.x + r.w > st.x + st.width + 4 || r.y + r.h > st.y + st.height + 4) {
+      notes.push(`layer "${l.id}" extends outside the ${where} (x:${Math.round(r.x)} y:${Math.round(r.y)} w:${Math.round(r.w)} h:${Math.round(r.h)}) — it will be clipped.`);
     }
   }
 

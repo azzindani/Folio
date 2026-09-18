@@ -357,6 +357,12 @@ export function layerLeftTop(l: Layer): { x: number; y: number } {
   return { x: xs.length ? Math.min(...xs) : 0, y: ys.length ? Math.min(...ys) : 0 };
 }
 
+/** Whether a layer's own fields place it (x/y, line ends, a centre) — a path's `d` does not count. */
+export function hasOwnPosition(l: Layer): boolean {
+  const o = l as unknown as Record<string, unknown>;
+  return ['x', 'y', 'x1', 'y1', 'x2', 'y2', 'cx', 'cy'].some(k => typeof o[k] === 'number');
+}
+
 export function bakeOffsetDeep(l: Layer, dx: number, dy: number): void {
   const o = l as unknown as Record<string, unknown>;
   for (const k of ['x', 'x1', 'x2', 'cx']) if (typeof o[k] === 'number') o[k] = (o[k] as number) + dx;
@@ -426,15 +432,21 @@ export function flattenRelativeGroups(layers: Layer[]): number {
     const gx = typeof o['x'] === 'number' ? o['x'] : 0;
     const gy = typeof o['y'] === 'number' ? o['y'] : 0;
     if (gx === 0 && gy === 0) continue;
+    // Only a child that carries coordinates can vote. A path is placed by its
+    // `d` and has no x/y, so it read as sitting at 0,0 — "before the origin" —
+    // and one path in a hand-built group shifted every sibling by the group's
+    // offset (found live: a data sheet's rows text jumped 1806 px right when the
+    // sheet's ruled lines were a path). Its box would drag the refit to 0,0 too.
+    const placedKids = kids.filter(hasOwnPosition);
     // Strict `<`: an absolute child is never positioned before its group origin,
     // so this never false-fires on a real template (children at X+margin >= X).
-    const local = kids.some(k => { const p = layerLeftTop(k); return p.x < gx || p.y < gy; });
+    const local = placedKids.some(k => { const p = layerLeftTop(k); return p.x < gx || p.y < gy; });
     if (!local) continue;
     for (const k of kids) bakeOffsetDeep(k, gx, gy);
     // Re-fit the group box to the children's true extent so the de-collide pass
     // and any bounds logic see the real occupied region, not the old origin.
     let minX = Infinity, minY = Infinity, maxR = -Infinity, maxB = -Infinity;
-    for (const k of kids) {
+    for (const k of placedKids) {
       const bb = layerBBox(k);
       minX = Math.min(minX, bb.x); minY = Math.min(minY, bb.y);
       maxR = Math.max(maxR, bb.r); maxB = Math.max(maxB, bb.b);
