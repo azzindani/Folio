@@ -202,16 +202,31 @@ body[data-view=list] .card .meta{padding:0;display:flex;gap:16px;align-items:bas
 body[data-view=list] .card .nm{font-size:14px}body[data-view=list] .card .proj{margin-top:0}
 body[data-view=list] .card .when{display:inline}
 body[data-view=list] .card .bar{border-top:0;margin-left:auto}
+.searchrow{display:flex;gap:8px;align-items:center}
+.filters-t{display:none;flex:none;white-space:nowrap}
 @media(max-width:600px){header{padding:14px 16px}h1{font-size:18px}.theme-btn{top:12px;right:14px}
+/* Four labelled filter rows put the first design 300px down a 844px phone —
+   a third of the screen spent on controls before any of the thing you came
+   for. They fold behind one button, and the grid starts under the search. */
+.filters-t{display:inline-flex}
+body:not(.filters-open) .filters{display:none}
+.filters{margin-top:10px}
 .grid{padding:14px 16px;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
-.toolbar,.cols,.chips,.sorts{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px}
+/* The toolbar holds TWO groups (sort, folder). Side by side in a scroller they
+   read as one jumbled row — the folder group wrapping to two lines beside a
+   clipped sort row. One group per line, each scrolling on its own. */
+.toolbar{flex-direction:column;align-items:stretch;gap:10px;overflow:visible}
+.cols,.chips,.sorts,.folders{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px}
+.folders .folderf{flex:1 1 auto;min-width:0;max-width:none}
 .col-chip,.chip,.sortb{white-space:nowrap}.mv{font-size:14px;padding:7px 8px}
 /* visible scroll affordance — without it a clipped pill row reads as broken */
-.toolbar::-webkit-scrollbar,.cols::-webkit-scrollbar,.chips::-webkit-scrollbar,.sorts::-webkit-scrollbar{height:4px}
-.toolbar::-webkit-scrollbar-thumb,.cols::-webkit-scrollbar-thumb,.chips::-webkit-scrollbar-thumb,.sorts::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:2px}
-.toolbar,.cols,.chips,.sorts{scrollbar-width:thin;scrollbar-color:var(--bd2) transparent}}`;
+.cols::-webkit-scrollbar,.chips::-webkit-scrollbar,.sorts::-webkit-scrollbar,.folders::-webkit-scrollbar{height:4px}
+.cols::-webkit-scrollbar-thumb,.chips::-webkit-scrollbar-thumb,.sorts::-webkit-scrollbar-thumb,.folders::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:2px}
+.cols,.chips,.sorts,.folders{scrollbar-width:thin;scrollbar-color:var(--bd2) transparent}}`;
 
 const SCRIPT = `const q=document.getElementById('q'),cards=[...document.querySelectorAll('.card')],grid=document.querySelector('.grid');
+const fb=document.getElementById('filtersb');
+if(fb)fb.addEventListener('click',function(){const on=document.body.classList.toggle('filters-open');fb.setAttribute('aria-expanded',on?'true':'false');});
 const chips=[...document.querySelectorAll('.chip')],colsEl=document.querySelector('.cols');
 let type='',col='',fdir='';
 const colChipEls=()=>colsEl?[...colsEl.querySelectorAll('.col-chip')]:[];
@@ -337,7 +352,7 @@ export function buildLibraryPage(opts: {
   const live = opts.live ? `<script>window.__libLive=true;</script>` : '';
   const liveBadge = opts.live ? ` · live<span class="live-dot" id="livedot"></span>` : '';
   return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Folio — Design Library</title>${FAVICON_LINK}<script>try{var m=localStorage.getItem('folio-lib-theme');if(m)document.documentElement.dataset.theme=m;var v=localStorage.getItem('folio-lib-view');if(v)document.body&&(document.body.dataset.view=v);}catch(e){}</script><style>${STYLE}${ASSET_STYLE}</style>${ASSET_ASSETS}</head>
-<body><header><button id="theme" class="theme-btn" type="button" title="Toggle light / dark theme">☀ Light</button><h1>Design Library</h1><div class="stat">${opts.totalProjects} projects · ${opts.totalDesigns} designs${opts.filtered ? ` · filtered` : ''}${liveBadge}</div><input id="q" type="search" placeholder="Search designs, projects…" autocomplete="off"><div class="toolbar">${sorts}${folders}</div>${colTabs}${chips ? `<div class="chips">${chips}</div>` : ''}</header>
+<body><header><button id="theme" class="theme-btn" type="button" title="Toggle light / dark theme">☀ Light</button><h1>Design Library</h1><div class="stat">${opts.totalProjects} projects · ${opts.totalDesigns} designs${opts.filtered ? ` · filtered` : ''}${liveBadge}</div><div class="searchrow"><input id="q" type="search" placeholder="Search designs, projects…" autocomplete="off"><button id="filtersb" class="fbtn filters-t" type="button" aria-expanded="false" aria-controls="filters">Filters</button></div><div class="filters" id="filters"><div class="toolbar">${sorts}${folders}</div>${colTabs}${chips ? `<div class="chips">${chips}</div>` : ''}</div></header>
 <div class="grid">${cards}</div>
 <div id="empty" class="empty">No designs match your search.</div>
 ${assetDrawerMarkup(opts.projects)}
