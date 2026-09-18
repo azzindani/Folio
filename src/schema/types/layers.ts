@@ -116,6 +116,8 @@ export interface BaseLayer {
     duration?: number;   // ms, default 2000
     delay?: number;      // ms on the layer's clock before it sets off; a precomp clock shifts and scales it
     loop?: boolean;
+    period?: number;     // with loop: one pass lasts this long (≥ duration), resting at the end — set for a looping precomp's child
+    offset?: number;     // with loop: ms into each pass before it sets off
     easing?: string;     // CSS easing, default 'ease-in-out'
     auto_rotate?: boolean; // rotate element along path
   };

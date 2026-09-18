@@ -14,7 +14,7 @@
 
 import type { Layer } from '../schema/types';
 import type { Keyframe } from '../animation/types';
-import { interpolateAtTime, poseToLayerUpdate, flattenForTimeline } from '../ui/panels/timeline-panel';
+import { interpolateAtTime, poseToLayerUpdate, flattenForTimeline } from '../ui/panels/timeline-model';
 
 export interface TrailSample { t: number; x: number; y: number; w: number; h: number; opacity: number }
 export interface LayerTrail { layerId: string; samples: TrailSample[] }

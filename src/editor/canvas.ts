@@ -6,7 +6,7 @@ import { flowGridMetrics } from '../renderer/flow-layout';
 import { setPreviewContext } from '../renderer/render-context';
 import type { TextLayer, Layer } from '../schema/types';
 import { surfaceTrails, trailsSVG } from './motion-trails';
-import { sceneDuration } from '../ui/panels/timeline-panel';
+import { sceneDuration } from '../ui/panels/timeline-model';
 import { composeTheme } from '../styles/compose';
 import { measureGaps, drawArrowLine, drawLabel } from './canvas-draw';
 import { CanvasInteractions } from './canvas-interactions';

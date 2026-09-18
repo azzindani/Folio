@@ -43,3 +43,55 @@ export function pathProgress(easing: string | undefined, x: number): number {
   return a + (b - a) * (c - i);
 }
 
+
+/** When a path travels. `period`/`offset` come from a looping precomp: each pass waits `offset`, travels, rests at the end until `period`. */
+export interface PathTiming { duration?: number; delay?: number; loop?: boolean; easing?: string; period?: number; offset?: number }
+
+/** One pass of a looping path: its period, the wait before it sets off, and how much of the travel fits before the pass ends. */
+function passOf(mp: PathTiming, dur: number): { period: number; offset: number; reach: number } {
+  const period = Math.max(1, mp.period ?? dur);
+  const offset = Math.min(Math.max(0, mp.offset ?? 0), period);
+  return { period, offset, reach: Math.min(1, (period - offset) / dur) };
+}
+
+/**
+ * How far along its path (0–1, eased) a layer is at scene time `t`, or null
+ * before it sets off — SMIL applies no motion before `begin`. The flipbook
+ * walks this; pathSMIL writes the same curve for the browser.
+ */
+export function pathAt(mp: PathTiming, t: number): number | null {
+  const dur = mp.duration ?? 2000;
+  const local = t - (mp.delay ?? 0);
+  if (dur <= 0 || local < 0) return null;
+  if (!mp.loop) return pathProgress(mp.easing, local / dur);
+  const { period, offset } = passOf(mp, dur);
+  const x = (local % period) - offset;
+  return pathProgress(mp.easing, x <= 0 ? 0 : Math.min(1, x / dur));
+}
+
+/**
+ * The <animateMotion> timing for a path. A plain pass is the eased samples
+ * over `dur`; a pass inside a looping precomp spans its period — held at the
+ * start for `offset`, the travel on the SAME easing samples (cut where the
+ * period ends), held at the end — so the browser and the flipbook agree.
+ */
+export function pathSMIL(mp: PathTiming): { begin: number; dur: number; repeat: boolean; keyTimes: string; keyPoints: string } {
+  const dur = mp.duration ?? 2000;
+  const ease = pathEase(mp.easing);
+  const begin = Math.max(0, mp.delay ?? 0);
+  if (!mp.loop || (mp.period === undefined && !mp.offset)) {
+    return { begin, dur, repeat: mp.loop === true, keyTimes: ease.times.join(';'), keyPoints: ease.points.join(';') };
+  }
+  const { period, offset, reach } = passOf(mp, dur);
+  const pts: Array<[number, number]> = [[0, 0]];
+  const push = (tau: number, u: number): void => {
+    const k = Number((tau / period).toFixed(5));
+    const last = pts[pts.length - 1];
+    if (last && k <= last[0]) { if (k === last[0]) last[1] = u; return; }
+    pts.push([k, Number(u.toFixed(4))]);
+  };
+  for (let i = 0; i <= PATH_EASE_STEPS && i / PATH_EASE_STEPS <= reach; i++) push(offset + (i / PATH_EASE_STEPS) * dur, ease.points[i] ?? 1);
+  push(offset + reach * dur, pathProgress(mp.easing, reach));
+  if ((pts[pts.length - 1]?.[0] ?? 1) < 1) push(period, pathProgress(mp.easing, reach));
+  return { begin, dur: period, repeat: true, keyTimes: pts.map(p => p[0]).join(';'), keyPoints: pts.map(p => p[1]).join(';') };
+}

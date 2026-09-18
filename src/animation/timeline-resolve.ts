@@ -66,11 +66,17 @@ function retimeDeep(l: Node, clock: LayerClock): Node {
   const speed = (num(clock.speed) ?? 1) > 0 ? (num(clock.speed) ?? 1) : 1;
   const out: Node = { ...l };
   if (l.animation?.keyframes?.length) out.animation = retimeTrack(l.animation, start, speed, num(clock.loop));
-  // A path travels on the precomp's clock too: set off later, cover it faster. It plays once per
-  // pass it is given — a precomp's loop_ms does not repeat it (loop:true on the path does).
-  const mp = (l as unknown as Record<string, unknown>)['motion_path'] as { delay?: unknown; duration?: unknown } | undefined;
+  // A path travels on the precomp's clock too: set off later, cover it faster. In a looping
+  // precomp a one-shot path runs every pass — waits its delay, travels, rests at the end — as
+  // a one-shot track is cycled; a path that loops by itself is left to its own loop.
+  const mp = (l as unknown as Record<string, unknown>)['motion_path'] as { delay?: unknown; duration?: unknown; loop?: unknown; period?: unknown; offset?: unknown } | undefined;
   if (mp && typeof mp === 'object') {
-    (out as unknown as Record<string, unknown>)['motion_path'] = { ...mp, delay: start + (num(mp.delay) ?? 0) / speed, duration: (num(mp.duration) ?? 2000) / speed };
+    const d = num(mp.delay) ?? 0, dur = (num(mp.duration) ?? 2000) / speed, loopMs = num(clock.loop);
+    const period = num(mp.period), offset = num(mp.offset);
+    (out as unknown as Record<string, unknown>)['motion_path'] = loopMs && loopMs > 0 && mp.loop !== true
+      ? { ...mp, loop: true, delay: start, duration: dur, period: loopMs / speed, offset: d / speed }
+      : { ...mp, delay: start + d / speed, duration: dur,
+        ...(period !== undefined ? { period: period / speed } : {}), ...(offset !== undefined ? { offset: offset / speed } : {}) };
   }
   const w = windowOf(l);
   if (w) {

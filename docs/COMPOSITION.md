@@ -154,5 +154,7 @@ HTML export goes through `buildAnimatedSVG`. A storyboard state can `loop` — h
 layer rests until its next change, unrolled into its one track. `motion_path` takes a
 `delay`, follows precomp clocks and travels on its own easing in both players.
 
-**Open.** In/out bands and markers are read-only in the timeline; a looping precomp
-does not repeat a one-shot `motion_path`.
+**Closed out.** The timeline edits time too — drag a layer's in/out edges, drag / add /
+rename / remove markers, snapping to markers, the playhead and the ends — and a looping
+precomp repeats a one-shot `motion_path` every pass in both players. The workstream has
+no open items.

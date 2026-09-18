@@ -12,7 +12,7 @@ import { buildEditorLink } from './engine/editor-link';
 
 import { evaluateFormula, isFormula } from '../scripting/formula';
 import type { FormulaContext } from '../scripting/formula';
-import { addKeyframe } from '../ui/panels/timeline-panel';
+import { addKeyframe } from '../ui/panels/timeline-model';
 import { sceneTracks, sceneLength, renderSceneASCII, lifeWindowList } from './engine/timeline-ascii';
 import { resolveTimeline } from '../animation/timeline-resolve';
 import { readMarkers } from './engine/motion-time';

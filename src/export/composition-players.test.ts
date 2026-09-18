@@ -87,5 +87,24 @@ describe('a motion path — the same travel in the SVG and the flipbook', () => 
     expect(svg).toContain('begin="1.100s"');
     expect(svg).toContain('dur="0.500s"');
   });
+
+  it('repeats a one-shot path every pass of a looping precomp: waits, travels, rests — in both players', () => {
+    const s = withLayers([{ id: 'pc', type: 'group', z: 1, clock: { start: 1000, loop: 2000 }, layers: [dot({ duration: 1000, delay: 500, easing: 'linear' })] }]);
+    expect(dx(s, 900)).toBeUndefined();                       // before the precomp starts
+    expect(dx(s, 1200)).toBeCloseTo(0, 3);                    // waiting its 500 ms in the first pass
+    expect(dx(s, 2000)).toBeCloseTo(200, 3);                  // halfway
+    expect(dx(s, 2800)).toBeCloseTo(400, 3);                  // resting at the end
+    expect(dx(s, 3200)).toBeCloseTo(0, 3);                    // the next pass waits again
+    expect(dx(s, 4000)).toBeCloseTo(200, 3);                  // and travels again
+    expect(animationDuration(s.layers ?? [])).toBe(3000);
+    const { svg } = buildAnimatedSVG(s, { renderSVG: x => renderToSVGString(x) });
+    expect(svg).toContain('begin="1.000s"');
+    expect(svg).toContain('dur="2.000s"');
+    expect(svg).toContain('repeatCount="indefinite"');
+    const attr = (n: string): number[] => (svg.match(new RegExp(`${n}="([^"]+)"`))?.[1] ?? '').split(';').map(Number);
+    const times = attr('keyTimes'), points = attr('keyPoints');
+    const at = (k: number): number | undefined => points[times.indexOf(k)];
+    expect([at(0), at(0.25), at(0.5), at(0.75), at(1)]).toEqual([0, 0, 0.5, 1, 1]);
+  });
 });
 
