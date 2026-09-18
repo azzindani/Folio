@@ -185,6 +185,13 @@ Animation timeline + motion export. **Req:** `op`, `design_path`.
 - `timeline` — keyframe tracks as an ASCII timeline (`page_id` to filter).
 - `keyframe` (req layer_id, keyframe:{t,x?,y?,opacity?,scale?,rotation?}) — add/replace a keyframe.
 - `export` (req type = svg|html|gif|mp4|webm; `fps`, `duration` ≤60s, `page_id`, `all_pages`) — SVG/HTML written in-process; GIF streamed in-process; MP4 (H.264) / WebM (VP9) piped into ffmpeg.
+- Continuous composition (one scene, many sub-sequences — [COMPOSITION.md](COMPOSITION.md)):
+  - `storyboard` (req shots:[{id?, at, states:{<id>: state | "hidden" | "<preset>"}}]) — where each object is per shot → one track per layer, in/out points, a marker per shot, a time-aware lint.
+  - `markers` (markers:{name: time}) · `span` (layer_id|layer_ids, in, out) — named times; a layer's in/out points.
+  - `precomp` (req layer_id; layer_ids, start, speed, loop_ms, duplicate) — a group on its own clock.
+  - `link` (layer_id|layer_ids, to, channels, lag, factor, stagger_ms) — follow another layer's track.
+  - `lint` — the time-aware checks, read-only. `camera` takes `world` + region targets; every time takes `"marker±ms"` or `"layer.in|out|start|end"`.
+- The rest (`sequence`, `track`, `text`, `wiggle`, `camera`, `morph`, `frame`, `scene`, `audio`, `beats`, `captions`, …) — see [MOTION.md](MOTION.md) §3.
 
 ---
 

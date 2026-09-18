@@ -429,7 +429,10 @@ export function decollideHandPlaced(layers: Layer[], W: number, H: number): numb
     const b = boxOf(l);
     return b.w > 0 && b.h > 0 && (b.w * b.h >= 0.33 * W * H || b.w >= 0.9 * W || b.h >= 0.9 * H);
   };
-  const movable = layers.filter(l => l && !isFullBleed(l) && !isMotifLayer(l) && !isWire(l) && !bleedsOffCanvas(l) && !isBackdropPanel(l) && !containerShapes.has(l) && !isLocked(l) && typeof o(l)['x'] === 'number' && typeof o(l)['y'] === 'number');
+  // A layer with an in or out point takes turns in time: two headlines on one
+  // spot, one leaving as the other lands, is the composition, not an overprint.
+  const inTime = (l: Layer): boolean => o(l)['in'] !== undefined || o(l)['out'] !== undefined;
+  const movable = layers.filter(l => l && !isFullBleed(l) && !isMotifLayer(l) && !isWire(l) && !bleedsOffCanvas(l) && !isBackdropPanel(l) && !containerShapes.has(l) && !isLocked(l) && !inTime(l) && typeof o(l)['x'] === 'number' && typeof o(l)['y'] === 'number');
   if (movable.length < 2) return 0;
   const ordered = [...movable].sort((a, b) => (Number(o(a)['y']) - Number(o(b)['y'])) || (Number(o(a)['x']) - Number(o(b)['x'])));
   const placed: { x: number; w: number; bot: number }[] = [];

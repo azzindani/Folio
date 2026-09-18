@@ -131,7 +131,7 @@ interface Step { pct: number; decls: string[]; timing: string }
  * Turn a keyframe timeline into a real `@keyframes` rule plus the selector
  * that plays it. Returns '' for anything with fewer than two frames.
  */
-export function generateKeyframeCSS(layerId: string, anim: AnimationSpec, spacingBase = 0, morph?: { from: string; to: string }): string {
+export function generateKeyframeCSS(layerId: string, anim: AnimationSpec, spacingBase = 0, morph?: { from: string; to: string }, extra: string[] = []): string {
   const frames = anim.keyframes;
   if (!frames || frames.length < 2) return '';
 
@@ -193,6 +193,9 @@ export function generateKeyframeCSS(layerId: string, anim: AnimationSpec, spacin
   const delay = Math.max(0, playback?.delay ?? 0);
   const origin = anchorToOrigin(playback?.anchor);
   const timing = `${duration}ms linear ${delay}ms ${iteration} ${direction} both`;
+  // One element plays one animation list: other animations on the same element
+  // (the in/out window's visibility steps) ride in it, after the pose.
+  const also = extra.length ? `, ${extra.join(', ')}` : '';
   // A trimmed track writes its dash pair per step; only a plain reveal needs the static dash.
   const drawDecl = hasDraw === 'dash' ? ' stroke-dasharray: 1;' : '';
 
@@ -205,13 +208,13 @@ export function generateKeyframeCSS(layerId: string, anim: AnimationSpec, spacin
   const pair = morph && sorted.some(k => num(k.morph) !== undefined) ? morphPairCached(morph.from, morph.to) : null;
   const outline = pair ? [
     `@keyframes ${name}-d { ${steps.map((s, i) => `${fmt(s.pct)}% { d: path("${morphPathAt(pair, clamp01(morphAt[i] ?? 0))}"); animation-timing-function: ${s.timing}; }`).join(' ')} }`,
-    `path[data-layer-id="${layerId}"] { animation: ${name} ${timing}, ${name}-d ${timing}; }`,
+    `path[data-layer-id="${layerId}"] { animation: ${name} ${timing}, ${name}-d ${timing}${also}; }`,
     `[data-layer-id="${layerId}"] path { animation: ${hasDraw !== 'none' ? `${name} ${timing}, ` : ''}${name}-d ${timing}; }`,
   ] : [];
 
   return [
     `@keyframes ${name} { ${body} }`,
-    `${selector} { transform-box: fill-box; transform-origin: ${origin};${drawDecl} animation: ${name} ${timing}; }`,
+    `${selector} { transform-box: fill-box; transform-origin: ${origin};${drawDecl} animation: ${name} ${timing}${also}; }`,
     // The <text> carries its own letter-spacing attribute, which beats an
     // inherited value — Chromium held the glyphs still without this rule.
     ...(tracked !== undefined ? [`[data-layer-id="${layerId}"] text { letter-spacing: inherit; }`] : []),

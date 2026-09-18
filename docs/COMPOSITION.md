@@ -1,8 +1,9 @@
-# Continuous Composition — design proposal
+# Continuous Composition
 
-Status: **proposal, not built.** Agreed direction for the next video workstream:
-engine + MCP first, editor after. Builds on [MOTION.md](MOTION.md) (keyframe engine
-v2, presets, ops, multi-scene export).
+Status: **scaffolded 2026-09-18** — all six steps built in the engine and the MCP
+surface (§6). The editor comes next. Builds on [MOTION.md](MOTION.md) (keyframe engine
+v2, presets, ops, multi-scene export); MOTION.md §3 "Continuous composition" is the
+reference for how each piece works.
 
 ---
 
@@ -96,7 +97,7 @@ shots:
     at: 4000
     states:
       title: { x: 120, y: 90, scale: 0.4 }   # same object, new rest state
-      card1: { in: rise }                    # enters with a preset mechanic
+      card1: rise                            # enters with a preset ({enter: rise} + a state works too)
 ```
 
 * The model writes **where each object is in each shot**. The engine diffs consecutive
@@ -124,3 +125,22 @@ shots:
 Every step lands on both players in the same commit (CSS route + flipbook), as the
 Phase 2 ops did. The editor (timeline bars for in/out, shot strip) follows once the
 engine and MCP surface are live.
+
+## 6. Built
+
+| # | Step | Ops | Where |
+|---|---|---|---|
+| 1 | Time model | `markers`, `span`; every time takes `"marker±ms"` or `"layer.in"` / `.out` / `.start` / `.end` | `motion-time.ts`, `motion-time-ops.ts`, `src/animation/lifespan.ts` |
+| 2 | Many rest states | (inside `storyboard`) | `motion-states.ts` |
+| 3 | Storyboard + time-aware lint | `storyboard`, `lint` | `motion-storyboard-parse.ts`, `motion-storyboard-op.ts`, `motion-lint.ts` |
+| 4 | Precomps, links | `precomp`, `link` | `motion-precomp-op.ts`, `src/animation/timeline-resolve.ts` |
+| 5 | World camera | `camera` `world` + region / `"world"` targets | `motion-camera-op.ts`, `motion-camera.ts` (pivot) |
+| 6 | Render cost | — | `frame-cull.ts` (hidden, faded, off-canvas left out of raster frames) |
+
+**One resolved tree.** Clocks, links and windows are intent on the layers; `resolveTimeline()`
+flattens them onto the scene clock once per page, and the flipbook, the SVG export,
+the durations and `op:timeline` all read that result — so the two players cannot disagree.
+
+**Open.** The editor (in/out bars, a shot strip, hiding layers outside their window
+while scrubbing); the editor's own HTML export still builds CSS from the unresolved
+tree; loops inside a storyboard need their own layer; `motion_path` ignores precomp clocks.

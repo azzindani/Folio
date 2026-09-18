@@ -1,6 +1,6 @@
 // Folio schema — layer types: the LayerType/Layer unions and every concrete layer
 // interface. Split out of types.ts; re-exported by it.
-import type { AnimationSpec } from '../../animation/types';
+import type { AnimationSpec, LayerClock, LayerLink } from '../../animation/types';
 import type { Effects, Fill, Interaction, PinConstraints, PositionShorthand, Radius, Stroke, TextContent, TextStyle } from './primitives';
 
 // ── Layer Types ─────────────────────────────────────────────
@@ -83,6 +83,14 @@ export interface BaseLayer {
   clip_path_ref?: string;
   /** Per-layer animation spec */
   animation?: AnimationSpec;
+  /** In point, ms on the scene clock: the layer does not exist before it (After Effects' layer bar). */
+  in?: number;
+  /** Out point, ms on the scene clock: the layer is gone from here on. */
+  out?: number;
+  /** Group only: a precomp's local clock — see LayerClock. */
+  clock?: LayerClock;
+  /** Follow another layer's track with a lag — see LayerLink. */
+  link?: LayerLink;
   /** PowerApps-style formula bindings: { fill: "=state.active ? '#f00' : '#ccc'" } */
   formulas?: Record<string, string>;
   /**

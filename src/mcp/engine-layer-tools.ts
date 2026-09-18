@@ -444,7 +444,7 @@ export function addLayers(args: {
   // Pull any top-level content layer the model placed fully off-canvas back
   // inside (e.g. a title computed at y:1095 on a 1080 poster) — otherwise it
   // renders nowhere and the content is silently lost.
-  const snappedOff = snapOffCanvasContent(activeLayers, spec.document.width, spec.document.height);
+  const snappedOff = snapOffCanvasContent(activeLayers, spec.document.width, spec.document.height, (spec.pages ?? []).find(p => p.layers === activeLayers)?.world ?? spec.world);
   if (snappedOff) progress.push(pInfo(`Snapped ${snappedOff} off-canvas layer(s) inside`, 'content placed past the canvas edge would have rendered nowhere'));
 
   // Give a composition flush against the top edge (first text at y:0) a real top

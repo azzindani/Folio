@@ -185,6 +185,35 @@ The svg/html motion export does not carry captions. `op:export captions:false` l
 
 ---
 
+### Continuous composition
+
+One page, one clock, many sub-sequences — the proposal and its reasoning are [COMPOSITION.md](COMPOSITION.md).
+
+```
+animation(op:storyboard, shots:[{id, at, states:{<id>: {x,y|dx,dy, scale, rotation, opacity, blur, fill.color, enter, exit, hidden, duration, delay, easing} | "hidden" | "show" | "<preset>"}, duration?, easing?, stagger_ms?, order?, hold?}], length_ms?, hold_ms?)
+animation(op:markers, markers:{name: time | null}, clear?)      named points on the scene clock
+animation(op:span, layer_id|layer_ids, in?, out?, clear?)      a layer exists only between them
+animation(op:precomp, layer_id, layer_ids?, start?, speed?, loop_ms?, duplicate:{id, start?, dx?, dy?}?, clear?)
+animation(op:link, layer_id|layer_ids, to, channels?, lag?, factor?, stagger_ms?, clear?)
+animation(op:lint)                                              the time-aware checks, read-only
+animation(op:camera, world:{x,y,width,height}|"auto"|"none", shots:[{t, target:…|"world"|{x,y,width,height}}])
+```
+
+| Piece | Where | Rule |
+|---|---|---|
+| Times | `src/mcp/engine/motion-time.ts` | ms, a marker (`hook`), a layer point (`title.in` `title.out` `card.start` `card.end`), each `±ms`. Resolved to ms when an op writes (markers label the timeline, they do not drive it). An exact marker name wins; names are matched lazily, so `cta-200` is `cta` minus 200; marker names may not end in `-digits`. Storyboard, span, sequence `at`, camera `t`, precomp `start` all take them. |
+| In/out points | `src/animation/lifespan.ts` | `in` ≤ t < `out` on the scene clock. The flipbook marks a layer outside its window `visible:false` and never samples its children; the SVG plays `visibility` as `step-end` keyframes in the same animation list as the pose (`generateKeyframeCSS(…, extra)`), only when `generateDesignAnimationCSS(…, {lifespans:true})` — the editor canvas replays its CSS on every render and must not hide layers. Windows count toward `animationDuration` / `oneShotDuration`. |
+| States | `src/mcp/engine/motion-states.ts` | A list of absolute states → one track (`origin:offset`). `x`/`y` place the top-left of the DRAWN box after its scale (pivot fractions from the anchor); presets compose onto a state (offsets add, ratios multiply). A layer that starts hidden gets an `in` at its first entrance; one that ends hidden gets an `out`. A change that starts before the previous one lands waits for it (and says so). |
+| Storyboard | `motion-storyboard-parse.ts`, `motion-storyboard-op.ts` | Shots in time order; the stagger runs over every layer a shot names, in order. The page as authored is the state before shot 1. Compiled twice: once to find where the last move lands, once holding every track to the end (`hold_ms`, default 2500). Shot ids become markers. A second call re-blocks — the storyboard owns the tracks it names (`replaced`). |
+| Lint | `src/mcp/engine/motion-lint.ts` | At each shot's rest (just before the next): text resting on text (>15% of the smaller box), text >10% outside the frame (camera included), reading time for newly shown words (240 wpm). Across the piece: idle stretches >2 s, >4 separate things moving at once (a stagger of identical tracks under one parent counts once), links to missing or still targets. Boxes come from `canvasBoxes` (`frame-cull.ts`) on the sampled frame. |
+| Precomp | `src/animation/timeline-resolve.ts` | `clock:{start, speed, loop}` on a group. Inner clocks resolve first; every descendant track, in and out point moves onto the parent clock (`t/speed`, delay `start + delay/speed`). A looping precomp cycles each one-shot child into one period (held at its first pose until its delay, cut at the period). `motion_path` stays on the scene clock; in/out inside a looping precomp apply to its first cycle only (the op says so). |
+| Link | `timeline-resolve.ts` | `link:{to, channels, lag, factor}` on a `<id>_link` wrapper. The wrapper plays the target's RESOLVED track `lag` ms later; travel is scaled from rest (0 for offsets and angles, 1 for scale and opacity, the first frame for an `origin:first` x/y). Chains resolve; cycles resolve to nothing. Live: change the target and the follower follows. |
+| One resolved tree | `resolveTimeline()` | Clocks → links → windows clipped to their ancestors. The flipbook (`layersAt`), the durations, `op:timeline` and the SVG export (`buildAnimatedSVG`) all read it, cached per page array; a tree without these features comes back as the same array. |
+| World | `motion-camera-op.ts`, `motion-camera.ts` | `world` on the page (or poster root). The camera group and its pin cover the world, so both players pivot on the world's centre; `framePose(target, canvas, padding, pivot)` puts the target's centre on the canvas centre from any pivot. `snapOffCanvasContent` leaves content inside the world alone; `append_page replace` keeps `markers` and `world`. |
+| Render cost | `src/export/frame-cull.ts` | Raster frames only: layers outside their window, faded to 0, or wholly off the (padded) canvas are left out — unless another layer clips with them. The animated SVG keeps everything. |
+
+The rescue passes know about time too: `decollideHandPlaced` never moves a layer with an in or out point — two headlines on one spot, one leaving as the other lands, is the composition.
+
 ## 4. Image processing
 
 Recipe object (`ProcessSpec`), applied in this order:
@@ -216,7 +245,7 @@ PNG only (pure-TS codec; no sharp/canvas in the `bun --smol` container). Non-PNG
 
 ## 5. What is still open (for the next session)
 
-* **Continuous composition** — one scene with layered sub-sequences instead of slide scenes: layer in/out, markers, many rest states per layer, `op:storyboard`, precomps, parenting, world camera. Proposal and build order: [COMPOSITION.md](COMPOSITION.md).
+* ~~**Continuous composition**~~ — SCAFFOLDED 2026-09-18 (all six steps, engine + MCP; §3 above). Open: the editor (timeline bars for in/out, a shot strip, the canvas hiding layers outside their window while scrubbing); the editor's own HTML export (`exporter.ts`) still generates CSS from the unresolved tree; loops inside a storyboard need their own layer; `motion_path` ignores precomp clocks.
 
 * ~~**Long raster motion**~~ — DONE. The GIF route held every frame in memory under a 180 MB budget, so a 30s scene at 1080×1350 shipped at 1fps. `gif-stream.ts` now writes each frame as it renders, merges identical frames and stores only the changed rectangle of an opaque frame; `gif-quantize.ts` cuts over a colour histogram (555ms → ~40ms per frame). `video-encode.ts` pipes the same frames into ffmpeg for mp4 (H.264, yuv420p, faststart) and webm (VP9) — no Puppeteer. `draw` on a `line` now reveals in stills too (only `d` paths were measured). Limits: clips ≤60s, gif ≤50fps, video ≤60fps.
 

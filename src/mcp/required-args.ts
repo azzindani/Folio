@@ -128,6 +128,12 @@ export const PER_OP: Record<string, Record<string, string[]>> = {
     audio: ['design_path'],
     beats: ['design_path'],
     captions: ['design_path'],
+    storyboard: ['design_path', 'shots'],
+    markers: ['design_path'],
+    span: ['design_path'],
+    precomp: ['design_path', 'layer_id'],
+    link: ['design_path'],
+    lint: ['design_path'],
   },
 };
 

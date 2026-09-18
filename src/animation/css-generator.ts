@@ -4,6 +4,7 @@ import type {
 } from './types';
 import { generateKeyframeCSS } from './keyframe-css';
 import type { Layer } from '../schema/types';
+import { windowOf, lifeCSS, type LifeWindow } from './lifespan';
 
 // ── Enter Animation CSS Keyframes ───────────────────────────
 const ENTER_KEYFRAMES: Record<EnterAnimationType, string> = {
@@ -156,25 +157,62 @@ export function morphSources(layers: Layer[] | undefined): Map<string, { from: s
   return out;
 }
 
+/** Every layer's in/out window, by id — already resolved onto the scene clock and clipped to its ancestors. */
+export function lifeWindows(layers: Layer[] | undefined): Map<string, LifeWindow> {
+  const out = new Map<string, LifeWindow>();
+  const visit = (ls: Layer[]): void => {
+    for (const l of ls) {
+      const w = windowOf(l);
+      if (w && typeof l.id === 'string') out.set(l.id, w);
+      const kids = (l as Layer & { layers?: Layer[] }).layers;
+      if (Array.isArray(kids)) visit(kids);
+    }
+  };
+  if (layers) visit(layers);
+  return out;
+}
+
 // ── Generate all animation CSS for a design ─────────────────
+/**
+ * `lifespans` plays each layer's in/out window as stepped `visibility`. Only
+ * the exports ask for it: the editor canvas replays its CSS on every render,
+ * and a layer that vanished after its out point there could not be edited.
+ */
 export function generateDesignAnimationCSS(
   layerAnimations: Map<string, AnimationSpec>,
   layers?: Layer[],
+  opts: { lifespans?: boolean } = {},
 ): string {
   const parts: string[] = [];
   const spacing = letterSpacingBases(layers);
   const morphs = morphSources(layers);
+  const lives = new Map<string, { keyframes: string; animation: string }>();
+  if (opts.lifespans) {
+    for (const [id, w] of lifeWindows(layers)) {
+      const css = lifeCSS(id, w);
+      if (css) lives.set(id, css);
+    }
+  }
 
   for (const [layerId, anim] of layerAnimations) {
     const css = generateLayerCSS(layerId, anim);
     if (css) parts.push(css);
 
-    const kf = generateKeyframeCSS(layerId, anim, spacing.get(layerId) ?? 0, morphs.get(layerId));
-    if (kf) parts.push(kf);
+    const life = lives.get(layerId);
+    const kf = generateKeyframeCSS(layerId, anim, spacing.get(layerId) ?? 0, morphs.get(layerId), life ? [life.animation] : []);
+    if (kf) {
+      parts.push(kf);
+      if (life) { parts.push(life.keyframes); lives.delete(layerId); }
+    }
 
     if (anim.sequence) {
       parts.push(generateStaggerCSS(anim.sequence));
     }
+  }
+
+  // Windows on layers with no track of their own play alone.
+  for (const [layerId, life] of lives) {
+    parts.push(`${life.keyframes}\n[data-layer-id="${layerId}"] { animation: ${life.animation}; }`);
   }
 
   return parts.join('\n\n');

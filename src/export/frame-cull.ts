@@ -86,7 +86,7 @@ function reach(layer: Layer, parent: Matrix): Box | 'none' | null {
   return { x, y, width: Math.max(...boxes.map(b => b.x + b.width)) - x, height: Math.max(...boxes.map(b => b.y + b.height)) - y };
 }
 
-/** A sampled frame as a rasteriser should see it: the page it renders, unseen clips left out. */
+/** A sampled frame as a rasteriser should see it: the page it renders, unseen layers left out. */
 export function cullFrame(spec: DesignSpec): DesignSpec {
   const w = spec.document?.width ?? 1080, h = spec.document?.height ?? 1080;
   const [page, ...rest] = spec.pages ?? [];
@@ -94,14 +94,36 @@ export function cullFrame(spec: DesignSpec): DesignSpec {
   return { ...spec, layers: cullUnseenClips(spec.layers ?? [], w, h) };
 }
 
-/** Every clipped layer that cannot reach the canvas left out — for a rasteriser, never for the animated SVG. */
-export function cullUnseenClips(layers: Layer[], width: number, height: number, parent: Matrix = IDENTITY): Layer[] {
+/** Ids another layer clips itself with — they must stay in the frame even when they draw nothing. */
+function referencedIds(layers: Layer[], into = new Set<string>()): Set<string> {
+  for (const l of layers) {
+    const o = l as unknown as Record<string, unknown>;
+    if (typeof o['clip_path_ref'] === 'string') into.add(o['clip_path_ref']);
+    if (Array.isArray(o['layers'])) referencedIds(o['layers'] as Layer[], into);
+  }
+  return into;
+}
+
+/**
+ * The frame without what cannot draw on the canvas — for a rasteriser, never
+ * for the animated SVG, where CSS can still bring a layer into view.
+ *
+ * Clips that cannot reach the canvas go first (the resvg abort, above). Then
+ * the cost: a continuous composition keeps forty layers on one page and most
+ * are hidden at any moment — outside their in/out window (the sampler marks
+ * them invisible), faded to nothing, or parked off-canvas until the camera
+ * reaches them. Rendering them draws no pixel and costs the frame its time.
+ */
+export function cullUnseenClips(layers: Layer[], width: number, height: number, parent: Matrix = IDENTITY, refs?: Set<string>): Layer[] {
+  const keep = refs ?? referencedIds(layers);
   // Slack for ink past a measured box (strokes, shadows, glyph overshoot); the abort needs far more.
   const pad = Math.max(64, Math.max(width, height) * 0.25);
   const canvas: Box = { x: -pad, y: -pad, width: width + pad * 2, height: height + pad * 2 };
   const out: Layer[] = [];
   for (const layer of layers) {
     const o = layer as unknown as Record<string, unknown>;
+    const needed = typeof o['id'] === 'string' && keep.has(o['id']);
+    if (!needed && (o['visible'] === false || (typeof o['opacity'] === 'number' && o['opacity'] <= 0.001))) continue;
     const own = transformOf(o);
     const clip = clipRectFor(layer);
     if (clip && own) {
@@ -109,11 +131,38 @@ export function cullUnseenClips(layers: Layer[], width: number, height: number, 
       // The renderer wraps a layer that already has a shape mask, so its rectangle sits in the parent's space.
       const clipBox = mapBox(o['clip_path_ref'] ? parent : mul(parent, own), clip);
       if (content === 'none' || !meets(clipBox, canvas) || (content !== null && !meets(content, canvas))) continue;
+    } else if (own && !needed) {
+      const content = reach(layer, parent);
+      if (content === 'none' || (content !== null && !meets(content, canvas))) continue;
     }
     const kids = o['layers'];
     out.push(o['type'] === 'group' && Array.isArray(kids) && own
-      ? ({ ...layer, layers: cullUnseenClips(kids as Layer[], width, height, mul(parent, own)) } as Layer)
+      ? ({ ...layer, layers: cullUnseenClips(kids as Layer[], width, height, mul(parent, own), keep) } as Layer)
       : layer);
+  }
+  return out;
+}
+
+/** A drawn layer's box on the canvas after every transform above it, and how opaque it ends up. */
+export interface CanvasBox { layer: Layer; box: Box; opacity: number }
+
+/**
+ * Every drawn leaf of a sampled frame, placed on the canvas — camera, group
+ * poses and its own pose applied — with its opacity multiplied down the tree.
+ * What the composition lint measures overlaps and edges on. Hidden layers and
+ * transforms it cannot read exactly are left out.
+ */
+export function canvasBoxes(layers: Layer[], parent: Matrix = IDENTITY, alpha = 1, out: CanvasBox[] = []): CanvasBox[] {
+  for (const layer of layers) {
+    const o = layer as unknown as Record<string, unknown>;
+    if (o['visible'] === false) continue;
+    const own = transformOf(o);
+    if (!own) continue;
+    const m = mul(parent, own);
+    const a = alpha * (typeof o['opacity'] === 'number' ? Math.max(0, Math.min(1, o['opacity'])) : 1);
+    if (Array.isArray(o['layers'])) { canvasBoxes(o['layers'] as Layer[], m, a, out); continue; }
+    const b = drawnBox(layer);
+    if (b) out.push({ layer, box: mapBox(m, b), opacity: a });
   }
   return out;
 }

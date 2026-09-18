@@ -153,6 +153,44 @@ export interface KeyframeAnimation {
   };
 }
 
+// ── Continuous composition (docs/COMPOSITION.md) ─────────────
+
+/**
+ * A precomp's local clock (After Effects' nested composition). Set on a group:
+ * every track, in/out point and child clock inside it runs on local time
+ * `(t − start) × speed`, repeating every `loop` ms of local time when set.
+ */
+export interface LayerClock {
+  /** When local time 0 falls on the parent's clock, ms. Default 0. */
+  start?: number;
+  /** Local ms per parent ms: 2 plays twice as fast. Default 1. */
+  speed?: number;
+  /** Repeat the sub-sequence every this many LOCAL ms. */
+  loop?: number;
+}
+
+/** Channels a link can follow. */
+export type LinkChannel = 'x' | 'y' | 'rotation' | 'scale' | 'scale_x' | 'scale_y' | 'skew_x' | 'skew_y' | 'opacity' | 'blur';
+
+/**
+ * Follow another layer's motion (After Effects' parenting + a delayed
+ * expression): the layer plays the target's track `lag` ms later, each
+ * followed channel's travel multiplied by `factor`. Set on a wrapper group
+ * (`<id>_link`) so the layer's own track keeps playing inside it.
+ */
+export interface LayerLink {
+  to: string;
+  channels?: LinkChannel[];
+  lag?: number;
+  factor?: number;
+}
+
+/** Named points on a scene's clock, ms — what relative times ("hook+200") refer to. */
+export type TimeMarkers = Record<string, number>;
+
+/** The layout area a camera travels over, in canvas coordinates; may be larger than the canvas. */
+export interface WorldBox { x: number; y: number; width: number; height: number }
+
 // ── Stagger Sequence ────────────────────────────────────────
 export interface StaggerItem {
   ref: string;

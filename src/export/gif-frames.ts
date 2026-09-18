@@ -19,6 +19,8 @@ import { countText } from '../animation/count';
 import { morphPairCached, morphPathAt } from '../engine/path-ops';
 import { drawnBox } from './frame-geometry';
 import { poseTransform, FRAME_POSE, REST_POSE, type FramePose } from './frame-pose';
+import { resolveTimeline } from '../animation/timeline-resolve';
+import { windowOf, aliveAt, windowEnd } from '../animation/lifespan';
 
 const fmt = (n: number): string => String(Number(n.toFixed(3)));
 
@@ -34,6 +36,9 @@ type AnimatedLayer = Layer & { animation?: AnimationSpec; layers?: Layer[] };
 export function animationDuration(layers: Layer[]): number {
   let total = 0;
   const visit = (l: AnimatedLayer): void => {
+    // A layer that arrives at 12 s must be on screen before the clip ends.
+    const w = windowOf(l);
+    if (w) total = Math.max(total, windowEnd(w));
     const pb = l.animation?.playback;
     if (pb?.duration) {
       // An 'alternate' loop only returns to its start after TWO passes. Export
@@ -51,7 +56,8 @@ export function animationDuration(layers: Layer[]): number {
     if (mp?.path) total = Math.max(total, mp.duration ?? 2000);
     if (Array.isArray(l.layers)) for (const c of l.layers) visit(c as AnimatedLayer);
   };
-  for (const l of layers) visit(l as AnimatedLayer);
+  // Precomp clocks and links change when tracks run: measure the resolved tree.
+  for (const l of resolveTimeline(layers)) visit(l as AnimatedLayer);
   return total;
 }
 
@@ -66,6 +72,8 @@ export function animationDuration(layers: Layer[]): number {
 export function oneShotDuration(layers: Layer[]): number {
   let total = 0;
   const visit = (l: AnimatedLayer): void => {
+    const w = windowOf(l);
+    if (w) total = Math.max(total, windowEnd(w));
     const pb = l.animation?.playback;
     const endless = pb?.loop === true && !(pb.iterations && pb.iterations > 0);
     if (pb?.duration && !endless) total = Math.max(total, (pb.delay ?? 0) + pb.duration * (pb.loop && pb.iterations ? pb.iterations : 1));
@@ -73,7 +81,7 @@ export function oneShotDuration(layers: Layer[]): number {
     if (mp?.path && !mp.loop) total = Math.max(total, mp.duration ?? 2000);
     if (Array.isArray(l.layers)) for (const c of l.layers) visit(c as AnimatedLayer);
   };
-  for (const l of layers) visit(l as AnimatedLayer);
+  for (const l of resolveTimeline(layers)) visit(l as AnimatedLayer);
   return total;
 }
 
@@ -341,11 +349,25 @@ function applyValues(layer: AnimatedLayer, t: number): Layer {
  * a caption fell apart in every GIF.
  */
 export function layersAt(layers: Layer[], t: number): Layer[] {
+  // Clocks, links and windows first — once per page, cached — so the flipbook
+  // plays exactly the tracks the CSS route is generated from.
+  return sampleLayers(resolveTimeline(layers), t);
+}
+
+function sampleLayers(layers: Layer[], t: number): Layer[] {
   return layers.map(l => {
     const layer = l as AnimatedLayer;
+    // Outside its in/out window the layer is not there. It stays in the tree,
+    // hidden, so readouts keep their place; the raster cull drops it, and its
+    // children are never sampled.
+    if (!aliveAt(layer, t)) {
+      const { animation: _a, ...rest } = layer;
+      void _a;
+      return { ...rest, visible: false } as Layer;
+    }
     const resolved = applyMotionPath(applyValues(layer, t), t) as AnimatedLayer;
     if (!Array.isArray(layer.layers)) return resolved;
-    return { ...resolved, layers: layersAt(layer.layers, t) } as Layer;
+    return { ...resolved, layers: sampleLayers(layer.layers, t) } as Layer;
   });
 }
 

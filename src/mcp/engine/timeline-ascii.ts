@@ -9,7 +9,8 @@
  */
 
 import type { Layer } from '../../schema/types';
-import type { AnimationSpec } from '../../animation/types';
+import type { AnimationSpec, TimeMarkers } from '../../animation/types';
+import { windowOf } from '../../animation/lifespan';
 
 export interface SceneTrack {
   layer_id: string;
@@ -61,14 +62,29 @@ export function sceneTracks(layers: Layer[]): SceneTrack[] {
   return out;
 }
 
+/** Every layer that exists for only part of the scene, and when. */
+export function lifeWindowList(layers: Layer[]): Array<{ layer_id: string; in: number; out?: number }> {
+  const out: Array<{ layer_id: string; in: number; out?: number }> = [];
+  const visit = (ls: Layer[]): void => {
+    for (const l of ls) {
+      const w = windowOf(l);
+      if (w) out.push({ layer_id: l.id, in: Math.round(w.in), ...(Number.isFinite(w.out) ? { out: Math.round(w.out) } : {}) });
+      const kids = (l as Layer & { layers?: Layer[] }).layers;
+      if (Array.isArray(kids)) visit(kids);
+    }
+  };
+  visit(layers);
+  return out;
+}
+
 /** Longest one-shot end, or the longest loop cycle when nothing is one-shot. */
 export function sceneLength(tracks: SceneTrack[]): number {
   return tracks.reduce((m, t) => Math.max(m, t.end_ms), 0);
 }
 
-export function renderSceneASCII(layers: Layer[], tracks: SceneTrack[], width = 56): string {
+export function renderSceneASCII(layers: Layer[], tracks: SceneTrack[], width = 56, markers: TimeMarkers = {}): string {
   if (tracks.length === 0) return '(no animated layers)';
-  const total = Math.max(1, sceneLength(tracks));
+  const total = Math.max(1, sceneLength(tracks), ...Object.values(markers));
   const col = (ms: number): number => Math.min(width - 1, Math.max(0, Math.round((ms / total) * (width - 1))));
 
   // Ruler: tick every ~quarter, labelled in ms.
@@ -80,6 +96,17 @@ export function renderSceneASCII(layers: Layer[], tracks: SceneTrack[], width = 
     for (let i = 0; i < label.length; i++) ruler[c + i] = label[i];
   }
   const lines: string[] = [`Scene ${total}ms · ${tracks.length} track${tracks.length === 1 ? '' : 's'}`, `${''.padEnd(14)}${ruler.join('')}`];
+  // Markers under the ruler: ▼ at each, its name after it where there is room.
+  const marks = Object.entries(markers).sort((a, b) => a[1] - b[1]);
+  if (marks.length) {
+    const row = Array<string>(width).fill(' ');
+    for (const [name, ms] of marks) {
+      const c = col(ms);
+      row[c] = '▼';
+      for (let i = 0; i < name.length && c + 1 + i < width && row[c + 1 + i] === ' '; i++) row[c + 1 + i] = name[i] ?? ' ';
+    }
+    lines.push(`${'markers'.padEnd(14)}${row.join('')}`);
+  }
 
   const frameTimes = (id: string): number[] => {
     let found: number[] = [];
