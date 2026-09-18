@@ -209,3 +209,30 @@ describe('CanvasManager — ruler guide inside viewport and no-design guide rend
     void mgr;
   });
 });
+
+describe('CanvasManager — the design\'s animation CSS', () => {
+  const pulse = { keyframes: [{ t: 0, scale: 1 }, { t: 600, scale: 1.2 }], playback: { duration: 600, loop: true } };
+  const cssOf = (c: HTMLElement): string | null => c.querySelector('style[data-folio-animations]')?.textContent ?? null;
+  const count = (s: string, sub: string): number => s.split(sub).length - 1;
+
+  it('reaches only layers inside the SVG — panel rows carry data-layer-id too', () => {
+    const { state, container } = setup([makeRect()]);
+    state.set('animations', { r1: pulse } as never);
+    state.set('design', makeDesign([makeRect()]), false);
+    const css = cssOf(container) ?? '';
+    expect(css).toContain('svg [data-layer-id="r1"]');
+    expect(count(css, '[data-layer-id=')).toBe(count(css, 'svg [data-layer-id=') + count(css, 'path[data-layer-id='));
+  });
+
+  it('is left out while the player holds a pose, and back once it lets go', () => {
+    const { state, manager, container } = setup([makeRect()]);
+    let posed = true;
+    manager.setPosedSource(() => posed);
+    state.set('animations', { r1: pulse } as never);
+    state.set('design', makeDesign([makeRect()]), false);
+    expect(cssOf(container)).toBeNull();
+    posed = false;
+    state.set('design', makeDesign([makeRect()]), false);
+    expect(cssOf(container)).not.toBeNull();
+  });
+});
