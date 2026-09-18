@@ -22,7 +22,51 @@ A 30 s explainer, product promo or kinetic-type piece is **one continuous compos
 
 Target: **one continuous world, structured time** — not 200 tracks on one flat clock.
 
-## 2. Have vs missing
+## 2. Positioning — declarative, 2D, built for the loop
+
+HTML/CSS video frameworks are strong but **hard for a model to iterate on in a loop**:
+
+* The model writes a **program**; each pass rewrites code instead of patching values.
+* **Positions emerge from CSS layout**, so the model cannot predict where things land.
+* The only feedback is **render → look** — slow, needs vision, and not always repeatable.
+
+Folio's shape is the advantage, not a gap:
+
+| Folio has | Why it matters in a create → check → fix loop |
+|---|---|
+| Declarative YAML | small patches, not rewrites |
+| Feedback as numbers — `op:frame` poses, `op:timeline` Gantt | a model without vision still iterates |
+| One renderer for editor, SVG and raster frames | repeatable: what was checked is what ships |
+| Rescue passes (`engine-finalize-*`) | blind mistakes are fixed before they render |
+| One canvas for poster, deck, dashboard, diagram, report | video is **time on top** of every 2D format already built |
+
+### Leverage points
+
+1. **Any design is shot 1.** A finished poster, carousel page or dashboard becomes the
+   first state of `op:storyboard`; the model writes only what changes.
+2. **Data-driven motion.** Charts and report datasets animate from their own values —
+   bars grow to the value, counters land on the figure, lines draw. Hard for AI in HTML
+   tools, natural here.
+3. **Diagrams build in the right order.** Build order is computed from the graph's
+   edges (dependency order) — engine math, not a guess by the model.
+4. **Batch.** One template × N content variations → N videos (use case 5).
+5. **Time-aware lint is the moat.** Overlap, idle-gap and reading-time checks let the
+   model improve a piece over several passes without watching it.
+
+### Scope: 2D only, by design
+
+Folio has been 2D since day 1 and stays 2D. The 2D tools — layers, keyframes, camera,
+morph, mattes, text animator — already cover motion graphics; 3D would add a scene
+graph, lighting and projection the model would have to reason about, for little gain in
+this kind of work. Depth is **suggested in 2D** where a piece needs it: `skew`,
+`scale_x` flips, parallax (layers moving at different speeds under one camera move),
+blur for depth of field.
+
+The trade-off is accepted: no particles, true 3D or shaders from open code. When an
+effect earns a place, it arrives as a **declarative primitive the engine computes**,
+never as an escape hatch into raw code — the payload stays simple enough to iterate on.
+
+## 3. Have vs missing
 
 Checked against the source (2026-09-18): no in/out points, markers, parenting or local
 clocks exist anywhere in `src/animation`, `src/schema` or the motion ops.
@@ -36,7 +80,7 @@ clocks exist anywhere in `src/animation`, `src/schema` or the motion ops.
 | `op:sequence` timing: absolute `at` or after the previous step | **Markers** — named time points; steps anchor relatively (`at: "hero.in+200"`) |
 | `op:camera` frames a target on the canvas | **World larger than the frame** — the camera travels across a layout bigger than the canvas; replaces page transitions |
 
-## 3. Protocol — state-based storyboard
+## 4. Protocol — state-based storyboard
 
 Follows CLAUDE.md §0.4: the **model designs**, the **engine does the math**.
 
@@ -66,7 +110,7 @@ shots:
   * attention budget — too many things moving at once
   * reading time per shot (the 240 wpm rule, per shot instead of per page)
 
-## 4. Order
+## 5. Order
 
 | # | Step | Gives |
 |---|---|---|
