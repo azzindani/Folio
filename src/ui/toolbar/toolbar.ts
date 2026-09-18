@@ -22,28 +22,43 @@ export class ToolbarManager {
     this.state.subscribe(this.onStateChange.bind(this));
     // Motion is invisible in the chrome until a design HAS some — a play button
     // that does nothing on most designs is worse than no button.
-    this.app.motionPlayer?.subscribe(p => {
-      const btn = this.container.querySelector<HTMLButtonElement>('.toolbar-play');
-      if (!btn) return;
-      btn.hidden = !p.hasMotion;
-      btn.innerHTML = p.playing ? '&#10073;&#10073; Pause' : '&#9654; Play';
-      btn.title = p.playing
+    this.app.motionPlayer?.subscribe(() => this.syncPlay());
+    this.state.subscribe(() => this.syncPlay());
+  }
+
+  /**
+   * ONE play button, because there is one thing a person means by "play": show
+   * me the piece. Two buttons (Play / Play all) sitting side by side made the
+   * reader choose between two words for the same verb, and a third ▶ in the
+   * status bar made it three.
+   *
+   * What it plays follows the design, not the button: a deck (two pages or
+   * more) plays every page as one piece on the scene stage; a single page plays
+   * its own keyframes on the canvas. When neither exists there is nothing to
+   * play, and the button is not there.
+   */
+  private syncPlay(): void {
+    const btn = this.container.querySelector<HTMLButtonElement>('.toolbar-play');
+    if (!btn) return;
+    const deck = playsAsScenes(this.state.get().design);
+    const player = this.app.motionPlayer;
+    const playing = !deck && (player?.playing ?? false);
+    btn.hidden = !deck && !(player?.hasMotion() ?? false);
+    btn.dataset['scope'] = deck ? 'scenes' : 'motion';
+    btn.innerHTML = playing
+      ? '&#10073;&#10073;<span>Pause</span>'
+      : '&#9654;<span>Play</span>';
+    btn.title = deck
+      ? 'Play every page as one piece, transitions included (Space)'
+      : playing
         ? 'Pause (Space)'
-        : `Play the ${Math.round(p.duration)}ms animation on the canvas (Space)`;
-    });
-    this.state.subscribe(() => {
-      const btn = this.container.querySelector<HTMLButtonElement>('.toolbar-play');
-      if (btn) btn.hidden = !this.app.motionPlayer?.hasMotion();
-      // Play all belongs to a deck: two pages or more make a piece with scenes.
-      const all = this.container.querySelector<HTMLButtonElement>('.toolbar-play-all');
-      if (all) all.hidden = !playsAsScenes(this.state.get().design);
-    });
+        : `Play the ${Math.round(player?.duration ?? 0)}ms animation on the canvas (Space)`;
   }
 
   private build(): void {
     this.container.innerHTML = `
-      <div class="toolbar-left" style="display:flex;align-items:center;gap:12px;flex:1 1 0;min-width:0;overflow:hidden">
-        <span style="display:flex;align-items:center;gap:6px;user-select:none;flex-shrink:0">
+      <div class="toolbar-left">
+        <span class="toolbar-mark">
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style="flex-shrink:0">
             <rect width="18" height="18" rx="4" fill="var(--color-primary)"/>
             <path d="M4 4h10v2.5H6.5v2H9v2.5H6.5V14H4V4z" fill="white"/>
@@ -54,18 +69,16 @@ export class ToolbarManager {
         <span class="toolbar-project-name" style="color:var(--color-text-muted);font-size:13px">Untitled</span>
       </div>
 
-      <div class="toolbar-center" style="display:flex;align-items:center;gap:8px">
+      <div class="toolbar-center">
         <button class="btn btn-sm" data-action="new-design"
-          title="New blank design (Ctrl+Alt+N)" aria-label="New blank design"
-          style="display:flex;align-items:center;gap:5px">
+          title="New blank design (Ctrl+Alt+N)" aria-label="New blank design">
           <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true">
             <path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
           </svg>
           <span>New</span>
         </button>
         <button class="btn btn-sm" data-action="add-page"
-          title="Add a page (turns this into a multi-page design)" aria-label="Add page"
-          style="display:flex;align-items:center;gap:5px">
+          title="Add a page (turns this into a multi-page design)" aria-label="Add page">
           <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true">
             <rect x="2.5" y="1.5" width="7" height="9" rx="0.6" stroke="currentColor" stroke-width="1.1"/>
             <path d="M10.5 6.5h2M11.5 5.5v2" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/>
@@ -76,8 +89,7 @@ export class ToolbarManager {
         <button class="btn btn-sm toolbar-catalog-btn"
           data-action="catalog"
           title="Open Folio Catalog — browse templates, themes, reports (Ctrl+Shift+C)"
-          aria-label="Open Folio Catalog"
-          style="display:flex;align-items:center;gap:6px">
+          aria-label="Open Folio Catalog">
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
             <rect x="1" y="2" width="5" height="10" rx="0.5" stroke="currentColor" stroke-width="1.2"/>
             <rect x="8" y="2" width="5" height="10" rx="0.5" stroke="currentColor" stroke-width="1.2"/>
@@ -92,7 +104,7 @@ export class ToolbarManager {
         </div>
       </div>
 
-      <div class="toolbar-right" style="display:flex;align-items:center;gap:8px">
+      <div class="toolbar-right">
         <select class="toolbar-theme-select" title="Design theme"
           style="background:var(--color-surface-2);border:1px solid var(--color-border);
                  border-radius:var(--radius-sm);color:var(--color-text);font-size:12px;
@@ -101,10 +113,8 @@ export class ToolbarManager {
             `<option value="${id}">${spec.name ?? id}</option>`
           ).join('')}
         </select>
-        <button class="btn btn-sm toolbar-play" data-action="play-motion" hidden
-          title="Play the animation on the canvas (Space)">&#9654; Play</button>
-        <button class="btn btn-sm toolbar-play-all" data-action="play-scenes" hidden
-          title="Play every page as one piece, transitions included (Shift+Space)">&#9654; Play all</button>
+        <button class="btn btn-sm toolbar-play" data-action="play" hidden
+          title="Play (Space)">&#9654;<span>Play</span></button>
         <button class="btn btn-sm" data-action="undo" title="Undo (Ctrl+Z)">&#8617;</button>
         <button class="btn btn-sm" data-action="redo" title="Redo (Ctrl+Shift+Z)">&#8618;</button>
         <div class="export-group">
@@ -154,8 +164,7 @@ export class ToolbarManager {
     }
 
     const action = target.closest<HTMLElement>('[data-action]')?.dataset.action;
-    if (action === 'play-motion') { this.app.motionPlayer?.toggle(); return; }
-    if (action === 'play-scenes') { void this.app.openSceneStage({ play: true }); return; }
+    if (action === 'play') { this.play(); return; }
     if (action === 'undo') { this.state.undo(); return; }
     if (action === 'redo') { this.state.redo(); return; }
     if (action === 'catalog') { this.app.openCatalog(); return; }
@@ -202,6 +211,9 @@ export class ToolbarManager {
       this.triggerExport(format as 'svg' | 'png' | 'pdf' | 'html' | 'html-report', scale);
     }
   }
+
+  /** Play the whole piece: the deck on the stage, a lone page on the canvas. */
+  play(): void { this.app.playPiece(); }
 
   // Open/closed is a class, not an inline `display` — inline styles cannot be
   // overridden by a media query, and on a phone this menu has to stop being a

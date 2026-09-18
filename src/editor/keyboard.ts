@@ -104,10 +104,13 @@ export class KeyboardManager {
       // e.key is uppercase when Shift is held without Ctrl, hence 'H' / 'V'.
       { key: 'H', shift: true, action: () => this.flipSelectedH(), description: 'Flip selection horizontally' },
       { key: 'V', shift: true, action: () => this.flipSelectedV(), description: 'Flip selection vertically' },
-      // Motion — Space plays the scene on the canvas, the way every editor does
-      // it. No-op on a design with no animation, so it never steals the key.
-      { key: ' ', action: () => this.app.motionPlayer?.toggle(), description: 'Play / pause the animation' },
-      // Shift+Space plays every page as one piece, transitions included — the file the video export writes.
+      // Motion — Space plays THE PIECE, exactly as the Play button does: a deck
+      // on the scene stage, a lone page on the canvas (app.playPiece is the one
+      // implementation of that rule). No-op on a design with no animation, so
+      // it never steals the key.
+      { key: ' ', action: () => this.app.playPiece(), description: 'Play / pause' },
+      // Shift+Space forces the scene stage even on a single page — the piece the
+      // video export writes, previewed before rendering it.
       { key: ' ', shift: true, action: () => { void this.app.openSceneStage({ play: true }); }, description: 'Play all scenes' },
       // Presentation
       { key: 'F5', action: () => this.app.presentation?.open(), description: 'Start presentation (F5)' },

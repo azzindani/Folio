@@ -43,7 +43,8 @@ export function labelled(text: string, field: HTMLElement): HTMLElement {
 }
 
 export function buildTransport(state: StateManager, player: ScenePlayer, onClose: () => void): Transport {
-  const root = el('div', 'flex:0 0 auto;display:flex;flex-direction:column;gap:10px;padding:12px 24px 18px;background:#141416;color:#EDEDED;font:13px system-ui,sans-serif;border-top:1px solid #2A2A2E;');
+  const narrow = window.innerWidth < 768;
+  const root = el('div', `flex:0 0 auto;display:flex;flex-direction:column;gap:${narrow ? 8 : 10}px;padding:${narrow ? '10px 12px 14px' : '12px 24px 18px'};background:#141416;color:#EDEDED;font:13px system-ui,sans-serif;border-top:1px solid #2A2A2E;padding-bottom:${narrow ? 'calc(14px + env(safe-area-inset-bottom, 0px))' : '18px'};`);
   const row = el('div', 'display:flex;align-items:center;gap:14px;');
   const playBtn = el('button', BTN, '▶');
   playBtn.className = 'scene-stage-play';
@@ -71,6 +72,8 @@ export function buildTransport(state: StateManager, player: ScenePlayer, onClose
     strip.replaceChildren();
     const plan = player.plan();
     const pages = state.get().design?.pages ?? [];
+    const count = plan?.scenes.length ?? 1;
+    const roomForLabels = (strip.clientWidth || window.innerWidth) / Math.max(1, count) >= 56;
     for (const sc of plan?.scenes ?? []) {
       const seg = el('div', `position:relative;flex:${sc.length_ms} 1 0;min-width:0;border-left:1px solid #0B0B0C;display:flex;align-items:center;padding:0 8px;overflow:hidden;`);
       seg.className = 'scene-stage-seg';
@@ -80,7 +83,13 @@ export function buildTransport(state: StateManager, player: ScenePlayer, onClose
         lead.title = `enters with ${sc.transition.type}, ${sc.transition.duration_ms}ms`;
         seg.appendChild(lead);
       }
-      seg.appendChild(el('span', 'position:relative;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#D6D6D6;', `${sc.index + 1} ${pages[sc.index]?.label ?? sc.page_id}`));
+      // A label needs room to be a label. Seven scenes across a 250px phone
+      // strip gave each one ~30px, which ellipsised every name down to a single
+      // punctuation mark — a row of ":", "!" and "(" that read as corruption.
+      // The inspector underneath names the current scene in full anyway.
+      if (roomForLabels) {
+        seg.appendChild(el('span', 'position:relative;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#D6D6D6;', `${sc.index + 1} ${pages[sc.index]?.label ?? sc.page_id}`));
+      }
       strip.appendChild(seg);
     }
     strip.appendChild(head);

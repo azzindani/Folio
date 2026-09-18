@@ -10,6 +10,10 @@
 
 export const TOUCH_LAYOUT_MQ = '(max-width: 1023px) and (pointer: coarse)';
 export const PHONE_LAYOUT_MQ = '(max-width: 767px) and (pointer: coarse)';
+/** A touch TABLET — wide enough to keep a top toolbar, too narrow to hold it
+ *  all. Deliberately disjoint from PHONE_LAYOUT_MQ: the phone's controls belong
+ *  to the bottom dock, and two modules relocating the same nodes is a bug. */
+export const TABLET_LAYOUT_MQ = '(min-width: 768px) and (max-width: 1023px) and (pointer: coarse)';
 
 /** True when the viewport AND the input device call for the touch layout. */
 export function isTouchLayout(): boolean {

@@ -8,7 +8,7 @@ import type { TextLayer, Layer } from '../schema/types';
 import { surfaceTrails, trailsSVG } from './motion-trails';
 import { sceneDuration } from '../ui/panels/timeline-panel';
 import { composeTheme } from '../styles/compose';
-import { RULER_SIZE, measureGaps, drawArrowLine, drawLabel } from './canvas-draw';
+import { measureGaps, drawArrowLine, drawLabel } from './canvas-draw';
 import { CanvasInteractions } from './canvas-interactions';
 
 export class CanvasManager extends CanvasInteractions {
@@ -80,13 +80,13 @@ export class CanvasManager extends CanvasInteractions {
 
     // Convert SVG coords → screen px within container
     const toScreen = (sx: number, sy: number) => ({
-      x: sx * zoom + panX + RULER_SIZE,
-      y: sy * zoom + panY + RULER_SIZE,
+      x: sx * zoom + panX + this.rulerOffset(),
+      y: sy * zoom + panY + this.rulerOffset(),
     });
 
     // Find hovered element
-    const mx = e.clientX - containerRect.left - RULER_SIZE;
-    const my = e.clientY - containerRect.top  - RULER_SIZE;
+    const mx = e.clientX - containerRect.left - this.rulerOffset();
+    const my = e.clientY - containerRect.top  - this.rulerOffset();
     // Convert to design coords
     const dx = (mx - panX) / zoom;
     const dy = (my - panY) / zoom;

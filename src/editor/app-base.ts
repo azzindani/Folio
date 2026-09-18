@@ -3,6 +3,7 @@
 // this with the constructor, init(), and design load/export/theme operations. Verbatim.
 import { StateManager } from './state';
 import { chromeIcon } from './chrome-icons';
+import { playsAsScenes } from './scene-deck';
 import { applyPinConstraints } from './pin-constraints';
 import { CanvasManager } from './canvas';
 import { PayloadEditor } from './payload-editor';
@@ -42,7 +43,17 @@ import type { SceneStage } from '../ui/scene-stage/scene-stage';
 import { ColorSchemePanelManager } from '../ui/panels/color-scheme-panel';
 import type { AssetPanelManager } from '../ui/panels/asset-panel';
 import { wireMobileSheets } from './mobile-sheet';
-import { sc } from '../utils/shortcut';
+import { shellMarkup } from './app-shell';
+
+/** Find a layer by id at any depth — groups nest, and the selection is by id. */
+function findLayerDeep<T extends { id: string; layers?: T[] }>(layers: T[], id: string): T | null {
+  for (const l of layers) {
+    if (l.id === id) return l;
+    const hit = l.layers ? findLayerDeep(l.layers, id) : null;
+    if (hit) return hit;
+  }
+  return null;
+}
 
 export abstract class EditorAppBase {
   protected container!: HTMLElement;
@@ -93,6 +104,18 @@ export abstract class EditorAppBase {
     }
     this.sceneStageInstance.open(opts);
   }
+  /**
+   * Play the piece — the one verb behind every play affordance in the editor.
+   *
+   * A deck (two pages or more) plays every page on the scene stage, transitions
+   * and sound included; a single page plays its own keyframes on the canvas.
+   * The toolbar button, Space and the command palette all land here, so none of
+   * them can drift into meaning something slightly different.
+   */
+  playPiece(): void {
+    if (playsAsScenes(this.state.get().design)) { void this.openSceneStage({ play: true }); return; }
+    this.motionPlayer?.toggle();
+  }
   protected colorSchemePanel!: ColorSchemePanelManager;
   protected assetPanel?: AssetPanelManager;
   /** Project of the open server-backed design, so the asset manager opens on
@@ -100,162 +123,29 @@ export abstract class EditorAppBase {
   protected activeProject: string | null = null;
 
   protected buildLayout(): void {
-    this.container.innerHTML = `
-      <div class="toolbar"></div>
-
-      <div class="formula-bar">
-        <div class="formula-bar-resize-handle" data-resize="formula"></div>
-        <span class="fb-layer-id">—</span>
-        <span class="fb-prefix">ƒ=</span>
-        <input class="fb-input" type="text" placeholder="Select a layer to inspect…" spellcheck="false">
-      </div>
-
-      <div class="activity-bar">
-        <button class="act-btn active" data-panel="layers" title="Layers (${sc('⌘⇧L')})">${chromeIcon('layers')}</button>
-        <button class="act-btn" data-panel="files" title="Files (${sc('⌘⇧E')})">${chromeIcon('folder')}</button>
-        <button class="act-btn" data-panel="project-assets" title="Project assets">${chromeIcon('image')}</button>
-        <button class="act-btn" data-panel="components" title="Components (${sc('⌘⇧K')})">${chromeIcon('component')}</button>
-        <button class="act-btn" data-panel="icons" title="Icons (${sc('⌘⇧I')})">${chromeIcon('star')}</button>
-        <button class="act-btn" data-panel="find" title="Find &amp; Replace (${sc('⌘H')})">${chromeIcon('search')}</button>
-        <div class="act-spacer"></div>
-        <button class="act-btn" id="theme-toggle" title="Toggle light/dark theme">${chromeIcon('moon')}</button>
-      </div>
-
-      <div class="mob-backdrop"></div>
-
-      <nav class="mobile-nav" aria-label="Mobile navigation">
-        <button class="mob-nav-btn" data-mob="layers" title="Layers">${chromeIcon('layers', 18)}<span>Layers</span></button>
-        <button class="mob-nav-btn" data-mob="props" title="Properties">${chromeIcon('sliders', 18)}<span>Props</span></button>
-        <button class="mob-nav-btn" data-mob="tools" title="Drawing tools">${chromeIcon('component', 18)}<span>Tools</span></button>
-        <button class="mob-nav-btn" data-mob="panels" title="All panels">${chromeIcon('frame', 18)}<span>Panels</span></button>
-        <button class="mob-nav-btn" data-mob="cmd" title="Command palette">${chromeIcon('search', 18)}<span>Find</span></button>
-      </nav>
-
-      <div class="left-panel">
-        <div class="mob-sheet-grip" aria-hidden="true"></div>
-        <div class="left-panel-view active" data-panel="layers">
-          <div class="tools-panel"></div>
-          <div class="layer-panel">
-            <div class="panel-header">Layers</div>
-          </div>
-        </div>
-
-        <div class="left-panel-view" data-panel="files">
-          <div class="file-tree">
-            <div class="panel-header">Files</div>
-            <div class="file-tree-content"></div>
-          </div>
-          <div class="asset-panel">
-            <div class="asset-panel-header">
-              <span class="asset-panel-title">Assets</span>
-              <button class="asset-open-btn" id="open-folder-btn" title="Open project folder">${chromeIcon('folder', 13)} Open Folder</button>
-            </div>
-            <div class="asset-grid" id="asset-grid"></div>
-          </div>
-        </div>
-
-        <div class="left-panel-view" data-panel="project-assets">
-          <div class="panel-header">Project assets</div>
-          <div class="project-assets-content" style="flex:1;min-height:0;overflow:hidden"></div>
-        </div>
-
-        <div class="left-panel-view" data-panel="components">
-          <div class="comp-library-content" style="height:100%;overflow-y:auto"></div>
-        </div>
-
-        <div class="left-panel-view" data-panel="icons">
-          <div class="panel-header">Icons</div>
-          <div class="icon-browser-content" style="flex:1;overflow:hidden;display:flex;flex-direction:column"></div>
-        </div>
-
-        <div class="left-panel-view" data-panel="find">
-          <div class="find-replace-content" style="flex:1;overflow:hidden;height:100%"></div>
-        </div>
-
-        <div class="left-panel-resize-handle" data-resize="left"></div>
-      </div>
-
-      <div class="canvas-section" style="position:relative">
-        <div class="tab-bar-container"></div>
-        <div class="viewport-area"></div>
-        <div class="page-strip-section" id="page-strip-section" style="display:none">
-          <div class="page-strip-resize-handle" data-resize="page-strip"></div>
-          <div class="page-strip-content"></div>
-        </div>
-      </div>
-
-      <div class="properties-panel">
-        <div class="mob-sheet-grip" aria-hidden="true"></div>
-        <div class="right-panel-resize-handle" data-resize="right"></div>
-        <div class="rpanel-body">
-          <div class="tab-pane active" data-tab="properties">
-            <div class="properties-content"></div>
-          </div>
-          <div class="tab-pane tab-pane--scroll" data-tab="data">
-            <div class="data-content" style="height:100%;overflow-y:auto"></div>
-          </div>
-          <div class="tab-pane tab-pane--scroll" data-tab="scripts">
-            <div class="scripts-content" style="height:100%;overflow-y:auto"></div>
-          </div>
-          <div class="tab-pane tab-pane--flex" data-tab="colors">
-            <div class="color-palette-content" style="flex:1;overflow-y:auto"></div>
-            <div class="color-scheme-content" style="border-top:1px solid var(--color-border)">
-              <div class="panel-header" style="padding:6px 8px">Color Schemes</div>
-            </div>
-          </div>
-          <div class="tab-pane" data-tab="problems">
-            <div class="problems-content"></div>
-          </div>
-          <div class="tab-pane tab-pane--scroll" data-tab="animate">
-            <div class="animate-content" style="height:100%"></div>
-          </div>
-          <div class="tab-pane tab-pane--flex" data-tab="timeline">
-            <div class="timeline-content" style="flex:1;overflow:hidden"></div>
-          </div>
-          <div class="tab-pane tab-pane--full" data-tab="a11y">
-            <div class="a11y-content" style="height:100%"></div>
-          </div>
-        </div>
-        <div class="minimap-container"></div>
-      </div>
-
-      <div class="r-activity-bar" role="tablist" aria-label="Right panel tabs">
-        <button class="act-btn rpanel-tab active" data-tab="properties" title="Properties" aria-label="Properties">${chromeIcon('sliders')}</button>
-        <button class="act-btn rpanel-tab" data-tab="data" title="Data" aria-label="Data">${chromeIcon('table')}</button>
-        <button class="act-btn rpanel-tab" data-tab="scripts" title="Scripts" aria-label="Scripts">${chromeIcon('code')}</button>
-        <button class="act-btn rpanel-tab" data-tab="colors" title="Colors" aria-label="Colors">${chromeIcon('palette')}</button>
-        <button class="act-btn rpanel-tab" data-tab="animate" title="Animate" aria-label="Animate">${chromeIcon('zap')}</button>
-        <button class="act-btn rpanel-tab" data-tab="timeline" title="Timeline" aria-label="Timeline">${chromeIcon('clock')}</button>
-        <button class="act-btn rpanel-tab" data-tab="problems" title="Issues" aria-label="Issues">${chromeIcon('alert')}</button>
-        <button class="act-btn rpanel-tab" data-tab="a11y" title="Accessibility" aria-label="Accessibility">${chromeIcon('a11y')}</button>
-      </div>
-
-      <div class="status-bar">
-        <div class="status-pages"></div>
-        <div class="status-sep"></div>
-        <button class="sb-btn" id="zoom-out" title="Zoom out (−)">−</button>
-        <span class="sb-zoom-val toolbar-zoom">100%</span>
-        <button class="sb-btn" id="zoom-in" title="Zoom in (+)">+</button>
-        <button class="sb-btn" id="zoom-fit" title="Fit to screen (${sc('⌘0')})">&#8862;</button>
-        <div class="status-sep"></div>
-        <button class="sb-btn" id="toggle-grid" title="Grid (G)">&#8862;</button>
-        <button class="sb-btn" id="toggle-snap" title="Snap">&#8859;</button>
-        <div class="status-sep"></div>
-        <span class="sb-ruler-unit" id="sb-ruler-unit" title="Click to change ruler units">px</span>
-        <div class="status-sep"></div>
-        <button class="sb-btn" id="canvas-resize" title="Resize canvas">⊞</button>
-        <div class="status-sep"></div>
-        <button class="sb-btn" id="status-preview" title="Preview (F5)">&#9654;</button>
-        <div class="status-spacer"></div>
-        <span class="sb-info" id="sb-info"></span>
-      </div>
-    `;
-
+    this.container.innerHTML = shellMarkup();
     this.wireActivityBar();
     this.wireRpanelTabs();
     this.wireThemeToggle();
     this.wireResizers();
     this.wireMobileNav();
+    this.wireModeChrome();
+  }
+
+  /**
+   * Publish the view mode on the shell so CSS can dress the whole editor for it.
+   *
+   * Payload and Preview are FULL-SCREEN views, but the visual canvas used to
+   * stay laid out underneath them — and its rulers (z-index 29/30) outrank the
+   * Monaco container (z-index 10), so the YAML editor was read through a
+   * tick-marked grid with the vertical ruler sitting on its line numbers. The
+   * canvas keeps its geometry (visibility, not display: a hidden-then-shown
+   * canvas measured 0×0 and came back at the wrong zoom) and stops painting.
+   */
+  protected wireModeChrome(): void {
+    const apply = (mode: string): void => { this.container.dataset['mode'] = mode; };
+    apply(this.state.get().mode);
+    this.state.subscribe((s, keys) => { if (keys.includes('mode')) apply(s.mode); });
   }
 
   protected wireResizers(): void {
@@ -644,6 +534,9 @@ export abstract class EditorAppBase {
         }
       }
     });
+    // Once at startup: nothing is selected yet, and the phone's collapsed
+    // formula bar is a class that has to be on the shell before first paint.
+    this.updateFormulaBar();
   }
 
   protected updateFormulaBar(): void {
@@ -653,6 +546,10 @@ export abstract class EditorAppBase {
     const inputEl = this.container.querySelector<HTMLInputElement>('.fb-input');
     if (!idEl || !inputEl) return;
 
+    // The phone collapses the bar when there is nothing in it: 44px of "Select
+    // a layer to inspect…" above a 390px canvas is a caption, not a control.
+    this.container.classList.toggle('no-selection', !layerId);
+
     if (!layerId) {
       idEl.textContent = '—';
       inputEl.value = '';
@@ -660,9 +557,10 @@ export abstract class EditorAppBase {
       return;
     }
 
-    const design = state.design;
-    const layers = design?.layers ?? design?.pages?.[state.currentPageIndex ?? 0]?.layers ?? [];
-    const layer = layers.find((l: { id: string }) => l.id === layerId);
+    // NESTED, not top-level. Every MCP design is one group with the real layers
+    // inside it, so a flat .find() matched nothing and the bar sat on "—" with a
+    // layer plainly selected — it looked broken because it was.
+    const layer = findLayerDeep(this.state.getCurrentLayers() as { id: string }[], layerId);
     if (!layer) return;
 
     idEl.textContent = layer.id;
@@ -674,7 +572,7 @@ export abstract class EditorAppBase {
       l.type === 'rect' || l.type === 'circle' ? String((l.fill as { color?: string })?.color ?? '') :
       '';
     inputEl.value = primary;
-    inputEl.placeholder = `${layer.type} — edit value`;
+    inputEl.placeholder = `${l.type ?? 'layer'} — edit value`;
   }
 
   /** Open the canvas-resize / aspect-ratio dialog for the current design.

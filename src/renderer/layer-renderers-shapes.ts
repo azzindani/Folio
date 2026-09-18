@@ -8,7 +8,7 @@ import { applyEffects } from './effects-renderer';
 import { LUCIDE_ICONS, resolveIconName } from './lucide-icons';
 import { shapePath } from '../engine/shape-paths';
 
-import { plainTextLayout, drawnLetterSpacing, applyCommonAttributes, applyStroke, normalizeStroke, roundedRectPath, normalizeTextLayer, transformText, applyTypography } from './layer-renderers-shared';
+import { plainTextLayout, drawnLetterSpacing, applyCommonAttributes, applyStroke, normalizeStroke, roundedRectPath, resolveRadii, normalizeTextLayer, transformText, applyTypography } from './layer-renderers-shared';
 
 // Resolve a shape's fill, tolerating a bare `color` string. Small models very
 // often emit `{type:'rect', color:'#0A0A0A'}` (color is the universal "make it
@@ -61,13 +61,12 @@ export function renderRect(layer: RectLayer, svg: SVGSVGElement): SVGElement {
   // Determine which element to use based on radius type
   let el: SVGElement;
   if (layer.radius !== undefined && typeof layer.radius !== 'number') {
-    // Per-corner radius → convert to path
-    const r = layer.radius as { tl: number; tr: number; br: number; bl: number };
-    el = createSVGElement('path', { d: roundedRectPath(x, y, w, h, r) });
+    // Per-corner radius (object OR the CSS-style array a model writes) → path
+    el = createSVGElement('path', { d: roundedRectPath(x, y, w, h, resolveRadii(layer.radius, w, h)) });
   } else {
     el = createSVGElement('rect', { x, y, width: w, height: h });
     if (layer.radius !== undefined) {
-      el.setAttribute('rx', String(layer.radius as number));
+      el.setAttribute('rx', String(resolveRadii(layer.radius, w, h).tl));
     }
   }
 

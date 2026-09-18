@@ -40,6 +40,7 @@ import { ColorSchemePanelManager } from '../ui/panels/color-scheme-panel';
 import { resolveStyleRefs } from './style-refs';
 import { EditorAppBase } from './app-base';
 import { wireMobileToolbarOverflow } from './mobile-toolbar';
+import { wireMobileDock } from './mobile-dock';
 import { SAMPLE_DESIGN } from './sample-design';
 import { makeBlankDesign } from './blank-design';
 import { canvasResizeDialog, type CanvasDocSpec } from '../ui/dialogs/canvas-resize';
@@ -86,8 +87,6 @@ export class EditorApp extends EditorAppBase {
     // bundle, which sits within a KB of its budget.
     if (window.matchMedia?.('(pointer: coarse)').matches) {
       void import('./touch-gestures').then(m => m.wireTouchGestures(primaryPane, this.state));
-      // One-handed reach layer — same reasoning, same budget: phones only.
-      void import('./one-hand').then(m => m.wireOneHand(this.container));
       // Options belong beside the object they act on. A touch device has no
       // hover and no right-click, so selecting a layer brings the verbs to it
       // instead of sending the thumb to the bottom of the screen and back.
@@ -108,9 +107,11 @@ export class EditorApp extends EditorAppBase {
       this.state,
       this,
     );
-    // After the toolbar exists — the overflow sheet MOVES its controls, so it
-    // has nothing to collect while buildLayout's .toolbar is still empty.
+    // After the toolbar exists — both MOVE its controls, so they have nothing to
+    // collect while buildLayout's .toolbar is still empty. Disjoint media
+    // queries (tablet / phone), so only one ever holds a given node.
     wireMobileToolbarOverflow(this.container);
+    wireMobileDock(this.container);
     // After bindRightPanelTabs (in buildLayout's wiring) — the rail's node is
     // MOVED here, and every binding on it has to already exist.
     wireRightPanelTabs(this.container);

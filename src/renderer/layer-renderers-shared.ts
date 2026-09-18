@@ -178,11 +178,52 @@ export function applyStroke(el: SVGElement, stroke: { color: ColorOrGradient; wi
   }
 }
 
+export interface CornerRadii { tl: number; tr: number; br: number; bl: number }
+
+/**
+ * Normalise every shape a corner radius arrives in.
+ *
+ * The schema says `number | {tl,tr,br,bl}`, but a model writes CSS — and the
+ * flagship folio-intro design carries `radius: [4, 0, 0, 4]`. Cast straight to
+ * the object form, that array yields four `undefined`s, every coordinate in the
+ * path comes out NaN, and the layer renders as NOTHING while the console fills
+ * with `<path> attribute d: Expected number`. A vanished accent bar is not the
+ * price of a plausible spelling.
+ *
+ * Accepts: a number; a 1/2/3/4-value array in CSS corner order (tl, tr, br,
+ * bl); an object with any subset of the four keys. Anything non-finite is 0,
+ * and each corner is clamped to half the box so two big radii cannot cross.
+ */
+export function resolveRadii(radius: unknown, w = Infinity, h = Infinity): CornerRadii {
+  const n = (v: unknown, fallback = 0): number => {
+    const num = typeof v === 'string' ? parseFloat(v) : v;
+    return typeof num === 'number' && Number.isFinite(num) ? num : fallback;
+  };
+  let r: CornerRadii;
+  if (Array.isArray(radius)) {
+    // CSS order, CSS shorthand: 1 value = all, 2 = tl/br + tr/bl, 3 = tl, tr/bl, br.
+    const a = radius.map(v => n(v));
+    r = a.length === 1 ? { tl: a[0]!, tr: a[0]!, br: a[0]!, bl: a[0]! }
+      : a.length === 2 ? { tl: a[0]!, tr: a[1]!, br: a[0]!, bl: a[1]! }
+      : a.length === 3 ? { tl: a[0]!, tr: a[1]!, br: a[2]!, bl: a[1]! }
+      : { tl: a[0] ?? 0, tr: a[1] ?? 0, br: a[2] ?? 0, bl: a[3] ?? 0 };
+  } else if (radius && typeof radius === 'object') {
+    const o = radius as Record<string, unknown>;
+    r = { tl: n(o['tl']), tr: n(o['tr']), br: n(o['br']), bl: n(o['bl']) };
+  } else {
+    const v = n(radius);
+    r = { tl: v, tr: v, br: v, bl: v };
+  }
+  const cap = Math.max(0, Math.min(w, h) / 2);
+  const clamp = (v: number): number => Math.max(0, Math.min(v, cap));
+  return { tl: clamp(r.tl), tr: clamp(r.tr), br: clamp(r.br), bl: clamp(r.bl) };
+}
+
 // Build an SVG path for a rect with per-corner radii (quarter-circle arcs)
 
 export function roundedRectPath(x: number, y: number, w: number, h: number,
   r: { tl: number; tr: number; br: number; bl: number }): string {
-  const { tl, tr, br, bl } = r;
+  const { tl, tr, br, bl } = resolveRadii(r, w, h);
   return [
     `M ${x + tl} ${y}`,
     `L ${x + w - tr} ${y}`, `Q ${x + w} ${y} ${x + w} ${y + tr}`,

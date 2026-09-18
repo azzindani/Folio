@@ -124,10 +124,29 @@ export class SceneStage {
     overlay.setAttribute('aria-label', 'Play all scenes');
     overlay.style.cssText = 'position:fixed;inset:0;z-index:9000;display:flex;flex-direction:column;background:#0B0B0C;';
     const well = document.createElement('div');
-    well.style.cssText = 'flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:24px;';
+    const pad = window.innerWidth < 768 ? 10 : 24;
+    well.style.cssText = `flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:${pad}px;`;
     const frame = document.createElement('div');
     frame.className = 'scene-stage-frame';
-    frame.style.cssText = `aspect-ratio:${width} / ${height};height:100%;max-width:100%;background:#FFFFFF;overflow:hidden;`;
+    frame.style.cssText = 'background:#FFFFFF;overflow:hidden;';
+
+    // MEASURED, not `aspect-ratio + height:100% + max-width:100%`. That trio
+    // does not fit a box: max-width clamps the width while the height stays at
+    // 100%, so on a phone a 4:5 deck was framed 342×578 — a white card taller
+    // than the design, with white bands above and below every scene. The SVG
+    // letterboxes inside the frame correctly; the frame itself was the wrong
+    // shape. Two numbers from the well's own box get it right at any size.
+    const fit = (): void => {
+      const availW = Math.max(1, well.clientWidth - pad * 2);
+      const availH = Math.max(1, well.clientHeight - pad * 2);
+      const scale = Math.min(availW / width, availH / height);
+      frame.style.width = `${Math.round(width * scale)}px`;
+      frame.style.height = `${Math.round(height * scale)}px`;
+    };
+    if (typeof ResizeObserver !== 'undefined') new ResizeObserver(fit).observe(well);
+    window.addEventListener('resize', fit);
+    queueMicrotask(fit);
+
     well.appendChild(frame);
     overlay.appendChild(well);
     return { overlay, surface: frame.attachShadow({ mode: 'open' }) };
