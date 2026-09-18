@@ -63,7 +63,11 @@ export's frame: `src/editor/motion-pose.ts` (a lazy chunk) samples the page with
 the flipbook's `layersAt()` over the resolved timeline — delays, loops, precomp
 clocks, links, in/out windows (a layer outside its window is hidden), paths,
 scale, reveal, draw, morph — and `MotionPlayer` copies the changed fields into
-state in one `updateLayers()` write, putting them back on stop. **Present** (the status
+state in one `updateLayers()` write, putting them back on stop. While a pose is
+held the canvas leaves out the design's animation CSS — its `transform` beats the
+pose's transform attribute and replays from 0 on every render, which froze a
+one-scene piece on its first frame — and that CSS only ever matches elements
+inside an `<svg>` (Layers-panel rows and timeline tracks carry `data-layer-id` too). **Present** (the status
 bar's screen icon; in More on a phone) is full-screen pages you click through —
 a different verb.
 
