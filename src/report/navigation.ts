@@ -78,6 +78,23 @@ function renderDots(items: NavItem[]): string {
   return `<div class="folio-dots">${dots}</div>`;
 }
 
+/**
+ * The default way through a paged report that configured no navigation.
+ *
+ * A carousel exported (or previewed) as a paged report showed page one and
+ * nothing else — no nav unless `report.navigation` was set, no keys, no swipe —
+ * so six of seven pages were unreachable. Prev · counter · next, BELOW the page
+ * where a thumb reaches it; the runtime adds arrow keys and swipe on top.
+ */
+export function renderPager(pages: Page[]): string {
+  if (pages.length < 2) return '';
+  return `<nav class="folio-pager" aria-label="Pages">
+  <button class="pager-btn" type="button" aria-label="Previous page" onclick="window.Folio.nav.prev()">&#8249;</button>
+  <span class="pager-count" aria-live="polite"><span class="pager-cur">1</span> / ${pages.length}</span>
+  <button class="pager-btn" type="button" aria-label="Next page" onclick="window.Folio.nav.next()">&#8250;</button>
+</nav>`;
+}
+
 function escHtml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }

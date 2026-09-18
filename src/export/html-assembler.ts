@@ -1,7 +1,7 @@
 import type { DesignSpec, Page, Layer } from '../schema/types';
 import type { LoadedDataset } from '../report/data-loader';
 import { bindLayers } from '../report/binder';
-import { renderNavigation } from '../report/navigation';
+import { renderNavigation, renderPager } from '../report/navigation';
 import { renderToSVGStringUniversal as renderToSVGString } from './svg-string';
 import { FAVICON_LINK } from '../utils/favicon';
 import { collectSvgFonts, googleFontLinks } from './svg-fonts';
@@ -52,6 +52,9 @@ export function assembleReportHTML(
   const nav = report?.navigation
     ? renderNavigation(report.navigation, pages)
     : '';
+  // A paged report with no configured navigation still needs a way through it.
+  const isPaged = !isFlow && report?.layout !== 'scroll' && report?.layout !== 'tabs';
+  const pager = isPaged && !report?.navigation ? renderPager(pages) : '';
 
   const sections = pages.map((page, i) =>
     renderPageSection(spec, page, i, datasets, ctx),
@@ -99,6 +102,7 @@ export function assembleReportHTML(
 <body class="${layoutClass}" data-theme="${isDark ? 'dark' : 'light'}"${rootVars ? ` style="${rootVars}"` : ''}>
 ${nav}
 <main class="folio-report" id="folio-report">${isFlow ? `<div class="folio-flow">${sections}</div>` : sections}</main>
+${pager}
 <script type="application/json" id="folio-design">${JSON.stringify({ meta: spec.meta, pageCount: pages.length, pageIds: pages.map(p => p.id) })}</script>
 ${initScripts ? `<script>${initScripts}</script>` : ''}
 <script>${RUNTIME_JS}</script>
@@ -207,6 +211,10 @@ function escHtml(s: string): string {
 const REPORT_CSS = `
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{min-height:100%;font-family:var(--folio-font-body,system-ui,-apple-system,sans-serif)}
+/* html needs a HEIGHT, not just a min-height: body.layout-paged is height:100%,
+   and a percentage of an auto-height parent resolves to nothing — body shrank to
+   its content and a phone showed the page at the top over 200px of empty body. */
+html{height:100%}
 body{background:#0b0d12;color:#e8e8ec;
   --folio-maxw:1200px;
   --ic-pos:#22c55e;--ic-neg:#ef4444;--ic-muted:#94a3b8;
@@ -237,6 +245,22 @@ body.layout-scroll #folio-report,body.layout-flow #folio-report{overflow:visible
 .layout-flow #folio-report{padding:0}
 .layout-paged .folio-page{display:none}
 .layout-paged .folio-page.active{display:block}
+/* A plain page (no interactive layers) FITS the screen — whichever axis binds —
+   and sits in the middle, the way a slide viewer shows a slide. It used to be
+   width-only and top-aligned. Pages with interactive layers keep their fixed
+   stage: HTML widgets cannot be scaled by the SVG's viewBox. */
+.layout-paged .folio-page.active:has(> svg){display:flex;height:100%;align-items:center;justify-content:center}
+.layout-paged .folio-page.active > svg{width:100%;height:100%;max-width:100%;max-height:100%}
+.folio-pager{flex:0 0 auto;display:flex;align-items:center;justify-content:center;gap:18px;
+  padding:6px 12px calc(10px + env(safe-area-inset-bottom,0px));user-select:none}
+.pager-btn{width:44px;height:44px;border-radius:50%;border:1px solid var(--ic-border);background:var(--ic-surface);
+  color:inherit;font-size:24px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.pager-btn:hover{border-color:var(--ic-accent);color:var(--ic-accent)}
+/* A phone flashes a SQUARE tap highlight around a round button; keep the ring. */
+.pager-btn{-webkit-tap-highlight-color:transparent}
+.pager-btn:focus{outline:none}.pager-btn:focus-visible{outline:2px solid var(--ic-accent);outline-offset:2px}
+.pager-count{min-width:64px;text-align:center;font-size:13px;font-variant-numeric:tabular-nums;color:var(--ic-muted)}
+@media (max-width:600px){.layout-paged #folio-report{padding:8px}}
 .layout-scroll .folio-page{display:block;margin-bottom:2rem}
 .layout-tabs .folio-page{display:none}
 .layout-tabs .folio-page.active{display:block}
@@ -442,6 +466,8 @@ const RUNTIME_JS = `(function(){
   function setActive(id){
     pages.forEach(function(p){p.classList.toggle('active',p.dataset.pageId===id)});
     navItems.forEach(function(n){n.classList.toggle('active',n.dataset.page===id)});
+    var cur=document.querySelector('.pager-cur');
+    if(cur)cur.textContent=String(pages.findIndex(function(p){return p.dataset.pageId===id})+1);
   }
   function goto(id){setActive(id)}
   function next(){
@@ -606,6 +632,27 @@ const RUNTIME_JS = `(function(){
   });
   document.addEventListener('keydown',function(e){if(e.key==='Escape')closeModal();});
 
+  // Paged reports turn with the arrow keys and a horizontal swipe, like any
+  // slide viewer — typing in a field or scrolling a table never does.
+  if(document.body.classList.contains('layout-paged')&&pages.length>1){
+    document.addEventListener('keydown',function(e){
+      var t=e.target&&e.target.tagName;if(t==='INPUT'||t==='TEXTAREA'||t==='SELECT')return;
+      if(e.key==='ArrowRight'||e.key==='PageDown')next();
+      else if(e.key==='ArrowLeft'||e.key==='PageUp')prev();
+    });
+    var sx=0,sy=0,tracking=false;
+    document.addEventListener('touchstart',function(e){
+      if(e.touches.length!==1)return;
+      // A drag inside a table, a chart or a field is that widget's, not a page turn.
+      var el=e.target;if(el&&el.closest&&el.closest('.ic-table,.ic-chart,input,textarea,select'))return;
+      tracking=true;sx=e.touches[0].clientX;sy=e.touches[0].clientY;
+    },{passive:true});
+    document.addEventListener('touchend',function(e){
+      if(!tracking)return;tracking=false;var t=e.changedTouches[0];if(!t)return;
+      var dx=t.clientX-sx,dy=t.clientY-sy;
+      if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)*1.5){if(dx<0)next();else prev();}
+    },{passive:true});
+  }
   Folio.nav={goto:goto,next:next,prev:prev};Folio.openModal=openModal;Folio.closeModal=closeModal;window.Folio=Folio;
   reactState();
   if(pages.length>0&&!pages.some(function(p){return p.classList.contains('active');})){
