@@ -61,6 +61,17 @@ export function trackHTML(layer: Layer, timing: RowTiming | undefined, duration:
       + ` style="position:absolute;top:3px;bottom:3px;left:${at(w.in, duration)}%;width:${Math.max(0.4, at(out, duration) - at(w.in, duration))}%;`
       + 'background:var(--color-accent);opacity:.14;border-radius:3px;pointer-events:none"></div>');
   }
+  // In/out handles (timeline-edit.ts): on the band's edges, or waiting at the ends of a row that lives the whole scene.
+  if (timing) {
+    const inIdle = !w || w.in <= 0, outIdle = !w || !Number.isFinite(w.out);
+    const handle = (edge: 'in' | 'out', pct: number, idle: boolean, title: string): string =>
+      `<div class="tl-life-h${idle ? ' tl-idle' : ''}" data-edge="${edge}" data-layer-id="${esc(layer.id)}" title="${esc(title)}"`
+      + ` style="left:calc(${pct}% - ${edge === 'in' ? 0 : 7}px)"></div>`;
+    parts.push(
+      handle('in', w ? at(w.in, duration) : 0, inIdle, `${layer.id} appears${inIdle ? ' from the start' : ` at ${fmtMs(w?.in ?? 0)}`} — drag to set its in point; back to the start removes it`),
+      handle('out', w && Number.isFinite(w.out) ? at(w.out, duration) : 100, outIdle, `${layer.id} ${outIdle ? 'stays to the end' : `leaves at ${fmtMs(w?.out ?? 0)}`} — drag to set its out point; out to the end removes it`),
+    );
+  }
 
   if (timing && timing.end > timing.start) {
     const end = Number.isFinite(timing.end) ? timing.end : duration;
@@ -102,20 +113,24 @@ export function trackHTML(layer: Layer, timing: RowTiming | undefined, duration:
       </div>`;
 }
 
-/** The shot strip: every marker on the ruler; a click jumps the playhead there. */
+/**
+ * The shot strip: every marker on the ruler (click jumps, drag moves,
+ * double-click renames, right-click removes). Drawn even with no markers —
+ * double-clicking the strip is how the first one is added.
+ */
 export function markerStripHTML(markers: TimeMarkers, duration: number): string {
   const entries = Object.entries(markers)
     .filter((e): e is [string, number] => typeof e[1] === 'number' && Number.isFinite(e[1]))
     .sort((a, b) => a[1] - b[1]);
-  if (!entries.length) return '';
+  const hint = entries.length ? '' : '<span class="tl-marker-hint">double-click to mark a shot</span>';
   const ticks = entries.map(([name, ms]) =>
-    `<button type="button" class="tl-marker" data-ms="${ms}" title="${esc(`${name} · ${fmtMs(ms)} — click to jump`)}"`
+    `<button type="button" class="tl-marker" data-name="${esc(name)}" data-ms="${ms}" title="${esc(`${name} · ${fmtMs(ms)} — click to jump, drag to move, double-click to rename, right-click to remove`)}"`
     + ` style="position:absolute;left:${at(ms, duration)}%;top:0;bottom:0;border:0;border-left:2px solid var(--color-text-muted);`
     + 'background:none;padding:0 0 0 3px;font-size:10px;line-height:20px;color:var(--color-text-muted);cursor:pointer;white-space:nowrap">'
     + `${esc(name)}</button>`).join('');
   return `
       <div class="tl-markers" style="display:flex;height:20px;border-bottom:1px solid var(--color-border)">
         <div style="width:${HEADER_W}px;flex-shrink:0;display:flex;align-items:center;padding:0 8px;font-size:10px;color:var(--color-text-muted)">Shots</div>
-        <div class="tl-marker-area" style="flex:1;position:relative;overflow:hidden">${ticks}</div>
+        <div class="tl-marker-area" title="Double-click to add a shot marker" style="flex:1;position:relative;overflow:hidden">${hint}${ticks}</div>
       </div>`;
 }

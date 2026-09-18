@@ -33,7 +33,6 @@ import { ColorPaletteManager } from '../ui/panels/color-palette';
 import { ComponentLibraryManager } from '../ui/panels/component-library';
 import { AnimationPanel } from '../ui/panels/animation-panel';
 import { ImageImportHandler } from './image-import-handler';
-import { TimelinePanelManager } from '../ui/panels/timeline-panel';
 import { ColorSchemePanelManager } from '../ui/panels/color-scheme-panel';
 import { resolveStyleRefs } from './style-refs';
 import { EditorAppBase } from './app-base';
@@ -218,8 +217,12 @@ export class EditorApp extends EditorAppBase {
     // Timeline panel
     const timelineContainer = this.container.querySelector<HTMLElement>('.timeline-content');
     if (timelineContainer) {
-      this.timelinePanel = new TimelinePanelManager(timelineContainer, this.state, this.motionPlayer);
-      this.timelinePanel.onTrailsToggle = (on: boolean) => this.canvas.setMotionTrails(on);
+      // Loaded on its own chunk: the ruler, its editing and the easing picker are
+      // a tab away, and the main bundle sits at its budget.
+      void import('../ui/panels/timeline-panel').then(({ TimelinePanelManager }) => {
+        this.timelinePanel = new TimelinePanelManager(timelineContainer, this.state, this.motionPlayer);
+        this.timelinePanel.onTrailsToggle = (on: boolean) => this.canvas.setMotionTrails(on);
+      }).catch(() => { timelineContainer.textContent = 'The timeline could not load — reload the editor.'; });
       // The trail is measured from the design as AUTHORED, never from whatever
       // pose is on screen — so it stays put while the scene plays, and can be
       // switched on mid-playback.

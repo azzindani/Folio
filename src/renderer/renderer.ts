@@ -5,7 +5,7 @@ import { expandPositionShorthand } from '../schema/validator';
 import { resolveAllFormulas, type FormulaContext } from '../scripting/formula';
 import { createSVGRoot, createSVGElement } from './svg-utils';
 import { clipRectFor, applyClipRect } from './clip-rect';
-import { pathEase } from '../animation/path-ease';
+import { pathSMIL } from '../animation/path-ease';
 import {
   renderRect, renderCircle, renderPath, renderPolygon,
   renderLine, renderText, renderImage, renderIcon, renderConnector,
@@ -275,16 +275,16 @@ function renderLayerUncached(layer: Layer, svg: SVGSVGElement): SVGElement {
   if ('motion_path' in layer && layer.motion_path !== undefined) {
     const mp = layer.motion_path;
     const animMotion = document.createElementNS('http://www.w3.org/2000/svg', 'animateMotion');
-    animMotion.setAttribute('dur', `${((mp.duration ?? 2000) / 1000).toFixed(3)}s`);
-    if (mp.delay && mp.delay > 0) animMotion.setAttribute('begin', `${(mp.delay / 1000).toFixed(3)}s`);
-    animMotion.setAttribute('repeatCount', mp.loop === true ? 'indefinite' : '1');
+    // The same timing the flipbook walks (pathAt): delay, easing samples, and a looping precomp's pass.
+    const timing = pathSMIL(mp);
+    animMotion.setAttribute('dur', `${(timing.dur / 1000).toFixed(3)}s`);
+    if (timing.begin > 0) animMotion.setAttribute('begin', `${(timing.begin / 1000).toFixed(3)}s`);
+    animMotion.setAttribute('repeatCount', timing.repeat ? 'indefinite' : '1');
     // Holds the end, as the flipbook does — the default fill="remove" snapped the layer home when the path ended.
     animMotion.setAttribute('fill', 'freeze');
-    // The path's own easing, sampled — the same samples the flipbook walks (pathEase).
-    const ease = pathEase(mp.easing);
     animMotion.setAttribute('calcMode', 'linear');
-    animMotion.setAttribute('keyTimes', ease.times.join(';'));
-    animMotion.setAttribute('keyPoints', ease.points.join(';'));
+    animMotion.setAttribute('keyTimes', timing.keyTimes);
+    animMotion.setAttribute('keyPoints', timing.keyPoints);
     animMotion.setAttribute('path', mp.path);
     if (mp.auto_rotate === true) {
       animMotion.setAttribute('rotate', 'auto');

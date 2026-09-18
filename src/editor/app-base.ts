@@ -37,7 +37,7 @@ import { canvasResizeDialog } from '../ui/dialogs/canvas-resize';
 import { ComponentLibraryManager } from '../ui/panels/component-library';
 import { AnimationPanel } from '../ui/panels/animation-panel';
 import { ImageImportHandler } from './image-import-handler';
-import { TimelinePanelManager } from '../ui/panels/timeline-panel';
+import type { TimelinePanelManager } from '../ui/panels/timeline-panel';
 import { MotionPlayer } from './motion-player';
 import type { SceneStage } from '../ui/scene-stage/scene-stage';
 import { ColorSchemePanelManager } from '../ui/panels/color-scheme-panel';
@@ -86,7 +86,7 @@ export abstract class EditorAppBase {
   protected componentLibrary!: ComponentLibraryManager;
   protected animationPanel!: AnimationPanel;
   protected imageImport!: ImageImportHandler;
-  protected timelinePanel!: TimelinePanelManager;
+  protected timelinePanel?: TimelinePanelManager;
   /** Playback shared by the timeline panel and the canvas toolbar's play button.
    *  Assigned by the subclass constructor, NOT initialised here: a field
    *  initializer runs before the subclass builds `state`, so it would capture

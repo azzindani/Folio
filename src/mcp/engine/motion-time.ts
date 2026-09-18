@@ -21,10 +21,7 @@ export interface TimeContext { markers: TimeMarkers; layers: Layer[] }
 // -digits (usableMarkerName), so a bare name is never ambiguous.
 const REF = /^\s*(?:(-?\d+(?:\.\d+)?)|([A-Za-z_][\w-]*?)(?:\.(in|out|start|end))?)\s*(?:([+-])\s*(\d+(?:\.\d+)?))?\s*$/;
 
-/** A marker (or shot) name a time can refer to without ambiguity. */
-export function usableMarkerName(name: string): boolean {
-  return /^[A-Za-z_][\w-]*$/.test(name) && !/-\d+(?:\.\d+)?$/.test(name);
-}
+export { usableMarkerName } from '../../animation/marker-name';
 
 /** Where a scope's markers live: its page, else a deck's first page, else the poster root. */
 export function markerHost(spec: DesignSpec, page?: Page): { markers?: TimeMarkers } {

@@ -16,7 +16,7 @@
 
 import type { StateManager, EditorState } from './state';
 import type { Layer } from '../schema/types';
-import { flattenForTimeline, sceneDuration, playsInTime } from '../ui/panels/timeline-panel';
+import { flattenForTimeline, sceneDuration, playsInTime } from '../ui/panels/timeline-model';
 import type { PosePlan, Pose, RowTiming } from './motion-pose';
 
 type PoseEngine = typeof import('./motion-pose');
