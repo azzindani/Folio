@@ -5,8 +5,8 @@
  * Here: drag a band edge to move a layer's in or out point (back to the start,
  * or out to the end, removes it — a layer that lives the whole scene shows its
  * handles at the ends of its row); drag a marker to move it, click it to jump,
- * double-click it to rename, right-click to remove, double-click the strip to
- * add one. Every drag snaps to 0, the end, the playhead and the markers. Times
+ * double-click it to rename, right-click to remove; + (at the playhead) or a
+ * double-click on the strip adds one. Every drag snaps to 0, the end, the playhead and the markers. Times
  * are written in each layer's OWN clock (a precomp child's in point is local),
  * and a marker is a label on the scene clock: moving one retimes nothing.
  */
@@ -207,6 +207,13 @@ export function bindTimelineEdits(body: HTMLElement, ctx: TimelineEditContext): 
       void _gone;
       writeMarkers(ctx, rest);
     });
+  });
+  // The reliable way in: a marker at the playhead, whatever the labels cover.
+  body.querySelector<HTMLElement>('.tl-marker-add')?.addEventListener('click', () => {
+    const markers = ctx.markers();
+    const at = Math.round(ctx.playhead());
+    nameField(strip, (at / Math.max(1, ctx.duration())) * 100, freshMarkerName(markers), markers, undefined,
+      name => writeMarkers(ctx, { ...ctx.markers(), [name]: at }));
   });
   strip.addEventListener('dblclick', e => {
     if (e.target !== strip) return;

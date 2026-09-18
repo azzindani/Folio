@@ -122,15 +122,19 @@ export function markerStripHTML(markers: TimeMarkers, duration: number): string 
   const entries = Object.entries(markers)
     .filter((e): e is [string, number] => typeof e[1] === 'number' && Number.isFinite(e[1]))
     .sort((a, b) => a[1] - b[1]);
-  const hint = entries.length ? '' : '<span class="tl-marker-hint">double-click to mark a shot</span>';
-  const ticks = entries.map(([name, ms]) =>
-    `<button type="button" class="tl-marker" data-name="${esc(name)}" data-ms="${ms}" title="${esc(`${name} · ${fmtMs(ms)} — click to jump, drag to move, double-click to rename, right-click to remove`)}"`
-    + ` style="position:absolute;left:${at(ms, duration)}%;top:0;bottom:0;border:0;border-left:2px solid var(--color-text-muted);`
-    + 'background:none;padding:0 0 0 3px;font-size:10px;line-height:20px;color:var(--color-text-muted);cursor:pointer;white-space:nowrap">'
-    + `${esc(name)}</button>`).join('');
+  const hint = entries.length ? '' : '<span class="tl-marker-hint">+ or double-click to mark a shot</span>';
+  // A label stops at the next marker: in a narrow panel they overlapped, and a
+  // double-click meant for the empty strip landed on a label and renamed it.
+  const ticks = entries.map(([name, ms], i) => {
+    const room = (entries[i + 1] ? at(entries[i + 1]?.[1] ?? ms, duration) : 100) - at(ms, duration);
+    return `<button type="button" class="tl-marker" data-name="${esc(name)}" data-ms="${ms}" title="${esc(`${name} · ${fmtMs(ms)} — click to jump, drag to move, double-click to rename, right-click to remove`)}"`
+      + ` style="position:absolute;left:${at(ms, duration)}%;max-width:max(6px, calc(${room.toFixed(3)}% - 2px));top:0;bottom:0;border:0;border-left:2px solid var(--color-text-muted);`
+      + 'background:none;padding:0 0 0 3px;font-size:10px;line-height:20px;color:var(--color-text-muted);cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'
+      + `${esc(name)}</button>`;
+  }).join('');
   return `
       <div class="tl-markers" style="display:flex;height:20px;border-bottom:1px solid var(--color-border)">
-        <div style="width:${HEADER_W}px;flex-shrink:0;display:flex;align-items:center;padding:0 8px;font-size:10px;color:var(--color-text-muted)">Shots</div>
+        <div style="width:${HEADER_W}px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 4px 0 8px;font-size:10px;color:var(--color-text-muted)">Shots<button type="button" class="tl-marker-add" title="Add a shot marker at the playhead" aria-label="Add a shot marker at the playhead">+</button></div>
         <div class="tl-marker-area" title="Double-click to add a shot marker" style="flex:1;position:relative;overflow:hidden">${hint}${ticks}</div>
       </div>`;
 }
