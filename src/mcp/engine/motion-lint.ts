@@ -10,7 +10,7 @@
  */
 
 import type { Layer } from '../../schema/types';
-import type { AnimationSpec, LayerLink } from '../../animation/types';
+import type { AnimationSpec, Keyframe, LayerLink } from '../../animation/types';
 import { resolveTimeline } from '../../animation/timeline-resolve';
 import { layersAt } from '../../export/gif-frames';
 import { canvasBoxes, type CanvasBox } from '../../export/frame-cull';
@@ -27,10 +27,15 @@ const IDLE_MS = 2000;
 const BUSY_UNITS = 4;
 const WPM = 240;
 
-/** Every stretch of a one-shot track where the pose actually changes, on the scene clock. */
-function segments(layers: Layer[]): { moves: Segment[]; loops: string[] } {
+/**
+ * Every stretch of a one-shot track where the pose actually changes, on the
+ * scene clock. `followers` are link wrappers: they move because their lead
+ * does, so they are motion (not idle) but not a separate thing to follow.
+ */
+function segments(layers: Layer[], followers: Set<string>): { moves: Segment[]; loops: string[] } {
   const moves: Segment[] = [];
   const loops: string[] = [];
+  const values = (k: Keyframe): string => JSON.stringify(Object.entries(k).filter(([key]) => key !== 't' && key !== 'easing' && key !== 'hold').sort());
   const visit = (ls: Layer[], parent: string): void => {
     for (const l of ls as Node[]) {
       const a = l.animation;
@@ -40,13 +45,12 @@ function segments(layers: Layer[]): { moves: Segment[]; loops: string[] } {
         else {
           const sorted = [...frames].sort((p, q) => p.t - q.t);
           const base = (a?.playback?.delay ?? 0) - (sorted[0]?.t ?? 0);
-          // A stagger is one gesture: siblings running the same keyframes count as one thing moving.
-          const unit = `${parent}|${JSON.stringify(sorted.map(k => ({ ...k, t: k.t - (sorted[0]?.t ?? 0) })))}`;
           for (let i = 0; i + 1 < sorted.length; i++) {
             const p = sorted[i], q = sorted[i + 1];
-            if (!p || !q || p.hold) continue;
-            const same = Object.keys({ ...p, ...q }).every(k => k === 't' || k === 'easing' || p[k] === q[k]);
-            if (!same) moves.push({ id: l.id, unit, start: base + p.t, end: base + q.t });
+            if (!p || !q || p.hold || values(p) === values(q)) continue;
+            // A stagger is one gesture: siblings making the same move count as one thing moving.
+            const unit = followers.has(l.id) ? '' : `${parent}|${values(p)}>${values(q)}|${q.t - p.t}`;
+            moves.push({ id: l.id, unit, start: base + p.t, end: base + q.t });
           }
         }
       }
@@ -62,7 +66,7 @@ function busyNotes(moves: Segment[], endMs: number): LintNote[] {
   const notes: LintNote[] = [];
   let lastNoted = -Infinity;
   for (let t = 0; t <= endMs; t += 100) {
-    const active = moves.filter(m => m.start <= t && t < m.end);
+    const active = moves.filter(m => m.unit && m.start <= t && t < m.end);
     const units = new Set(active.map(m => m.unit));
     if (units.size > BUSY_UNITS && t - lastNoted > 1000) {
       const ids = [...new Set(active.map(m => m.id))];
@@ -74,13 +78,18 @@ function busyNotes(moves: Segment[], endMs: number): LintNote[] {
   return notes;
 }
 
+/** When a shot rests, and how long its new words need — a hold that long is reading, not idling. */
+interface Rest { start: number; end: number; readMs: number }
+
 /** Stretches with nothing moving, before the last motion ends (the final hold is the reading time). */
-function idleNotes(moves: Segment[], loops: string[]): LintNote[] {
+function idleNotes(moves: Segment[], loops: string[], rests: Rest[]): LintNote[] {
   const spans = [...moves].sort((a, b) => a.start - b.start);
   const notes: LintNote[] = [];
   let reach = 0;
   for (const s of spans) {
-    if (s.start - reach > IDLE_MS) {
+    const gap = s.start - reach;
+    const reading = rests.find(r => r.start <= reach + 1 && reach < r.end);
+    if (gap > IDLE_MS && gap > (reading ? reading.readMs + 1000 : 0)) {
       notes.push({ kind: 'idle', at_ms: Math.round(reach),
         note: `Nothing ${loops.length ? 'but loops ' : ''}moves from ${Math.round(reach)} to ${Math.round(s.start)}ms (${Math.round(s.start - reach)}ms). Hold on purpose, or bring the next beat forward.` });
     }
@@ -100,8 +109,23 @@ function overlapArea(a: CanvasBox['box'], b: CanvasBox['box']): number {
   return w > 0 && h > 0 ? w * h : 0;
 }
 
-/** Overlaps, edges and reading time, measured where each shot has landed — just before the next one starts. */
-function restNotes(layers: Layer[], canvas: { width: number; height: number }, marks: LintMark[], moves: Segment[], endMs: number): LintNote[] {
+/**
+ * A shot's rest: its longest stretch with nothing moving. Found live: sampling
+ * "just before the next shot" caught a camera already panning to the next
+ * section — every card of the shot read as off the frame.
+ */
+function quietest(moves: Segment[], from: number, until: number): { start: number; end: number } {
+  const busy = moves.filter(m => m.end > from && m.start < until).sort((a, b) => a.start - b.start);
+  let best = { start: until, end: until }, reach = from;
+  for (const m of [...busy, { start: until, end: until }]) {
+    if (m.start - reach > best.end - best.start) best = { start: reach, end: m.start };
+    reach = Math.max(reach, m.end);
+  }
+  return best;
+}
+
+/** Overlaps, edges and reading time, measured where each shot rests. */
+function restNotes(layers: Layer[], canvas: { width: number; height: number }, marks: LintMark[], moves: Segment[], endMs: number, rests: Rest[]): LintNote[] {
   const notes: LintNote[] = [];
   const seenPairs = new Set<string>(), seenEdges = new Set<string>();
   let shownBefore = new Set<string>();
@@ -109,8 +133,9 @@ function restNotes(layers: Layer[], canvas: { width: number; height: number }, m
   ordered.forEach((mark, i) => {
     const until = Math.min(ordered[i + 1]?.at ?? endMs, endMs);
     if (until <= mark.at) return;
-    const landed = Math.max(mark.at, ...moves.filter(m => m.start >= mark.at && m.start < until).map(m => m.end));
-    const t = Math.max(mark.at, until - 1);
+    const quiet = quietest(moves, mark.at, until);
+    const landed = quiet.start;
+    const t = Math.max(mark.at, quiet.end - 1);
     const texts = canvasBoxes(layersAt(layers, t)).filter(b => b.layer.type === 'text' && b.opacity > 0.3 && area(b.box) > 0);
     for (let p = 0; p < texts.length; p++) {
       for (let q = p + 1; q < texts.length; q++) {
@@ -123,19 +148,24 @@ function restNotes(layers: Layer[], canvas: { width: number; height: number }, m
           note: `In "${mark.id}", "${A.layer.id}" and "${B.layer.id}" rest on top of each other at ${t}ms. Move one, or hide it before the other lands.` });
       }
     }
+    const shown = new Set(texts.filter(b => b.opacity > 0.5).map(b => b.layer.id));
+    const fresh = texts.filter(b => shown.has(b.layer.id) && !shownBefore.has(b.layer.id));
     for (const b of texts) {
       const inside = overlapArea(b.box, { x: 0, y: 0, ...canvas }) / area(b.box);
-      if (inside < 0.9 && !seenEdges.has(b.layer.id)) {
+      // Cut by the edge is always wrong. Wholly outside is where a camera left it —
+      // unless it only just appeared, in which case it entered where no one sees it.
+      const cut = inside > 0.02 && inside < 0.9;
+      const unseen = inside <= 0.02 && fresh.includes(b);
+      if ((cut || unseen) && !seenEdges.has(b.layer.id)) {
         seenEdges.add(b.layer.id);
         notes.push({ kind: 'off_canvas', shot: mark.id, at_ms: t, layers: [b.layer.id],
           note: `In "${mark.id}", "${b.layer.id}" rests ${Math.round((1 - inside) * 100)}% outside the frame at ${t}ms (box ${Math.round(b.box.x)},${Math.round(b.box.y)} ${Math.round(b.box.width)}×${Math.round(b.box.height)}).` });
       }
     }
-    const shown = new Set(texts.filter(b => b.opacity > 0.5).map(b => b.layer.id));
-    const fresh = texts.filter(b => shown.has(b.layer.id) && !shownBefore.has(b.layer.id));
     const count = fresh.reduce((n, b) => n + words(b.layer), 0);
     const need = Math.round((count / WPM) * 60000);
-    const hold = until - landed;
+    const hold = quiet.end - quiet.start;
+    rests.push({ start: mark.at, end: until, readMs: need });
     if (count > 0 && hold < need * 0.9) {
       notes.push({ kind: 'reading', shot: mark.id, at_ms: landed, layers: fresh.map(b => b.layer.id).slice(0, 8),
         note: `"${mark.id}" shows ${count} new word(s) and rests ${Math.max(0, hold)}ms after its last move lands; reading takes ~${need}ms at ${WPM} wpm.` });
@@ -165,13 +195,17 @@ function linkNotes(layers: Layer[]): LintNote[] {
  * piece is told in; without any, the whole piece is one shot.
  */
 export function lintComposition(layers: Layer[], canvas: { width: number; height: number }, marks: LintMark[], endMs: number): LintNote[] {
-  const resolved = resolveTimeline(layers);
-  const { moves, loops } = segments(resolved);
+  const followers = new Set<string>();
+  const find = (ls: Layer[]): void => { for (const l of ls as Node[]) { if (l.link) followers.add(l.id); if (Array.isArray(l.layers)) find(l.layers); } };
+  find(layers);
+  const { moves, loops } = segments(resolveTimeline(layers), followers);
   const shots = marks.length ? marks : [{ id: 'piece', at: 0 }];
+  const rests: Rest[] = [];
+  const atRest = restNotes(layers, canvas, shots, moves, endMs, rests);
   return [
     ...linkNotes(layers),
-    ...restNotes(layers, canvas, shots, moves, endMs),
-    ...idleNotes(moves, loops),
+    ...atRest,
+    ...idleNotes(moves, loops, rests),
     ...busyNotes(moves, endMs),
   ].slice(0, 24);
 }

@@ -321,7 +321,7 @@ export function addLayers(args: {
     // with the backdrop showing through the empty lower half (the sage-block
     // "In Praise of Doing Less" bug). Fit the doc to the group and clamp the
     // backdrops to it so there's no dead band.
-    if (!hadContent) {
+    if (!hadContent && !spec.world) { // a declared camera world is wider than the canvas on purpose
       const { width: DW, height: DH } = spec.document;
       type Box = Layer & { x?: number; y?: number; width?: number; height?: number };
       const groups = incoming.filter(l => l.type === 'group') as Box[];

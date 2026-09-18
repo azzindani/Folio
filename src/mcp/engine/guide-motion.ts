@@ -36,7 +36,12 @@ CHANNELS  x y opacity scale scale_x scale_y rotation skew_x skew_y blur draw
 CONTINUOUS COMPOSITION — one scene, many sub-sequences (a 30 s motion piece)
   Professional motion pieces are ONE scene: the objects carry the story (a headline
   shrinks into a corner label, a circle grows into the next background) instead of
-  pages wiping past. Build that on one page:
+  pages wiping past. Lay the scene out FIRST, in ONE add_layers call, inside one
+  group with locked:true — layers of a continuous scene overlap on purpose (they take
+  turns in time) and the layout rescue would push them apart; it leaves a locked group
+  alone, and every motion op still reaches its children by id. A world wider than the
+  canvas comes before the layout: animation(op:camera, world:{x:0,y:0,width:3840,height:1080}).
+  Then build the scene on that page:
     animation(op:storyboard, shots:[
       {id:"hook",    at:0,    states:{title:{x:120, y:420}, logo:"hidden", card1:"hidden"}},
       {id:"problem", at:3500, states:{title:{x:80, y:80, scale:0.45}, card1:"rise"}, stagger_ms:80},

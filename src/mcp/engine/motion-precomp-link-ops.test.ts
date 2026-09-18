@@ -10,6 +10,7 @@ import { specAt } from '../../export/gif-frames';
 import { buildAnimatedSVG } from '../../export/svg-animate';
 import { renderToSVGString } from './svg-export';
 import { parseTransform } from '../../export/frame-cull';
+import { addLayers } from '../engine-layer-tools';
 import type { DesignSpec } from '../../schema/types';
 import type { ToolResult } from '../types';
 
@@ -112,6 +113,19 @@ describe('animation op:camera — a world larger than the canvas', () => {
     const cam = (specAt(spec(), 0, 2000).layers as unknown as Node[]).find(l => l.id === '__camera');
     const m = parseTransform(String(cam?.['transform'])) ?? [1, 0, 0, 1, 0, 0];
     expect([m[0] * 2430 + m[2] * 270 + m[4], m[1] * 2430 + m[3] * 270 + m[5]].map(v => Math.round(v))).toEqual([540, 540]);
+  });
+
+  it('keeps the canvas when a world is declared first and the scene is laid out across it', async () => {
+    fs.writeFileSync(dPath, yaml.dump({ meta: { id: 'd', name: 'D', type: 'poster' }, document: { width: 1920, height: 1080 }, layers: [] }));
+    expect((await call({ op: 'camera', world: { x: 0, y: 0, width: 3840, height: 1080 } })).success).toBe(true);
+    const scene = { id: 'scene', type: 'group', z: 1, locked: true, x: 0, y: 0, width: 3840, height: 1080, layers: [
+      { id: 'left', type: 'text', z: 1, x: 160, y: 400, width: 1500, height: 200, content: { type: 'plain', value: 'Left' }, style: { font_size: 150 } },
+      { id: 'right', type: 'text', z: 1, x: 2080, y: 400, width: 1500, height: 200, content: { type: 'plain', value: 'Right' }, style: { font_size: 150 } }] };
+    const r = addLayers({ design_path: dPath, layers: [{ id: 'bg', type: 'rect', z: 0, x: 0, y: 0, width: 1920, height: 1080, fill: '#FAF5EC' }, scene] as never });
+    expect(r.success, JSON.stringify(r)).toBe(true);
+    // Found live: the auto-fit resized a 1920 canvas to the 3840 world, so the "world" became the canvas.
+    expect(spec().document).toMatchObject({ width: 1920, height: 1080 });
+    expect(find('right')?.['x']).toBe(2080);
   });
 
   it('declares every argument the new ops read in the published schema', () => {
