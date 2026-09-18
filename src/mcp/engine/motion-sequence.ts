@@ -24,14 +24,15 @@ import { mergeFragment, MergeError, trackEnd } from './motion-merge';
 import { isKnownEasing, describeEasings } from '../../animation/easing';
 import { REVEAL_FROMS, type RevealFrom } from '../../animation/reveal';
 import { staggerRanks, isStaggerOrder, STAGGER_ORDERS, type StaggerOrder } from './motion-order';
+import { readMarkers, resolveTime } from './motion-time';
 
 // ── op:sequence ──────────────────────────────────────────────
 
 export interface SequenceStep {
   preset: string;
   layer_ids?: unknown;
-  /** When the step starts, ms from scene start. Default: right after the previous step ends. */
-  at?: number;
+  /** When the step starts: ms from scene start, or a marker / layer time ("problem+200"). Default: right after the previous step ends. */
+  at?: number | string;
   duration?: number;
   stagger_ms?: number;
   /** Which layer the stagger starts from — see motion-order.ts. */
@@ -69,7 +70,7 @@ function parseSteps(v: unknown): SequenceStep[] | string {
     out.push({
       preset: st['preset'] as string,
       layer_ids: st['layer_ids'] ?? st['layer_id'],
-      at: typeof st['at'] === 'number' ? st['at'] : undefined,
+      at: typeof st['at'] === 'number' || typeof st['at'] === 'string' ? st['at'] : undefined,
       duration: typeof st['duration'] === 'number' ? st['duration'] : undefined,
       stagger_ms: typeof st['stagger_ms'] === 'number' ? st['stagger_ms'] : undefined,
       order: isStaggerOrder(st['order']) ? st['order'] : undefined,
@@ -92,6 +93,7 @@ export function sequenceMotion(args: SequenceArgs): ToolResult {
   const scoped = resolveScope(spec, args.page_id);
   if ('error' in scoped) return errResult(op, scoped.error, 'Run manage_design(op:inspect) to list page ids.');
   let { scope } = scoped;
+  const markers = readMarkers(spec, scoped.page);
 
   const progress: ProgressItem[] = [];
   const timeline: Array<{ step: number; preset: string; layers: string[]; from: number; to: number }> = [];
@@ -105,7 +107,9 @@ export function sequenceMotion(args: SequenceArgs): ToolResult {
     }
     const stagger = Math.max(0, step.stagger_ms ?? 0);
     const ranks = staggerRanks(targets, step.order ?? 'forward');
-    const at = Math.max(0, step.at ?? cursor);
+    const when = step.at === undefined ? cursor : resolveTime(step.at, { markers, layers: scope });
+    if (typeof when === 'string') return errResult(op, `steps[${i}].at: ${when}`, 'A time in ms, or a marker / layer time like "problem+200" or "title.end".', progress);
+    const at = Math.max(0, when);
     const updates = new Map<string, unknown>();
     let stepEnd = at;
 

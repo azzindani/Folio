@@ -144,6 +144,12 @@ export function dispatchAnimation(a: Args): ToolResult | Promise<ToolResult> {
     case 'audio':    return engine.audioMotion(a as unknown as Parameters<typeof engine.audioMotion>[0]);
     case 'beats':    return engine.beatsMotion(a as unknown as Parameters<typeof engine.beatsMotion>[0]);
     case 'captions': return engine.captionsMotion(a as unknown as Parameters<typeof engine.captionsMotion>[0]);
+    case 'markers':  return engine.markersMotion(a as unknown as Parameters<typeof engine.markersMotion>[0]);
+    case 'span':     return engine.spanMotion(a as unknown as Parameters<typeof engine.spanMotion>[0]);
+    case 'storyboard': return engine.storyboardMotion(a as unknown as Parameters<typeof engine.storyboardMotion>[0]);
+    case 'lint':     return engine.lintMotion(a as unknown as Parameters<typeof engine.lintMotion>[0]);
+    case 'precomp':  return engine.precompMotion(a as unknown as Parameters<typeof engine.precompMotion>[0]);
+    case 'link':     return engine.linkMotion(a as unknown as Parameters<typeof engine.linkMotion>[0]);
     case 'presets':  return engine.listMotionPresets();
     default:         return badOp('animation', a['op']);
   }

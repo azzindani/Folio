@@ -1,6 +1,7 @@
 // Folio schema — document-level types: theme, palette, type/effects packs, page,
 // presentation, report, design, component, template, project. Split out of types.ts.
 import type { DataSpec, Layer } from './layers';
+import type { TimeMarkers, WorldBox } from '../../animation/types';
 
 // ── Theme ───────────────────────────────────────────────────
 export interface TypographyScale {
@@ -235,6 +236,10 @@ export interface Page {
   audio_cues?: AudioCue[];
   /** Captions timed from this scene's first frame (see CaptionTrack for the design-wide ones). */
   captions?: SceneCaption[];
+  /** Named points on this scene's clock, ms (animation op:markers). */
+  markers?: TimeMarkers;
+  /** Layout area larger than the canvas that the camera travels over (animation op:camera world). */
+  world?: WorldBox;
 }
 
 // ── Design Document ─────────────────────────────────────────
@@ -328,6 +333,10 @@ export interface DesignSpec {
   audio?: AudioTrack[];
   /** Captions over the piece: style, and cues timed on the piece's timeline. */
   captions?: CaptionTrack;
+  /** A poster's named time points (a deck keeps them per page). */
+  markers?: TimeMarkers;
+  /** A poster's camera world (a deck keeps it per page). */
+  world?: WorldBox;
   // Mode B interactive output
   _output_mode?: 'static' | 'interactive';
   state?: Record<string, StateDef>;

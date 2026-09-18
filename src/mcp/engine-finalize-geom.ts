@@ -483,7 +483,7 @@ export function collectContentBoxes(layers: Layer[], out: Array<{ x: number; y: 
 // rather than vanishing. Only fires on layers with NO intersection at all — a
 // bleeding/partly-visible decoration (motif, backdrop) is never touched.
 
-export function snapOffCanvasContent(layers: Layer[], docW: number, docH: number): number {
+export function snapOffCanvasContent(layers: Layer[], docW: number, docH: number, world?: { x: number; y: number; width: number; height: number }): number {
   let snapped = 0;
   const mX = Math.round(docW * 0.03), mY = Math.round(docH * 0.03);
   const SNAPPABLE = new Set(['text', 'rich_text', 'image', 'group', 'chart', 'kpi_card', 'mermaid', 'icon']);
@@ -496,6 +496,9 @@ export function snapOffCanvasContent(layers: Layer[], docW: number, docH: number
     const outX = bb.r <= 0 || bb.x >= docW;
     const outY = bb.b <= 0 || bb.y >= docH;
     if (!outX && !outY) continue; // overlaps the canvas → already visible
+    // A camera world larger than the canvas: content parked out there is where
+    // the camera travels to, not a mistake.
+    if (world && bb.r > world.x && bb.x < world.x + world.width && bb.b > world.y && bb.y < world.y + world.height) continue;
     let nx = bb.x, ny = bb.y;
     if (bb.r <= 0) nx = mX; else if (bb.x >= docW) nx = docW - w - mX;
     if (bb.b <= 0) ny = mY; else if (bb.y >= docH) ny = docH - h - mY;

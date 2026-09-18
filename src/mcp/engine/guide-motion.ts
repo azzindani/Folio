@@ -33,6 +33,36 @@ CHANNELS  x y opacity scale scale_x scale_y rotation skew_x skew_y blur draw
         left_to_right | right_to_left | top_to_bottom | bottom_to_top. After split_text,
         left_to_right sweeps the letters by where they sit; random is the same every call.
 
+CONTINUOUS COMPOSITION — one scene, many sub-sequences (a 30 s motion piece)
+  Professional motion pieces are ONE scene: the objects carry the story (a headline
+  shrinks into a corner label, a circle grows into the next background) instead of
+  pages wiping past. Build that on one page:
+    animation(op:storyboard, shots:[
+      {id:"hook",    at:0,    states:{title:{x:120, y:420}, logo:"hidden", card1:"hidden"}},
+      {id:"problem", at:3500, states:{title:{x:80, y:80, scale:0.45}, card1:"rise"}, stagger_ms:80},
+      {id:"cta",     at:"problem+5000", states:{card1:"fade_out", logo:{enter:"pop", x:440, y:460}}}])
+  • You write WHERE each object is per shot; the engine writes the moves between (a
+    layer stays where it lands), in/out points for what enters and leaves, and a
+    marker per shot. x/y = top-left of what the layer draws, after its scale.
+  • A state is {x,y | dx,dy, scale, rotation, opacity, blur, fill.color, enter, exit,
+    hidden, duration, delay, easing} or a word: "hidden", "show", "<entrance|exit preset>".
+    The page as authored is the state before shot 1 — author the layout of the first
+    beat, hide what comes later.
+  • The reply lints the timeline: text resting on text, text off the frame, idle
+    stretches, >4 things moving at once, shots shorter than their words take to read.
+    Fix and call again; op:lint re-checks after hand edits.
+  • Times anywhere: ms, a marker ("problem+200"), a layer point ("title.out", "card.end").
+    op:markers names them; op:span sets a layer's in/out points directly.
+  • Sub-sequences: op:precomp gives a group its own clock (start, speed, loop_ms) —
+    author its children from 0, place it at start; duplicate:{id, start, dy} re-uses it.
+  • Secondary motion: op:link makes a layer follow another's track lag ms later,
+    ×factor travel (a shadow trailing its card, a row whipping after its lead).
+  • Travel instead of cutting: op:camera world:{x,y,width,height} lays the page out
+    larger than the canvas; shots target a layer, "world" or a region and the camera
+    pans between sections. Shot t takes marker names.
+  • Use slide scenes (op:scene) when the piece IS a sequence of cards; use one
+    continuous scene when things should move across beats.
+
 TEXT ANIMATOR (one call)
   animation(op:text, layer_id, by:"char"|"word"|"line", preset | keyframes, stagger_ms?, order?, mask?)
   Splits the layer into measured units — a wrapped paragraph along its drawn lines — and

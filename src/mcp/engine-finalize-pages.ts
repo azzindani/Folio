@@ -7,6 +7,7 @@
 // file) converges on the same legible result. Every pass is idempotent — a clean
 // design is a no-op.
 import type { DesignSpec, Layer, Page, ThemeSpec } from '../schema/types';
+import type { WorldBox } from '../animation/types';
 import { ALL_THEMES } from '../themes/all-themes';
 import { stripNullLayers, placePositionlessLayers, ensureBackgroundFill, recoverEmbeddedLayers, dropPlaceholderText } from './engine-finalize-autoplace';
 import { decollideHandPlaced } from './engine-finalize-text';
@@ -28,13 +29,16 @@ const zeroTotals = (): PageFinalizeTotals =>
  * must keep these — found live, a rebuilt scene of the promo lost its 3800ms
  * length and played at motion + hold instead.
  */
-export function pageSceneFields(page: Page): Pick<Page, 'transition' | 'auto_advance' | 'notes' | 'audio_cues'> {
-  const { transition, auto_advance, notes, audio_cues } = page;
+export function pageSceneFields(page: Page): Pick<Page, 'transition' | 'auto_advance' | 'notes' | 'audio_cues' | 'markers' | 'world'> {
+  const { transition, auto_advance, notes, audio_cues, markers, world } = page;
   return {
     ...(transition ? { transition } : {}),
     ...(auto_advance !== undefined ? { auto_advance } : {}),
     ...(notes !== undefined ? { notes } : {}),
     ...(audio_cues ? { audio_cues } : {}),
+    // A continuous scene's time names and camera world belong to the page, not its layers.
+    ...(markers ? { markers } : {}),
+    ...(world ? { world } : {}),
   };
 }
 
@@ -47,7 +51,7 @@ export function themeSpecOf(spec: DesignSpec): ThemeSpec | undefined {
 /** The rescue chain over ONE layers array: strip nulls → flow positionless →
  *  de-collide → snap back anything pushed off → re-light. Idempotent. Mutates in
  *  place; returns the counts. */
-export function finalizePageLayers(layers: Layer[], w: number, h: number, theme?: ThemeSpec): PageFinalizeTotals {
+export function finalizePageLayers(layers: Layer[], w: number, h: number, theme?: ThemeSpec, world?: WorldBox): PageFinalizeTotals {
   const t = zeroTotals();
   if (!Array.isArray(layers) || !layers.length) return t;
   t.nulls = stripNullLayers(layers);
@@ -73,7 +77,7 @@ export function finalizePageLayers(layers: Layer[], w: number, h: number, theme?
   // y=898 after add_layers and at y=1095 — wholly outside a 1080px canvas —
   // after seal.) Only fires on a layer with NO overlap at all, so a deliberate
   // bleed is untouched.
-  t.snapped = snapOffCanvasContent(layers, w, h);
+  t.snapped = snapOffCanvasContent(layers, w, h, world);
   t.relit = fixInvisibleText(layers, w, h, theme);
   return t;
 }
@@ -82,11 +86,11 @@ export function finalizePageLayers(layers: Layer[], w: number, h: number, theme?
 export function finalizeSpecPages(spec: DesignSpec): PageFinalizeTotals {
   const totals = zeroTotals();
   const w = spec.document.width, h = spec.document.height, theme = themeSpecOf(spec);
-  const arrays: Layer[][] = [];
-  if (Array.isArray(spec.layers)) arrays.push(spec.layers);
-  for (const p of spec.pages ?? []) if (Array.isArray(p.layers)) arrays.push(p.layers);
-  for (const ls of arrays) {
-    const t = finalizePageLayers(ls, w, h, theme);
+  const arrays: Array<{ ls: Layer[]; world?: WorldBox }> = [];
+  if (Array.isArray(spec.layers)) arrays.push({ ls: spec.layers, world: spec.world });
+  for (const p of spec.pages ?? []) if (Array.isArray(p.layers)) arrays.push({ ls: p.layers, world: p.world });
+  for (const { ls, world } of arrays) {
+    const t = finalizePageLayers(ls, w, h, theme, world);
     totals.nulls += t.nulls; totals.recovered += t.recovered; totals.placed += t.placed;
     totals.bgFilled += t.bgFilled; totals.reflowed += t.reflowed; totals.relit += t.relit;
     totals.snapped += t.snapped; totals.placeholders += t.placeholders;

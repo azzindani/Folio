@@ -20,6 +20,7 @@ import type { AnimationSpec } from '../animation/types';
 import { generateDesignAnimationCSS } from '../animation/css-generator';
 import { usesDraw } from '../animation/keyframe-css';
 import { expandCounts } from './count-expand';
+import { resolveTimeline } from '../animation/timeline-resolve';
 
 export interface AnimatedSVGOptions {
   /** Which page of a multi-page design to export. Defaults to the first. */
@@ -87,7 +88,9 @@ export function buildAnimatedSVG(authored: DesignSpec, opts: AnimatedSVGOptions)
   const spec = expandCounts(authored);
   const svg = opts.renderSVG(spec, pageIndex);
 
-  const layers = pageLayers(spec, pageIndex);
+  // Precomp clocks, links and in/out windows onto the scene clock — the same
+  // resolved tree the flipbook samples, so the SVG and the GIF agree.
+  const layers = resolveTimeline(pageLayers(spec, pageIndex));
   const anims = collectLayerAnimations(layers);
 
   // Also honour the top-level `spec.animations` map. That is the shape the
@@ -114,7 +117,7 @@ export function buildAnimatedSVG(authored: DesignSpec, opts: AnimatedSVGOptions)
     }
   }
 
-  const css = anims.size > 0 ? generateDesignAnimationCSS(anims, layers) : '';
+  const css = generateDesignAnimationCSS(anims, layers, { lifespans: true });
   const drawIds = [...anims.entries()].filter(([, a]) => usesDraw(a)).map(([id]) => id);
   return { svg: injectStyle(normalisePathLength(svg, drawIds), css), animatedLayers: [...anims.keys()] };
 }

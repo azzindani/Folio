@@ -39,10 +39,21 @@ describe('cullUnseenClips', () => {
     expect(ids(cullUnseenClips([far, near] as unknown as Layer[], 1080, 1080))).toEqual(['near', 'b']);
   });
 
-  it('never drops unclipped content, or a clip it cannot measure', () => {
+  it('drops content wholly off the canvas, keeps what bleeds in, and never drops what it cannot measure', () => {
     const loose = rect('loose', -3000, 100);
+    const bleed = rect('bleed', -200, 100);
     const odd = mask('odd', [rect('c', -3000, 130)], { transform: 'perspective(2)' });
-    expect(ids(cullUnseenClips([loose, odd] as unknown as Layer[], 1080, 1080))).toEqual(['loose', 'odd', 'c']);
+    const unread = rect('unread', -3000, 100, { transform: 'perspective(2)' });
+    expect(ids(cullUnseenClips([loose, bleed, odd, unread] as unknown as Layer[], 1080, 1080))).toEqual(['bleed', 'odd', 'c', 'unread']);
+  });
+
+  it('drops what draws nothing — outside its window, or faded out — unless another layer clips with it', () => {
+    const gone = rect('gone', 10, 10, { visible: false });
+    const faded = rect('faded', 10, 10, { opacity: 0 });
+    const shape = rect('shape', 10, 10, { opacity: 0 });
+    const masked = rect('masked', 10, 10, { clip_path_ref: 'shape' });
+    const group = { id: 'g', type: 'group', z: 1, layers: [rect('a', 10, 10, { visible: false }), rect('b', 10, 10)] };
+    expect(ids(cullUnseenClips([gone, faded, shape, masked, group] as unknown as Layer[], 1080, 1080))).toEqual(['shape', 'masked', 'g', 'b']);
   });
 
   it('renders the shape that aborted resvg on the live server', () => {

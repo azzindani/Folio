@@ -43,3 +43,6 @@ export { morphMotion } from './engine/motion-morph-op';
 export { audioMotion } from './engine/motion-audio-op';
 export { beatsMotion } from './engine/motion-beats-op';
 export { captionsMotion } from './engine/motion-captions-op';
+export { markersMotion, spanMotion } from './engine/motion-time-ops';
+export { storyboardMotion, lintMotion } from './engine/motion-storyboard-op';
+export { precompMotion, linkMotion } from './engine/motion-precomp-op';

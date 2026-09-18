@@ -13,7 +13,10 @@ import { buildEditorLink } from './engine/editor-link';
 import { evaluateFormula, isFormula } from '../scripting/formula';
 import type { FormulaContext } from '../scripting/formula';
 import { addKeyframe } from '../ui/panels/timeline-panel';
-import { sceneTracks, sceneLength, renderSceneASCII } from './engine/timeline-ascii';
+import { sceneTracks, sceneLength, renderSceneASCII, lifeWindowList } from './engine/timeline-ascii';
+import { resolveTimeline } from '../animation/timeline-resolve';
+import { readMarkers } from './engine/motion-time';
+import { animationDuration } from '../export/gif-frames';
 import type { Keyframe } from '../animation/types';
 import { getClientScript } from '../export/remote-server';
 import { syncAnimationsToSpec } from './engine/animation-sync';
@@ -232,13 +235,19 @@ export function inspectTimeline(args: {
 
   // Scene view: every track (groups descended) as a bar from its delay to its
   // end, so a stagger, a late exit and a loop each read as what they are.
-  const tracks = sceneTracks(layers);
-  const ascii = renderSceneASCII(layers, tracks);
+  // Precomp clocks and links resolved first: the bars are where tracks PLAY.
+  const resolved = resolveTimeline(layers);
+  const tracks = sceneTracks(resolved);
+  const markers = readMarkers(spec, args.page_id ? (spec.pages ?? []).find((p: Page) => p.id === args.page_id) : undefined);
+  const ascii = renderSceneASCII(resolved, tracks, 56, markers);
+  const windows = lifeWindowList(resolved);
 
   return okResult(op, {
     track_count: tracks.length,
-    scene_ms: sceneLength(tracks),
+    scene_ms: Math.max(sceneLength(tracks), animationDuration(layers)),
     tracks,
+    ...(Object.keys(markers).length ? { markers } : {}),
+    ...(windows.length ? { windows } : {}),
     ascii,
     ...(tracks.length === 0 ? { hint: 'No motion yet — animation(op:sequence) builds a scene in one call; op:presets lists the vocabulary.' } : {}),
   });
