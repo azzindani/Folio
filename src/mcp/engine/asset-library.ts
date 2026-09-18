@@ -21,6 +21,7 @@ import {
   type AssetProvenance,
 } from './assets';
 import { processAsset, hasWork, ProcessError, type ProcessSpec } from './asset-process';
+import { probeAudioBytes } from './asset-audio';
 import {
   sha256, findByHash, findBySource, upsertLibraryEntry, removeLibraryEntry,
   readLibraryIndex, type LibraryEntry,
@@ -265,6 +266,10 @@ export function ingestLibraryAsset(args: LibraryIngestArgs): { entry: LibraryEnt
       'Downscale/compress the file, or raise FOLIO_MAX_ASSET_BYTES.');
   }
   buf = stripSvgScripts(buf, clean.ext, warnings);
+  // The same check the project store makes: a sound's length is what op:audio
+  // and the export mix plan with, and a file with no audio stream is refused.
+  const probed = clean.kind === 'audio' ? probeAudioBytes(buf, clean.ext) : null;
+  if (probed === 'not-audio') throw new AssetError(`"${clean.name}" has no audio stream`, 415, 'Store an mp3, wav, m4a, aac, ogg, opus or flac file.');
   if (hasWork(args.process)) {
     try {
       const processed = processAsset(buf, clean.ext, args.process);
@@ -309,6 +314,7 @@ export function ingestLibraryAsset(args: LibraryIngestArgs): { entry: LibraryEnt
     ...(meta.width ? { width: meta.width, height: meta.height } : {}),
     ...(meta.dominant_colors ? { dominant_colors: meta.dominant_colors } : {}),
     ...(meta.luminance ? { luminance: meta.luminance } : {}),
+    ...(probed ? { duration_ms: probed.duration_ms } : {}),
     ...(args.alt ? { alt: String(args.alt).slice(0, 300) } : {}),
     added: new Date().toISOString().split('T')[0] ?? '',
     ...(args.provenance ? { provenance: args.provenance } : {}),

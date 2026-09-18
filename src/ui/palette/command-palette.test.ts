@@ -433,10 +433,13 @@ describe('CommandPalette — more commands', () => {
     vi.restoreAllMocks();
   });
 
-  it('export-html command triggers download when design is set', () => {
+  // Async: the HTML export loads svg-animate lazily. Not waiting for the
+  // download let that import land after the environment was torn down — an
+  // unhandled rejection in a loaded full run, and nothing actually asserted.
+  it('export-html command triggers download when design is set', async () => {
     Object.defineProperty(URL, 'createObjectURL', { writable: true, value: vi.fn().mockReturnValue('blob:html') });
     Object.defineProperty(URL, 'revokeObjectURL', { writable: true, value: vi.fn() });
-    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+    const download = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
     const { state, palette } = setup();
     state.set('design', {
       _protocol: 'design/v1',
@@ -449,6 +452,7 @@ describe('CommandPalette — more commands', () => {
     input.value = 'Export as HTML';
     input.dispatchEvent(new Event('input'));
     expect(() => container.querySelector<HTMLElement>('.cmd-row')!.click()).not.toThrow();
+    await vi.waitFor(() => expect(download).toHaveBeenCalled(), { timeout: 10000 });
     vi.restoreAllMocks();
   });
 

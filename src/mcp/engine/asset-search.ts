@@ -1,7 +1,8 @@
-// Asset finder — search free, openly-licensed sources for photos, icons and
-// fonts, without an API key anywhere.
+// Asset finder — search free, openly-licensed sources for photos, icons,
+// fonts and sound, without an API key anywhere.
 //
-//   openverse  → CC/PD photography + illustration (aggregates Flickr, museums…)
+//   openverse  → CC/PD photography + illustration (aggregates Flickr, museums…),
+//                and its audio index: Freesound effects, Jamendo music
 //   wikimedia  → Commons: documentary photos, diagrams, historic + PD material
 //   iconify    → 200k+ icons across 150 open sets, incl. brand marks
 //   fontsource → the Google Fonts / open-source font catalogue
@@ -18,10 +19,11 @@ export type AssetSourceId = 'openverse' | 'wikimedia' | 'iconify' | 'font';
 export interface AssetCandidate {
   ref: string;                 // hand to asset_fetch
   source: AssetSourceId;
-  kind: 'images' | 'icons' | 'fonts';
+  kind: 'images' | 'icons' | 'fonts' | 'audio';
   title: string;
   width?: number;
   height?: number;
+  duration_ms?: number;        // audio: how long the file plays
   filetype?: string;
   license?: string;            // human label, e.g. "CC BY-SA 2.0" / "OFL-1.1"
   attribution?: string;        // ready-to-print credit line (when required)
@@ -70,6 +72,46 @@ export async function searchOpenverse(query: string, limit: number, category?: s
     if (r.attribution) c.attribution = r.attribution;
     if (r.foreign_landing_url) c.page = r.foreign_landing_url;
     if (r.thumbnail) c.preview = r.thumbnail;
+    return c;
+  });
+}
+
+// ── Openverse audio ──────────────────────────────────────────
+interface OVAudioRow extends OVRow { duration?: number; source?: string; category?: string | null }
+
+/** Openverse says "mp32" for Jamendo's 96 kbit stream; the bytes are plain mp3. */
+export function audioExt(filetype?: string): string | undefined {
+  const t = String(filetype ?? '').toLowerCase();
+  if (!t) return undefined;
+  return t.startsWith('mp3') ? 'mp3' : t;
+}
+
+/**
+ * Sound for a video: Freesound effects, Jamendo music and Commons recordings,
+ * through Openverse's audio index. `category` "music" narrows to tagged music;
+ * most effects carry no category at all, so a sound search leaves it off.
+ */
+export async function searchOpenverseAudio(query: string, limit: number, category?: string): Promise<AssetCandidate[]> {
+  const qs = new URLSearchParams({
+    q: query, page_size: String(limit),
+    license_type: 'commercial,modification',
+    mature: 'false',
+  });
+  if (category) qs.set('category', category);
+  const data = await httpJSON<{ results?: OVAudioRow[] }>(`https://api.openverse.org/v1/audio/?${qs}`);
+  return (data.results ?? []).filter(r => r.id && r.url).map(r => {
+    const c: AssetCandidate = {
+      ref: `openverse-audio:${r.id}`, source: 'openverse', kind: 'audio',
+      title: (r.title ?? 'untitled').slice(0, 120),
+      license: ovLicenseLabel(r.license, r.license_version),
+    };
+    const ext = audioExt(r.filetype);
+    if (ext) c.filetype = ext;
+    if (typeof r.duration === 'number') c.duration_ms = r.duration;
+    if (r.creator) c.creator = r.creator;
+    if (r.attribution) c.attribution = r.attribution;
+    if (r.foreign_landing_url) c.page = r.foreign_landing_url;
+    if (r.source) c.note = `${r.source}${r.category ? ` · ${r.category}` : ''}`;
     return c;
   });
 }
@@ -183,7 +225,7 @@ export async function searchFonts(query: string, limit: number): Promise<AssetCa
 }
 
 // ── Multiplexer ──────────────────────────────────────────────
-export type SearchWhat = 'photo' | 'illustration' | 'diagram' | 'icon' | 'font' | 'logo';
+export type SearchWhat = 'photo' | 'illustration' | 'diagram' | 'icon' | 'font' | 'logo' | 'sound' | 'music';
 
 const CATEGORY: Partial<Record<SearchWhat, string>> = {
   photo: 'photograph',
@@ -207,6 +249,12 @@ export async function runSearch(what: SearchWhat, query: string, limit: number)
     jobs.push({ id: 'fontsource', run: () => searchFonts(query, n) });
   } else if (what === 'diagram') {
     jobs.push({ id: 'wikimedia', run: () => searchWikimedia(query, n) });
+  } else if (what === 'sound') {
+    jobs.push({ id: 'openverse', run: () => searchOpenverseAudio(query, n) });
+  } else if (what === 'music') {
+    // Few providers tag music, so the tagged set is topped up from an untagged search.
+    jobs.push({ id: 'openverse', run: () => searchOpenverseAudio(query, n, 'music') });
+    jobs.push({ id: 'openverse', run: () => searchOpenverseAudio(`${query} music`, n) });
   } else {
     jobs.push({ id: 'openverse', run: () => searchOpenverse(query, n, CATEGORY[what]) });
     jobs.push({ id: 'wikimedia', run: () => searchWikimedia(query, Math.ceil(n / 2)) });
@@ -222,16 +270,23 @@ export async function runSearch(what: SearchWhat, query: string, limit: number)
   const failures: string[] = [];
   // Interleave, so a provider that returned 8 rows cannot bury one that
   // returned 2 — both viewpoints stay visible in a truncated list.
+  // Two searches of one index can return the same file: keep its first sighting.
   const lists = settled.map(s => s.rows);
+  const seen = new Set<string>();
   for (let i = 0; i < Math.max(...lists.map(l => l.length), 0); i++) {
-    for (const l of lists) if (l[i]) results.push(l[i] as AssetCandidate);
+    for (const l of lists) {
+      const c = l[i];
+      if (c && !seen.has(c.ref)) { seen.add(c.ref); results.push(c); }
+    }
   }
   for (const s of settled) if (s.error) failures.push(`${s.id}: ${s.error}`);
   return { results: results.slice(0, n), failures };
 }
 
 // ── MCP op ───────────────────────────────────────────────────
-const WHATS: SearchWhat[] = ['photo', 'illustration', 'diagram', 'icon', 'font', 'logo'];
+const WHATS: SearchWhat[] = ['photo', 'illustration', 'diagram', 'icon', 'font', 'logo', 'sound', 'music'];
+const WHAT_ALIASES: Record<string, SearchWhat> = { audio: 'sound', sfx: 'sound', sound_effect: 'sound', effect: 'sound', song: 'music', image: 'photo' };
+const isAudio = (w: SearchWhat): boolean => w === 'sound' || w === 'music';
 
 /**
  * manage_design {op:"asset_search"} — find openly-licensed material.
@@ -246,7 +301,13 @@ export async function assetSearch(args: { query?: string; what?: string; limit?:
   }
   const query = String(args.query ?? '').trim();
   if (!query) return errResult(op, 'query is required', 'Pass what you are looking for, e.g. query:"office desk overhead", what:"photo".');
-  const what = (WHATS.includes(args.what as SearchWhat) ? args.what : 'photo') as SearchWhat;
+  // An unknown `what` still searches photos (a small model's typo should not
+  // cost it the call), but it says so: silently, a request for a sound came
+  // back as "0 results (photo)", which reads as "no such sound".
+  const asked = args.what === undefined || args.what === '' ? 'photo' : String(args.what).trim().toLowerCase();
+  const named = WHAT_ALIASES[asked] ?? asked;
+  const what: SearchWhat = WHATS.includes(named as SearchWhat) ? named as SearchWhat : 'photo';
+  const fellBack = what !== named;
 
   let found: { results: AssetCandidate[]; failures: string[] };
   try {
@@ -257,6 +318,7 @@ export async function assetSearch(args: { query?: string; what?: string; limit?:
   }
 
   const progress = [pOk('Searched', `${found.results.length} result(s) for "${query}" (${what})`)];
+  if (fellBack) progress.push(pWarn(`what:"${String(args.what)}" is not a source — searched photos`, `asset_search finds: ${WHATS.join(', ')}.`));
   for (const f of found.failures) progress.push(pWarn('Source unavailable', f));
   if (!found.results.length) {
     progress.push(pInfo('Nothing matched', 'Try fewer words, or a different `what`.'));
@@ -269,10 +331,12 @@ export async function assetSearch(args: { query?: string; what?: string; limit?:
       op: 'asset_fetch',
       project_path: args.project_path ?? '<your project>',
       ref: first.ref,
-      alt: '<describe what the image shows>',
+      alt: isAudio(what) ? '<what the sound is>' : '<describe what the image shows>',
     },
     remaining: 0,
-    hint: `Pick a ref and fetch it. Fetching stores the file AND its licence; asset_list then reports any credit line you must typeset.`,
+    hint: isAudio(what)
+      ? 'Pick a ref and fetch it, then put it on the timeline with animation(op:audio, src). Fetching stores the file AND its licence; a CC BY sound needs its credit line on the piece.'
+      : `Pick a ref and fetch it. Fetching stores the file AND its licence; asset_list then reports any credit line you must typeset.`,
   } : undefined;
 
   const context = buildContext(op, `asset_search "${query}" → ${found.results.length}`);
@@ -281,9 +345,13 @@ export async function assetSearch(args: { query?: string; what?: string; limit?:
     query, what, results: found.results,
     ...(found.failures.length ? { unavailable: found.failures } : {}),
     licensing: 'Every result here allows commercial use and modification, but many require a CREDIT LINE. attribution is the exact text; it must appear on the design.',
-    hint: found.results.length
-      ? 'These are candidates, not files. Fetch one with op:"asset_fetch" + its ref. width/height are the native pixels — size the layer to that aspect.'
-      : 'No matches. Openverse/Commons index real photographs — for an abstract idea, search the concrete object instead ("stack of paper" not "bureaucracy").',
+    hint: isAudio(what)
+      ? (found.results.length
+        ? 'These are candidates, not files. duration_ms is the length of the file: a cue wants well under 2 s, a music bed the length of the piece (or loop:true on op:audio). Prefer CC0 — a CC BY sound needs its credit line on the piece.'
+        : 'No matches. Name the sound plainly — "whoosh", "click", "pop", "piano loop", "ambient pad" — rather than the mood.')
+      : found.results.length
+        ? 'These are candidates, not files. Fetch one with op:"asset_fetch" + its ref. width/height are the native pixels — size the layer to that aspect.'
+        : 'No matches. Openverse/Commons index real photographs — for an abstract idea, search the concrete object instead ("stack of paper" not "bureaucracy").',
     ...(next_action ? { next_action } : {}),
     progress, context, handover,
   });

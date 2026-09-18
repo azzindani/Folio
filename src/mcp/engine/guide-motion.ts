@@ -151,6 +151,8 @@ MULTI-SCENE PIECES — one video, many pages
     to read at 240 wpm. Whether to cut copy or hold longer is your call.
 
 SOUND — music and cues (mp4 and webm carry it; a GIF has none)
+    manage_design(op:asset_search, what:"music"|"sound", query:"whoosh")  → CC sounds + duration_ms
+    manage_design(op:asset_fetch, ref:"openverse-audio:…")  → lib/audio/whoosh.mp3 (no file of your own needed)
     manage_design(op:asset_add, name:"theme.mp3", …)  → assets/audio/theme.mp3 + duration_ms
     animation(op:audio, src:"assets/audio/theme.mp3", volume:0.6, fade_in:300, fade_out:1200)
                                                   ← music under the whole piece
