@@ -30,6 +30,7 @@ export const TIER2_TOOLS: ToolDefinition[] = [
       properties: {
         design_path:      { type: 'string', description: 'Path to .design.yaml' },
         page_id:          { type: 'string', description: 'Page ID (carousel only)' },
+        parent_id:        { type: 'string', description: 'Add INSIDE this group instead of at the top level — the way to extend a scene that is already built (a continuous composition keeps its world in one group). Coordinates stay in the same space; the group\'s z-order applies. A LOCKED parent also skips the engine\'s rescue passes, so authored geometry is left exactly as sent.' },
         project_path:     { type: 'string', description: 'Project dir — enables relative design_path' },
         layers:           { type: 'array', description: 'Verbose layers array', items: { type: 'object' } },
         layers_shorthand: { type: 'array', description: 'Compact shorthand — 80% fewer tokens', items: { type: 'object' } },

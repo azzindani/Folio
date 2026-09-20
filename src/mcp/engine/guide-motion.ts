@@ -72,7 +72,9 @@ CONTINUOUS COMPOSITION — one scene, many sub-sequences (a 30 s motion piece)
     ×factor travel (a shadow trailing its card, a row whipping after its lead).
   • Travel instead of cutting: op:camera world:{x,y,width,height} lays the page out
     larger than the canvas; shots target a layer, "world" or a region and the camera
-    pans between sections. Shot t takes marker names.
+    pans between sections. Shot t takes marker names. rotation:deg on a shot tilts
+    the camera (the framing follows the turn), so a push can spiral; a slow turn
+    reads as drift, not as a move.
   • Use slide scenes (op:scene) when the piece IS a sequence of cards; use one
     continuous scene when things should move across beats.
 

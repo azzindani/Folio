@@ -83,6 +83,14 @@ describe('lintComposition', () => {
     expect(kinds(notes)).not.toContain('idle');
   });
 
+  it('reads a gentle push as a drift at any depth — scale is a ratio, not a distance', () => {
+    // A 2.5% push held over 3.3 s, deep in a zoom: absolute scale moves 0.23, the eye reads through it.
+    const deep = { id: '__camera', type: 'group', z: 1, x: 0, y: 0, width: 1920, height: 1080,
+      animation: move(0, 3300, { scale: 9.275 }, { scale: 9.505 }),
+      layers: [text('deep', 100, 400, 'one two three four five six')] } as unknown as Layer;
+    expect(kinds(lintComposition([deep], canvas, [{ id: 'd1', at: 0 }], 3300))).not.toContain('reading');
+  });
+
   it('reads headlines, not data texture, and keeps words readable through shots that add none', () => {
     const cells = [0, 1, 2, 3, 4, 5].map(i => text(`cell${i}`, 100, 600 + i * 30, 'north 2024 12,400 units shipped by road', { style: { font_size: 14 }, height: 20 }));
     const head = text('head', 100, 100, 'one two three four five six seven eight', { animation: move(0, 300, { opacity: 0 }, { opacity: 1 }) });
@@ -109,6 +117,14 @@ describe('lintComposition', () => {
     const next = text('next', 100, 400, 'short answer', { animation: move(1300, 300, { opacity: 0 }, { opacity: 1 }) });
     const cut = lintComposition([long, next], canvas, [{ id: 'ask', at: 0 }, { id: 'answer', at: 1300 }], 5000);
     expect(cut.filter(n => n.kind === 'reading').map(n => [n.shot, n.layers])).toEqual([['ask', ['long']]]);
+  });
+
+  // Found live on a piece that dives with a tilt: axis-aligned boxes grow when the camera turns.
+  it('judges overlap under a tilted camera by where things sit, not by their turned boxes', () => {
+    const stack = { id: '__camera', type: 'group', z: 1, x: 0, y: 0, width: 1920, height: 1080,
+      animation: move(0, 2000, { rotation: 0 }, { rotation: 3 }),
+      layers: [text('l1', 100, 100, 'First line here', { width: 1400, height: 96 }), text('l2', 100, 210, 'Second line here', { width: 1400, height: 96 })] } as unknown as Layer;
+    expect(kinds(lintComposition([stack], canvas, [{ id: 'a', at: 0 }], 2000))).not.toContain('overlap');
   });
 
   it('does not see text a scrim or a clip hides, nor scenery the camera has yet to reach', () => {
