@@ -80,8 +80,8 @@ function gesture(parent: string, p: Keyframe, q: Keyframe): string {
   return changed.length === 1 && changed[0] === 'opacity' ? 'fade' : `${parent}|${changed.join(',')}|${q.t - p.t}`;
 }
 
-const DRIFT_PX_S = 60, DRIFT_SCALE_S = 0.05, DRIFT_MIN_MS = 1500;
-const DRIFT_KEYS = new Set(['x', 'y', 'scale', 'scale_x', 'scale_y']);
+const DRIFT_PX_S = 60, DRIFT_SCALE_S = 0.05, DRIFT_DEG_S = 3, DRIFT_MIN_MS = 1500;
+const DRIFT_KEYS = new Set(['x', 'y', 'scale', 'scale_x', 'scale_y', 'rotation']);
 
 /**
  * A slow push or drift — only position and scale, a few pixels a second, held
@@ -89,6 +89,7 @@ const DRIFT_KEYS = new Set(['x', 'y', 'scale', 'scale_x', 'scale_y']);
  * through it, so it is no interruption of a rest; it is still motion, so it is
  * no idle stretch either. Found live: a camera easing 4% closer over
  * each 4.5 s hold made every shot "rest 0 ms" and every line "too short to read".
+ * Position stays absolute (px/s), scale a ratio per second, rotation degrees per second.
  */
 function isDrift(p: Keyframe, q: Keyframe): boolean {
   if (q.t - p.t < DRIFT_MIN_MS) return false;
@@ -97,8 +98,13 @@ function isDrift(p: Keyframe, q: Keyframe): boolean {
   for (const key of new Set([...Object.keys(a), ...Object.keys(b)])) {
     if (key === 't' || key === 'easing' || key === 'hold' || key === 'ambient' || a[key] === b[key]) continue;
     if (!DRIFT_KEYS.has(key)) return false;
-    const d = Math.abs(Number(b[key] ?? (key.startsWith('scale') ? 1 : 0)) - Number(a[key] ?? (key.startsWith('scale') ? 1 : 0)));
-    if (d / secs > (key.startsWith('scale') ? DRIFT_SCALE_S : DRIFT_PX_S)) return false;
+    const from = Number(a[key] ?? (key.startsWith('scale') ? 1 : 0)), to = Number(b[key] ?? (key.startsWith('scale') ? 1 : 0));
+    // Scale is judged as a RATIO: deep in a zoom, scale 9.3 → 9.5 is the same
+    // gentle push as 1 → 1.02 at the top, and an absolute threshold called it a
+    // move (found live on a piece that dives to 13×).
+    const rate = key.startsWith('scale') ? Math.abs(to / (from || 1) - 1) : Math.abs(to - from);
+    const cap = key.startsWith('scale') ? DRIFT_SCALE_S : key === 'rotation' ? DRIFT_DEG_S : DRIFT_PX_S;
+    if (rate / secs > cap) return false;
   }
   return true;
 }
@@ -177,6 +183,8 @@ interface ShotView {
   readable: Set<string>;
   /** The fresh readable lines: new words to read. */
   reads: Landing[];
+  /** Each drawn layer's box with the camera's transform taken out — where things really sit. */
+  world: Map<string, CanvasBox>;
   /** This shot brought the layer in or moved it — itself or through a parent. */
   entered: (id: string) => boolean;
   buried: Array<{ text: string; under: string }>;
@@ -224,7 +232,14 @@ function shotViews(layers: Layer[], canvas: { width: number; height: number }, m
     const moved = new Set(moves.filter(m => m.id !== CAMERA_ID && m.end > mark.at && m.start < until).map(m => m.id));
     const self = (id: string): boolean => moved.has(id) || ((windows.get(id) ?? -1) >= mark.at && (windows.get(id) ?? Infinity) < until);
     const entered = (id: string): boolean => self(id) || (up.get(id) ?? []).some(self);
-    const hidden = new Set(buriedTexts(frame, () => true).map(b => b.text));
+    // Overlap and burial are judged in WORLD space, with the camera's own
+    // transform neutralised. Every layer shares that transform, so it cannot
+    // make two of them overlap — but a TILTED camera inflates each axis-aligned
+    // box (found live: a 2.6° tilt made two stacked headlines "rest on top of
+    // each other"). Edges and readability still use the screen boxes.
+    const flat = frame.map(l => (l.id === CAMERA_ID ? ({ ...l, transform: undefined } as Layer) : l));
+    const hidden = new Set(buriedTexts(flat, () => true).map(b => b.text));
+    const world = new Map(canvasBoxes(flat).map(b => [b.layer.id, b]));
     const texts = canvasBoxes(frame).filter(b => b.layer.type === 'text' && b.opacity > 0.3 && area(b.box) > 0 && !hidden.has(b.layer.id));
     const shown = new Set(texts.filter(b => b.opacity > 0.5).map(b => b.layer.id));
     const fresh = texts.filter(b => shown.has(b.layer.id) && !shownBefore.has(b.layer.id));
@@ -233,7 +248,9 @@ function shotViews(layers: Layer[], canvas: { width: number; height: number }, m
     const inShot = moves.filter(m => m.end > mark.at && m.start < until);
     const lastEnd = (ms: Segment[]): number => ms.reduce((at, m) => Math.max(at, m.end), mark.at);
     const reads = fresh.filter(b => readable.has(b.layer.id)).map((b): Landing => {
-      const by = new Set([b.layer.id, ...(up.get(b.layer.id) ?? [])]);
+      // The camera is an ancestor of everything and moves on its own schedule;
+      // its part is judged below, by whether it was already moving when the line landed.
+      const by = new Set([b.layer.id, ...(up.get(b.layer.id) ?? [])].filter(id => id !== CAMERA_ID));
       const own = lastEnd(inShot.filter(m => by.has(m.id)));
       // A pan that starts after the line landed is the camera leaving, not arriving.
       const camera = lastEnd(inShot.filter(m => m.id === CAMERA_ID && m.start <= own));
@@ -242,7 +259,8 @@ function shotViews(layers: Layer[], canvas: { width: number; height: number }, m
     views.push({
       mark, until, t, texts, fresh, readable, reads,
       entered,
-      buried: buriedTexts(frame, id => entered(id) || freshIds.has(id)),
+      buried: buriedTexts(flat, id => entered(id) || freshIds.has(id)),
+      world,
     });
     shownBefore = shown;
   });
@@ -261,7 +279,8 @@ function restNotes(layers: Layer[], canvas: { width: number; height: number }, m
         const A = texts[p], B = texts[q];
         if (!A || !B) continue;
         const key = [A.layer.id, B.layer.id].sort().join('+');
-        if (seenPairs.has(key) || overlapArea(A.box, B.box) < 0.15 * Math.min(area(A.box), area(B.box))) continue;
+        const a = v.world.get(A.layer.id)?.box ?? A.box, b = v.world.get(B.layer.id)?.box ?? B.box;
+        if (seenPairs.has(key) || overlapArea(a, b) < 0.15 * Math.min(area(a), area(b))) continue;
         seenPairs.add(key);
         notes.push({ kind: 'overlap', shot: mark.id, at_ms: t, layers: [A.layer.id, B.layer.id],
           note: `In "${mark.id}", "${A.layer.id}" and "${B.layer.id}" rest on top of each other at ${t}ms. Move one, or hide it before the other lands.` });

@@ -25,7 +25,7 @@ import { framePose, type Box } from './motion-camera';
 import { readMarkers, resolveTime, type TimeContext } from './motion-time';
 
 type CameraArgs = { design_path: string; shots?: unknown; exclude?: unknown; padding?: number; world?: unknown; page_id?: string; project_path?: string };
-type Shot = { t: number; target: string[] | 'all' | 'world' | Box; padding?: number; easing?: string; hold?: boolean };
+type Shot = { t: number; target: string[] | 'all' | 'world' | Box; padding?: number; easing?: string; hold?: boolean; rotation?: number };
 
 const CAMERA = '__camera';
 
@@ -34,7 +34,7 @@ const isBox = (v: unknown): v is Box => !!v && typeof v === 'object' && !Array.i
   && (v as Box).width > 0 && (v as Box).height > 0;
 
 function parseShots(v: unknown, ctx: TimeContext): Shot[] | string {
-  if (!Array.isArray(v) || v.length === 0) return 'shots must be a non-empty array of {t, target?, padding?, easing?, hold?}.';
+  if (!Array.isArray(v) || v.length === 0) return 'shots must be a non-empty array of {t, target?, padding?, easing?, hold?, rotation?}.';
   const out: Shot[] = [];
   for (const [i, s] of v.entries()) {
     const o = (s && typeof s === 'object' ? s : {}) as Record<string, unknown>;
@@ -45,7 +45,8 @@ function parseShots(v: unknown, ctx: TimeContext): Shot[] | string {
     const target = raw === undefined || raw === 'all' ? 'all' : raw === 'world' ? 'world' : isBox(raw) ? raw : toIdList(raw);
     if (!target) return `shots[${i}].target must be "all", "world", a region {x, y, width, height}, a layer id or a list of ids.`;
     out.push({ t, target, padding: typeof o['padding'] === 'number' ? o['padding'] : undefined,
-      easing: typeof o['easing'] === 'string' ? o['easing'] : undefined, hold: o['hold'] === true });
+      easing: typeof o['easing'] === 'string' ? o['easing'] : undefined, hold: o['hold'] === true,
+      rotation: typeof o['rotation'] === 'number' && Number.isFinite(o['rotation']) ? o['rotation'] : undefined });
   }
   return out.sort((a, b) => a.t - b.t);
 }
@@ -139,9 +140,14 @@ export function cameraMotion(args: CameraArgs): ToolResult {
     if (pin) Object.assign(pin, frame);
   }
 
+  // A rotation, once a shot sets one, is carried by every later shot: otherwise
+  // the track would spin back to 0 between them.
+  let turn = 0;
   const frames: Keyframe[] = shots.map((s, i) => {
-    const pose = framePose(boxes[i] as Box, canvas, s.padding ?? args.padding ?? 0, pivot);
-    return { t: s.t, scale: pose.scale, x: pose.x, y: pose.y, ...(s.easing ? { easing: s.easing } : {}), ...(s.hold ? { hold: true } : {}) };
+    turn = s.rotation ?? turn;
+    const pose = framePose(boxes[i] as Box, canvas, s.padding ?? args.padding ?? 0, pivot, turn);
+    return { t: s.t, scale: pose.scale, x: pose.x, y: pose.y, ...(turn ? { rotation: turn } : {}),
+      ...(s.easing ? { easing: s.easing } : {}), ...(s.hold ? { hold: true } : {}) };
   });
   // A single shot still needs two frames to play: hold it.
   const track = frames.length === 1 ? [frames[0] as Keyframe, { ...(frames[0] as Keyframe), t: (frames[0]?.t ?? 0) + 1 }] : frames;
@@ -156,7 +162,8 @@ export function cameraMotion(args: CameraArgs): ToolResult {
   writeYAML(dPath, spec);
 
   return okResult(op, {
-    design_path: dPath, camera: CAMERA, reused: !!existing, ...(world ? { world } : {}), shots: frames.map(f => ({ t: f.t, scale: f.scale, x: f.x, y: f.y })),
+    design_path: dPath, camera: CAMERA, reused: !!existing, ...(world ? { world } : {}),
+    shots: frames.map(f => ({ t: f.t, scale: f.scale, x: f.x, y: f.y, ...(f.rotation ? { rotation: f.rotation } : {}) })),
     progress: [pOk(`${existing ? 'Re-framed' : 'Placed'} a camera over the page`, `${shots.length} shot(s); the ground stays still behind it`)],
     next_action: { tool: 'animation', params: { op: 'frame', design_path: dPath, ...(args.page_id ? { page_id: args.page_id } : {}), t: shots[Math.min(1, shots.length - 1)]?.t ?? 0 }, remaining: 0,
       hint: 'Check a shot with op:frame. Add exclude:[ids] to hold a layer still while the camera moves.' },

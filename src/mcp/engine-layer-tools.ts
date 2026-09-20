@@ -2,6 +2,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import type { DesignSpec, Layer } from '../schema/types';
+import { addIntoGroup, parentIsLocked } from './engine-layer-parent';
+import { autoFitPosterCanvas } from './engine-layer-autofit';
 import type { ToolResult } from './types';
 
 import type { ProgressItem } from './types';
@@ -35,8 +37,10 @@ import { VALID_LAYER_TYPES, dimError } from './engine-edit-tools';
 import { resolveThemeColors, isFullCanvasBgRect, hasFullCanvasBackdrop, hasRenderableContent } from './engine-layer-predicates';
 export { isFullCanvasBgRect, hasFullCanvasBackdrop, hasRenderableContent };
 
+const PARENT_HINT = 'manage_design {op:"inspect"} lists the group ids; leave parent_id out to add at the top level.';
+
 export function addLayers(args: {
-  design_path: string; page_id?: string; project_path?: string;
+  design_path: string; page_id?: string; project_path?: string; parent_id?: string;
   layers?: Layer[]; layers_shorthand?: ShorthandLayer[]; task_path?: string;
 }): ToolResult {
   const op = 'add_layers';
@@ -215,7 +219,13 @@ export function addLayers(args: {
   // Recover a layer-array serialized into ONE text layer (else it renders as a raw JSON blob — suite-033/084).
   const rec = recoverEmbeddedLayers(incoming);
   if (rec.recovered || rec.dropped) progress.push(pInfo(`Recovered ${rec.recovered}, dropped ${rec.dropped} JSON-in-text layer(s)`, 'a stringified layer array was rendering as literal text'));
-  const placed = spec.pages ? 0 : placePositionlessLayers(incoming, spec.document.width, spec.document.height);
+  // A locked parent means the caller owns this geometry (a continuous scene keeps
+  // its whole world in one locked group, authored far from the canvas box and, deep
+  // in a zoom, only a few px tall). The canvas-relative rescues would "fix" exactly
+  // what makes it work, so adding INTO a locked group skips them — the same bargain
+  // the lock already makes for layers once they are inside it.
+  const intoLocked = parentIsLocked(spec.pages?.length ? spec.pages.find(p => p.id === (args.page_id ?? spec.pages?.[0]?.id))?.layers : spec.layers, args.parent_id);
+  const placed = spec.pages || intoLocked ? 0 : placePositionlessLayers(incoming, spec.document.width, spec.document.height);
   if (placed) progress.push(pInfo(`Placed ${placed} positionless layer(s)`, 'flowed into a centered column'));
 
   // Draw a foreignObject BAR chart natively so it isn't blank in PNG/PDF export —
@@ -233,7 +243,7 @@ export function addLayers(args: {
   // Rescue a hand-placed, unsized text poster (a weak model that skipped the
   // preset) into a readable title/subtitle/body hierarchy. Posters only — paged
   // designs route into pages and have their own flow.
-  if (!spec.pages) {
+  if (!spec.pages && !intoLocked) {
     const restructured = structureHandPlacedText(incoming, spec.document.width, spec.document.height);
     if (restructured) progress.push(pInfo(`Structured ${restructured} unsized text layer(s)`, 'hand-placed → title/subtitle/body hierarchy'));
     // Then de-collide: a model that SIZED its text still gives wrong heights (it
@@ -296,16 +306,28 @@ export function addLayers(args: {
     if (!page) return errResult(op, `Page not found: ${pageId}`, `Pages: ${pages.map(p => p.id).join(', ')}`, progress);
     if (!args.page_id && pages.length === 1) progress.push(pInfo('Routed to the only page', pageId));
     if (!page.layers) page.layers = [];
-    const sunk = demoteCoveringBackdrops(page.layers, incoming, spec.document.width, spec.document.height);
-    if (sunk) progress.push(pInfo(`Sank ${sunk} full-canvas backdrop(s) behind page content`, 'a background added last would have blanked the page'));
-    page.layers.push(...incoming);
+    if (args.parent_id) {
+      const err = addIntoGroup(page.layers, args.parent_id, incoming, `on page ${pageId}`);
+      if (err) return errResult(op, err, PARENT_HINT, progress);
+      progress.push(pInfo(`Added inside "${args.parent_id}"`, `${incoming.length} layer(s) — the group's own z-order applies`));
+    } else {
+      const sunk = demoteCoveringBackdrops(page.layers, incoming, spec.document.width, spec.document.height);
+      if (sunk) progress.push(pInfo(`Sank ${sunk} full-canvas backdrop(s) behind page content`, 'a background added last would have blanked the page'));
+      page.layers.push(...incoming);
+    }
     activeLayers = page.layers;
   } else {
     if (!spec.layers) spec.layers = [];
     const hadContent = spec.layers.length > 0;
-    const sunk = demoteCoveringBackdrops(spec.layers, incoming, spec.document.width, spec.document.height);
-    if (sunk) progress.push(pInfo(`Sank ${sunk} full-canvas backdrop(s) behind poster content`, 'a background added last would have blanked the poster'));
-    spec.layers.push(...incoming);
+    if (args.parent_id) {
+      const err = addIntoGroup(spec.layers, args.parent_id, incoming, 'in this design');
+      if (err) return errResult(op, err, PARENT_HINT, progress);
+      progress.push(pInfo(`Added inside "${args.parent_id}"`, `${incoming.length} layer(s) — the group's own z-order applies`));
+    } else {
+      const sunk = demoteCoveringBackdrops(spec.layers, incoming, spec.document.width, spec.document.height);
+      if (sunk) progress.push(pInfo(`Sank ${sunk} full-canvas backdrop(s) behind poster content`, 'a background added last would have blanked the poster'));
+      spec.layers.push(...incoming);
+    }
     activeLayers = spec.layers;
     // Auto-fit the canvas to a fresh single full-bleed preset. A flow preset
     // (sections/stat/…) builds its group at the origin sized to its own content.
@@ -321,35 +343,8 @@ export function addLayers(args: {
     // with the backdrop showing through the empty lower half (the sage-block
     // "In Praise of Doing Less" bug). Fit the doc to the group and clamp the
     // backdrops to it so there's no dead band.
-    if (!hadContent && !spec.world) { // a declared camera world is wider than the canvas on purpose
-      const { width: DW, height: DH } = spec.document;
-      type Box = Layer & { x?: number; y?: number; width?: number; height?: number };
-      const groups = incoming.filter(l => l.type === 'group') as Box[];
-      const others = incoming.filter(l => l.type !== 'group') as Box[];
-      const fullCanvasRect = (l: Box): boolean => l.type === 'rect'
-        && (l.width ?? 0) >= DW * 0.9 && (l.height ?? 0) >= DH * 0.9;
-      const g = groups.length === 1 ? groups[0] : undefined;
-      if (g && others.every(fullCanvasRect)
-        && (g.x ?? 0) <= DW * 0.02 && (g.y ?? 0) <= DH * 0.02
-        && typeof g.width === 'number' && g.width > 0 && typeof g.height === 'number' && g.height > 0) {
-        // The user/model created the doc with a deliberate standard portrait/
-        // square ratio (4:5, 9:16, 1:1, …) → HONOR it instead of silently
-        // resizing the canvas to the content's natural height (4:5 → 3:5).
-        const ratioFit = honorPosterRatio(g as unknown as Layer, others as unknown as Layer[], DW, DH);
-        if (ratioFit) {
-          spec.document.width = ratioFit.width;
-          spec.document.height = ratioFit.height;
-          progress.push(pInfo(`Kept the requested ${DW}×${DH} aspect ratio`, `fit the content to a ${ratioFit.width}×${ratioFit.height} canvas (same shape) instead of reshaping it to the content's height`));
-        } else {
-          spec.document.width = g.width;
-          spec.document.height = g.height;
-          for (const r of others) {
-            if ((r.height ?? 0) > g.height) r.height = g.height;
-            if ((r.width ?? 0) > g.width) r.width = g.width;
-          }
-        }
-      }
-    }
+    // Fit a fresh full-bleed preset's canvas to it (engine-layer-autofit.ts).
+    if (!hadContent && !spec.world && !args.parent_id) autoFitPosterCanvas(spec, incoming, progress);
   }
   // Remove stacked duplicate full-canvas presets (a thrashing model rebuilds the
   // poster several times, leaving N overlapping content groups). Keep the final
