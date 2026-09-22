@@ -32,6 +32,7 @@ import { buildPptx, type PptxSlide } from '../export/pptx-export';
 import { extractPptxTexts } from '../export/pptx-text-extract';
 import { reviewLayout, type PageLayout } from './engine/layout-review';
 import { withMotion } from './engine/layout-review-motion';
+import { rememberReview, type Delta } from './engine/layout-review-compare';
 
 /**
  * The design's own resolution, for px → PostScript-point conversion in the PDF.
@@ -483,11 +484,14 @@ export function diagnoseDesign(args: { design_path: string; project_path?: strin
   // review:true — how each page spends its canvas (layout-review.ts). Two small
   // renders per page, so only on request; a failed render keeps the diagnosis.
   let review: PageLayout[] | undefined;
+  let sinceLast: Record<string, Delta> | null = null;
   if (args.review) {
     try {
       const projDir = args.project_path ?? path.dirname(path.dirname(dPath));
       // A page that moves is also measured at each shot's rest (layout-review-motion.ts).
       review = withMotion(reviewLayout(spec, projDir, args.page_id), spec, projDir, args.page_id);
+      // Kept beside the design, so the next review can say what the revision changed.
+      sinceLast = rememberReview(dPath, review);
       progress.push(pOk('Measured layout', `${review.length} page(s), ${review.reduce((n, p) => n + p.notes.length, 0)} note(s)`));
     } catch (err) {
       progress.push(pInfo('Layout review skipped', (err as Error).message));
@@ -516,6 +520,7 @@ export function diagnoseDesign(args: { design_path: string; project_path?: strin
     ...(findings.length > 40 ? { findings_truncated: findings.length - 40 } : {}),
     ...(mark ? { mark } : {}),
     ...(review ? { review } : {}),
+    ...(sinceLast ? { since_last: sinceLast } : {}),
     progress, context,
   });
 }
