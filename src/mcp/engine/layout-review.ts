@@ -1,0 +1,199 @@
+// diagnose_design {review:true} — how each page spends its canvas.
+//
+// Renders every page twice at a small size — the ground alone, then the whole
+// page — and measures the difference (layout-measure.ts): how much is covered,
+// where the big empty areas are, where the visual weight sits, and how large
+// each component and the type are next to the canvas. Numbers and places only;
+// what to do about them is the model's call (CLAUDE.md §0.4).
+//
+// Found live (2026-09-20, a 1920×1080 build): "so much dead space" and "the
+// last slide is not in the middle" were caught by the user, never by a check.
+
+import type { DesignSpec, Layer } from '../../schema/types';
+import { renderToSVGString } from './svg-export';
+import { rasterizeSync } from '../../utils/resvg-isolate';
+import { resvgFontOption } from './fonts';
+import { cullUnseenClips } from '../../export/frame-cull';
+import {
+  inkGrid, occupancy, emptyRects, balance, thirds, contentBox, round2,
+  type Rect, type Balance,
+} from './layout-measure';
+
+export interface Box { x: number; y: number; width: number; height: number }
+export interface Component { id: string; type: string; box: Box; share: { w: number; h: number; area: number } }
+
+export interface PageLayout {
+  page?: string;
+  canvas: string;
+  /** Share of the canvas painted over the ground. */
+  ink: number;
+  /** Share the content spans — ink plus the small gaps inside it. */
+  occupied: number;
+  content_box: (Box & { margins: { left: number; right: number; top: number; bottom: number } }) | null;
+  empty: Array<Box & { share: number }>;
+  balance: Balance | null;
+  thirds: number[][];
+  components: Component[];
+  type_scale: { max_px: number; max_share_of_height: number; median_px: number; sizes: number } | null;
+  notes: string[];
+}
+
+const REVIEW_EDGE = 480;   // px of the longest edge the page is measured at
+const CELL_PX = 10;        // one grid cell at that size (40 px on a 1920 canvas)
+const GROUNDABLE = new Set(['rect', 'image', 'path', 'ellipse', 'circle', 'polygon', 'shape', 'svg', 'gradient']);
+
+type Geo = { x: number; y: number; w: number; h: number };
+
+function geo(l: Layer): Geo | null {
+  const p = (l as { pos?: unknown }).pos;
+  const [x, y, w, h] = Array.isArray(p) && p.length >= 4 ? p : [l.x, l.y, l.width, l.height];
+  return [x, y, w, h].every(v => typeof v === 'number') ? { x: x as number, y: y as number, w: w as number, h: h as number } : null;
+}
+
+const kids = (l: Layer): Layer[] | null => {
+  const k = (l as { layers?: unknown }).layers;
+  return Array.isArray(k) ? (k as Layer[]) : null;
+};
+
+const fullBleed = (g: Geo | null, W: number, H: number): boolean =>
+  !!g && g.x <= 2 && g.y <= 2 && g.x + g.w >= W - 2 && g.y + g.h >= H - 2;
+
+const paintOrder = (layers: Layer[]): Layer[] => [...layers].sort((a, b) => (a.z ?? 0) - (b.z ?? 0));
+
+/**
+ * The layers that ARE the ground: full-bleed fills at the bottom of the paint
+ * order, looking inside a full-bleed group (a preset's own backdrop) — the
+ * first thing that is not ground ends it.
+ */
+export function groundLayers(layers: Layer[], W: number, H: number): Layer[] {
+  const out: Layer[] = [];
+  for (const l of paintOrder(layers)) {
+    const inner = kids(l);
+    if (inner && fullBleed(geo(l), W, H)) {
+      const g = groundLayers(inner, W, H);
+      if (g.length) out.push({ ...l, layers: g } as Layer);
+      break;
+    }
+    if (!fullBleed(geo(l), W, H) || !GROUNDABLE.has(l.type)) break;
+    out.push(l);
+  }
+  return out;
+}
+
+/** What the page is built from: top-level layers, and the members of any
+ *  full-canvas container (a preset group spans the page; its cards are the
+ *  components). Largest first. */
+export function components(layers: Layer[], W: number, H: number, ground: Set<Layer>, depth = 0): Component[] {
+  const out: Component[] = [];
+  for (const l of layers) {
+    if (ground.has(l)) continue;
+    const g = geo(l);
+    const inner = kids(l);
+    if (inner && depth < 3 && (!g || (g.w * g.h) / (W * H) >= 0.85)) {
+      out.push(...components(inner, W, H, ground, depth + 1));
+      continue;
+    }
+    if (!g || g.w <= 0 || g.h <= 0 || fullBleed(g, W, H)) continue;
+    if (g.x >= W || g.y >= H || g.x + g.w <= 0 || g.y + g.h <= 0) continue;   // not on this canvas
+    out.push({
+      id: l.id, type: l.type, box: { x: Math.round(g.x), y: Math.round(g.y), width: Math.round(g.w), height: Math.round(g.h) },
+      share: { w: round2(g.w / W), h: round2(g.h / H), area: round2((g.w * g.h) / (W * H)) },
+    });
+  }
+  return depth ? out : out.sort((a, b) => b.share.area - a.share.area).slice(0, 6);
+}
+
+function fontSizes(layers: Layer[], out: number[] = []): number[] {
+  for (const l of layers) {
+    const inner = kids(l);
+    if (inner) { fontSizes(inner, out); continue; }
+    const fs = l.type === 'text' ? (l as { style?: { font_size?: number } }).style?.font_size
+      : l.type === 'rich_text' ? (l as { font_size?: number }).font_size : undefined;
+    if (typeof fs === 'number' && fs > 0) out.push(fs);
+  }
+  return out;
+}
+
+export function typeScale(layers: Layer[], H: number): PageLayout['type_scale'] {
+  const s = fontSizes(layers).sort((a, b) => a - b);
+  if (!s.length) return null;
+  const max = s[s.length - 1] ?? 0;
+  return { max_px: max, max_share_of_height: round2(max / H), median_px: s[Math.floor(s.length / 2)] ?? 0, sizes: new Set(s).size };
+}
+
+const pct = (v: number): string => `${Math.round(v * 100)}%`;
+/** Backdrop shapes: a big one is a panel, not an oversized component. */
+const PANEL = new Set(['rect', 'ellipse', 'circle', 'path', 'polygon', 'background', 'shape', 'line']);
+
+/** Facts worth a sentence — where the page crosses a line a viewer notices. */
+export function layoutNotes(p: Omit<PageLayout, 'notes'>): string[] {
+  const out: string[] = [];
+  const big = p.empty[0];
+  if (big && big.share >= 0.2) out.push(`${pct(big.share)} of the canvas is one empty area: x ${big.x}–${big.x + big.width}, y ${big.y}–${big.y + big.height}.`);
+  const b = p.balance;
+  if (b && Math.abs(b.offset.x) >= 0.08) out.push(`Visual weight sits ${pct(Math.abs(b.offset.x))} ${b.offset.x > 0 ? 'right' : 'left'} of centre (left/right ${b.left_right[0]}/${b.left_right[1]}).`);
+  if (b && Math.abs(b.offset.y) >= 0.08) out.push(`Visual weight sits ${pct(Math.abs(b.offset.y))} ${b.offset.y > 0 ? 'below' : 'above'} centre (top/bottom ${b.top_bottom[0]}/${b.top_bottom[1]}).`);
+  for (const c of p.components) if (c.share.area >= 0.4 && !PANEL.has(c.type)) out.push(`"${c.id}" (${c.type}) covers ${pct(c.share.area)} of the canvas.`);
+  const [W] = p.canvas.split('×').map(Number);
+  if (p.content_box && W && p.content_box.width / W < 0.6) out.push(`Content spans ${pct(p.content_box.width / W)} of the width.`);
+  return out;
+}
+
+/** Measure one page from its two renders. */
+export function measurePage(full: Uint8Array, ground: Uint8Array, rw: number, rh: number, W: number, H: number, layers: Layer[], groundSet: Set<Layer>, page?: string): PageLayout {
+  const cols = Math.max(1, Math.round(rw / CELL_PX)), rows = Math.max(1, Math.round(rh / CELL_PX));
+  const g = inkGrid(full, ground, rw, rh, cols, rows);
+  const occ = occupancy(g, 1);
+  const toBox = (r: Rect): Box => ({ x: Math.round((r.x * W) / cols), y: Math.round((r.y * H) / rows), width: Math.round((r.w * W) / cols), height: Math.round((r.h * H) / rows) });
+  const cb = contentBox(occ, cols, rows);
+  const box = cb ? toBox(cb) : null;
+  const base = {
+    ...(page ? { page } : {}),
+    canvas: `${W}×${H}`,
+    ink: round2(g.ink.reduce((s, v) => s + v, 0) / g.ink.length),
+    occupied: round2(occ.reduce((s, v) => s + v, 0) / occ.length),
+    content_box: box ? { ...box, margins: { left: box.x, right: W - box.x - box.width, top: box.y, bottom: H - box.y - box.height } } : null,
+    empty: emptyRects(occ, cols, rows).map(r => ({ ...toBox(r), share: round2((r.w * r.h) / (cols * rows)) })),
+    balance: balance(g),
+    thirds: thirds(occ, cols, rows),
+    components: components(layers, W, H, groundSet),
+    type_scale: typeScale(layers, H),
+  };
+  return { ...base, notes: layoutNotes(base) };
+}
+
+function flatten(layers: Layer[], out = new Set<Layer>()): Set<Layer> {
+  for (const l of layers) { out.add(l); const k = kids(l); if (k) flatten(k, out); }
+  return out;
+}
+
+/** Review every page (or one) of a design. Both renders of every page go to
+ *  the rasteriser in ONE batch — one child process, not two per page. */
+export function reviewLayout(spec: DesignSpec, projectDir: string, pageId?: string): PageLayout[] {
+  const W = spec.document?.width ?? 0, H = spec.document?.height ?? 0;
+  if (W <= 0 || H <= 0) return [];
+  const pages = spec.pages?.length
+    ? spec.pages.filter(p => !pageId || p.id === pageId).map(p => ({ id: p.id as string | undefined, layers: p.layers ?? [], world: !!(p as { world?: unknown }).world }))
+    : [{ id: undefined, layers: spec.layers ?? [], world: !!(spec as { world?: unknown }).world }];
+  const scale = REVIEW_EDGE / Math.max(W, H);
+  const opts = { fitTo: { mode: 'zoom' as const, value: scale }, background: '#ffffff', font: resvgFontOption(projectDir) };
+  // What cannot reach the canvas is left out first — a clip parked far off it
+  // aborts resvg (frame-cull.ts), and it draws no pixel either way.
+  const svgOf = (layers: Layer[]): string =>
+    renderToSVGString({ ...spec, layers: cullUnseenClips(layers, W, H), pages: undefined } as DesignSpec);
+  const grounds = pages.map(p => groundLayers(p.layers, W, H));
+  const rasters = rasterizeSync(pages.flatMap((p, i) => [
+    { svg: svgOf(p.layers), opts, want: 'pixels' as const },
+    { svg: svgOf(grounds[i] ?? []), opts, want: 'pixels' as const },
+  ]));
+  return pages.map((p, i) => {
+    const full = rasters[i * 2], ground = rasters[i * 2 + 1];
+    if (!full || !ground || full.width !== ground.width || full.height !== ground.height) {
+      return { ...(p.id ? { page: p.id } : {}), canvas: `${W}×${H}`, ink: 0, occupied: 0, content_box: null, empty: [], balance: null, thirds: [], components: [], type_scale: null, notes: ['Could not render this page to measure it.'] };
+    }
+    const m = measurePage(new Uint8Array(full.pixels), new Uint8Array(ground.pixels), full.width, full.height, W, H, p.layers, flatten(grounds[i] ?? []), p.id);
+    // A world is seen through the camera, so the authored frame is not a shot.
+    if (p.world) m.notes.push('This page is a camera world: measured at the authored frame (the world\'s top-left), not at any shot — check a shot with animation(op:frame).');
+    return m;
+  });
+}
