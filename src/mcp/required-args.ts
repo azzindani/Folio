@@ -104,6 +104,9 @@ export const PER_OP: Record<string, Record<string, string[]>> = {
     update: ['design_path', 'layer_id', 'props'],
     remove: ['design_path', 'layer_id'],
     align: ['design_path', 'layer_ids', 'operation'],
+    // layer_id OR layer_ids — the handler names whichever is missing.
+    move: ['design_path'],
+    scale: ['design_path'],
     patch_spec: ['design_path', 'layer_id', 'changes'],
     shape: ['design_path', 'shape_op', 'layer_ids'],
     split_text: ['design_path', 'layer_id'],
