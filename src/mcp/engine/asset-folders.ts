@@ -12,7 +12,7 @@ import * as path from 'path';
 import { sanitizeFolder, removeManifestEntry, MAX_PROJECT_FOLDER_DEPTH, type AssetKind } from './assets';
 import { libraryRoot, sanitizeFolderPath } from './asset-library';
 
-const KINDS: AssetKind[] = ['images', 'icons', 'fonts', 'docs', 'audio'];
+const KINDS: AssetKind[] = ['images', 'icons', 'fonts', 'docs', 'audio', 'video'];
 
 export interface FolderOpResult {
   success: boolean;

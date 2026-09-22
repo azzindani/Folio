@@ -16,7 +16,7 @@ import { rasterize } from '../../utils/resvg-isolate';
 // ── Types ─────────────────────────────────────────────────────
 import { processAsset, hasWork, ProcessError, type ProcessSpec } from './asset-process';
 
-export type AssetKind = 'images' | 'icons' | 'fonts' | 'docs' | 'audio';
+export type AssetKind = 'images' | 'icons' | 'fonts' | 'docs' | 'audio' | 'video';
 
 /**
  * Where a fetched asset came from and on what terms.
@@ -40,7 +40,8 @@ export interface AssetEntry {
   path: string;               // project-relative, e.g. "assets/images/team.jpg"
   kind: AssetKind;
   folder?: string;            // optional folder path inside the kind dir, may nest
-  duration_ms?: number;       // audio: how long the file plays
+  duration_ms?: number;       // audio/video: how long the file plays
+  fps?: number; has_audio?: boolean;   // video: frame rate, carries sound
   bytes: number;
   width?: number;             // raster/svg pixel dims (absent for fonts)
   height?: number;
@@ -75,6 +76,7 @@ const EXT_KIND: Record<string, AssetKind> = {
   md: 'docs', markdown: 'docs', txt: 'docs', csv: 'docs', json: 'docs',
   yaml: 'docs', yml: 'docs',
   ...AUDIO_EXT_KIND,   // a video's soundtrack and sound cues (asset-audio.ts)
+  ...VIDEO_EXT_KIND,   // footage for a video layer (asset-video.ts)
 };
 const MIME_EXT: Record<string, string> = {
   'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp',
@@ -82,7 +84,7 @@ const MIME_EXT: Record<string, string> = {
   'font/ttf': 'ttf', 'font/otf': 'otf', 'font/woff2': 'woff2', 'font/woff': 'woff',
   'text/markdown': 'md', 'text/plain': 'txt', 'text/csv': 'csv',
   'application/json': 'json', 'text/yaml': 'yaml', 'application/x-yaml': 'yaml',
-  ...AUDIO_MIME_EXT,
+  ...AUDIO_MIME_EXT, ...VIDEO_MIME_EXT,
 };
 
 /** Content-type → our extension, for bytes arriving off the wire. */
@@ -109,19 +111,19 @@ function targetKind(fileKind: AssetKind, requested?: string): AssetKind {
 // budget) and are re-exported here so every existing importer keeps working.
 export { MAX_PROJECT_FOLDER_DEPTH, sanitizeFolder, parseAssetPath } from './asset-paths';
 import { MAX_PROJECT_FOLDER_DEPTH, sanitizeFolder, parseAssetPath } from './asset-paths';
-import { AUDIO_EXT_KIND, AUDIO_MIME_EXT, probeAudioBytes } from './asset-audio';
+import { AUDIO_EXT_KIND, AUDIO_MIME_EXT } from './asset-audio';
+import { VIDEO_EXT_KIND, VIDEO_MIME_EXT } from './asset-video';
+import { assetCap, probeMedia, mediaNextAction, type MediaMeta } from './asset-media';
 
 // ── Metadata extraction ───────────────────────────────────────
-export interface AssetMeta {
+export interface AssetMeta extends Partial<MediaMeta> {
   width?: number; height?: number;
   dominant_colors?: string[];
   luminance?: 'dark' | 'light' | 'busy';
-  /** Audio: how long the file plays, ms. */
-  duration_ms?: number;
 }
 
 export function extractAssetMeta(buf: Buffer, ext: string): AssetMeta {
-  if (EXT_KIND[ext] === 'fonts' || EXT_KIND[ext] === 'docs' || EXT_KIND[ext] === 'audio') return {};
+  if (EXT_KIND[ext] === 'fonts' || EXT_KIND[ext] === 'docs' || EXT_KIND[ext] === 'audio' || EXT_KIND[ext] === 'video') return {};
   if (ext === 'svg') {
     const { dims, colors } = parseSvg(buf.toString('utf8'));
     const rgbs = dedupeColors(colors).slice(0, 4);
@@ -181,7 +183,7 @@ function sampleRasterColors(buf: Buffer, ext: string): Pick<AssetMeta, 'dominant
 }
 
 // ── Manifest I/O ──────────────────────────────────────────────
-const KINDS: AssetKind[] = ['images', 'icons', 'fonts', 'docs', 'audio'];
+const KINDS: AssetKind[] = ['images', 'icons', 'fonts', 'docs', 'audio', 'video'];
 
 export function readAssetManifest(projectDir: string): Partial<Record<AssetKind, AssetEntry[]>> {
   const file = path.join(projectDir, 'project.yaml');
@@ -288,10 +290,8 @@ export function ingestAsset(args: IngestArgs): { entry: AssetEntry; warnings: st
   }
 
   if (buf.length === 0) throw new AssetError('Asset is empty (0 bytes)', 400, 'Check the data: URI payload.');
-  if (buf.length > maxAssetBytes()) {
-    throw new AssetError(`Asset too large: ${Math.round(buf.length / 1024)} KiB > ${Math.round(maxAssetBytes() / 1024)} KiB cap`, 413,
-      'Downscale/compress the image, or raise FOLIO_MAX_ASSET_BYTES.');
-  }
+  const cap = assetCap(clean.kind, maxAssetBytes());
+  if (buf.length > cap.bytes) throw new AssetError(`Asset too large: ${Math.round(buf.length / 1024)} KiB > ${Math.round(cap.bytes / 1024)} KiB cap`, 413, cap.hint);
   const total = assetsTotalBytes(args.projectDir);
   if (total + buf.length > maxAssetsTotalBytes()) {
     throw new AssetError('Project asset quota exceeded', 413,
@@ -325,8 +325,8 @@ export function ingestAsset(args: IngestArgs): { entry: AssetEntry; warnings: st
   }
 
   // Probed before anything is replaced: a mislabelled file must not overwrite a good one.
-  const probed = clean.kind === 'audio' ? probeAudioBytes(buf, clean.ext) : null;
-  if (probed === 'not-audio') throw new AssetError(`"${clean.name}" has no audio stream`, 415, 'Store an mp3, wav, m4a, aac, ogg, opus or flac file.');
+  const probed = probeMedia(clean.kind, buf, clean.ext);
+  if (probed && 'error' in probed) throw new AssetError(`"${clean.name}" ${probed.error}`, 415, probed.hint);
 
   const kind = targetKind(clean.kind, args.kind);
   const folder = sanitizeFolder(args.folder);
@@ -338,7 +338,7 @@ export function ingestAsset(args: IngestArgs): { entry: AssetEntry; warnings: st
   if (existed) { snapshot(abs); warnings.push(`replaced existing ${relPath}`); }
   fs.writeFileSync(abs, buf);
 
-  const meta: AssetMeta = probed ? { duration_ms: probed.duration_ms } : extractAssetMeta(buf, clean.ext);
+  const meta: AssetMeta = probed ? probed.meta : extractAssetMeta(buf, clean.ext);
   const entry: AssetEntry = {
     id: clean.name.replace(/\.[a-z0-9]+$/, '').replace(/[^a-z0-9-]+/g, '-'),
     path: relPath, kind, ...(folder ? { folder } : {}), bytes: buf.length,
@@ -346,6 +346,7 @@ export function ingestAsset(args: IngestArgs): { entry: AssetEntry; warnings: st
     ...(meta.dominant_colors ? { dominant_colors: meta.dominant_colors } : {}),
     ...(meta.luminance ? { luminance: meta.luminance } : {}),
     ...(meta.duration_ms ? { duration_ms: meta.duration_ms } : {}),
+    ...(meta.fps ? { fps: meta.fps } : {}), ...(meta.has_audio !== undefined ? { has_audio: meta.has_audio } : {}),
     ...(args.alt ? { alt: String(args.alt).slice(0, 300) } : {}),
     added: new Date().toISOString().split('T')[0],
     ...(args.provenance ? { provenance: args.provenance } : {}),
@@ -377,15 +378,9 @@ export function assetAdd(args: { project_path?: string; name?: string; data?: st
     progress.push(pOk('Asset saved', `${entry.path} (${Math.round(entry.bytes / 1024)} KiB${entry.width ? `, ${entry.width}×${entry.height}` : ''})`));
     for (const w of warnings) progress.push(pWarn('Note', w));
 
-    // A sound is not a layer: hand it to the soundtrack, not to add_layers as an image.
-    if (entry.kind === 'audio') {
-      const secs = typeof entry.duration_ms === 'number' ? ` (${(entry.duration_ms / 1000).toFixed(1)} s)` : '';
-      const soundNext: NextAction = {
-        tool: 'animation', params: { op: 'audio', design_path: '<your .design.yaml>', src: entry.path }, remaining: 0,
-        hint: `Sound stored${secs}. Put it under the whole piece with animation(op:audio, src:"${entry.path}"), or start it with a scene by adding page_id.`,
-      };
-      return okResult(op, { asset: entry, next_action: soundNext, progress, context: buildContext(op, `Added sound ${entry.path}`), handover: buildHandover('COMPOSE', { project_path: proj.dir }) });
-    }
+    // A sound or a clip is not an image layer: hand it to the soundtrack / a video layer.
+    const media = mediaNextAction(entry);
+    if (media) return okResult(op, { asset: entry, next_action: media, progress, context: buildContext(op, `Added ${entry.kind === 'audio' ? 'sound' : 'clip'} ${entry.path}`), handover: buildHandover('COMPOSE', { project_path: proj.dir }) });
     // Baton: a ready-to-place image layer at the asset's native aspect.
     const w = entry.width ?? 600, h = entry.height ?? 400;
     const scale = Math.min(1, 600 / Math.max(w, h));

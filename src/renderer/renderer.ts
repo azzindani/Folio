@@ -16,6 +16,7 @@ import {
   renderButton, renderTabs, renderAccordion, renderFilterBar,
   renderToggle, renderTooltip, renderCallout, renderProgress,
 } from './layer-renderers';
+import { renderVideo } from './layer-renderers-video';
 
 export interface RenderOptions {
   theme?: ThemeSpec;
@@ -219,6 +220,7 @@ function renderLayerUncached(layer: Layer, svg: SVGSVGElement): SVGElement {
     case 'line':          el = renderLine(layer, svg); break;
     case 'text':          el = renderText(layer, svg); break;
     case 'image':         el = renderImage(layer, svg); break;
+    case 'video':         el = renderVideo(layer, svg); break;
     case 'icon':          el = renderIcon(layer, svg); break;
     case 'mermaid':       el = renderMermaid(layer, svg); break;
     case 'chart':         el = renderChart(layer, svg); break;

@@ -171,6 +171,24 @@ A GIF has no sound, and its export says so in `notes`.
 
 `confidence` is the correlation at the tempo: noise reads under 0.25, so `pulse` reports steady, weak or none and a track with no pulse gets no grid. The reply puts every beat on the PIECE timeline (offset and loops applied) and gives `scenes_on_beat`: for each scene, the `length_ms` that ends it on its nearest beat, each counting the scenes before it. It writes nothing; the model applies a length with `op:scene`, or keeps a cut where the story wants it.
 
+### Video layers (footage)
+
+A clip is a project asset under `assets/video/` (mp4, m4v, mov, webm; its own 64 MiB cap, `FOLIO_MAX_VIDEO_BYTES`). `manage_design(op:asset_add)` stores it untouched and records `duration_ms`, `width`/`height`, `fps` and `has_audio` with ffprobe (`src/mcp/engine/asset-video.ts`), refuses a file with no video stream before it can replace a good one, and hands back an `add_layers` stub for a `video` layer (`asset-media.ts`).
+
+```yaml
+- { id: take, type: video, src: assets/video/take.mp4, x: 0, y: 0, width: 1920, height: 1080, fit: cover,
+    video: { offset_ms: 2000, duration_ms: 6000, speed: 1, loop: false } }
+```
+
+| Piece | Where | Rule |
+|---|---|---|
+| Time | `src/animation/video-time.ts` | The clip plays from the layer's `in` point (0 without one): before it the first used frame shows; `offset_ms` is where in the file the used part starts, `speed` scales time, `duration_ms` ends the used part — held on its last frame, or repeated with `loop`. The flipbook (`layersAt`) stamps each posed video layer with `_video_ms`, so an export frame, `op:frame` and the editor ask for the same moment. |
+| File | `asset-resolve.ts` | `resolveImageAssets` records the resolved file as `_video_file` (not inlined — each frame is drawn at its own moment), or notes that the src is not a stored clip. |
+| Frame | `src/mcp/engine/video-frame.ts` | `renderToSVGString` — every server render — attaches `_video_frame`: the file's picture at `_video_ms` (or `offset_ms` for a still render) as a JPEG data: URI, one ffmpeg call per distinct moment, cached; a moment past the end shows the last frame. No stored file → `''`. |
+| Draw | `src/renderer/layer-renderers-video.ts` | With a frame (server) the layer draws as an IMAGE — fit, crop, mask, focal, overlay and frame all apply to footage. Without one (the browser) the file plays in a `<video>` inside a foreignObject, `object-fit` from `fit`, `data-video-layer` for the editor's transport. |
+
+Not yet (next): the clip's own sound in the mix, the editor driving `<video>` from the playhead, trim/speed/split ops, clip search.
+
 ### Captions
 
 A design's `captions:` holds a `style` and `cues` timed on the piece; a page's `captions:` holds lines timed from its scene's first frame (`at`, `duration`). Lines without times share their scene by word count, and times the model set are kept.

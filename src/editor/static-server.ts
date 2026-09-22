@@ -112,6 +112,8 @@ const MIME: Record<string, string> = {
   '.gif':  'image/gif',
   '.mp4':  'video/mp4',
   '.webm': 'video/webm',
+  '.mov':  'video/quicktime',
+  '.m4v':  'video/x-m4v',
   '.mp3': 'audio/mpeg', '.wav': 'audio/wav', '.m4a': 'audio/mp4', '.aac': 'audio/aac',
   '.ogg': 'audio/ogg', '.oga': 'audio/ogg', '.opus': 'audio/ogg', '.flac': 'audio/flac',
   '.ico':  'image/x-icon',

@@ -294,6 +294,14 @@ export function resolveImageAssets(spec: DesignSpec, designPath: string, project
           else if (r.kind === 'blank') { img.src = ''; notes.push(r.note); }
         }
       }
+      if (l.type === 'video') {
+        // Footage is not inlined: each frame is drawn from the file at its own
+        // moment (video-frame.ts), so the file's path rides along instead.
+        const v = l as Layer & { src?: string; _video_file?: string };
+        const file = typeof v.src === 'string' && v.src.trim() ? resolveAssetFile(v.src, designPath, projectPath) : null;
+        if (file) v._video_file = file;
+        else notes.push(`video "${l.id}": "${v.src ?? ''}" is not a stored clip — store it with manage_design {op:"asset_add"} and use src:"assets/video/…".`);
+      }
       const withFill = l as Layer & { fill?: Fill };
       if (withFill.fill) withFill.fill = resolveFill(withFill.fill, l.id, dirs, roots, notes) ?? withFill.fill;
       if (l.type === 'group') visit((l as Layer & { layers?: Layer[] }).layers);

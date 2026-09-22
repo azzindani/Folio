@@ -209,11 +209,13 @@ function expandShorthandLayer(sh: ShorthandLayer): Layer {
       } as unknown as Layer;
     }
 
-    case 'image': {
+    case 'image':
+    case 'video': {
       const shr = sh as unknown as Record<string, unknown>;
-      const out: Record<string, unknown> = { ...base, type: 'image', src: sh.src ?? '' };
-      // pass fit (was silently dropped) + the WP-1.5 photo treatments through.
-      for (const k of ['fit', 'alt', 'role', 'crop', 'mask', 'focal', 'overlay', 'frame'] as const) if (shr[k] !== undefined) out[k] = shr[k];
+      const out: Record<string, unknown> = { ...base, type: sh.type, src: sh.src ?? '' };
+      // pass fit (was silently dropped) + the WP-1.5 photo treatments through;
+      // a video's frames take the same treatments, plus its timing (`video`).
+      for (const k of ['fit', 'alt', 'role', 'crop', 'mask', 'focal', 'overlay', 'frame', 'video'] as const) if (shr[k] !== undefined) out[k] = shr[k];
       return out as unknown as Layer;
     }
 
@@ -525,7 +527,7 @@ export function inferLayerType(sh: ShorthandLayer): string {
       ? 'auto_layout' : 'group';
   }
   if (sh.text !== undefined) return 'text';
-  if (sh.src !== undefined) return 'image';
+  if (sh.src !== undefined) return /\.(mp4|m4v|mov|webm)(\?|#|$)/i.test(String(sh.src)) ? 'video' : 'image';
   if (sh.icon !== undefined) return 'icon';
   if (sh.d !== undefined) return 'path';
   if ((sh as Record<string, unknown>)['x1'] !== undefined) return 'line';
