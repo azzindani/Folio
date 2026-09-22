@@ -14,6 +14,7 @@ export type LayerType =
   | 'line'
   | 'text'
   | 'image'
+  | 'video'
   | 'icon'
   | 'component'
   | 'component_list'
@@ -203,6 +204,26 @@ export interface ImageLayer extends BaseLayer {
   overlay?: { fill?: string; opacity?: number; blend?: string };
   /** Outline around the photo/mask shape. */
   frame?: { stroke?: string; width?: number; offset?: number };
+}
+
+/**
+ * Footage on the canvas. Everything an image layer does (fit, crop, mask,
+ * focal, overlay, frame) applies to each frame. The clip plays from the
+ * layer's `in` point on the scene clock; `video` says which part of the file
+ * and how (not `clip`, which every layer already has — clip its children): `offset_ms` skips into it, `duration_ms` stops it, `speed` scales
+ * time, `loop` repeats the trimmed part. Server exports draw the frame at each
+ * moment; the editor plays the file.
+ */
+export interface VideoLayer extends BaseLayer {
+  type: 'video';
+  src: string;
+  fit?: 'cover' | 'contain' | 'fill' | 'none';
+  crop?: { x: number; y: number; width: number; height: number };
+  mask?: 'circle' | 'blob' | 'arch' | 'rounded' | 'hex';
+  focal?: [number, number];
+  overlay?: { fill?: string; opacity?: number; blend?: string };
+  frame?: { stroke?: string; width?: number; offset?: number };
+  video?: { offset_ms?: number; duration_ms?: number; speed?: number; volume?: number; muted?: boolean; loop?: boolean };
 }
 
 export interface IconLayer extends BaseLayer {
@@ -586,6 +607,7 @@ export type Layer =
   | LineLayer
   | TextLayer
   | ImageLayer
+  | VideoLayer
   | IconLayer
   | ComponentLayer
   | ComponentListLayer

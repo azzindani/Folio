@@ -13,7 +13,7 @@ export interface ValidationError {
 const VALID_LAYER_TYPES = new Set([
   'rect', 'circle', 'ellipse', 'path', 'polygon', 'polyline', 'line',
   'connector', 'background', 'backdrop',
-  'text', 'image', 'icon', 'component', 'component_list',
+  'text', 'image', 'video', 'icon', 'component', 'component_list',
   'mermaid', 'chart', 'code', 'math', 'group',
   'qrcode', 'auto_layout',
   'interactive_chart', 'interactive_table', 'rich_text',

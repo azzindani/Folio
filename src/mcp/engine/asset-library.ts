@@ -21,7 +21,7 @@ import {
   type AssetProvenance,
 } from './assets';
 import { processAsset, hasWork, ProcessError, type ProcessSpec } from './asset-process';
-import { probeAudioBytes } from './asset-audio';
+import { assetCap, probeMedia } from './asset-media';
 import {
   sha256, findByHash, findBySource, upsertLibraryEntry, removeLibraryEntry,
   readLibraryIndex, type LibraryEntry,
@@ -261,15 +261,14 @@ export function ingestLibraryAsset(args: LibraryIngestArgs): { entry: LibraryEnt
   }
 
   if (buf.length === 0) throw new AssetError('Asset is empty (0 bytes)', 400, 'Check the data: URI payload.');
-  if (buf.length > maxAssetBytes()) {
-    throw new AssetError(`Asset too large: ${Math.round(buf.length / 1024)} KiB > ${Math.round(maxAssetBytes() / 1024)} KiB cap`, 413,
-      'Downscale/compress the file, or raise FOLIO_MAX_ASSET_BYTES.');
-  }
+  const cap = assetCap(clean.kind, maxAssetBytes());
+  if (buf.length > cap.bytes) throw new AssetError(`Asset too large: ${Math.round(buf.length / 1024)} KiB > ${Math.round(cap.bytes / 1024)} KiB cap`, 413, cap.hint);
   buf = stripSvgScripts(buf, clean.ext, warnings);
-  // The same check the project store makes: a sound's length is what op:audio
-  // and the export mix plan with, and a file with no audio stream is refused.
-  const probed = clean.kind === 'audio' ? probeAudioBytes(buf, clean.ext) : null;
-  if (probed === 'not-audio') throw new AssetError(`"${clean.name}" has no audio stream`, 415, 'Store an mp3, wav, m4a, aac, ogg, opus or flac file.');
+  // The same check the project store makes: a sound's or clip's length is what
+  // op:audio, the video layer and the export plan with, and a file with no
+  // audio (or video) stream is refused.
+  const probed = probeMedia(clean.kind, buf, clean.ext);
+  if (probed && 'error' in probed) throw new AssetError(`"${clean.name}" ${probed.error}`, 415, probed.hint);
   if (hasWork(args.process)) {
     try {
       const processed = processAsset(buf, clean.ext, args.process);
@@ -314,7 +313,9 @@ export function ingestLibraryAsset(args: LibraryIngestArgs): { entry: LibraryEnt
     ...(meta.width ? { width: meta.width, height: meta.height } : {}),
     ...(meta.dominant_colors ? { dominant_colors: meta.dominant_colors } : {}),
     ...(meta.luminance ? { luminance: meta.luminance } : {}),
-    ...(probed ? { duration_ms: probed.duration_ms } : {}),
+    ...(probed ? { duration_ms: probed.meta.duration_ms } : {}),
+    ...(probed?.meta.width ? { width: probed.meta.width, height: probed.meta.height } : {}),
+    ...(probed?.meta.fps ? { fps: probed.meta.fps } : {}), ...(probed?.meta.has_audio !== undefined ? { has_audio: probed.meta.has_audio } : {}),
     ...(args.alt ? { alt: String(args.alt).slice(0, 300) } : {}),
     added: new Date().toISOString().split('T')[0] ?? '',
     ...(args.provenance ? { provenance: args.provenance } : {}),

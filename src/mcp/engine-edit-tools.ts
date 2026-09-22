@@ -316,7 +316,7 @@ export function sealDesign(args: { design_path: string; project_path?: string })
 export const VALID_LAYER_TYPES = new Set([
   'rect', 'circle', 'ellipse', 'path', 'polygon', 'polyline', 'line',
   'connector', 'background', 'backdrop',
-  'text', 'image', 'icon', 'component', 'component_list',
+  'text', 'image', 'video', 'icon', 'component', 'component_list',
   'mermaid', 'chart', 'code', 'math', 'group', 'qrcode',
   'auto_layout', 'interactive_chart', 'interactive_table',
   'rich_text', 'kpi_card', 'map', 'embed_code', 'popup', 'particle',
@@ -330,7 +330,7 @@ export const VALID_LAYER_TYPES = new Set([
 // the agent fixes the YAML immediately instead of debugging from the SVG.
 
 export const SIZED_LAYER_TYPES = new Set([
-  'rect', 'circle', 'ellipse', 'image', 'icon', 'group',
+  'rect', 'circle', 'ellipse', 'image', 'video', 'icon', 'group',
   'chart', 'interactive_chart', 'interactive_table', 'rich_text', 'kpi_card',
   'mermaid', 'code', 'math', 'qrcode', 'map', 'embed_code',
 ]);

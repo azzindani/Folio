@@ -5,6 +5,7 @@ import { invalidateCache } from '../../renderer/renderer';
 import { renderEntry } from '../../renderer/render-entry';
 import { ALL_THEMES } from '../../themes/all-themes';
 import type { DesignSpec, ThemeSpec, ComponentSpec } from '../../schema/types';
+import { withVideoFrames } from './video-frame';
 
 let serializer: { serializeToString(el: Node): string } | null = null;
 
@@ -60,5 +61,7 @@ export function serializeSVGElement(svgEl: SVGSVGElement): string {
 }
 
 export function renderToSVGString(spec: DesignSpec, formulaContext?: import('../../scripting/formula').FormulaContext, theme?: ThemeSpec, componentRegistry?: Map<string, ComponentSpec>): string {
-  return serializeSVGElement(renderToSVGElement(spec, formulaContext, theme, componentRegistry));
+  // Every server render passes here, so a stored clip always draws its frame
+  // at the moment the spec was posed at (video-frame.ts) — resvg plays no video.
+  return serializeSVGElement(renderToSVGElement(withVideoFrames(spec), formulaContext, theme, componentRegistry));
 }

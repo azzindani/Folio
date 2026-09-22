@@ -21,7 +21,7 @@ import {
 } from './asset-library';
 import type { LibraryEntry } from './asset-library-index';
 
-const KINDS: AssetKind[] = ['images', 'icons', 'fonts', 'docs', 'audio'];
+const KINDS: AssetKind[] = ['images', 'icons', 'fonts', 'docs', 'audio', 'video'];
 
 /** Which store an op is addressing. Listings default to both. */
 type Scope = 'project' | 'library' | 'both';

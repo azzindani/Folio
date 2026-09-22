@@ -68,7 +68,7 @@ export function listProjects(projectsDir: string, refresh?: string | null): Resp
       .map(e => ({
         name: e.name,
         designs: countFiles(path.join(projectsDir, e.name, 'designs'), n => n.endsWith('.design.yaml')),
-        assets: ['images', 'icons', 'fonts', 'docs', 'audio']
+        assets: ['images', 'icons', 'fonts', 'docs', 'audio', 'video']
           .reduce((n, k) => n + countFiles(path.join(projectsDir, e.name, 'assets', k), () => true, true), 0),
       }))
       .sort((a, b) => b.assets - a.assets || a.name.localeCompare(b.name));

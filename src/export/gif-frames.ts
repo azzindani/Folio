@@ -18,6 +18,7 @@ import { clipRectFor, intersectRect } from '../renderer/clip-rect';
 import { revealRect } from '../animation/reveal';
 import { countText } from '../animation/count';
 import { morphPairCached, morphPathAt } from '../engine/path-ops';
+import { videoSourceMs, type VideoTiming } from '../animation/video-time';
 import { drawnBox } from './frame-geometry';
 import { poseTransform, FRAME_POSE, REST_POSE, type FramePose } from './frame-pose';
 import { resolveTimeline } from '../animation/timeline-resolve';
@@ -366,6 +367,11 @@ function sampleLayers(layers: Layer[], t: number): Layer[] {
       return { ...rest, visible: false } as Layer;
     }
     const resolved = applyMotionPath(applyValues(layer, t), t) as AnimatedLayer;
+    // A clip shows the moment of its file that t lands on (video-time.ts).
+    if (layer.type === 'video') {
+      const v = layer as unknown as { in?: number; video?: VideoTiming };
+      return { ...resolved, _video_ms: videoSourceMs(t, v.in, v.video) } as unknown as Layer;
+    }
     if (!Array.isArray(layer.layers)) return resolved;
     return { ...resolved, layers: sampleLayers(layer.layers, t) } as Layer;
   });
