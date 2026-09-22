@@ -167,33 +167,47 @@ function flatten(layers: Layer[], out = new Set<Layer>()): Set<Layer> {
   return out;
 }
 
-/** Review every page (or one) of a design. Both renders of every page go to
- *  the rasteriser in ONE batch — one child process, not two per page. */
-export function reviewLayout(spec: DesignSpec, projectDir: string, pageId?: string): PageLayout[] {
+/** A layer list to measure — a page, or a page posed at some moment. */
+export interface Entry { id?: string; layers: Layer[] }
+
+/** Render and measure each entry. Both renders of every entry go to the
+ *  rasteriser in ONE batch — one child process, not two per entry. */
+export function measureEntries(spec: DesignSpec, entries: Entry[], projectDir: string): PageLayout[] {
   const W = spec.document?.width ?? 0, H = spec.document?.height ?? 0;
-  if (W <= 0 || H <= 0) return [];
-  const pages = spec.pages?.length
-    ? spec.pages.filter(p => !pageId || p.id === pageId).map(p => ({ id: p.id as string | undefined, layers: p.layers ?? [], world: !!(p as { world?: unknown }).world }))
-    : [{ id: undefined, layers: spec.layers ?? [], world: !!(spec as { world?: unknown }).world }];
+  if (W <= 0 || H <= 0 || !entries.length) return [];
   const scale = REVIEW_EDGE / Math.max(W, H);
   const opts = { fitTo: { mode: 'zoom' as const, value: scale }, background: '#ffffff', font: resvgFontOption(projectDir) };
   // What cannot reach the canvas is left out first — a clip parked far off it
   // aborts resvg (frame-cull.ts), and it draws no pixel either way.
   const svgOf = (layers: Layer[]): string =>
     renderToSVGString({ ...spec, layers: cullUnseenClips(layers, W, H), pages: undefined } as DesignSpec);
-  const grounds = pages.map(p => groundLayers(p.layers, W, H));
-  const rasters = rasterizeSync(pages.flatMap((p, i) => [
-    { svg: svgOf(p.layers), opts, want: 'pixels' as const },
+  const grounds = entries.map(e => groundLayers(e.layers, W, H));
+  const rasters = rasterizeSync(entries.flatMap((e, i) => [
+    { svg: svgOf(e.layers), opts, want: 'pixels' as const },
     { svg: svgOf(grounds[i] ?? []), opts, want: 'pixels' as const },
   ]));
-  return pages.map((p, i) => {
+  return entries.map((e, i) => {
     const full = rasters[i * 2], ground = rasters[i * 2 + 1];
     if (!full || !ground || full.width !== ground.width || full.height !== ground.height) {
-      return { ...(p.id ? { page: p.id } : {}), canvas: `${W}×${H}`, ink: 0, occupied: 0, content_box: null, empty: [], balance: null, thirds: [], components: [], type_scale: null, notes: ['Could not render this page to measure it.'] };
+      return { ...(e.id ? { page: e.id } : {}), canvas: `${W}×${H}`, ink: 0, occupied: 0, content_box: null, empty: [], balance: null, thirds: [], components: [], type_scale: null, notes: ['Could not render this to measure it.'] };
     }
-    const m = measurePage(new Uint8Array(full.pixels), new Uint8Array(ground.pixels), full.width, full.height, W, H, p.layers, flatten(grounds[i] ?? []), p.id);
+    return measurePage(new Uint8Array(full.pixels), new Uint8Array(ground.pixels), full.width, full.height, W, H, e.layers, flatten(grounds[i] ?? []), e.id);
+  });
+}
+
+/** The pages of a design (or the one asked for) as entries. */
+export function pageEntries(spec: DesignSpec, pageId?: string): Array<Entry & { world: boolean }> {
+  return spec.pages?.length
+    ? spec.pages.filter(p => !pageId || p.id === pageId).map(p => ({ id: p.id, layers: p.layers ?? [], world: !!(p as { world?: unknown }).world }))
+    : [{ layers: spec.layers ?? [], world: !!(spec as { world?: unknown }).world }];
+}
+
+/** Review every page (or one) of a design as authored. */
+export function reviewLayout(spec: DesignSpec, projectDir: string, pageId?: string): PageLayout[] {
+  const pages = pageEntries(spec, pageId);
+  return measureEntries(spec, pages, projectDir).map((m, i) => {
     // A world is seen through the camera, so the authored frame is not a shot.
-    if (p.world) m.notes.push('This page is a camera world: measured at the authored frame (the world\'s top-left), not at any shot — check a shot with animation(op:frame).');
+    if (pages[i]?.world) m.notes.push('This page is a camera world: measured at the authored frame (the world\'s top-left), not at any shot — its `motion.shots` measure what the viewer sees.');
     return m;
   });
 }

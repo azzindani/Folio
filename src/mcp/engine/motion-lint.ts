@@ -379,3 +379,30 @@ export function lintComposition(layers: Layer[], canvas: { width: number; height
     ...busyNotes(moves, endMs),
   ].slice(0, 24);
 }
+
+/** Where one shot rests, for measuring it (layout-review-motion.ts). */
+export interface ShotRest {
+  shot: string;
+  /** The shot's own span on the scene clock. */
+  at: number;
+  until: number;
+  /** The moment the shot is judged at: the end of its rest. */
+  t: number;
+  /** Its rest as the lint reads it — a slow camera drift does not break it. */
+  rest_ms: number;
+  /** Its longest stretch with NOTHING moving, drift included. */
+  still_ms: number;
+}
+
+/** Each shot's rest — the same moment the lint judges it at. */
+export function shotRests(layers: Layer[], marks: LintMark[], endMs: number): ShotRest[] {
+  const { moves, drifts } = segments(resolveTimeline(layers), new Set());
+  const shots = marks.length ? [...marks].sort((a, b) => a.at - b.at) : [{ id: 'piece', at: 0 }];
+  return shots.flatMap((m, i) => {
+    const until = Math.min(shots[i + 1]?.at ?? endMs, endMs);
+    if (until <= m.at) return [];
+    const rest = quietest(moves, m.at, until);
+    const still = quietest([...moves, ...drifts], m.at, until);
+    return [{ shot: m.id, at: m.at, until, t: Math.max(m.at, rest.end - 1), rest_ms: rest.end - rest.start, still_ms: still.end - still.start }];
+  });
+}
