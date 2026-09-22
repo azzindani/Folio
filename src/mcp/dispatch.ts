@@ -25,6 +25,8 @@ export function dispatchEditLayer(a: Args): ToolResult | Promise<ToolResult> {
     case 'update': return engine.updateLayer(a as Parameters<typeof engine.updateLayer>[0]);
     case 'remove': return engine.removeLayer(a as Parameters<typeof engine.removeLayer>[0]);
     case 'align':  return engine.alignLayers(a as Parameters<typeof engine.alignLayers>[0]);
+    case 'move':   return engine.moveLayers(a as unknown as Parameters<typeof engine.moveLayers>[0]);
+    case 'scale':  return engine.scaleLayers(a as unknown as Parameters<typeof engine.scaleLayers>[0]);
     case 'patch_spec': return engine.patchDesignSpec(a as Parameters<typeof engine.patchDesignSpec>[0]);
     case 'shape':  return engine.shapeOp(a as unknown as Parameters<typeof engine.shapeOp>[0]);
     case 'split_text': return engine.splitText(a as unknown as Parameters<typeof engine.splitText>[0]);

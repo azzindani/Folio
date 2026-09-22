@@ -111,11 +111,11 @@ export function stampFixedCanvas(layers: ShorthandLayer[]): number {
 const ARITY: Record<string, number> = { m: 2, l: 2, t: 2, h: 1, v: 1, c: 6, s: 4, q: 4, a: 7, z: 0 };
 
 /** Scale one path's coordinates about (ox,oy) by k, then shift x by dx. */
-export function scalePathD(d: string, k: number, ox: number, oy: number, dx: number): string {
+export function scalePathD(d: string, k: number, ox: number, oy: number, dx: number, dy = 0): string {
   const tokens = d.match(/[a-zA-Z]|-?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?/g);
   if (!tokens) return d;
   const sx = (v: number): number => ox + dx + (v - ox) * k;
-  const sy = (v: number): number => oy + (v - oy) * k;
+  const sy = (v: number): number => oy + dy + (v - oy) * k;
   const out: string[] = [];
   let cmd = '';
   let i = 0;
@@ -179,11 +179,11 @@ function scaleLengths(node: unknown, k: number, depth = 0): void {
  *  Shared with the canvas-reflow pass (see engine-customize-tools): resizing a
  *  deck and compressing a preset are the same spatial problem, so they use the
  *  same arithmetic rather than two subtly different copies of it. */
-export function scaleSubtree(layer: Layer, k: number, ox: number, oy: number, dx: number): void {
+export function scaleSubtree(layer: Layer, k: number, ox: number, oy: number, dx: number, dy = 0): void {
   const o = layer as unknown as Record<string, unknown>;
   const num = (key: string): number | undefined => (typeof o[key] === 'number' ? o[key] as number : undefined);
   const px = (v: number): number => Math.round(ox + dx + (v - ox) * k);
-  const py = (v: number): number => Math.round(oy + (v - oy) * k);
+  const py = (v: number): number => Math.round(oy + dy + (v - oy) * k);
 
   const x = num('x'), y = num('y'), w = num('width'), h = num('height');
   if (x !== undefined) o['x'] = px(x);
@@ -192,7 +192,9 @@ export function scaleSubtree(layer: Layer, k: number, ox: number, oy: number, dx
   if (h !== undefined) o['height'] = Math.max(1, Math.round(h * k));
   for (const key of ['x1', 'x2'] as const) { const v = num(key); if (v !== undefined) o[key] = px(v); }
   for (const key of ['y1', 'y2'] as const) { const v = num(key); if (v !== undefined) o[key] = py(v); }
-  if (typeof o['d'] === 'string') o['d'] = scalePathD(o['d'] as string, k, ox, oy, dx);
+  if (typeof o['d'] === 'string') o['d'] = scalePathD(o['d'] as string, k, ox, oy, dx, dy);
+  // A polygon's points are absolute too (renderPolygon draws them as given).
+  if (typeof o['points'] === 'string') o['points'] = scalePoints(o['points'] as string, k, ox, oy, dx, dy);
 
   scaleLengths(o['style'], k);
   scaleLengths(o['effects'], k);
@@ -203,7 +205,19 @@ export function scaleSubtree(layer: Layer, k: number, ox: number, oy: number, dx
   if (o['stroke'] && typeof o['stroke'] === 'object') scaleLengths({ stroke: o['stroke'] }, k);
 
   const kids = o['layers'];
-  if (Array.isArray(kids)) for (const c of kids as Layer[]) scaleSubtree(c, k, ox, oy, dx);
+  if (Array.isArray(kids)) for (const c of kids as Layer[]) scaleSubtree(c, k, ox, oy, dx, dy);
+}
+
+/** "x,y x,y …" scaled about (ox,oy) and shifted — an SVG polygon's points. */
+export function scalePoints(points: string, k: number, ox: number, oy: number, dx: number, dy = 0): string {
+  const n = points.match(/-?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?/g)?.map(Number) ?? [];
+  if (n.length < 2 || n.length % 2 || n.some(v => !Number.isFinite(v))) return points;
+  const pairs: string[] = [];
+  for (let i = 0; i < n.length; i += 2) {
+    const x = ox + dx + ((n[i] ?? 0) - ox) * k, y = oy + dy + ((n[i + 1] ?? 0) - oy) * k;
+    pairs.push(`${Math.round(x * 100) / 100},${Math.round(y * 100) / 100}`);
+  }
+  return pairs.join(' ');
 }
 
 // ── Fit ─────────────────────────────────────────────────────
