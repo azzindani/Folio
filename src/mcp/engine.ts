@@ -23,6 +23,7 @@ export { createDesign, createProject, listDesigns, listThemes, applyTheme, dupli
 export { addLayers, appendPage } from './engine-layer-tools';
 export { patchDesign, sealDesign, addLayer, updateLayer, removeLayer } from './engine-edit-tools';
 export { collectHrefRects, exportDesign, diagnoseDesign, renderPreview, alignLayers, batchCreate } from './engine-export-tools';
+export { moveLayers, scaleLayers } from './engine-transform-tools';
 export { saveAsComponent, listComponents } from './engine-component-tools';
 export { healDesign } from './engine-heal-tools';
 export { exportTemplate, injectTemplate, listTemplateSlots, listTemplates } from './engine-template-tools';

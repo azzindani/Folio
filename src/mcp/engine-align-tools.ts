@@ -6,6 +6,7 @@
 // and shares nothing with this: aligning layers is a geometry edit, not an
 // export. Same reason batch_create moved to engine-batch-tools.ts.
 import * as fs from 'fs';
+import { findTargets, translateSubtree } from './engine/layer-transform';
 import type { DesignSpec, Layer } from '../schema/types';
 import type { ToolResult, ProgressItem } from './types';
 import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, pOk, pWarn, buildContext } from './engine/utils';
@@ -25,49 +26,20 @@ export function alignLayers(args: { design_path: string; layer_ids: string[]; op
     if ([l.x, l.y, l.width, (l as { height?: unknown }).height].every(v => typeof v === 'number')) return { x: l.x as number, y: l.y as number, w: l.width as number, h: (l as { height: number }).height };
     return null;
   };
+  // Moves go through translateSubtree: a group's children and a path's `d`
+  // are absolute, so moving only the box left the ink behind — the reply said
+  // aligned and the drawing stayed put (layer-transform.ts).
   const setXY = (l: Layer, x: number, y: number): void => {
-    const o = l as unknown as Record<string, unknown>;
-    const nx = Math.round(x), ny = Math.round(y);
     const was = getXY(l);
-    const p = (l as { pos?: number[] }).pos;
-    if (Array.isArray(p)) { p[0] = nx; p[1] = ny; }
-    else { (l as { x: number }).x = nx; (l as { y: number }).y = ny; }
-    // A line/connector draws from ABSOLUTE endpoints; moving only the box
-    // leaves the ink behind, so the layer reports where it was aligned to and
-    // renders where it used to be. Same disagreement update_layer had.
-    const dx = was ? nx - was.x : 0;
-    const dy = was ? ny - was.y : 0;
-    if (dx || dy) {
-      for (const [k, d] of [['x1', dx], ['x2', dx], ['y1', dy], ['y2', dy]] as const) {
-        if (typeof o[k] === 'number') o[k] = (o[k] as number) + d;
-      }
-    }
+    if (was) translateSubtree(l, Math.round(x) - was.x, Math.round(y) - was.y);
   };
   // Every MCP poster is ONE group, so a flat scan of the page's top level found
   // nothing for 267 of 279 real designs: `align` answered "No positioned target
   // layers found" for the inner layers `update` has always been able to reach.
-  // Group children carry ABSOLUTE document coordinates, so aligning across
-  // groups needs no transform — only the search had to learn to descend.
-  const wanted = new Set(args.layer_ids);
-  const found = new Map<string, { l: Layer; lockedBy?: string }>();
-  const descend = (layers: Layer[], lockedAncestor?: string): void => {
-    for (const l of layers) {
-      if (wanted.has(l.id) && !found.has(l.id)) found.set(l.id, { l, ...(lockedAncestor ? { lockedBy: lockedAncestor } : {}) });
-      const kids = (l as Layer & { layers?: Layer[] }).layers;
-      if (l.type === 'group' && Array.isArray(kids)) {
-        descend(kids, lockedAncestor ?? ((l as { locked?: unknown }).locked ? l.id : undefined));
-      }
-    }
-  };
-  descend(arr);
-
-  // A batch op reports what it could not do rather than quietly doing less —
-  // `align` used to filter unknown ids away and still answer success:true with a
-  // shorter `aligned` list, leaving the caller to diff the arrays to notice.
-  // patch_design already had the right convention (`unresolved`); this follows it.
-  const unresolved = args.layer_ids.filter(id => !found.has(id));
-  const locked = [...found.values()].filter(f => f.lockedBy).map(f => `${f.l.id} (in "${f.lockedBy}")`);
-  const targets = [...found.values()].filter(f => !f.lockedBy).map(f => f.l);
+  // A batch op reports what it could not do rather than quietly doing less
+  // (`unresolved`, patch_design's convention), and a layer inside a LOCKED
+  // group is left alone and named.
+  const { targets, unresolved, locked } = findTargets(arr, args.layer_ids);
   const boxed = targets.map(l => ({ l, b: getXY(l) })).filter((t): t is { l: Layer; b: { x: number; y: number; w: number; h: number } } => !!t.b);
   if (boxed.length < 1) return errResult(op, 'No positioned target layers found.', 'Pass layer_ids that exist on the page and have numeric positions.', progress);
 
