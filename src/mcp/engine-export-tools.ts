@@ -31,6 +31,7 @@ import { addVectorPdfPage, type PdfDoc } from './engine/pdf-build';
 import { buildPptx, type PptxSlide } from '../export/pptx-export';
 import { extractPptxTexts } from '../export/pptx-text-extract';
 import { reviewLayout, type PageLayout } from './engine/layout-review';
+import { withMotion } from './engine/layout-review-motion';
 
 /**
  * The design's own resolution, for px → PostScript-point conversion in the PDF.
@@ -484,7 +485,9 @@ export function diagnoseDesign(args: { design_path: string; project_path?: strin
   let review: PageLayout[] | undefined;
   if (args.review) {
     try {
-      review = reviewLayout(spec, args.project_path ?? path.dirname(path.dirname(dPath)), args.page_id);
+      const projDir = args.project_path ?? path.dirname(path.dirname(dPath));
+      // A page that moves is also measured at each shot's rest (layout-review-motion.ts).
+      review = withMotion(reviewLayout(spec, projDir, args.page_id), spec, projDir, args.page_id);
       progress.push(pOk('Measured layout', `${review.length} page(s), ${review.reduce((n, p) => n + p.notes.length, 0)} note(s)`));
     } catch (err) {
       progress.push(pInfo('Layout review skipped', (err as Error).message));
