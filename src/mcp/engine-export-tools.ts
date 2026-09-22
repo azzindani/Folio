@@ -30,6 +30,7 @@ import { resolveImageAssets } from './engine/asset-resolve';
 import { addVectorPdfPage, type PdfDoc } from './engine/pdf-build';
 import { buildPptx, type PptxSlide } from '../export/pptx-export';
 import { extractPptxTexts } from '../export/pptx-text-extract';
+import { reviewLayout, type PageLayout } from './engine/layout-review';
 
 /**
  * The design's own resolution, for px → PostScript-point conversion in the PDF.
@@ -440,7 +441,7 @@ export function exportDesign(args: { design_path: string; format: string; output
 // ── diagnose_design ─────────────────────────────────────────
 // Built-in troubleshooter: geometry + composition + quality findings with fixes.
 
-export function diagnoseDesign(args: { design_path: string; project_path?: string; page_id?: string }): ToolResult {
+export function diagnoseDesign(args: { design_path: string; project_path?: string; page_id?: string; review?: boolean }): ToolResult {
   const op = 'diagnose_design';
   const progress: ProgressItem[] = [];
   const dPath = resolveDesignPath(args.design_path, args.project_path);
@@ -478,6 +479,18 @@ export function diagnoseDesign(args: { design_path: string; project_path?: strin
   const echo = echoFinding(spec, dPath, args.project_path);
   if (echo) findings.push(echo);
 
+  // review:true — how each page spends its canvas (layout-review.ts). Two small
+  // renders per page, so only on request; a failed render keeps the diagnosis.
+  let review: PageLayout[] | undefined;
+  if (args.review) {
+    try {
+      review = reviewLayout(spec, args.project_path ?? path.dirname(path.dirname(dPath)), args.page_id);
+      progress.push(pOk('Measured layout', `${review.length} page(s), ${review.reduce((n, p) => n + p.notes.length, 0)} note(s)`));
+    } catch (err) {
+      progress.push(pInfo('Layout review skipped', (err as Error).message));
+    }
+  }
+
   const errors = findings.filter(f => f.severity === 'error');
   const warnings = findings.filter(f => f.severity === 'warning');
   const suggestions = findings.filter(f => f.severity === 'suggestion');
@@ -499,6 +512,7 @@ export function diagnoseDesign(args: { design_path: string; project_path?: strin
     findings: rankForDisplay(findings, 40),
     ...(findings.length > 40 ? { findings_truncated: findings.length - 40 } : {}),
     ...(mark ? { mark } : {}),
+    ...(review ? { review } : {}),
     progress, context,
   });
 }
