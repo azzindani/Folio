@@ -4,6 +4,7 @@ import { createSVGElement, getOrCreateDefs } from './svg-utils';
 
 import { resolveColorOrGradient } from './fill-renderer';
 import { wrapToWidth, textWidthPx } from '../utils/text-width';
+import { emMeasure } from '../utils/font-widths';
 
 // Word-wrap plain text into lines that fit within maxWidth.
 // Default char-width is ~0.52× font-size (accurate for Inter/sans-serif). Pass
@@ -21,10 +22,10 @@ import { wrapToWidth, textWidthPx } from '../utils/text-width';
 //     line — rendered off the box and clipped at the canvas edge, while
 //     diagnose_design reported no problems. A long URL does the same thing.
 // Breaking mid-token is a last resort, only when the token alone overflows.
-export function wrapPlainText(text: string, maxWidth: number | undefined, fontSize: number, perCharPx?: number): string[] {
+export function wrapPlainText(text: string, maxWidth: number | undefined, fontSize: number, perCharPx?: number, emOf?: (s: string) => number): string[] {
   const cw = perCharPx && perCharPx > 0 ? perCharPx : fontSize * 0.52;
   if (!maxWidth || maxWidth <= 0) return text.split('\n');
-  const lines = wrapToWidth(text, maxWidth, fontSize, cw / fontSize);
+  const lines = wrapToWidth(text, maxWidth, fontSize, emOf ?? cw / fontSize);
   return lines.length ? lines : [''];
 }
 
@@ -85,7 +86,11 @@ export function plainTextLayout(
   const tracking = typeof style.letter_spacing === 'number' ? style.letter_spacing : 0;
   const perChar = factor === 0.52 ? undefined : fontSize * factor + Math.max(0, tracking);
   const width = typeof box.width === 'number' ? box.width : undefined;
-  const lines = wrapPlainText(value, width, fontSize, perChar);
+  // A bundled face wraps by its real widths (utils/font-widths): at 0.52 em a
+  // glyph, "Nori & Broth" in Caveat wrapped in a box it fits by 130 px, and
+  // Archivo Black capitals ran past theirs (one-shot benchmark r3).
+  const emOf = emMeasure(style.font_family, style.font_weight, fontSize, tracking) ?? undefined;
+  const lines = wrapPlainText(value, width, fontSize, perChar, emOf);
 
   const x = box.x ?? 0, y = box.y ?? 0;
   const textX = alignVal === 'center' && width !== undefined ? x + width / 2
@@ -97,7 +102,7 @@ export function plainTextLayout(
     else if (style.vertical_align === 'bottom') textY = y + box.height - totalH + fontSize;
   }
   const narrowEm = (perChar ?? fontSize * 0.52) / fontSize;
-  const lineWidths = lines.map(l => textWidthPx(l, fontSize, narrowEm) + tracking * Math.max(0, [...l].length - 1));
+  const lineWidths = lines.map(l => (emOf ? emOf(l) * fontSize - Math.max(0, tracking) : textWidthPx(l, fontSize, narrowEm) + tracking * Math.max(0, [...l].length - 1)));
   return { value, lines, lineWidths, fontSize, lineH, anchor, textX, textY };
 }
 

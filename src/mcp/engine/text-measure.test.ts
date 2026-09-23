@@ -36,7 +36,9 @@ describe('measureTextLayer', () => {
     expect(m).toBeTruthy();
     expect(m!.declaredH).toBe(120);
     expect(m!.estH).toBeGreaterThan(m!.declaredH * 1.5);
-    expect(m!.lines).toBeGreaterThanOrEqual(3);
+    // Two lines, as Playfair Display really sets it ("5 Habits of Highly" /
+    // "Effective Engineers"); the flat 0.54 em guess counted three.
+    expect(m!.lines).toBe(2);
   });
 });
 

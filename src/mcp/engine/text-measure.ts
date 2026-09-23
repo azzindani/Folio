@@ -10,6 +10,7 @@
 import type { Layer } from '../../schema/types';
 import { layerText } from '../../schema/layer-text';
 import { wrapToWidth } from '../../utils/text-width';
+import { emMeasure } from '../../utils/font-widths';
 
 /** Average glyph advance as a fraction of font size, by font family category. */
 function advanceRatio(font?: string): number {
@@ -24,7 +25,7 @@ function advanceRatio(font?: string): number {
  * Estimate the rendered height (px) of wrapped text.
  * cpl = chars that fit per line; lines respects explicit "\n"; height = lines·fontSize·lh.
  */
-export function estTextHeight(text: string, fontSize: number, widthPx: number, lh = 1.3, font?: string): number {
+export function estTextHeight(text: string, fontSize: number, widthPx: number, lh = 1.3, font?: string, weight?: unknown, letterSpacingPx = 0): number {
   // Counts the lines the RENDERER will actually produce, by calling the same
   // wrapper it does. This used to be its own arithmetic — `seg.length` charged
   // at a flat advance, divided by chars-per-line — which was wrong twice over:
@@ -33,7 +34,8 @@ export function estTextHeight(text: string, fontSize: number, widthPx: number, l
   // the division wanted. An estimator that disagrees with the renderer is how
   // diagnose_design came to report "No problems" about text rendering off the
   // canvas.
-  const lines = wrapToWidth(text, Math.max(1, widthPx), fontSize, advanceRatio(font)).length;
+  // A bundled face measures by its real widths — the renderer's own measure (utils/font-widths).
+  const lines = wrapToWidth(text, Math.max(1, widthPx), fontSize, emMeasure(font, weight, fontSize, letterSpacingPx) ?? advanceRatio(font)).length;
   return Math.ceil(Math.max(1, lines) * fontSize * lh);
 }
 
@@ -48,7 +50,7 @@ export function measureTextLayer(l: Layer): TextMetrics | null {
   const text = layerText(l).trim();
   if (!text) return null;
 
-  const style = (l as { style?: { font_size?: unknown; line_height?: unknown; font_family?: unknown; text_transform?: unknown } }).style ?? {};
+  const style = (l as { style?: { font_size?: unknown; line_height?: unknown; font_family?: unknown; font_weight?: unknown; letter_spacing?: unknown; text_transform?: unknown } }).style ?? {};
   const fontSize = typeof style.font_size === 'number' ? style.font_size : 16;
   const lh = typeof style.line_height === 'number' && style.line_height > 0 ? style.line_height : 1.3;
   const font = typeof style.font_family === 'string' ? style.font_family : undefined;
@@ -60,12 +62,17 @@ export function measureTextLayer(l: Layer): TextMetrics | null {
     : typeof (l as { height?: unknown }).height === 'number' ? (l as { height: number }).height : 0;
   if (width <= 0) return null;
 
-  // UPPERCASE renders ~12% wider → fewer chars per line. Widen by shrinking the effective width.
-  const transformed = style.text_transform === 'uppercase' ? width / 1.12 : width;
+  // A bundled face measures the capitals it will draw; otherwise UPPERCASE
+  // renders ~12% wider → fewer chars per line, so the effective width shrinks.
+  const known = emMeasure(font, style.font_weight, fontSize) !== null;
+  const upper = style.text_transform === 'uppercase';
+  const measured = known && upper ? text.toUpperCase() : text;
+  const transformed = upper && !known ? width / 1.12 : width;
+  const tracking = typeof style.letter_spacing === 'number' ? style.letter_spacing : 0;
   // Text with no break opportunity — one Latin word, as op:text splits a line
   // into — draws on ONE line whatever the width estimate says ("Astra" at 96px
   // measured as two lines in a box cut to its width).
-  const estH = UNBREAKABLE.test(text) ? Math.ceil(fontSize * lh) : estTextHeight(text, fontSize, transformed, lh, font);
+  const estH = UNBREAKABLE.test(text) ? Math.ceil(fontSize * lh) : estTextHeight(measured, fontSize, transformed, lh, font, style.font_weight, tracking);
   const lines = Math.max(1, Math.round(estH / (fontSize * lh)));
   return { estH, declaredH, lines, fontSize, lineH: fontSize * lh };
 }

@@ -9,6 +9,7 @@
   },
   "scripts": {
     "dev": "vite",
+    "gen:widths": "bun scripts/gen-font-widths.ts",
     "gen": "node scripts/gen-catalog-index.mjs && node scripts/gen-palette-index.mjs && node scripts/gen-type-pack-index.mjs && node scripts/gen-effects-pack-index.mjs && node scripts/gen-font-manifest.mjs",
     "build": "npm run gen && tsc && vite build && npm run build:assets",
     "build:assets": "vite build --config vite.assets.config.ts",
