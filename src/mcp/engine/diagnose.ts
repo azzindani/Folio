@@ -16,6 +16,8 @@ export interface Finding {
   severity: 'error' | 'warning' | 'suggestion';
   message: string;
   layer_id?: string;
+  /** Every layer the finding is about, when it is about a pair. */
+  layers?: string[];
   fix?: string;
 }
 

@@ -74,9 +74,15 @@ export function collectFindings(
 ): PageFinding[] {
   const W = spec.document?.width ?? 1080, H = spec.document?.height ?? 1080;
   // A moving surface is also judged where each shot rests (diagnose-motion.ts).
-  const run = (layers: Layer[] | undefined, page?: Page): PageFinding[] =>
-    [...analyzeLayers(layers ?? [], W, H, page ? page.world : spec.world), ...motionFindings(spec, layers ?? [], page)]
-      .map(f => (page ? { ...f, page: page.id } : f));
+  const run = (layers: Layer[] | undefined, page?: Page): PageFinding[] => {
+    const moving = motionFindings(spec, layers ?? [], page);
+    // A pair judged where the shots rest is not judged again as authored.
+    // The static message names its pair first: "a" and "b" (both text) overlap …
+    const pair = (f: Finding): string => (f.layers ?? [...f.message.matchAll(/"([^"]+)"/g)].slice(0, 2).map(m => m[1] ?? '')).slice().sort().join('+');
+    const atRest = new Set(moving.filter(f => f.code === 'motion_overlap' || f.code === 'motion_collision').map(pair));
+    const still = analyzeLayers(layers ?? [], W, H, page ? page.world : spec.world).filter(f => f.code !== 'collision' || !atRest.has(pair(f)));
+    return [...still, ...moving].map(f => (page ? { ...f, page: page.id } : f));
+  };
 
   const findings: PageFinding[] = [];
   if (pageId && spec.pages) {
