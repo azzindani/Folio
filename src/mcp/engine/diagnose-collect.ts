@@ -25,6 +25,7 @@ import { auditImageAssets } from './asset-resolve';
 import { renderFailureFindings } from './diagnose-render';
 import { motionFindings } from './diagnose-motion';
 import { safeAreaFindings } from './diagnose-safe';
+import { beatFindings } from './diagnose-beats';
 import { validateDesignSpec } from '../../schema/validator';
 
 export type PageFinding = Finding & { page?: string };
@@ -100,6 +101,8 @@ export function collectFindings(
     findings.push(...run(spec.layers));
   }
 
+  // Scene cuts off the soundtrack's beat — once the music is measured (diagnose-beats.ts).
+  if (!pageId) findings.push(...beatFindings(spec, designPath));
   // Unresolvable image srcs (blank in exports) + distortion/upscale.
   findings.push(...auditImageAssets(spec, designPath, projectPath));
   // Styling written at layer level that the renderer ignores (see diagnose.ts).
