@@ -34,11 +34,12 @@ export function openEasePopover(o: EasePopoverOptions): void {
   const pop = document.createElement('div');
   pop.className = 'tl-ease-pop';
   pop.style.cssText = 'position:absolute;z-index:20;display:flex;flex-direction:column;gap:4px;'
-    + `left:${Math.max(0, a.left - h.left + o.host.scrollLeft)}px;top:${a.bottom - h.top + o.host.scrollTop + 2}px`;
+    // Under the keyframe, but inside the panel: a right-hand panel is barely wider than the plot.
+    + `left:${Math.max(0, Math.min(a.left - h.left, o.host.clientWidth - BOX.w - 4)) + o.host.scrollLeft}px;top:${a.bottom - h.top + o.host.scrollTop + 2}px`;
 
   const sel = document.createElement('select');
   sel.className = 'tl-ease-picker';
-  sel.style.cssText = 'font-size:11px;background:var(--color-bg);color:var(--color-text);border:1px solid var(--color-border);border-radius:3px';
+  sel.style.cssText = `width:${BOX.w}px;` + 'font-size:11px;background:var(--color-bg);color:var(--color-text);border:1px solid var(--color-border);border-radius:3px';
   const options = (current: string): string => {
     const names = ['', ...EASING_NAMES];
     // A shaped curve is not one of the names: list it, so the select says what the keyframe has.
