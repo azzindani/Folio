@@ -39,7 +39,7 @@ export interface ResolvedAsset {
 export function slugify(s: string, fallback: string): string {
   const out = String(s ?? '').toLowerCase().normalize('NFKD')
     .replace(/[^\w\s-]+/g, '').trim().replace(/[\s_]+/g, '-')
-    .replace(/-{2,}/g, '-').replace(/^-|-$/g, '').slice(0, 48);
+    .replace(/-{2,}/g, '-').slice(0, 48).replace(/^-|-$/g, '');
   return out || fallback;
 }
 
