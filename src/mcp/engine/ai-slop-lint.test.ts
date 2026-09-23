@@ -70,6 +70,15 @@ describe('lintAiSlop', () => {
     expect(lintAiSlop(layers).join(' ')).toMatch(/accent hue appears/i);
   });
 
+  // benchmark r6 b23: pale discs (#E6F0FA) and idle progress bars (#C9D6E6) counted as brand-blue accents.
+  it('does not count pale tints of the accent as accent uses — only colour the eye reads as colour', () => {
+    const blue = ['#0057B8', '#0057B8', '#0057B8'].map((c, i) => L({ id: `b${i}`, type: 'rect', fill: c }));
+    const tints = ['#E6F0FA', '#C9D6E6', '#C9D6E6', '#C9D6E6', '#DCE9F7'].map((c, i) => L({ id: `t${i}`, type: 'rect', fill: c }));
+    expect(lintAiSlop([...blue, ...tints]).join(' ')).not.toMatch(/accent hue appears/i);
+    const loud = ['#0057B8', '#1E6FD9', '#0A4C9C', '#0057B8', '#2A7DE1', '#0057B8'].map((c, i) => L({ id: `v${i}`, type: 'rect', fill: c }));
+    expect(lintAiSlop(loud).join(' ')).toMatch(/accent hue appears on 6 layers/i);
+  });
+
   it('counts a chart series as ONE accent use, not one per bar', () => {
     const bars = Array.from({ length: 12 }, (_, i) => L({ id: `bar${i}`, type: 'rect', fill: '#E11D48' }));
     const chart = L({ id: 'chart', type: 'group', layers: bars });

@@ -109,7 +109,11 @@ function isUpper(l: Layer, v: string): boolean {
 /** A single saturated-hue "bucket" (30° wide) for accent-overuse counting. */
 function vividBucket(hex: string): number | null {
   const rgb = hexToRgb(hex);
-  if (!rgb || saturation(rgb) < 0.45) return null;
+  // HSL saturation runs high for near-white tints: #E6F0FA scores 0.66, and a
+  // how-to's pale icon discs and idle progress bars counted as brand-blue accents
+  // (benchmark r6, b23). Chroma — how far from grey — is what the eye reads as colour.
+  const chroma = rgb ? (Math.max(...rgb) - Math.min(...rgb)) / 255 : 0;
+  if (!rgb || saturation(rgb) < 0.45 || chroma < 0.25) return null;
   return Math.round(hue(rgb) / 30);
 }
 
