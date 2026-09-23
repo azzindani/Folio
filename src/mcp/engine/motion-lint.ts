@@ -13,6 +13,7 @@ import type { Layer } from '../../schema/types';
 import type { AnimationSpec, Keyframe, LayerLink } from '../../animation/types';
 import { resolveTimeline } from '../../animation/timeline-resolve';
 import { layersAt } from '../../export/gif-frames';
+import { pivotOf } from '../../export/frame-pose';
 import { canvasBoxes, type CanvasBox } from '../../export/frame-cull';
 import { buriedTexts, ancestry } from './motion-lint-buried';
 
@@ -345,7 +346,7 @@ function readingNotes(views: ShotView[], endMs: number, rests: Rest[]): LintNote
     note: w.cut.length > 1 ? `${w.note.note} ${w.cut.length - 1} more line(s) in this shot are cut short too.` : w.note.note }));
 }
 
-/** Links whose target is missing or does not move — the follower would sit still. */
+/** Links whose target is missing or does not move — the follower would sit still — and children turning about where their parent no longer is. */
 function linkNotes(layers: Layer[]): LintNote[] {
   const ids = new Map<string, Node>();
   const index = (ls: Layer[]): void => { for (const l of ls as Node[]) { ids.set(l.id, l); if (Array.isArray(l.layers)) index(l.layers); } };
@@ -356,6 +357,13 @@ function linkNotes(layers: Layer[]): LintNote[] {
     const target = ids.get(l.link.to);
     if (!target) notes.push({ kind: 'link', layers: [l.id], note: `"${l.id}" follows "${l.link.to}", which is not on this page.` });
     else if (!target.animation?.keyframes?.length && !target.link) notes.push({ kind: 'link', layers: [l.id, target.id], note: `"${l.id}" follows "${target.id}", which has no motion — so it never moves.` });
+    else if (l.link.pivot) {
+      // A parent's own pivot is read live; an anchor was measured when parented.
+      const pb = target.animation?.playback, was = l.link.pivot;
+      const now = pb?.pivot ? null : pivotOf(target, pb?.anchor);
+      if (now && Math.hypot(now.x - was.x, now.y - was.y) > 1) notes.push({ kind: 'link', layers: [l.id, target.id],
+        note: `"${l.id}" turns about (${was.x}, ${was.y}), where "${target.id}"'s anchor was when parented — it is now at (${Math.round(now.x)}, ${Math.round(now.y)}). Run op:parent again to re-seat it.` });
+    }
   }
   return notes;
 }

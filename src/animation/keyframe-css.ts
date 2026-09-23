@@ -192,7 +192,9 @@ export function generateKeyframeCSS(layerId: string, anim: AnimationSpec, spacin
   const iteration = playback?.loop ? (playback.iterations && playback.iterations > 0 ? String(playback.iterations) : 'infinite') : '1';
   const direction = playback?.direction ?? 'normal';
   const delay = Math.max(0, playback?.delay ?? 0);
-  const origin = anchorToOrigin(playback?.anchor);
+  // A pivot is a canvas point: view-box measures it in the design's own px.
+  const pv = playback?.pivot;
+  const origin = pv ? `view-box; transform-origin: ${fmt(pv.x)}px ${fmt(pv.y)}px` : `fill-box; transform-origin: ${anchorToOrigin(playback?.anchor)}`;
   const timing = `${duration}ms linear ${delay}ms ${iteration} ${direction} both`;
   // One element plays one animation list: other animations on the same element
   // (the in/out window's visibility steps) ride in it, after the pose.
@@ -215,7 +217,7 @@ export function generateKeyframeCSS(layerId: string, anim: AnimationSpec, spacin
 
   return [
     `@keyframes ${name} { ${body} }`,
-    `${selector} { transform-box: fill-box; transform-origin: ${origin};${drawDecl} animation: ${name} ${timing}${also}; }`,
+    `${selector} { transform-box: ${origin};${drawDecl} animation: ${name} ${timing}${also}; }`,
     // The <text> carries its own letter-spacing attribute, which beats an
     // inherited value — Chromium held the glyphs still without this rule.
     ...(tracked !== undefined ? [`[data-layer-id="${layerId}"] text { letter-spacing: inherit; }`] : []),

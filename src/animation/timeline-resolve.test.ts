@@ -110,6 +110,16 @@ describe('resolveTimeline', () => {
     expect(t?.keyframes?.map(k => [k['x'], k['scale'], k['opacity']])).toEqual([[100, 0.75, 0.5], [200, 1, 1]]);
   });
 
+  it('a parent link turns about the parent pivot; a plain follower keeps its own anchor', () => {
+    const spin: AnimationSpec = { keyframes: [{ t: 0, rotation: 0 }, { t: 1000, rotation: 90 }], playback: { duration: 1000, anchor: 'bottom' } };
+    expect(followTrack(spin, { to: 'p', pivot: { x: 540, y: 675 } })?.playback).toEqual({ duration: 1000, pivot: { x: 540, y: 675 }, delay: 0 });
+    // The parent's own pivot is live — it wins over the point stored at parenting.
+    const hub = { ...spin, playback: { duration: 1000, pivot: { x: 10, y: 20 } } };
+    expect(followTrack(hub, { to: 'p', pivot: { x: 540, y: 675 } })?.playback?.pivot).toEqual({ x: 10, y: 20 });
+    expect(followTrack(hub, { to: 'p' })?.playback).toEqual({ duration: 1000, delay: 0 });
+    expect(followTrack(spin, { to: 'p', lag: 80 })?.playback).toEqual({ duration: 1000, anchor: 'bottom', delay: 80 });
+  });
+
   it('clips a child window to its group', () => {
     const out = resolveTimeline([group('g', [rect('a', { in: 500, out: 9000 }), rect('b')], { in: 1000, out: 4000 })]);
     expect([find(out, 'a')['in'], find(out, 'a')['out']]).toEqual([1000, 4000]);

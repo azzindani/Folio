@@ -14,7 +14,7 @@
 
 import * as fs from 'fs';
 import type { DesignSpec, Layer } from '../../schema/types';
-import type { AnimationSpec, Keyframe, AnchorPoint } from '../../animation/types';
+import type { AnimationSpec, Keyframe, AnchorPoint, PivotPoint } from '../../animation/types';
 import type { ToolResult, ProgressItem } from '../types';
 import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, pOk, pInfo, pWarn } from './utils';
 import { expandPreset, isMotionPreset, PRESET_NAMES, PRESET_NOTES, PRESET_KIND, presetsByKind, type MotionPreset } from './motion-presets';
@@ -185,6 +185,14 @@ function validateKeyframes(v: unknown): Keyframe[] | string {
   return out.sort((a, b) => a.t - b.t);
 }
 
+/** A canvas point {x, y}, nothing when absent, 'bad' when it is not one. */
+function pivotArg(v: unknown): PivotPoint | undefined | 'bad' {
+  if (v === undefined) return undefined;
+  const o = (v && typeof v === 'object' ? v : {}) as Record<string, unknown>;
+  const x = o['x'], y = o['y'];
+  return typeof x === 'number' && Number.isFinite(x) && typeof y === 'number' && Number.isFinite(y) ? { x, y } : 'bad';
+}
+
 function validatePlayback(v: unknown, frames: Keyframe[]): NonNullable<AnimationSpec['playback']> | string {
   const pb = (v && typeof v === 'object' ? v : {}) as Record<string, unknown>;
   const span = frames[frames.length - 1].t - frames[0].t;
@@ -192,6 +200,8 @@ function validatePlayback(v: unknown, frames: Keyframe[]): NonNullable<Animation
   if (pb['easing'] !== undefined && !isKnownEasing(pb['easing'])) return `playback.easing "${String(pb['easing'])}" is unknown${easingHint(pb['easing'])}`;
   if (pb['anchor'] !== undefined && !ANCHORS.has(String(pb['anchor']))) return `playback.anchor must be one of: ${[...ANCHORS].join(', ')}.`;
   if (pb['reveal_from'] !== undefined && !(REVEAL_FROMS as readonly string[]).includes(String(pb['reveal_from']))) return `playback.reveal_from must be one of: ${REVEAL_FROMS.join(', ')}.`;
+  const pivot = pivotArg(pb['pivot']);
+  if (pivot === 'bad') return 'playback.pivot must be a canvas point {x, y} in px.';
   if (pb['origin'] !== undefined && pb['origin'] !== 'first' && pb['origin'] !== 'offset') return 'playback.origin must be "first" or "offset".';
   return {
     duration,
@@ -204,6 +214,7 @@ function validatePlayback(v: unknown, frames: Keyframe[]): NonNullable<Animation
     ...(typeof pb['easing'] === 'string' ? { easing: pb['easing'] } : {}),
     ...(typeof pb['delay'] === 'number' ? { delay: Math.max(0, pb['delay']) } : {}),
     ...(pb['anchor'] ? { anchor: pb['anchor'] as AnchorPoint } : {}),
+    ...(pivot ? { pivot } : {}),
     ...(pb['reveal_from'] ? { reveal_from: pb['reveal_from'] as RevealFrom } : {}),
   };
 }

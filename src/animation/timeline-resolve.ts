@@ -193,8 +193,11 @@ export function followTrack(anim: AnimationSpec, link: LayerLink): AnimationSpec
     return out;
   });
   if (!any) return undefined;
-  const pb = anim.playback ?? { duration: Math.max(1, (sorted[sorted.length - 1]?.t ?? 1) - first.t) };
-  return { keyframes, playback: { ...pb, delay: (pb.delay ?? 0) + lag } };
+  const { pivot: own, anchor, ...pb } = anim.playback ?? { duration: Math.max(1, (sorted[sorted.length - 1]?.t ?? 1) - first.t) };
+  // A child turns about its parent's pivot — the parent's own point when it has
+  // one, else where its anchor stood when parented. A follower turns about itself.
+  const pivot = link.pivot ? own ?? link.pivot : undefined;
+  return { keyframes, playback: { ...pb, ...(pivot ? { pivot } : anchor ? { anchor } : {}), delay: (pb.delay ?? 0) + lag } };
 }
 
 // ── Windows ──────────────────────────────────────────────────
