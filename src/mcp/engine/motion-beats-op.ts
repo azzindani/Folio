@@ -12,33 +12,18 @@ import type { DesignSpec } from '../../schema/types';
 import type { ToolResult } from '../types';
 import { resolveDesignPath, readYAML, errResult, okResult } from './utils';
 import { planScenes } from '../../export/scene-plan';
-import type { SoundClip } from '../../export/audio-plan';
 import { tryFfmpeg } from '../../export/animation-export';
 import { resolveSound } from './sound-resolve';
 import { soundTimeline } from './motion-audio-op';
 import { analyzeAudioFile } from './audio-analyze';
+import { beatsOnPiece } from '../../export/beat-place';
 
 export type BeatsArgs = { design_path: string; project_path?: string; audio_id?: unknown; hold_ms?: number };
 
 const OP = 'beats';
 const MAX_BEATS = 400;
 
-/** Times in a file, placed where the clip sounds them on the piece — every pass of a loop. */
-export function beatsOnPiece(clip: SoundClip, fileTimes: number[], fileMs: number): number[] {
-  const out: number[] = [];
-  const end = clip.start_ms + clip.length_ms;
-  // Piece time of the file's 0 ms on this pass: the first pass starts at the offset, later ones at 0.
-  let passStart = clip.start_ms - clip.offset_ms;
-  for (let pass = 0; passStart < end && pass < 1000; pass++) {
-    for (const t of fileTimes) {
-      const at = passStart + t;
-      if (at >= clip.start_ms && at <= end) out.push(Math.round(at));
-    }
-    if (!clip.loop || fileMs <= 0) break;
-    passStart += fileMs;
-  }
-  return out;
-}
+export { beatsOnPiece };
 
 export interface BeatSnap { page_id: string; length_ms: number; on_beat_ms: number; moved_ms: number; longer_for?: 'reading' | 'motion' }
 

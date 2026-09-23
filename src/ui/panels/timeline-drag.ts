@@ -59,6 +59,8 @@ export interface TimelineDragContext {
   animationOf: (layerId: string) => AnimationSpec | undefined;
   /** Write one layer's new track — one undo step. */
   write: (layerId: string, anim: AnimationSpec) => void;
+  /** The soundtrack's beats on this page's ruler. */
+  beats?: () => number[];
 }
 
 /** A finished drag is not a click: the click it ends in would open the easing picker or add a keyframe. */
@@ -72,7 +74,7 @@ function swallowNextClick(): void {
 function snapsFor(ctx: TimelineDragContext, skip: (layerId: string, i: number) => boolean): number[] {
   const keys: number[] = [];
   for (const [id, row] of ctx.rows() ?? new Map<string, RowTiming>()) row.keys.forEach((k, i) => { if (!skip(id, i)) keys.push(k); });
-  return [0, ctx.duration(), ctx.playhead(), ...Object.values(ctx.markers()).filter((v): v is number => typeof v === 'number'), ...keys];
+  return [0, ctx.duration(), ctx.playhead(), ...Object.values(ctx.markers()).filter((v): v is number => typeof v === 'number'), ...(ctx.beats?.() ?? []), ...keys];
 }
 
 export function bindTimelineDrags(body: HTMLElement, ctx: TimelineDragContext): void {

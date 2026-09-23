@@ -6,7 +6,7 @@
  * or out to the end, removes it — a layer that lives the whole scene shows its
  * handles at the ends of its row); drag a marker to move it, click it to jump,
  * double-click it to rename, right-click to remove; + (at the playhead) or a
- * double-click on the strip adds one. Every drag snaps to 0, the end, the playhead and the markers. Times
+ * double-click on the strip adds one. Every drag snaps to 0, the end, the playhead, the markers and the music's beats. Times
  * are written in each layer's OWN clock (a precomp child's in point is local),
  * and a marker is a label on the scene clock: moving one retimes nothing.
  */
@@ -27,6 +27,8 @@ export interface TimelineEditContext {
   /** Show a time while it is dragged (the panel's timecode). */
   preview: (ms: number) => void;
   seek: (ms: number) => void;
+  /** The soundtrack's beats on this page's ruler — more snap points. */
+  beats?: () => number[];
 }
 
 const SNAP_PX = 6;
@@ -160,7 +162,7 @@ function nameField(strip: HTMLElement, leftPct: number, value: string, markers: 
 }
 
 export function bindTimelineEdits(body: HTMLElement, ctx: TimelineEditContext): void {
-  const markerTimes = (except?: string): number[] => Object.entries(ctx.markers()).filter(([n]) => n !== except).map(([, t]) => t);
+  const markerTimes = (except?: string): number[] => [...Object.entries(ctx.markers()).filter(([n]) => n !== except).map(([, t]) => t), ...(ctx.beats?.() ?? [])];
 
   body.querySelectorAll<HTMLElement>('.tl-life-h').forEach(h => {
     const area = h.closest<HTMLElement>('.tl-track-area');

@@ -42,7 +42,7 @@ describe('the drag gestures', () => {
   const layer = { id: 'dot', type: 'rect', z: 1, x: 0, y: 0, width: 10, height: 10, animation: anim() } as unknown as Layer;
   const timing = (): RowTiming => ({ keys: [1000, 1500, 2000], ghosts: [], start: 1000, end: 2000, loop: false, window: null, link: null, clocks: [] });
 
-  function mount(): { body: HTMLElement; write: ReturnType<typeof vi.fn> } {
+  function mount(beats?: number[]): { body: HTMLElement; write: ReturnType<typeof vi.fn> } {
     const body = document.createElement('div');
     body.innerHTML = trackHTML(layer, timing(), 10000, 0);
     document.body.appendChild(body);
@@ -54,7 +54,7 @@ describe('the drag gestures', () => {
     if (bar) bar.getBoundingClientRect = (): DOMRect => ({ left: 100, width: 100, top: 0, height: 12, right: 200, bottom: 12, x: 100, y: 0, toJSON: () => ({}) });
     const write = vi.fn();
     bindTimelineDrags(body, { duration: () => 10000, playhead: () => 0, rows: () => new Map([['dot', timing()]]), markers: () => ({ cta: 3000 }),
-      preview: () => undefined, animationOf: () => anim(), write });
+      preview: () => undefined, animationOf: () => anim(), write, ...(beats ? { beats: () => beats } : {}) });
     return { body, write };
   }
   const drag = (el: Element, from: number, to: number): void => {
@@ -72,6 +72,13 @@ describe('the drag gestures', () => {
     const last = body.querySelectorAll('.tl-keyframe')[2];
     if (last) drag(last, 200, 297);       // within 6 px of the marker at 3000
     expect(scene(write.mock.calls[1]?.[1] as AnimationSpec)).toEqual([1000, 1500, 3000]);
+  });
+
+  it('lands a keyframe on a beat of the soundtrack', () => {
+    const { body, write } = mount([1750]);
+    const middle = body.querySelectorAll('.tl-keyframe')[1];
+    if (middle) drag(middle, 150, 179);   // 1790 ms, within 6 px of the beat at 1750
+    expect(scene(write.mock.calls[0]?.[1] as AnimationSpec)).toEqual([1000, 1750, 2000]);
   });
 
   it('moves a whole layer by its bar, dropped by its start wherever it was held, and a tap is not a drag', () => {
