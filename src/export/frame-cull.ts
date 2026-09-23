@@ -144,7 +144,8 @@ export function cullUnseenClips(layers: Layer[], width: number, height: number, 
 }
 
 /** A drawn layer's box on the canvas after every transform above it, and how opaque it ends up. */
-export interface CanvasBox { layer: Layer; box: Box; opacity: number }
+/** A drawn leaf on the canvas; `scale` is how much its transforms enlarge it (√|det|). */
+export interface CanvasBox { layer: Layer; box: Box; opacity: number; scale?: number }
 
 /**
  * Every drawn leaf of a sampled frame, placed on the canvas — camera, group
@@ -170,7 +171,7 @@ export function canvasBoxes(layers: Layer[], parent: Matrix = IDENTITY, alpha = 
     const b = drawnBox(layer);
     if (!b) continue;
     const box = overlapBox(clip, mapBox(m, b));
-    if (!clip || (box.width > 0 && box.height > 0)) out.push({ layer, box, opacity: a });
+    if (!clip || (box.width > 0 && box.height > 0)) out.push({ layer, box, opacity: a, scale: Math.sqrt(Math.abs(m[0] * m[3] - m[1] * m[2])) });
   }
   return out;
 }

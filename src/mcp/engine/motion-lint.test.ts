@@ -57,6 +57,12 @@ describe('lintComposition', () => {
     expect(kinds(notes)).toEqual(expect.arrayContaining(['overlap', 'reading']));
   });
 
+  it('reads a short line in a wide box at its font size — the box is the ink, not the scale', () => {
+    // 36 px on a 1080 px frame is well above a glance (27 px); drawn 150 px wide in a 1600 px box.
+    const short = text('short', 100, 400, 'Read me now please', { width: 1600, style: { font_size: 36 }, animation: move(0, 400, { opacity: 0 }, { opacity: 1 }) });
+    expect(kinds(lintComposition([short], canvas, [{ id: 's1', at: 0 }], 700))).toContain('reading');
+  });
+
   // Found live: chips flew into a card declared after them; the card painted over every one.
   it('flags text a shot moves under an opaque layer, and leaves a scrim laid over a settled scene alone', () => {
     const chip = { id: 'chip', type: 'group', z: 2, x: 100, y: 100, width: 200, height: 60,
