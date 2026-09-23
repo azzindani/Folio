@@ -31,7 +31,7 @@ tools stay 1:1; the long tail is folded into **multiplexed tools** that take an
 |---|---|
 | `manage_design` | list→list_designs · browse→browse_library · inspect→inspect_design · rename→rename_design · duplicate→duplicate_design · move→move_design · delete→delete_design · resume→resume_design · gallery→export_library_gallery · icon_search→(new) · get_spec→(new) · resize→(new) · tokens→(new) · lineage→(new) · restore→(new) · style_history→(new) |
 | `themes` | list→list_themes · apply→apply_theme · packs→(new) catalog packs |
-| `tasks` | list→list_tasks · create→create_task · resume→resume_task |
+| `tasks` | list→list_tasks · create→create_task · resume→resume_task · execute · save_recipe · run_recipe · recipes |
 | `edit_layer` | add→add_layer · update→update_layer · remove→remove_layer · align→align_layers · patch_spec→(new) |
 | `templates` | list→list_templates · slots→list_template_slots · inject→inject_template · export→export_template · save_component→save_as_component · components→(new) · batch→batch_create |
 | `report` | generate→generate_report · customize→(new) · bind_data→bind_data · validate→validate_report · export→export_report · formula→set_formula_context · debug→debug_formula |
@@ -81,10 +81,14 @@ Find, inspect and manage designs + the whole library. **Req:** `op`.
 - `packs` — read-only editor catalog packs. `id` ALONE looks the pack up across all three kinds (you rarely know which kind an id belongs to). Omit both → the three kinds + counts. `kind:"palette|type|effects"` (+ `search`) → filtered listing with values inline. `+id` → one pack's full values: palette→hexes, type→heading/body/mono families, effects→effect keys. Needs no project.
 
 ### `tasks`  ·  *op-multiplexed*
-Multi-page carousel/deck planning. **Req:** `op`.
+Multi-page carousel/deck planning, and chains of calls run as one. **Req:** `op`.
 - `create` (req project_path, task_name, brief, pages:[{label,hints}]) — plan + scaffold; returns the first append_page baton.
 - `list` (req project_path) — task files + progress.
 - `resume` (req task_path) — exact next tool call after a context reset.
+- `execute` (req steps; opt dry_run) — a chain of Folio calls in ONE call (`src/mcp/engine/task-execute.ts`). Each step `{tool, args, as?}` runs in-process through the same handler map as its own MCP call (JSON-string decoding, required args, path normalisation, a lineage record per write). A later step reads an earlier reply with `${name.field}` (`${name.list.0.id}` indexes; a string that is only a ref keeps its type; every step is also `${stepN}`). `{recipe, params}` runs a saved recipe inline (≤4 deep, loops refused with the path named); `{for_each: list | "${ref}", item, do:[steps]}` runs its body per item with `${item}` and `${index}`. The chain is checked whole first (unknown tool, ref to a later step, duplicate name) and stops at the first failure, naming the step, with every reply so far — earlier changes stand. ≤50 steps / items.
+- `save_recipe` (req recipe, steps; opt description, params) — keep a chain under a name in the SHARED library (`<projects>/.library/recipes/<name>.recipe.json`, `task-recipes.ts` + `recipe-store.ts`); `params:{name:"what it is"}` declares what varies, read as `${params.name}`; a step reading an undeclared param, or a recipe running itself, is refused at save. A second save is the next version.
+- `run_recipe` (req recipe; opt params, dry_run) — run it in one call; a missing param is asked for by its description.
+- `recipes` — the saved recipes with their params.
 
 ---
 
