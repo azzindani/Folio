@@ -5,6 +5,7 @@ import { flowColumnX, type FlowGridMetrics } from '../renderer/flow-layout';
 import { type FlowRect } from './flow-edit';
 import type { Layer, TextLayer } from '../schema/types';
 import { generateDesignAnimationCSS } from '../animation/css-generator';
+import { pageAnimations } from '../animation/page-animations';
 import { RULER_SIZE, drawRuler } from './canvas-draw';
 
 let guideCounter = 0;
@@ -184,13 +185,14 @@ export abstract class CanvasBase {
 
   protected injectAnimationCSS(svg: SVGSVGElement): void {
     const { animations, design } = this.state.get();
-    const entries = Object.entries(animations);
-    if (entries.length === 0) return;
-    // Build a Map so the generator's signature matches; keep insertion
-    // order so stagger sequences fire in the order the YAML declared.
-    const map = new Map<string, import('../animation/types').AnimationSpec>(entries);
+    if (Object.keys(animations).length === 0) return;
+    // Only the page on screen is painted; ids repeated across pages take the
+    // layer's own track, since the flat map holds just one page's entry.
+    const layers = this.state.getCurrentLayers();
+    const pages = design?.pages?.length ? design.pages.map(p => p.layers ?? []) : [design?.layers ?? []];
+    const map = pageAnimations(animations, layers, pages);
+    if (map.size === 0) return;
     // Layers ride along so a `tracking` track adds to each text's authored spacing.
-    const layers = [...(design?.layers ?? []), ...(design?.pages ?? []).flatMap(p => p.layers ?? [])];
     const css = generateDesignAnimationCSS(map, layers);
     if (!css) return;
     // A <style> inside an inline SVG is global to the document, and the Layers
