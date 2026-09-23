@@ -38,6 +38,8 @@ export interface ShotLayout {
 export interface MotionReview { scene_ms: number; shots: ShotLayout[]; notes: string[] }
 
 const MAX_SHOTS = 16;
+/** Under this share of the frame inked, a posed moment shows nothing. */
+const BLANK_INK = 0.005;
 const CAMERA_ID = '__camera';
 /** Under this, a shot never holds still long enough to settle the eye. */
 const STILL_MIN_MS = 1000;
@@ -89,6 +91,21 @@ export function reviewMotionPage(spec: DesignSpec, page: Page | undefined, layer
   const rests = shotRests(layers, marks, end).slice(0, MAX_SHOTS);
   const posed = rests.map(r => ({ id: r.shot, layers: layersAt(layers, r.t) }));
   const measured = measureEntries(spec, posed, projectDir);
+  // A shot whose only still moment comes before anything has entered measured
+  // a blank frame and called a full scene "100% empty" (found on a 7-scene
+  // promo). Such a shot is measured at its last frame instead, and says so.
+  const blankAt = rests.flatMap((r, i) => ((measured[i]?.ink ?? 0) < BLANK_INK && r.until - 1 > r.t ? [i] : []));
+  if (blankAt.length) {
+    const again = blankAt.map(i => ({ id: rests[i]?.shot, layers: layersAt(layers, (rests[i]?.until ?? 1) - 1) }));
+    const remeasured = measureEntries(spec, again, projectDir);
+    blankAt.forEach((i, j) => {
+      const r = rests[i], m = remeasured[j], pose = again[j];
+      if (!r || !m || !pose || m.ink < BLANK_INK) return;
+      measured[i] = { ...m, notes: [`Its only still moment (${r.rest_ms} ms at ${r.t} ms) shows nothing yet — measured at its last frame, ${r.until - 1} ms.`, ...m.notes] };
+      rests[i] = { ...r, t: r.until - 1 };
+      posed[i] = pose;
+    });
+  }
   const shots: ShotLayout[] = rests.map((r, i) => {
     const m: PageLayout | undefined = measured[i];
     const zoom = cameraZoom(posed[i]?.layers ?? []);

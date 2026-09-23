@@ -61,6 +61,17 @@ describe('reviewMotionPage (rendered)', () => {
     expect(m?.shots[1]?.balance?.x ?? 0).toBeGreaterThan(0.1);
   }, 30_000);
 
+  it('a shot whose only still moment is before anything enters is measured at its last frame', () => {
+    // Found live: a promo scene measured at 249 ms — nothing on screen yet — read "100% empty".
+    const a = box('a', 100, 300, 600, 480, { animation: move(400, 600, { x: -900 }, { x: 0 }) });
+    const b = box('b', 1000, 300, 600, 480, { animation: move(1000, 2000, { x: 1000 }, { x: 0 }) });
+    const s = spec([bg, a, b]);
+    const shot = reviewMotionPage(s, undefined, s.layers ?? [], '/tmp')?.shots[0];
+    expect(shot?.t).toBe(2999);
+    expect(shot?.ink ?? 0).toBeGreaterThan(0.2);
+    expect(shot?.notes[0]).toMatch(/shows nothing yet — measured at its last frame, 2999 ms/);
+  }, 30_000);
+
   it('a still page gets no motion block', () => {
     const s = spec([bg, box('card', 100, 100, 400, 400)]);
     expect(reviewMotionPage(s, undefined, s.layers ?? [], '/tmp')).toBeNull();
