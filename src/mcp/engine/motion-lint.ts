@@ -17,8 +17,9 @@ import { pivotOf } from '../../export/frame-pose';
 import { parentBases, chainOf } from './motion-rig-stack';
 import { canvasBoxes, type CanvasBox } from '../../export/frame-cull';
 import { buriedTexts, ancestry } from './motion-lint-buried';
+import { frameUnits, collisions, type Unit } from './motion-lint-collide';
 
-export type LintKind = 'overlap' | 'off_canvas' | 'buried' | 'idle' | 'busy' | 'reading' | 'link';
+export type LintKind = 'overlap' | 'collision' | 'off_canvas' | 'buried' | 'idle' | 'busy' | 'reading' | 'link';
 export interface LintNote { kind: LintKind; note: string; at_ms?: number; shot?: string; layers?: string[] }
 /** A named moment of the piece — a storyboard shot or a marker — and when the next one starts. */
 export interface LintMark { id: string; at: number }
@@ -190,6 +191,8 @@ interface ShotView {
   /** This shot brought the layer in or moved it — itself or through a parent. */
   entered: (id: string) => boolean;
   buried: Array<{ text: string; under: string }>;
+  /** The objects where the shot rests, in world space. */
+  units: Unit[];
 }
 
 /**
@@ -262,6 +265,7 @@ function shotViews(layers: Layer[], canvas: { width: number; height: number }, m
       mark, until, t, texts, fresh, readable, reads,
       entered,
       buried: buriedTexts(flat, id => entered(id) || freshIds.has(id)),
+      units: frameUnits(flat, canvas),
       world,
     });
     shownBefore = shown;
@@ -269,20 +273,47 @@ function shotViews(layers: Layer[], canvas: { width: number; height: number }, m
   return views;
 }
 
+/**
+ * The same words at the same size — an RGB split, a drop echo, or a letter of
+ * a split title over a ghost of the whole title. Their overlap IS the effect
+ * (benchmark r2: a chromatic split read as 24 "rest on top of each other"
+ * notes). "Ship it" on "Ship it now" is still two lines on one spot.
+ */
+function echoes(a: Layer, b: Layer): boolean {
+  const said = (l: Layer): string => {
+    const c = (l as unknown as { content?: { value?: unknown } }).content?.value;
+    return typeof c === 'string' ? c.toLowerCase().replace(/\s+/g, ' ').trim() : '';
+  };
+  const size = (l: Layer): number => (l as unknown as { style?: { font_size?: number } }).style?.font_size ?? 0;
+  const piece = (l: Layer): boolean => typeof (l as unknown as { split_of?: unknown }).split_of === 'string';
+  const x = said(a), y = said(b), sa = size(a), sb = size(b);
+  if (!x || !y || !sa || !sb || Math.abs(sa - sb) > 0.1 * Math.max(sa, sb)) return false;
+  return x === y || (piece(a) && y.includes(x)) || (piece(b) && x.includes(y));
+}
+
 /** Overlaps, edges, buried text and reading time, measured where each shot rests. */
 function restNotes(layers: Layer[], canvas: { width: number; height: number }, marks: LintMark[], moves: Segment[], endMs: number, rests: Rest[]): LintNote[] {
   const notes: LintNote[] = [];
   const seenPairs = new Set<string>(), seenEdges = new Set<string>(), seenBuried = new Set<string>();
   const views = shotViews(layers, canvas, marks, moves, endMs);
+  // Where everything was before anything moved — the camera's own pose left out, as at rest.
+  const authored = frameUnits(layers.map(l => (l.id === CAMERA_ID ? ({ ...l, transform: undefined } as Layer) : l)), canvas);
   for (const v of views) {
     const { mark, t, texts } = v;
+    for (const c of collisions(v.units, authored, v.entered)) {
+      const key = [c.under, c.over].sort().join('+');
+      if (seenPairs.has(key) || v.buried.some(b => b.text === c.under && b.under === c.over)) continue;
+      seenPairs.add(key);
+      notes.push({ kind: 'collision', shot: mark.id, at_ms: t, layers: [c.over, c.under],
+        note: `In "${mark.id}", "${c.over}" comes to rest over ${Math.round(c.share * 100)}% of "${c.under}" at ${t}ms (of the smaller one) — they were apart as authored, so the motion cut one into the other. Move one clear, tuck it wholly behind or inside on purpose, or take one away before the other lands.` });
+    }
     for (let p = 0; p < texts.length; p++) {
       for (let q = p + 1; q < texts.length; q++) {
         const A = texts[p], B = texts[q];
         if (!A || !B) continue;
         const key = [A.layer.id, B.layer.id].sort().join('+');
         const a = v.world.get(A.layer.id)?.box ?? A.box, b = v.world.get(B.layer.id)?.box ?? B.box;
-        if (seenPairs.has(key) || overlapArea(a, b) < 0.15 * Math.min(area(a), area(b))) continue;
+        if (seenPairs.has(key) || overlapArea(a, b) < 0.15 * Math.min(area(a), area(b)) || echoes(A.layer, B.layer)) continue;
         seenPairs.add(key);
         notes.push({ kind: 'overlap', shot: mark.id, at_ms: t, layers: [A.layer.id, B.layer.id],
           note: `In "${mark.id}", "${A.layer.id}" and "${B.layer.id}" rest on top of each other at ${t}ms. Move one, or hide it before the other lands.` });
