@@ -96,6 +96,15 @@ Self-heal (close the loop yourself instead of hand-fixing findings):
   doing nothing", "this reads flat" is judgement no measurement returns. The
   full loop is: compose → heal → render_preview → look → patch_spec → repeat.
 
+  SPACE AND SCALE, MEASURED: diagnose_design(design_path, review:true) says how
+  each page spends its canvas with no image — the empty areas (px + share),
+  where the weight sits, the largest components (text by its drawn lines; a
+  moving shot where the camera puts it) and which are cut by the canvas edge or
+  run edge to edge. On 1920×1080, and on every shot of a video, read it before
+  export: the dead space and cut-off copy a viewer sees first are in those
+  numbers. Revise with edit_layer move/scale, review again — since_last says
+  what the revision changed.
+
   Every could_not_fix / for_you_to_judge entry carries WHERE to act:
     layer_id      the layer the finding is about
     patch_target  the id patch_spec accepts — the preset that OWNS that layer,
