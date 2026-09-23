@@ -22,7 +22,7 @@ import { frameUnits, collisions, type Unit } from './motion-lint-collide';
 import { crowdNotes, restlessNotes, readingLines, type ReadLine, type Shown } from './motion-lint-pace';
 
 export type LintKind = 'overlap' | 'collision' | 'off_canvas' | 'buried' | 'idle' | 'busy' | 'reading' | 'link' | 'crowd' | 'restless';
-export interface LintNote { kind: LintKind; note: string; at_ms?: number; shot?: string; layers?: string[] }
+export interface LintNote { kind: LintKind; note: string; at_ms?: number; shot?: string; layers?: string[]; /** reading: how much longer the words need, ms. */ short_ms?: number }
 /** A named moment of the piece — a storyboard shot or a marker — and when the next one starts. */
 export interface LintMark { id: string; at: number }
 
@@ -401,7 +401,7 @@ function readingNotes(views: ShotView[], endMs: number, rests: Rest[]): LintNote
     seen.cut.push(r.id);
     if (late > seen.late) {
       seen.late = late;
-      seen.note = { kind: 'reading', shot: r.shot, at_ms: r.settle, layers: seen.cut,
+      seen.note = { kind: 'reading', shot: r.shot, at_ms: r.settle, layers: seen.cut, short_ms: Math.round(late),
         note: `In "${r.shot}", "${r.id}" (${r.words} words, ~${need}ms at ${WPM} wpm) lands at ${r.settle}ms${start > r.settle ? `, is reached at ${start}ms after the lines before it` : ''} and leaves readable view at ${r.leave}ms — ${Math.round(late)}ms short.` };
     }
     worst.set(r.shot, seen);

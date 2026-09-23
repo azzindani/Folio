@@ -16,6 +16,13 @@ describe('safe areas on a vertical feed (9:16)', () => {
   it('flags words under the header, the caption band and the button column — and not the middle', () => {
     const layers = [words('head', 120, 120), words('mid', 120, 900), words('cta', 120, 1600), words('side', 920, 1000, 'Tap')];
     expect(found(tall, layers, 'safe_area').sort()).toEqual(['cta', 'head', 'side']);
+    // Each comes with the shortest move out of its zone: the caption band up, the button column left.
+    const call = (id: string): Record<string, unknown> | undefined =>
+      safeAreaFindings(tall, [ground(1080, 1920), ...layers]).find(f => f.code === 'safe_area' && f.layer_id === id)?.call?.params;
+    expect(call('cta')).toMatchObject({ op: 'move', layer_id: 'cta', dx: 0 });
+    expect(Number(call('cta')?.['dy'])).toBeLessThan(-160);
+    expect(call('side')).toMatchObject({ op: 'move', layer_id: 'side', dy: 0 });
+    expect(Number(call('side')?.['dx'])).toBeLessThan(-20);
   });
 
   it('scales the zones to the canvas, and leaves other shapes alone', () => {
@@ -36,6 +43,10 @@ describe('title-safe margin', () => {
 
   it('reads the ink, not the box: a short line in a full-width box is not at the right edge', () => {
     expect(found(square, [words('left', 20, 400)], 'title_safe')).toEqual(['left']);
+    const nudge = safeAreaFindings(square, [ground(1080, 1080), words('left', 20, 400)]).find(f => f.code === 'title_safe')?.call;
+    expect(nudge?.tool).toBe('edit_layer');
+    expect(nudge?.params).toMatchObject({ op: 'move', layer_id: 'left', dy: 0 });
+    expect(Number(nudge?.params['dx'])).toBeGreaterThan(0);
     expect(found(square, [words('wide', 100, 400, 'Short', { width: 980 })], 'title_safe')).toEqual([]);
   });
 

@@ -63,6 +63,14 @@ describe('diagnose_design on how a moving page is paced', () => {
   it('says when words leave before they can be read', () => {
     const brief = text('long', 400, 'A long sentence with far too many words to read in half a second', { out: 900, ...fadeIn(0) });
     expect(found([brief])).toContain('motion_reading');
+    // With the call that gives them the time: open the shortfall at their landing.
+    const f = collectFindings({ ...doc, layers: [ground, brief] } as unknown as DesignSpec, '/nowhere/d.design.yaml').find(x => x.code === 'motion_reading');
+    expect(f?.call?.tool).toBe('animation');
+    expect(f?.call?.params).toMatchObject({ op: 'retime' });
+    const short = Number(/— (\d+)ms short/.exec(f?.message ?? '')?.[1]);
+    const by = Number(f?.call?.params['shift_ms']);
+    expect(by).toBeGreaterThanOrEqual(short);
+    expect(by % 100).toBe(0);
   });
 
   it('says when nothing holds still for seconds, and not when a beat lands and rests', () => {

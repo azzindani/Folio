@@ -41,9 +41,13 @@ export function motionFindings(spec: DesignSpec, layers: Layer[], page?: Page): 
   const end = typeof held === 'number' && held > 0 ? held : moving;
   const canvas = { width: spec.document?.width ?? 1080, height: spec.document?.height ?? 1080 };
   const marks = Object.entries(readMarkers(spec, page)).map(([id, at]) => ({ id, at: Number(at) })).filter(m => Number.isFinite(m.at));
+  const pageId = page?.id && (spec.pages?.length ?? 0) > 1 ? { page_id: page.id } : {};
   return lintComposition(layers, canvas, marks, end).map((n): Finding => {
     const how = AS_FINDING[n.kind];
-    return { code: `motion_${n.kind}`, severity: how.severity, message: n.note, fix: how.fix,
+    // Words short of time: open that much at their landing — everything after it, the page's length included, moves later.
+    const call = n.kind === 'reading' && n.at_ms !== undefined && n.short_ms
+      ? { call: { tool: 'animation', params: { op: 'retime', ...pageId, at: String(n.at_ms), shift_ms: Math.ceil(n.short_ms / 100) * 100 } } } : {};
+    return { code: `motion_${n.kind}`, severity: how.severity, message: n.note, fix: how.fix, ...call,
       ...(n.layers?.[0] ? { layer_id: n.layers[0] } : {}), ...(n.layers && n.layers.length > 1 ? { layers: n.layers } : {}) };
   });
 }

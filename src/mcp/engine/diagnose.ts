@@ -20,7 +20,12 @@ export interface Finding {
   /** Every layer the finding is about, when it is about a pair. */
   layers?: string[];
   fix?: string;
+  /** The exact call that applies the fix, when the check can work it out — ready to send once design_path is added. */
+  call?: FixCall;
 }
+
+/** A tool call a finding can be fixed with: the tool and its params, less design_path. */
+export interface FixCall { tool: string; params: Record<string, unknown> }
 
 interface Box { id: string; type: string; z: number; x: number; y: number; w: number; h: number; }
 

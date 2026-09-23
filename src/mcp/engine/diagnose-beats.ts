@@ -76,6 +76,7 @@ export function beatFindings(spec: DesignSpec, designPath: string): PageFinding[
     out.push({
       code: 'beat_cut', severity: 'suggestion', page: s.page_id,
       message: `"${s.page_id}" cuts in at ${s.start_ms}ms, ${Math.abs(off)}ms ${off > 0 ? 'after' : 'before'} the beat at ${Math.round(nearest)}ms (${Math.round(grid.bpm)} bpm, a beat every ${Math.round(grid.beat_ms)}ms).`,
+      call: { tool: 'animation', params: { op: 'scene', page_id: before.page_id, length_ms: snap.on_beat_ms } },
       fix: `animation(op:scene, page_id:"${before.page_id}", length_ms:${snap.on_beat_ms}) ends "${before.page_id}" on a beat that keeps its motion and reading time${i > 1 ? ' — counting the scenes before it as already snapped: apply them in order (op:beats lists every one)' : ''}. Or keep the cut where the story wants it.`,
     });
   });

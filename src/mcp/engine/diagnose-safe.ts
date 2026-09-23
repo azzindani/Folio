@@ -20,7 +20,7 @@
  */
 
 import type { DesignSpec, Layer, Page } from '../../schema/types';
-import type { Finding } from './diagnose';
+import type { Finding, FixCall } from './diagnose';
 import { canvasBoxes, type CanvasBox } from '../../export/frame-cull';
 import { layersAt, animationDuration } from '../../export/gif-frames';
 import { shotRests } from './motion-lint';
@@ -72,6 +72,26 @@ function crowded(b: Box, W: number, H: number, m: number): string[] {
   return gaps.filter(([, g]) => g < m).map(([side, g]) => (g < 0 ? `runs ${Math.round(-g)} px past the ${side} edge` : `${Math.round(g)} px from the ${side} edge`));
 }
 
+const move = (id: string, dx: number, dy: number): { call: FixCall } | Record<string, never> =>
+  (Math.round(dx) || Math.round(dy) ? { call: { tool: 'edit_layer', params: { op: 'move', layer_id: id, dx: Math.round(dx), dy: Math.round(dy) } } } : {});
+
+/** The move that brings ink `b` inside the margin on each axis it fits on (an axis it is too big for stays). */
+function intoMargin(b: Box, W: number, H: number, m: number): [number, number] {
+  const axis = (at: number, size: number, room: number): number =>
+    (size > room - 2 * m ? 0 : at < m ? m - at : at + size > room - m ? room - m - (at + size) : 0);
+  return [axis(b.x, b.width, W), axis(b.y, b.height, H)];
+}
+
+/** The shortest move that takes ink `b` wholly out of zone `z` and keeps it inside the margin, or none. */
+function outOf(b: Box, z: Box, W: number, H: number, m: number): [number, number] | null {
+  const ways: Array<[number, number]> = [
+    [0, z.y - (b.y + b.height)], [0, z.y + z.height - b.y], [z.x - (b.x + b.width), 0], [z.x + z.width - b.x, 0],
+  ];
+  const fits = ([dx, dy]: [number, number]): boolean =>
+    b.x + dx >= m && b.x + b.width + dx <= W - m && b.y + dy >= m && b.y + b.height + dy <= H - m;
+  return ways.filter(fits).sort((p, q) => Math.abs(p[0] + p[1]) - Math.abs(q[0] + q[1]))[0] ?? null;
+}
+
 /** The moments a page is seen at: as authored when still, else each shot's rest. */
 function moments(spec: DesignSpec, layers: Layer[], page?: Page): Array<{ label: string; frame: Layer[] }> {
   const moving = animationDuration(layers);
@@ -99,14 +119,16 @@ export function safeAreaFindings(spec: DesignSpec, layers: Layer[], page?: Page)
         const share = meet(b.box, z.box) / area(b.box);
         if (share < 0.2 || said.has(`${id}:${z.name}`)) continue;
         said.add(`${id}:${z.name}`);
-        out.push({ code: 'safe_area', severity: 'warning', layer_id: id,
+        const away = outOf(b.box, z.box, W, H, margin);
+        out.push({ code: 'safe_area', severity: 'warning', layer_id: id, ...(away ? move(id, away[0], away[1]) : {}),
           message: `"${id}"${label} sits ${Math.round(share * 100)}% inside the ${z.name} of a vertical feed (${z.where}) — under ${z.covers}.`,
           fix: `Keep words a viewer must read inside ${clear} — clear on every app — or let this one be covered on purpose.` });
       }
       const edges = crowded(b.box, W, H, margin);
       if (!edges.length || said.has(`${id}:edge`)) continue;
       said.add(`${id}:edge`);
-      out.push({ code: 'title_safe', severity: 'suggestion', layer_id: id,
+      const [dx, dy] = intoMargin(b.box, W, H, margin);
+      out.push({ code: 'title_safe', severity: 'suggestion', layer_id: id, ...move(id, dx, dy),
         message: `"${id}"${label}: its letters are ${edges.join(' and ')} — inside the ${margin} px title-safe margin (4% of the short side).`,
         fix: `Hold words at least ${margin} px from every edge, or run them off the edge on purpose.` });
     }
