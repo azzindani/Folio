@@ -21,6 +21,7 @@ import { resvgFontOption } from './fonts';
 import { resolveImageAssets } from './asset-resolve';
 import { specAt, animationDuration } from '../../export/gif-frames';
 import { cullFrame, parseTransform } from '../../export/frame-cull';
+import { PREVIEW_FRAME_MS } from '../../export/motion-blur';
 import { drawnBox } from '../../export/frame-geometry';
 import { planScenes, sceneAt } from '../../export/scene-plan';
 import { FRAME_POSE, type FramePose } from '../../export/frame-pose';
@@ -163,7 +164,8 @@ export function renderFrame(args: FrameArgs): ToolResult {
     const assetNotes = resolveImageAssets(spec, dPath, args.project_path);
     const pageId = spec.pages?.[pageIndex]?.id;
     const captions = planCaptions(spec, { total_ms: sceneMs, scenes: pageId ? [{ page_id: pageId, start_ms: 0, length_ms: sceneMs }] : [] });
-    const at = withCaptions(specAt(spec, pageIndex, t), captions, spec.captions?.style, t);
+    // A still of a moving piece shows what a video frame shows: motion blur at 30 fps.
+    const at = withCaptions(specAt(spec, pageIndex, t, PREVIEW_FRAME_MS), captions, spec.captions?.style, t);
     const renderSpec: DesignSpec = at.pages?.length
       ? ({ ...at, layers: at.pages[0]?.layers ?? [], pages: undefined } as DesignSpec)
       : at;
@@ -207,7 +209,7 @@ function renderSceneFrame(spec: DesignSpec, dPath: string, args: FrameArgs): Too
   const scale = typeof args.scale === 'number' && args.scale > 0 ? Math.min(2, args.scale) : 1;
   try {
     const assetNotes = resolveImageAssets(spec, dPath, args.project_path);
-    const svg = renderToSVGString(cullFrame(withCaptions(composeSceneFrame(spec, plan, t), planCaptions(spec, plan), spec.captions?.style, t)));
+    const svg = renderToSVGString(cullFrame(withCaptions(composeSceneFrame(spec, plan, t, PREVIEW_FRAME_MS), planCaptions(spec, plan), spec.captions?.style, t)));
     const projDir = args.project_path ?? path.dirname(path.dirname(dPath));
     const png = rasterize({ svg, opts: { fitTo: { mode: 'zoom', value: scale }, background: '#ffffff', font: resvgFontOption(projDir) } }).png;
     if (args.output_path) {

@@ -224,6 +224,12 @@ export interface Effects {
   posterize?: number;
   /** Saturation multiplier (0 = grayscale, 1 = unchanged, >1 = punchy). */
   saturate?: number;
+  /**
+   * A frame's motion blur — set by the frame sampler from a `motion_blur`
+   * layer's travel over the shutter, never authored (export/motion-blur.ts).
+   * dx/dy are in the layer's own coordinates; box is what it draws.
+   */
+  motion_blur?: { dx: number; dy: number; samples: number; box: { x: number; y: number; width: number; height: number } };
 }
 
 // ── Corner Radius ───────────────────────────────────────────

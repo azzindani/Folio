@@ -52,3 +52,4 @@ export { retimeMotion } from './engine/motion-retime-op';
 export { storyboardMotion, lintMotion } from './engine/motion-storyboard-op';
 export { precompMotion, linkMotion } from './engine/motion-precomp-op';
 export { parentMotion, nullMotion } from './engine/motion-rig-op';
+export { motionBlurMotion } from './engine/motion-blur-op';

@@ -17,6 +17,7 @@
 import type { Layer } from '../schema/types';
 import type { AnimationSpec, Keyframe, LayerClock, LayerLink } from '../animation/types';
 import { layersAt, animationDuration } from '../export/gif-frames';
+import { PREVIEW_FRAME_MS } from '../export/motion-blur';
 import { resolveTimeline } from '../animation/timeline-resolve';
 import { windowOf, type LifeWindow } from '../animation/lifespan';
 import { toSceneTime } from '../animation/clock-time';
@@ -150,7 +151,8 @@ export function poseFrame(plan: PosePlan, t: number): Map<string, Pose> {
       if (Array.isArray(kids)) walk(kids as Layer[]);
     }
   };
-  walk(layersAt(plan.layers, t));
+  // A 30 fps frame, so motion_blur layers smear here as they do in the export.
+  walk(layersAt(plan.layers, t, PREVIEW_FRAME_MS));
   return out;
 }
 

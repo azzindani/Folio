@@ -166,6 +166,7 @@ export function dispatchAnimation(a: Args): ToolResult | Promise<ToolResult> {
     case 'link':     return engine.linkMotion(a as unknown as Parameters<typeof engine.linkMotion>[0]);
     case 'parent':   return engine.parentMotion(a as unknown as Parameters<typeof engine.parentMotion>[0]);
     case 'null':     return engine.nullMotion(a as unknown as Parameters<typeof engine.nullMotion>[0]);
+    case 'motion_blur': return engine.motionBlurMotion(a as unknown as Parameters<typeof engine.motionBlurMotion>[0]);
     case 'presets':  return engine.listMotionPresets();
     default:         return badOp('animation', a['op']);
   }
