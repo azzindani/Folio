@@ -488,8 +488,12 @@ export function diagnoseDesign(args: { design_path: string; project_path?: strin
   if (args.review) {
     try {
       const projDir = args.project_path ?? path.dirname(path.dirname(dPath));
+      // Measure what renders: images inlined and footage located first, or every
+      // photo draws nothing and reads as empty canvas.
+      const seen = JSON.parse(JSON.stringify(spec)) as DesignSpec;
+      resolveImageAssets(seen, dPath, args.project_path);
       // A page that moves is also measured at each shot's rest (layout-review-motion.ts).
-      review = withMotion(reviewLayout(spec, projDir, args.page_id), spec, projDir, args.page_id);
+      review = withMotion(reviewLayout(seen, projDir, args.page_id), seen, projDir, args.page_id);
       // Kept beside the design, so the next review can say what the revision changed.
       sinceLast = rememberReview(dPath, review);
       progress.push(pOk('Measured layout', `${review.length} page(s), ${review.reduce((n, p) => n + p.notes.length, 0)} note(s)`));
