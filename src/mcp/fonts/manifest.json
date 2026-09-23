@@ -1,35 +1,63 @@
 {
   "families": [
+    "Abril Fatface",
     "Anton",
     "Archivo",
     "Audiowide",
+    "Barlow",
+    "Barlow Condensed",
     "Bebas Neue",
     "Bricolage Grotesque",
+    "Bungee",
+    "Caveat",
+    "DM Sans",
+    "DM Serif Display",
     "DejaVu Sans",
     "EB Garamond",
+    "Figtree",
     "Fira Code",
+    "Fraunces",
+    "Geist",
     "IBM Plex Mono",
     "IBM Plex Sans",
+    "Instrument Serif",
     "Inter",
     "JetBrains Mono",
+    "Lexend",
+    "Libre Baskerville",
     "Lora",
     "Manrope",
     "Montserrat",
+    "Nunito",
     "Orbitron",
+    "Oswald",
+    "Outfit",
+    "Pacifico",
     "Playfair Display",
     "Plus Jakarta Sans",
+    "Poppins",
+    "Press Start 2P",
     "Public Sans",
     "Quicksand",
+    "Righteous",
     "Roboto",
     "Roboto Mono",
     "Roboto Slab",
+    "Rubik",
+    "Sora",
     "Source Code Pro",
     "Source Serif 4",
     "Space Grotesk",
     "Space Mono",
+    "Syne",
+    "Unbounded",
+    "VT323",
     "Work Sans"
   ],
   "files": {
+    "Abril Fatface": [
+      "AbrilFatface-Regular.ttf"
+    ],
     "Anton": [
       "Anton-Regular.ttf"
     ],
@@ -45,6 +73,24 @@
     "Audiowide": [
       "Audiowide-Regular.ttf"
     ],
+    "Barlow": [
+      "Barlow-Black.ttf",
+      "Barlow-Bold.ttf",
+      "Barlow-ExtraBold.ttf",
+      "Barlow-Light.ttf",
+      "Barlow-Medium.ttf",
+      "Barlow-Regular.ttf",
+      "Barlow-SemiBold.ttf"
+    ],
+    "Barlow Condensed": [
+      "BarlowCondensed-Black.ttf",
+      "BarlowCondensed-Bold.ttf",
+      "BarlowCondensed-ExtraBold.ttf",
+      "BarlowCondensed-Light.ttf",
+      "BarlowCondensed-Medium.ttf",
+      "BarlowCondensed-Regular.ttf",
+      "BarlowCondensed-SemiBold.ttf"
+    ],
     "Bebas Neue": [
       "BebasNeue-Regular.ttf"
     ],
@@ -56,6 +102,25 @@
       "BricolageGrotesque-Regular.ttf",
       "BricolageGrotesque-SemiBold.ttf"
     ],
+    "Bungee": [
+      "Bungee-Regular.ttf"
+    ],
+    "Caveat": [
+      "Caveat-Bold.ttf",
+      "Caveat-Regular.ttf"
+    ],
+    "DM Sans": [
+      "DMSans-Black.ttf",
+      "DMSans-Bold.ttf",
+      "DMSans-ExtraBold.ttf",
+      "DMSans-Light.ttf",
+      "DMSans-Medium.ttf",
+      "DMSans-Regular.ttf",
+      "DMSans-SemiBold.ttf"
+    ],
+    "DM Serif Display": [
+      "DMSerifDisplay-Regular.ttf"
+    ],
     "DejaVu Sans": [
       "DejaVuSans.ttf"
     ],
@@ -66,12 +131,39 @@
       "EBGaramond-Regular.ttf",
       "EBGaramond-SemiBold.ttf"
     ],
+    "Figtree": [
+      "Figtree-Black.ttf",
+      "Figtree-Bold.ttf",
+      "Figtree-ExtraBold.ttf",
+      "Figtree-Light.ttf",
+      "Figtree-Medium.ttf",
+      "Figtree-Regular.ttf",
+      "Figtree-SemiBold.ttf"
+    ],
     "Fira Code": [
       "FiraCode-Bold.ttf",
       "FiraCode-Light.ttf",
       "FiraCode-Medium.ttf",
       "FiraCode-Regular.ttf",
       "FiraCode-SemiBold.ttf"
+    ],
+    "Fraunces": [
+      "Fraunces-Black.ttf",
+      "Fraunces-Bold.ttf",
+      "Fraunces-ExtraBold.ttf",
+      "Fraunces-Light.ttf",
+      "Fraunces-Medium.ttf",
+      "Fraunces-Regular.ttf",
+      "Fraunces-SemiBold.ttf"
+    ],
+    "Geist": [
+      "Geist-Black.ttf",
+      "Geist-Bold.ttf",
+      "Geist-ExtraBold.ttf",
+      "Geist-Light.ttf",
+      "Geist-Medium.ttf",
+      "Geist-Regular.ttf",
+      "Geist-SemiBold.ttf"
     ],
     "IBM Plex Mono": [
       "IBMPlexMono-Bold.ttf",
@@ -85,6 +177,9 @@
       "IBMPlexSans-Medium.ttf",
       "IBMPlexSans-Regular.ttf",
       "IBMPlexSans-SemiBold.ttf"
+    ],
+    "Instrument Serif": [
+      "InstrumentSerif-Regular.ttf"
     ],
     "Inter": [
       "Inter-Black.ttf",
@@ -102,6 +197,21 @@
       "JetBrainsMono-Medium.ttf",
       "JetBrainsMono-Regular.ttf",
       "JetBrainsMono-SemiBold.ttf"
+    ],
+    "Lexend": [
+      "Lexend-Black.ttf",
+      "Lexend-Bold.ttf",
+      "Lexend-ExtraBold.ttf",
+      "Lexend-Light.ttf",
+      "Lexend-Medium.ttf",
+      "Lexend-Regular.ttf",
+      "Lexend-SemiBold.ttf"
+    ],
+    "Libre Baskerville": [
+      "LibreBaskerville-Bold.ttf",
+      "LibreBaskerville-Medium.ttf",
+      "LibreBaskerville-Regular.ttf",
+      "LibreBaskerville-SemiBold.ttf"
     ],
     "Lora": [
       "Lora-Bold.ttf",
@@ -126,6 +236,15 @@
       "Montserrat-Regular.ttf",
       "Montserrat-SemiBold.ttf"
     ],
+    "Nunito": [
+      "Nunito-Black.ttf",
+      "Nunito-Bold.ttf",
+      "Nunito-ExtraBold.ttf",
+      "Nunito-Light.ttf",
+      "Nunito-Medium.ttf",
+      "Nunito-Regular.ttf",
+      "Nunito-SemiBold.ttf"
+    ],
     "Orbitron": [
       "Orbitron-Black.ttf",
       "Orbitron-Bold.ttf",
@@ -133,6 +252,25 @@
       "Orbitron-Medium.ttf",
       "Orbitron-Regular.ttf",
       "Orbitron-SemiBold.ttf"
+    ],
+    "Oswald": [
+      "Oswald-Bold.ttf",
+      "Oswald-Light.ttf",
+      "Oswald-Medium.ttf",
+      "Oswald-Regular.ttf",
+      "Oswald-SemiBold.ttf"
+    ],
+    "Outfit": [
+      "Outfit-Black.ttf",
+      "Outfit-Bold.ttf",
+      "Outfit-ExtraBold.ttf",
+      "Outfit-Light.ttf",
+      "Outfit-Medium.ttf",
+      "Outfit-Regular.ttf",
+      "Outfit-SemiBold.ttf"
+    ],
+    "Pacifico": [
+      "Pacifico-Regular.ttf"
     ],
     "Playfair Display": [
       "PlayfairDisplay-Black.ttf",
@@ -150,6 +288,18 @@
       "PlusJakartaSans-Regular.ttf",
       "PlusJakartaSans-SemiBold.ttf"
     ],
+    "Poppins": [
+      "Poppins-Black.ttf",
+      "Poppins-Bold.ttf",
+      "Poppins-ExtraBold.ttf",
+      "Poppins-Light.ttf",
+      "Poppins-Medium.ttf",
+      "Poppins-Regular.ttf",
+      "Poppins-SemiBold.ttf"
+    ],
+    "Press Start 2P": [
+      "PressStart2P-Regular.ttf"
+    ],
     "Public Sans": [
       "PublicSans-Black.ttf",
       "PublicSans-Bold.ttf",
@@ -165,6 +315,9 @@
       "Quicksand-Medium.ttf",
       "Quicksand-Regular.ttf",
       "Quicksand-SemiBold.ttf"
+    ],
+    "Righteous": [
+      "Righteous-Regular.ttf"
     ],
     "Roboto": [
       "Roboto-Black.ttf",
@@ -190,6 +343,23 @@
       "RobotoSlab-Medium.ttf",
       "RobotoSlab-Regular.ttf",
       "RobotoSlab-SemiBold.ttf"
+    ],
+    "Rubik": [
+      "Rubik-Black.ttf",
+      "Rubik-Bold.ttf",
+      "Rubik-ExtraBold.ttf",
+      "Rubik-Light.ttf",
+      "Rubik-Medium.ttf",
+      "Rubik-Regular.ttf",
+      "Rubik-SemiBold.ttf"
+    ],
+    "Sora": [
+      "Sora-Bold.ttf",
+      "Sora-ExtraBold.ttf",
+      "Sora-Light.ttf",
+      "Sora-Medium.ttf",
+      "Sora-Regular.ttf",
+      "Sora-SemiBold.ttf"
     ],
     "Source Code Pro": [
       "SourceCodePro-Black.ttf",
@@ -219,6 +389,22 @@
     "Space Mono": [
       "SpaceMono-Bold.ttf",
       "SpaceMono-Regular.ttf"
+    ],
+    "Syne": [
+      "Syne-Bold.ttf",
+      "Syne-ExtraBold.ttf",
+      "Syne-Medium.ttf",
+      "Syne-Regular.ttf",
+      "Syne-SemiBold.ttf"
+    ],
+    "Unbounded": [
+      "Unbounded-Black.ttf",
+      "Unbounded-Bold.ttf",
+      "Unbounded-ExtraBold.ttf",
+      "Unbounded-Regular.ttf"
+    ],
+    "VT323": [
+      "VT323-Regular.ttf"
     ],
     "Work Sans": [
       "WorkSans-Black.ttf",
