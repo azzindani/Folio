@@ -36,10 +36,11 @@ describe.skipIf(!hasFfmpeg)('diagnose_design — scene cuts against the beat', (
       pages: [page('s1', first), page('s2', 2400)], ...(audio ? { audio: [{ id: 'click', src: 'assets/audio/click.wav' }] } : {}),
     }));
   };
-  const cuts = async (): Promise<Array<{ code: string; page?: string; message: string; fix?: string }>> => {
+  type Cut = { code: string; page?: string; message: string; fix?: string; call?: { tool: string; params: Record<string, unknown> } };
+  const cuts = async (): Promise<Cut[]> => {
     const handler = TIER3_HANDLERS['diagnose_design'];
     const r = handler ? await handler({ design_path: design }) : {};
-    return ((r as { findings?: Array<{ code: string; page?: string; message: string; fix?: string }> }).findings ?? []).filter(f => f.code === 'beat_cut');
+    return ((r as { findings?: Cut[] }).findings ?? []).filter(f => f.code === 'beat_cut');
   };
   beforeAll(() => {
     fs.mkdirSync(path.join(root, 'designs'), { recursive: true });
@@ -56,6 +57,7 @@ describe.skipIf(!hasFfmpeg)('diagnose_design — scene cuts against the beat', (
     expect(f?.message).toMatch(/cuts in at 2300ms, \d+ms before the beat/);
     const len = Number(/length_ms:(\d+)/.exec(f?.fix ?? '')?.[1]);
     expect(Math.abs(len - 2400)).toBeLessThan(15);
+    expect(f?.call).toEqual({ tool: 'animation', params: { op: 'scene', page_id: 's1', length_ms: len } });
   }, 60_000);
 
   it('is quiet once the cut is on the beat, and without music', async () => {

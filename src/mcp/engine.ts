@@ -26,6 +26,7 @@ export { collectHrefRects, exportDesign, diagnoseDesign, renderPreview, alignLay
 export { moveLayers, scaleLayers } from './engine-transform-tools';
 export { saveAsComponent, listComponents } from './engine-component-tools';
 export { healDesign } from './engine-heal-tools';
+export { gateDesign } from './engine/diagnose-gate';
 export { exportTemplate, injectTemplate, listTemplateSlots, listTemplates } from './engine-template-tools';
 export { createPresentation, exportPresentation, generateReport, bindData, exportReport, validateReportDesign } from './engine-report-tools';
 export { setFormulaContext, debugFormula, inspectTimeline, addKeyframeToLayer, exportAnimation, exportStatus, setupRemotePresenter, setupCollab, openInEditor } from './engine-runtime-tools';

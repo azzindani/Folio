@@ -77,6 +77,8 @@ const TIER3_RAW: Record<string, Handler> = {
   // The soundtrack is measured first (ffmpeg, async, cached) so the cuts can be judged against its beat.
   diagnose_design: async (a) => {
     await measureSoundtrack(a['design_path'], a['project_path']);
+    // gate:true — the one call before export: heal, measure everything, rank (diagnose-gate.ts).
+    if (a['gate'] === true) return engine.gateDesign(a as Parameters<typeof engine.gateDesign>[0]);
     return a['heal'] === true
       ? engine.healDesign(a as Parameters<typeof engine.healDesign>[0])
       : engine.diagnoseDesign(a as Parameters<typeof engine.diagnoseDesign>[0]);

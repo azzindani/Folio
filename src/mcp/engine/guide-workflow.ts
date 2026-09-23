@@ -105,6 +105,12 @@ Self-heal (close the loop yourself instead of hand-fixing findings):
   numbers. Revise with edit_layer move/scale, review again — since_last says
   what the revision changed.
 
+  BEFORE EXPORT, ONE CALL: diagnose_design(design_path, gate:true) heals the
+  spatial faults, measures everything (checks, motion at each shot's rest, the
+  beat, the review) and answers ready + the top 3 things to do, each with a
+  "call" ready to send when the check can work it out. Send it, gate again;
+  when ready, next_action is the export.
+
   Every could_not_fix / for_you_to_judge entry carries WHERE to act:
     layer_id      the layer the finding is about
     patch_target  the id patch_spec accepts — the preset that OWNS that layer,
