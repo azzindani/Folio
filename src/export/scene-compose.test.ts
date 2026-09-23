@@ -54,6 +54,18 @@ describe('composeSceneFrame', () => {
     expect(px(75, 20)).toEqual(BLUE);
   });
 
+  it('dissolves: both scenes blurred and half there at the midpoint, over the outgoing ground', () => {
+    const spec = deck({ type: 'dissolve' });
+    const page = composeSceneFrame(spec, planScenes(spec, { hold_ms: 1000 }), 1200).pages?.[0];
+    const blurOf = (id: string): unknown => (page?.layers?.find(l => l.id === id) as { effects?: { blur?: number } } | undefined)?.effects?.blur;
+    expect(blurOf('__scene_from')).toBe(4);
+    expect(blurOf('__scene_to')).toBe(4);
+    const [r, g, b] = frameAt({ type: 'dissolve' }, 1200)(50, 20);
+    expect(g).toBe(0);
+    expect(Math.abs(r - 128)).toBeLessThan(4);
+    expect(Math.abs(b - 128)).toBeLessThan(4);
+  });
+
   it('turns a flip in front of a stage made from the outgoing ground — never white', () => {
     // At progress 0.25 the card is 45° round: its near edge lands at x ≈ 8.6, so x 5 is stage.
     const px = frameAt({ type: 'flip-h' }, 1100);

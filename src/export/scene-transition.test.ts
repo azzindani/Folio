@@ -61,8 +61,15 @@ describe('transitionPoses', () => {
     expect(transitionPoses('fade', 0.25, W, H, 'ease-in-out').to.opacity).toBeLessThan(0.25);
   });
 
-  it('plays none as a cut and names every approximation', () => {
+  it('dissolves as the slideshow does: the old scene blurs out as it fades, the new one sharpens in', () => {
+    const q = at('dissolve', 0.25);
+    expect(q.from).toEqual({ opacity: 0.75, blur: 2 });
+    expect(q.to).toEqual({ opacity: 0.25, blur: 6 });
+    expect(q.backdrop).toBe(true);
+  });
+
+  it('plays none as a cut, and approximates nothing', () => {
     expect(at('none', 0.5)).toEqual({ from: {}, to: {}, fromOnTop: false, backdrop: false });
-    expect(Object.keys(APPROXIMATED).sort()).toEqual(['dissolve']);
+    expect(Object.keys(APPROXIMATED)).toEqual([]);
   });
 });
