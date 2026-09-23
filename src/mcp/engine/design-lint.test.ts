@@ -125,3 +125,24 @@ describe('lintComposition — a camera world', () => {
     expect(lintComposition([bg, lost], 1920, 1080, world).join()).toContain('outside the 5760x3240 camera world');
   });
 });
+
+describe('lintComposition contrast — WCAG, judged on what a layer sits on (benchmark r2)', () => {
+  const W = 1080, H = 1920;
+  it('does not call a big yellow numeral on tomato, or brown on butter, invisible', () => {
+    const notes = lintComposition([rect('bg', 0, 0, 0, W, H, '#E8452C'), text('three', 5, 60, 150, 960, 760, '#FFC53D', '3')], W, H);
+    expect(notes.join(' ')).not.toMatch(/nearly invisible/);
+    const step = lintComposition([rect('bg', 0, 0, 0, W, H, '#FFC53D'), text('step', 5, 80, 170, 920, 80, '#8B5A2B', 'STEP 1')], W, H);
+    expect(step.join(' ')).not.toMatch(/nearly invisible/);
+  });
+
+  it('judges decor on the shape under it, and still flags white on cream', () => {
+    const notes = lintComposition([
+      rect('bg', 0, 0, 0, W, H, '#FFF1DC'),
+      rect('jar', 1, 100, 450, 240, 270, '#C98B4E'),
+      rect('jar_lbl', 2, 140, 540, 160, 90, '#FFF1DC'),
+      rect('bag', 1, 110, 860, 220, 280, '#FFFFFF'),
+    ], W, H).join(' ');
+    expect(notes).not.toMatch(/"jar_lbl"/);
+    expect(notes).toMatch(/decor "bag"/);
+  });
+});
