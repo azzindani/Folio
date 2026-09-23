@@ -57,7 +57,7 @@ export const TIER2_TOOLS: ToolDefinition[] = [
         width:        { type: 'number', description: 'op:scale — the width the block should draw at (instead of factor). op:shape/outline_stroke — the stroke width to outline, px. Defaults to the layer\'s own stroke width. Undeclared, a conforming client dropped it and the op could not be called at all.' },
         steps:        { type: 'number', description: 'op:shape/blend — how many in-between shapes (1-24, default 3). The two originals are left as they are; a blend is the shapes BETWEEN them.' },
         keep_source:  { type: 'boolean', description: 'op:shape — keep the layer operated on (default true). Ignored for blend, which never consumes its endpoints.', default: true },
-        props:        { type: 'object', description: 'op:update — properties to merge.', properties: {} },
+        props:        { type: 'object', description: 'op:update — properties to merge. A style object merges into the layer\'s style (null removes a key).', properties: {} },
         layer_ids:    { type: 'array', description: 'op:align — layer IDs to align. op:move/scale — layers edited as ONE block. op:shape — the path layer to operate on, or the TWO paths to blend between.', items: { type: 'string' } },
         operation:    { type: 'string', enum: ['left', 'right', 'top', 'bottom', 'center_h', 'center_v', 'distribute_h', 'distribute_v', 'snap_grid'], description: 'op:align — alignment operation (distribute_* needs ≥3 layers).' },
         grid:         { type: 'number', description: 'op:align — grid size px for snap_grid (default 8).' },
