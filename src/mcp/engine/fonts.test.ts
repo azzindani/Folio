@@ -57,13 +57,13 @@ describe('unbundledFonts', () => {
   });
 
   it('flags a family that is not bundled (would fall back to DejaVu in raster)', () => {
-    const svg = '<text font-family="Pacifico">a</text><text font-family="Inter">b</text>';
-    expect(unbundledFonts(svg)).toEqual(['Pacifico']);
+    const svg = '<text font-family="Lobster">a</text><text font-family="Inter">b</text>';
+    expect(unbundledFonts(svg)).toEqual(['Lobster']);
   });
 
   it('ignores generic keywords and dedupes', () => {
-    const svg = '<text font-family="sans-serif">a</text><text font-family="Pacifico">b</text><text font-family="Pacifico">c</text>';
-    expect(unbundledFonts(svg)).toEqual(['Pacifico']);
+    const svg = '<text font-family="sans-serif">a</text><text font-family="Lobster">b</text><text font-family="Lobster">c</text>';
+    expect(unbundledFonts(svg)).toEqual(['Lobster']);
   });
 
   it('reads the first family from a font stack', () => {
