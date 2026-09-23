@@ -85,7 +85,7 @@ describe('animation(op:scene)', () => {
 
 describe('scenes across timeline, frame and export', () => {
   // benchmark r1: a single-page looping GIF asked op:scene for its length.
-  it('takes the only page without page_id, and points a page-less piece at storyboard', () => {
+  it('takes the only page without page_id, and says a still page-less piece has no length to set', () => {
     const dir = path.dirname(design);
     const one = path.join(dir, 'one.design.yaml');
     fs.writeFileSync(one, yaml.dump({ meta: { id: 'o', name: 'O', type: 'carousel' }, document: { width: 64, height: 64 }, pages: [{ id: 'only', layers: [] }] }));
@@ -95,7 +95,24 @@ describe('scenes across timeline, frame and export', () => {
     fs.writeFileSync(poster, yaml.dump({ meta: { id: 'p', name: 'P', type: 'poster' }, document: { width: 64, height: 64 }, layers: [] }));
     const none = setScene({ design_path: poster, length_ms: 4000 });
     expect(none.success).toBe(false);
-    expect(String(none.hint)).toContain('op:storyboard, length_ms');
+    expect(String(none.error)).toContain('Nothing here moves');
+  });
+
+  // benchmark r6 b21: an 8 s loop whose motion ends at 7.6 s had no way to last 8 s.
+  it('makes a page-less piece last length_ms by holding its tracks, never cutting motion, and 0 takes it back', () => {
+    const sting = path.join(path.dirname(design), 'sting.design.yaml');
+    const late = { ...(mover() as object), id: 'late', animation: { keyframes: [{ t: 0, x: 0 }, { t: 600, x: 20 }], playback: { duration: 600, delay: 1000, origin: 'offset' } } };
+    fs.writeFileSync(sting, yaml.dump({ _protocol: 'design/v1', meta: { id: 's', name: 'S', type: 'poster' }, document: { width: 64, height: 64 }, layers: [ground('#000000'), mover(), late] }));
+    const tracks = (): Record<string, number> => Object.fromEntries(((yaml.load(fs.readFileSync(sting, 'utf8')) as { layers: Array<{ id: string; animation?: { playback: { duration: number } } }> }).layers)
+      .filter(l => l.animation).map(l => [l.id, l.animation?.playback.duration ?? 0]));
+    const r = setScene({ design_path: sting, length_ms: 2000 });
+    expect(r, JSON.stringify(r)).toMatchObject({ success: true, scene_ms: 2000, tracks_held: 2 });
+    expect(tracks()).toEqual({ dot: 2000, late: 1000 });
+    const cut = setScene({ design_path: sting, length_ms: 1200 });
+    expect(String(cut.error)).toMatch(/late still moves until 1600 ms/);
+    expect(setScene({ design_path: sting, length_ms: 0 })).toMatchObject({ success: true, scene_ms: 1600 });
+    expect(tracks()).toEqual({ dot: 500, late: 600 });
+    expect(setScene({ design_path: sting, transition: 'fade' }).success).toBe(false);
   });
 
   it('timeline lays out every scene and marks the transitions', () => {

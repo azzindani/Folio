@@ -10,7 +10,9 @@
 import * as fs from 'fs';
 import type { DesignSpec, Page, PageTransition, PageTransitionType } from '../../schema/types';
 import type { ToolResult } from '../types';
-import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult } from './utils';
+import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, pOk } from './utils';
+import { holdToLength } from './motion-poster-length';
+import { syncAnimationsToSpec } from './animation-sync';
 import { isKnownEasing } from '../../animation/easing';
 import { planScenes, type ScenePlan } from '../../export/scene-plan';
 import { APPROXIMATED } from '../../export/scene-transition';
@@ -98,12 +100,23 @@ export function setScene(args: SceneArgs): ToolResult {
 
   const spec = readYAML<DesignSpec>(dPath);
   const pages = spec.pages ?? [];
-  // A single-page piece — a looping GIF, a sting — asked for its length here and
-  // was told "Page not found" (one-shot benchmark r1). With no pages there are no
-  // scenes: the piece lasts as long as its motion, and storyboard sets that.
+  // A piece without pages — a looping GIF, a sting — has no scene to enter, but it
+  // has a length: its tracks hold their last pose to it (motion-poster-length.ts).
   if (!pages.length) {
-    return errResult(op, 'This design has no pages, so it has no scenes — it lasts as long as its motion.',
-      'Set that length with animation(op:storyboard, length_ms), which holds every track to it; a looping layer runs playback.duration × its loops. op:timeline shows the length now.');
+    if (args.transition !== undefined || typeof args.length_ms !== 'number') {
+      return errResult(op, 'This design has no pages, so nothing enters: a transition needs a page to play between.', 'length_ms still sets how long it lasts — every track holds its last pose to it.');
+    }
+    const held = holdToLength(spec.layers ?? [], Math.round(args.length_ms));
+    if ('error' in held) return errResult(op, held.error, held.hint);
+    const bak = snapshot(dPath);
+    spec.layers = held.layers;
+    syncAnimationsToSpec(spec);
+    writeYAML(dPath, spec);
+    return okResult(op, {
+      design_path: dPath, scene_ms: held.ends_ms, tracks_held: held.tracks,
+      progress: [pOk(`Lasts ${held.ends_ms} ms`, `${held.tracks} track(s) hold their last pose to ${args.length_ms ? 'it' : 'their own last key'}`)],
+      next_action: { tool: 'animation', params: { op: 'timeline', design_path: dPath }, remaining: 0, hint: 'op:timeline shows the length; a GIF export plays it at this length.' },
+    }, bak);
   }
   const pageId = args.page_id ?? (pages.length === 1 ? pages[0]?.id : undefined);
   if (pageId === undefined) return errResult(op, 'page_id is needed: this piece has several scenes.', `Pages: ${pages.map(p => p.id).join(', ')}.`);
