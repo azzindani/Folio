@@ -41,6 +41,14 @@ describe('locked layers are exempt from the auto-rescue passes', () => {
     expect(yOf(label)).toBe(1324);                        // and the label stays on its pill
   });
 
+  // benchmark r6 b24: a 260 px hanging “ floored the quote under it; the quote was pushed 113 px down.
+  it('decollideHandPlaced lets an oversized quote mark hang over the quote — its ink is only the top of its line', () => {
+    const mark = txt('mark', 214, 170, { width: 200, height: 220, content: { type: 'plain', value: '“' }, style: { font_family: 'Fraunces', font_size: 260, line_height: 1 } });
+    const quote = txt('quote', 300, 330, { width: 1320, height: 360, content: { type: 'plain', value: 'The best way to predict the future is to invent it.' }, style: { font_family: 'Fraunces', font_size: 96, line_height: 1.18 } });
+    decollideHandPlaced([mark, quote], 1920, 1080);
+    expect(yOf(quote)).toBe(330);
+  });
+
   it('decollideHandPlaced never moves a group\'s box away from its children — the group is a floor instead', () => {
     const a = txt('a', 80, 100);
     const g = { id: 'g', type: 'group', z: 1, x: 80, y: 110, width: 600, height: 200,

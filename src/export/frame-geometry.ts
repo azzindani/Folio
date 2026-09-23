@@ -54,6 +54,9 @@ function lineInk(line: string, estimate: number, style: Record<string, unknown>,
   return run.exact ? Math.max(0, run.total - spacing) : estimate;
 }
 
+/** A text of nothing but quote marks, whose ink sits high in the line. */
+const HIGH_MARKS = /^["'“”‘’«»‹›„‟]+$/;
+
 /** Glyphs that fall below the baseline in most faces. */
 const DESCENDS = /[gjpqyQJ,;()[\]{}|/@$§µ]/;
 
@@ -77,6 +80,12 @@ function textBox(o: Record<string, unknown>): Box | null {
   // digits stop at the baseline. Counting the band anyway made a 400px "24"
   // reach 80px into the "HOURS" set tight under it, and the motion lint called
   // two lines that never touch an overlap (one-shot benchmark r1).
+  // Quote marks alone — an oversized hanging “ — ink only the top of the line:
+  // measured as a full letter, a 260 px mark floored the quote under it and the
+  // rescue pushed the quote 113 px off its layout (benchmark r6, b24).
+  if (layout.lines.length === 1 && HIGH_MARKS.test(content.value.trim())) {
+    return { x: left, y: layout.textY - layout.fontSize * 0.78, width: widest, height: layout.fontSize * 0.42 };
+  }
   const top = layout.textY - layout.fontSize * 0.8;
   const last = layout.lines[layout.lines.length - 1] ?? '';
   const below = DESCENDS.test(last) ? 0.2 : 0.02;
