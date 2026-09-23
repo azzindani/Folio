@@ -53,7 +53,7 @@ describe('shaping a curve by its handles', () => {
     if (h1) drag(h1, svg, [x, y]);
     expect(commit).toHaveBeenCalledWith('cubic-bezier(0.2, 1.3, 0.64, 1)');
     expect(svg.querySelector('.tl-bez-h[data-h="1"]')?.getAttribute('cx')).toBe(x.toFixed(1));
-    expect(svg.querySelector('.tl-bez-label')?.textContent).toBe('cubic-bezier(0.2, 1.3, 0.64, 1)');
+    expect(svg.querySelector('.tl-bez-label')?.textContent).toBe('0.2, 1.3, 0.64, 1');
   });
 
   it('reads the pointer in the svg\'s own units when the panel is zoomed, and a tap commits nothing', () => {

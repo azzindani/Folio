@@ -40,6 +40,9 @@ export function bezierFor(name: string): Bezier {
 
 const r2 = (v: number): number => Math.round(v * 100) / 100;
 
+/** The plot's caption: a bezier as its four numbers (the full string is wider than the plot; the select names it), else the name. */
+export const curveLabel = (name: string): string => /^cubic-bezier\((.*)\)$/i.exec(name.trim())?.[1] ?? (name || 'track default');
+
 /** The easing string for a bezier: x kept in 0..1 (a curve must move forward in time), 2 decimals. */
 export function bezierString(b: Bezier): string {
   const [x1, y1, x2, y2] = b;
@@ -95,7 +98,7 @@ export function curveEditorSVG(name: string, b: Bezier, box: CurveBox): string {
     + `<line class="tl-bez-arm" data-h="1" x1="${l}" y1="${bottom}" x2="${p1x.toFixed(1)}" y2="${p1y.toFixed(1)}" stroke="${muted}"/>`
     + `<line class="tl-bez-arm" data-h="2" x1="${r}" y1="${top}" x2="${p2x.toFixed(1)}" y2="${p2y.toFixed(1)}" stroke="${muted}"/>`
     + handle(1, p1x, p1y) + handle(2, p2x, p2y)
-    + `<text class="tl-bez-label" x="6" y="${box.h - 5}" font-family="ui-monospace, monospace" font-size="9" fill="${muted}">${name || 'track default'}</text>`
+    + `<text class="tl-bez-label" x="6" y="${box.h - 5}" font-family="ui-monospace, monospace" font-size="9" fill="${muted}">${curveLabel(name)}</text>`
     + '</svg>';
 }
 
@@ -121,7 +124,7 @@ export function bindCurveEditor(host: HTMLElement, name: string, box: CurveBox, 
     set('.tl-bez-h[data-h="1"]', { cx: p1x.toFixed(1), cy: p1y.toFixed(1) });
     set('.tl-bez-h[data-h="2"]', { cx: p2x.toFixed(1), cy: p2y.toFixed(1) });
     const label = svg.querySelector('.tl-bez-label');
-    if (label) label.textContent = shown;
+    if (label) label.textContent = curveLabel(shown);
   };
   svg.querySelectorAll<SVGCircleElement>('.tl-bez-h').forEach(h => h.addEventListener('pointerdown', e => {
     e.preventDefault();
