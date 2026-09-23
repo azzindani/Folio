@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { DesignSpec, Layer } from '../../schema/types';
-import { cameraZoom, timeNotes, reviewMotionPage, withMotion, type ShotLayout } from './layout-review-motion';
+import { cameraZoom, timeNotes, reviewMotionPage, withMotion, fullestAt, type ShotLayout } from './layout-review-motion';
 import { shotRests } from './motion-lint';
 import { reviewLayout } from './layout-review';
 
@@ -105,4 +105,14 @@ describe('reviewMotionPage (rendered)', () => {
     expect(reviewMotionPage(s, undefined, s.layers ?? [], '/tmp')).toBeNull();
     expect(withMotion(reviewLayout(s, '/tmp'), s, '/tmp')[0]).not.toHaveProperty('motion');
   }, 30_000);
+});
+
+describe('fullestAt — a shot that only loops is measured where it is fullest', () => {
+  it('picks the moment a looping hero is at its biggest, not the end where it has folded away', () => {
+    const hero = { id: 'hero', type: 'rect', z: 1, x: 400, y: 400, width: 200, height: 200, fill: '#6FA356',
+      animation: { keyframes: [{ t: 0, scale: 0 }, { t: 2000, scale: 1 }, { t: 4000, scale: 1 }, { t: 6000, scale: 0 }], playback: { duration: 6000, loop: true } } } as unknown as Layer;
+    const t = fullestAt([hero], 0, 6000);
+    expect(t).toBeGreaterThanOrEqual(2000);
+    expect(t).toBeLessThanOrEqual(4000);
+  });
 });
