@@ -266,4 +266,26 @@ describe('decollideHandPlaced only rescues text (one-shot benchmark r1)', () => 
     expect(decollideHandPlaced([head, accent], W, H)).toBe(0);
     expect(yOf(accent)).toBe(496);
   });
+
+  // benchmark r2 (a 16:9 explainer): chip labels on chips on a disc were floored by
+  // the disc; a line in a wide box grazing a disc on the right was pushed under it.
+  it('leaves a label on a chip on a disc where it is, and judges text by its drawn width', () => {
+    const disc = { id: 'disc', type: 'ellipse', z: 1, x: 1100, y: 130, width: 640, height: 640, fill: '#E6DBC4' } as unknown as Layer;
+    const chip = rect('chip', 1200, 300, 440, 120);
+    const label = txt('lbl', 1200, 332, { width: 440, height: 60, content: { type: 'plain', value: '1 part GREEN' }, style: { font_size: 40, align: 'center' } });
+    expect(decollideHandPlaced([disc, chip, label], 1920, 1080)).toBe(0);
+    expect(yOf(label)).toBe(332);
+    const ring = { id: 'ring', type: 'ellipse', z: 1, x: 1200, y: 200, width: 520, height: 520, fill: '#4E7429' } as unknown as Layer;
+    const line = txt('line', 140, 300, { width: 1100, height: 300, content: { type: 'plain', value: 'Less waste.\nBetter soil.' }, style: { font_size: 140, line_height: 1.02, font_family: 'Fraunces' } });
+    expect(decollideHandPlaced([ring, line], 1920, 1080)).toBe(0);
+    expect(yOf(line)).toBe(300);
+  });
+
+  it('never pushes a layer off the bottom of the canvas', () => {
+    const a = txt('a', 80, 1200, { width: 600, height: 60 });
+    const b = txt('b', 80, 1230, { width: 600, height: 60 });
+    decollideHandPlaced([a, b], W, H);
+    expect(yOf(b) + hOf(b)).toBeLessThanOrEqual(H);
+  });
 });
+
