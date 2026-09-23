@@ -124,6 +124,8 @@ COPY --from=builder --chown=folio:folio /app/bunfig.toml   ./bunfig.toml
 COPY --from=builder --chown=folio:folio /app/tsconfig.json ./tsconfig.json
 # MCP HTTP server runs from src/ — bun executes TS directly, no transpile step.
 COPY --from=builder --chown=folio:folio /app/src           ./src
+# The bundled asset pack — seeded into the shared library at server start.
+COPY --chown=folio:folio library ./library
 COPY --chown=folio:folio scripts/serve.sh             ./scripts/serve.sh
 COPY --chown=folio:folio scripts/serve-mcp.sh         ./scripts/serve-mcp.sh
 COPY --chown=folio:folio scripts/docker-entrypoint.sh ./scripts/docker-entrypoint.sh

@@ -1,0 +1,1125 @@
+{
+ "version": 1,
+ "updated": "2026-09-23",
+ "files": [
+  {
+   "path": "sfx/digital/blip-down.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/digital-audio",
+   "page": "https://kenney.nl/assets/digital-audio",
+   "creator": "Kenney (kenney.nl)",
+   "title": "blip down",
+   "tags": [
+    "sfx",
+    "digital",
+    "blip",
+    "down",
+    "beep"
+   ],
+   "duration_ms": 470
+  },
+  {
+   "path": "sfx/digital/blip-up.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/digital-audio",
+   "page": "https://kenney.nl/assets/digital-audio",
+   "creator": "Kenney (kenney.nl)",
+   "title": "blip up",
+   "tags": [
+    "sfx",
+    "digital",
+    "blip",
+    "up",
+    "beep"
+   ],
+   "duration_ms": 444
+  },
+  {
+   "path": "sfx/digital/jump.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/digital-audio",
+   "page": "https://kenney.nl/assets/digital-audio",
+   "creator": "Kenney (kenney.nl)",
+   "title": "jump boing",
+   "tags": [
+    "sfx",
+    "digital",
+    "jump",
+    "boing",
+    "bounce"
+   ],
+   "duration_ms": 392
+  },
+  {
+   "path": "sfx/digital/laser-1.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/digital-audio",
+   "page": "https://kenney.nl/assets/digital-audio",
+   "creator": "Kenney (kenney.nl)",
+   "title": "laser zap",
+   "tags": [
+    "sfx",
+    "digital",
+    "laser",
+    "zap",
+    "shoot"
+   ],
+   "duration_ms": 1045
+  },
+  {
+   "path": "sfx/digital/laser-2.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/digital-audio",
+   "page": "https://kenney.nl/assets/digital-audio",
+   "creator": "Kenney (kenney.nl)",
+   "title": "laser, lower",
+   "tags": [
+    "sfx",
+    "digital",
+    "laser",
+    "zap",
+    "shoot"
+   ],
+   "duration_ms": 914
+  },
+  {
+   "path": "sfx/digital/low-down.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/digital-audio",
+   "page": "https://kenney.nl/assets/digital-audio",
+   "creator": "Kenney (kenney.nl)",
+   "title": "low drop blip",
+   "tags": [
+    "sfx",
+    "digital",
+    "blip",
+    "low",
+    "down"
+   ],
+   "duration_ms": 679
+  },
+  {
+   "path": "sfx/digital/pep.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/digital-audio",
+   "page": "https://kenney.nl/assets/digital-audio",
+   "creator": "Kenney (kenney.nl)",
+   "title": "pep blip",
+   "tags": [
+    "sfx",
+    "digital",
+    "blip",
+    "pep",
+    "bounce"
+   ],
+   "duration_ms": 444
+  },
+  {
+   "path": "sfx/digital/power-up-1.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/digital-audio",
+   "page": "https://kenney.nl/assets/digital-audio",
+   "creator": "Kenney (kenney.nl)",
+   "title": "power-up, rising arpeggio",
+   "tags": [
+    "sfx",
+    "digital",
+    "power",
+    "up",
+    "level",
+    "rise",
+    "reward"
+   ],
+   "duration_ms": 1149
+  },
+  {
+   "path": "sfx/digital/power-up-2.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/digital-audio",
+   "page": "https://kenney.nl/assets/digital-audio",
+   "creator": "Kenney (kenney.nl)",
+   "title": "power-up, bright",
+   "tags": [
+    "sfx",
+    "digital",
+    "power",
+    "up",
+    "level",
+    "rise",
+    "reward"
+   ],
+   "duration_ms": 392
+  },
+  {
+   "path": "sfx/digital/power-up-3.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/digital-audio",
+   "page": "https://kenney.nl/assets/digital-audio",
+   "creator": "Kenney (kenney.nl)",
+   "title": "power-up, long",
+   "tags": [
+    "sfx",
+    "digital",
+    "power",
+    "up",
+    "level",
+    "rise",
+    "reward"
+   ],
+   "duration_ms": 444
+  },
+  {
+   "path": "sfx/digital/space.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/digital-audio",
+   "page": "https://kenney.nl/assets/digital-audio",
+   "creator": "Kenney (kenney.nl)",
+   "title": "space warble",
+   "tags": [
+    "sfx",
+    "digital",
+    "space",
+    "warble",
+    "sci-fi"
+   ],
+   "duration_ms": 1411
+  },
+  {
+   "path": "sfx/digital/sweep-down.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/digital-audio",
+   "page": "https://kenney.nl/assets/digital-audio",
+   "creator": "Kenney (kenney.nl)",
+   "title": "phaser sweep down",
+   "tags": [
+    "sfx",
+    "digital",
+    "sweep",
+    "fall",
+    "down",
+    "drop"
+   ],
+   "duration_ms": 392
+  },
+  {
+   "path": "sfx/digital/sweep-up-1.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/digital-audio",
+   "page": "https://kenney.nl/assets/digital-audio",
+   "creator": "Kenney (kenney.nl)",
+   "title": "phaser sweep up",
+   "tags": [
+    "sfx",
+    "digital",
+    "sweep",
+    "riser",
+    "up",
+    "rise"
+   ],
+   "duration_ms": 470
+  },
+  {
+   "path": "sfx/digital/sweep-up-2.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/digital-audio",
+   "page": "https://kenney.nl/assets/digital-audio",
+   "creator": "Kenney (kenney.nl)",
+   "title": "phaser sweep up, long",
+   "tags": [
+    "sfx",
+    "digital",
+    "sweep",
+    "riser",
+    "up",
+    "rise"
+   ],
+   "duration_ms": 340
+  },
+  {
+   "path": "sfx/digital/three-tone.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/digital-audio",
+   "page": "https://kenney.nl/assets/digital-audio",
+   "creator": "Kenney (kenney.nl)",
+   "title": "three-tone chime",
+   "tags": [
+    "sfx",
+    "digital",
+    "chime",
+    "tone",
+    "notify"
+   ],
+   "duration_ms": 810
+  },
+  {
+   "path": "sfx/digital/tone.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/digital-audio",
+   "page": "https://kenney.nl/assets/digital-audio",
+   "creator": "Kenney (kenney.nl)",
+   "title": "plain tone",
+   "tags": [
+    "sfx",
+    "digital",
+    "tone",
+    "beep"
+   ],
+   "duration_ms": 627
+  },
+  {
+   "path": "sfx/digital/two-tone.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/digital-audio",
+   "page": "https://kenney.nl/assets/digital-audio",
+   "creator": "Kenney (kenney.nl)",
+   "title": "two-tone beep",
+   "tags": [
+    "sfx",
+    "digital",
+    "beep",
+    "tone",
+    "notify"
+   ],
+   "duration_ms": 653
+  },
+  {
+   "path": "sfx/digital/zap-down.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/digital-audio",
+   "page": "https://kenney.nl/assets/digital-audio",
+   "creator": "Kenney (kenney.nl)",
+   "title": "three-tone zap down",
+   "tags": [
+    "sfx",
+    "digital",
+    "zap",
+    "down",
+    "fall"
+   ],
+   "duration_ms": 1280
+  },
+  {
+   "path": "sfx/digital/zap-two-tone.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/digital-audio",
+   "page": "https://kenney.nl/assets/digital-audio",
+   "creator": "Kenney (kenney.nl)",
+   "title": "two-tone zap",
+   "tags": [
+    "sfx",
+    "digital",
+    "zap",
+    "two",
+    "tone"
+   ],
+   "duration_ms": 1202
+  },
+  {
+   "path": "sfx/digital/zap-up.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/digital-audio",
+   "page": "https://kenney.nl/assets/digital-audio",
+   "creator": "Kenney (kenney.nl)",
+   "title": "three-tone zap up",
+   "tags": [
+    "sfx",
+    "digital",
+    "zap",
+    "up",
+    "rise"
+   ],
+   "duration_ms": 1149
+  },
+  {
+   "path": "sfx/digital/zap.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/digital-audio",
+   "page": "https://kenney.nl/assets/digital-audio",
+   "creator": "Kenney (kenney.nl)",
+   "title": "electric zap",
+   "tags": [
+    "sfx",
+    "digital",
+    "zap",
+    "electric",
+    "spark"
+   ],
+   "duration_ms": 940
+  },
+  {
+   "path": "sfx/impact/bell.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/impact-sounds",
+   "page": "https://kenney.nl/assets/impact-sounds",
+   "creator": "Kenney (kenney.nl)",
+   "title": "bell strike",
+   "tags": [
+    "sfx",
+    "impact",
+    "bell",
+    "strike",
+    "ring"
+   ],
+   "duration_ms": 1515
+  },
+  {
+   "path": "sfx/impact/glass-heavy.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/impact-sounds",
+   "page": "https://kenney.nl/assets/impact-sounds",
+   "creator": "Kenney (kenney.nl)",
+   "title": "glass smash",
+   "tags": [
+    "sfx",
+    "impact",
+    "glass",
+    "smash",
+    "break"
+   ],
+   "duration_ms": 287
+  },
+  {
+   "path": "sfx/impact/glass-light.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/impact-sounds",
+   "page": "https://kenney.nl/assets/impact-sounds",
+   "creator": "Kenney (kenney.nl)",
+   "title": "glass clink",
+   "tags": [
+    "sfx",
+    "impact",
+    "glass",
+    "clink",
+    "tap"
+   ],
+   "duration_ms": 261
+  },
+  {
+   "path": "sfx/impact/metal-heavy.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/impact-sounds",
+   "page": "https://kenney.nl/assets/impact-sounds",
+   "creator": "Kenney (kenney.nl)",
+   "title": "heavy metal clang",
+   "tags": [
+    "sfx",
+    "impact",
+    "metal",
+    "clang",
+    "impact"
+   ],
+   "duration_ms": 209
+  },
+  {
+   "path": "sfx/impact/metal-light.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/impact-sounds",
+   "page": "https://kenney.nl/assets/impact-sounds",
+   "creator": "Kenney (kenney.nl)",
+   "title": "light metal tap",
+   "tags": [
+    "sfx",
+    "impact",
+    "metal",
+    "tap",
+    "impact"
+   ],
+   "duration_ms": 418
+  },
+  {
+   "path": "sfx/impact/pick.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/impact-sounds",
+   "page": "https://kenney.nl/assets/impact-sounds",
+   "creator": "Kenney (kenney.nl)",
+   "title": "pickaxe on stone",
+   "tags": [
+    "sfx",
+    "impact",
+    "stone",
+    "rock",
+    "hit"
+   ],
+   "duration_ms": 967
+  },
+  {
+   "path": "sfx/impact/plate.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/impact-sounds",
+   "page": "https://kenney.nl/assets/impact-sounds",
+   "creator": "Kenney (kenney.nl)",
+   "title": "plate clatter",
+   "tags": [
+    "sfx",
+    "impact",
+    "plate",
+    "clatter",
+    "impact"
+   ],
+   "duration_ms": 522
+  },
+  {
+   "path": "sfx/impact/punch-heavy.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/impact-sounds",
+   "page": "https://kenney.nl/assets/impact-sounds",
+   "creator": "Kenney (kenney.nl)",
+   "title": "heavy punch impact",
+   "tags": [
+    "sfx",
+    "impact",
+    "punch",
+    "hit",
+    "impact",
+    "slam"
+   ],
+   "duration_ms": 679
+  },
+  {
+   "path": "sfx/impact/punch.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/impact-sounds",
+   "page": "https://kenney.nl/assets/impact-sounds",
+   "creator": "Kenney (kenney.nl)",
+   "title": "punch impact",
+   "tags": [
+    "sfx",
+    "impact",
+    "punch",
+    "hit",
+    "impact"
+   ],
+   "duration_ms": 470
+  },
+  {
+   "path": "sfx/impact/step-concrete.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/impact-sounds",
+   "page": "https://kenney.nl/assets/impact-sounds",
+   "creator": "Kenney (kenney.nl)",
+   "title": "footstep on concrete",
+   "tags": [
+    "sfx",
+    "impact",
+    "footstep",
+    "step",
+    "walk"
+   ],
+   "duration_ms": 131
+  },
+  {
+   "path": "sfx/impact/step-wood.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/impact-sounds",
+   "page": "https://kenney.nl/assets/impact-sounds",
+   "creator": "Kenney (kenney.nl)",
+   "title": "footstep on wood",
+   "tags": [
+    "sfx",
+    "impact",
+    "footstep",
+    "step",
+    "walk"
+   ],
+   "duration_ms": 313
+  },
+  {
+   "path": "sfx/impact/tap.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/impact-sounds",
+   "page": "https://kenney.nl/assets/impact-sounds",
+   "creator": "Kenney (kenney.nl)",
+   "title": "generic light tap",
+   "tags": [
+    "sfx",
+    "impact",
+    "tap",
+    "hit",
+    "light"
+   ],
+   "duration_ms": 209
+  },
+  {
+   "path": "sfx/impact/thud-heavy.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/impact-sounds",
+   "page": "https://kenney.nl/assets/impact-sounds",
+   "creator": "Kenney (kenney.nl)",
+   "title": "soft heavy thud",
+   "tags": [
+    "sfx",
+    "impact",
+    "thud",
+    "soft",
+    "impact",
+    "land"
+   ],
+   "duration_ms": 575
+  },
+  {
+   "path": "sfx/impact/thud.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/impact-sounds",
+   "page": "https://kenney.nl/assets/impact-sounds",
+   "creator": "Kenney (kenney.nl)",
+   "title": "soft thud",
+   "tags": [
+    "sfx",
+    "impact",
+    "thud",
+    "soft",
+    "impact"
+   ],
+   "duration_ms": 157
+  },
+  {
+   "path": "sfx/impact/tin.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/impact-sounds",
+   "page": "https://kenney.nl/assets/impact-sounds",
+   "creator": "Kenney (kenney.nl)",
+   "title": "tin can hit",
+   "tags": [
+    "sfx",
+    "impact",
+    "tin",
+    "can",
+    "hit"
+   ],
+   "duration_ms": 183
+  },
+  {
+   "path": "sfx/impact/wood-heavy.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/impact-sounds",
+   "page": "https://kenney.nl/assets/impact-sounds",
+   "creator": "Kenney (kenney.nl)",
+   "title": "heavy wood knock",
+   "tags": [
+    "sfx",
+    "impact",
+    "wood",
+    "knock",
+    "impact"
+   ],
+   "duration_ms": 340
+  },
+  {
+   "path": "sfx/impact/wood-light.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/impact-sounds",
+   "page": "https://kenney.nl/assets/impact-sounds",
+   "creator": "Kenney (kenney.nl)",
+   "title": "light wood tap",
+   "tags": [
+    "sfx",
+    "impact",
+    "wood",
+    "tap",
+    "knock"
+   ],
+   "duration_ms": 313
+  },
+  {
+   "path": "sfx/ui/back.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/interface-sounds",
+   "page": "https://kenney.nl/assets/interface-sounds",
+   "creator": "Kenney (kenney.nl)",
+   "title": "back, step away",
+   "tags": [
+    "sfx",
+    "ui",
+    "back",
+    "return"
+   ],
+   "duration_ms": 131
+  },
+  {
+   "path": "sfx/ui/bong.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/interface-sounds",
+   "page": "https://kenney.nl/assets/interface-sounds",
+   "creator": "Kenney (kenney.nl)",
+   "title": "bong, soft gong",
+   "tags": [
+    "sfx",
+    "ui",
+    "bong",
+    "gong",
+    "notify"
+   ],
+   "duration_ms": 157
+  },
+  {
+   "path": "sfx/ui/click-1.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/interface-sounds",
+   "page": "https://kenney.nl/assets/interface-sounds",
+   "creator": "Kenney (kenney.nl)",
+   "title": "UI click, short and dry",
+   "tags": [
+    "sfx",
+    "ui",
+    "click",
+    "tap",
+    "button"
+   ],
+   "duration_ms": 131
+  },
+  {
+   "path": "sfx/ui/click-2.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/ui-audio",
+   "page": "https://kenney.nl/assets/ui-audio",
+   "creator": "Kenney (kenney.nl)",
+   "title": "UI click, brighter",
+   "tags": [
+    "sfx",
+    "ui",
+    "click",
+    "tap",
+    "button"
+   ],
+   "duration_ms": 104
+  },
+  {
+   "path": "sfx/ui/click-3.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/ui-audio",
+   "page": "https://kenney.nl/assets/ui-audio",
+   "creator": "Kenney (kenney.nl)",
+   "title": "soft button click",
+   "tags": [
+    "sfx",
+    "ui",
+    "click",
+    "tap",
+    "button"
+   ],
+   "duration_ms": 131
+  },
+  {
+   "path": "sfx/ui/close.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/interface-sounds",
+   "page": "https://kenney.nl/assets/interface-sounds",
+   "creator": "Kenney (kenney.nl)",
+   "title": "close, panel slides out",
+   "tags": [
+    "sfx",
+    "ui",
+    "close",
+    "hide",
+    "out"
+   ],
+   "duration_ms": 183
+  },
+  {
+   "path": "sfx/ui/confirm-1.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/interface-sounds",
+   "page": "https://kenney.nl/assets/interface-sounds",
+   "creator": "Kenney (kenney.nl)",
+   "title": "confirmation, success",
+   "tags": [
+    "sfx",
+    "ui",
+    "confirm",
+    "success",
+    "done",
+    "ok"
+   ],
+   "duration_ms": 340
+  },
+  {
+   "path": "sfx/ui/confirm-2.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/interface-sounds",
+   "page": "https://kenney.nl/assets/interface-sounds",
+   "creator": "Kenney (kenney.nl)",
+   "title": "confirmation, rising",
+   "tags": [
+    "sfx",
+    "ui",
+    "confirm",
+    "success",
+    "done",
+    "ok"
+   ],
+   "duration_ms": 575
+  },
+  {
+   "path": "sfx/ui/drop-1.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/interface-sounds",
+   "page": "https://kenney.nl/assets/interface-sounds",
+   "creator": "Kenney (kenney.nl)",
+   "title": "drop, soft landing",
+   "tags": [
+    "sfx",
+    "ui",
+    "drop",
+    "place",
+    "land"
+   ],
+   "duration_ms": 183
+  },
+  {
+   "path": "sfx/ui/drop-2.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/interface-sounds",
+   "page": "https://kenney.nl/assets/interface-sounds",
+   "creator": "Kenney (kenney.nl)",
+   "title": "drop, water-like",
+   "tags": [
+    "sfx",
+    "ui",
+    "drop",
+    "place",
+    "bubble"
+   ],
+   "duration_ms": 235
+  },
+  {
+   "path": "sfx/ui/error-1.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/interface-sounds",
+   "page": "https://kenney.nl/assets/interface-sounds",
+   "creator": "Kenney (kenney.nl)",
+   "title": "error buzz",
+   "tags": [
+    "sfx",
+    "ui",
+    "error",
+    "fail",
+    "wrong",
+    "deny"
+   ],
+   "duration_ms": 209
+  },
+  {
+   "path": "sfx/ui/error-2.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/interface-sounds",
+   "page": "https://kenney.nl/assets/interface-sounds",
+   "creator": "Kenney (kenney.nl)",
+   "title": "error, two notes down",
+   "tags": [
+    "sfx",
+    "ui",
+    "error",
+    "fail",
+    "wrong",
+    "deny"
+   ],
+   "duration_ms": 522
+  },
+  {
+   "path": "sfx/ui/glass-1.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/interface-sounds",
+   "page": "https://kenney.nl/assets/interface-sounds",
+   "creator": "Kenney (kenney.nl)",
+   "title": "glass ping",
+   "tags": [
+    "sfx",
+    "ui",
+    "glass",
+    "ping",
+    "ding",
+    "notify"
+   ],
+   "duration_ms": 313
+  },
+  {
+   "path": "sfx/ui/glass-2.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/interface-sounds",
+   "page": "https://kenney.nl/assets/interface-sounds",
+   "creator": "Kenney (kenney.nl)",
+   "title": "glass ping, double",
+   "tags": [
+    "sfx",
+    "ui",
+    "glass",
+    "ping",
+    "ding",
+    "notify"
+   ],
+   "duration_ms": 157
+  },
+  {
+   "path": "sfx/ui/grow.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/interface-sounds",
+   "page": "https://kenney.nl/assets/interface-sounds",
+   "creator": "Kenney (kenney.nl)",
+   "title": "grow, sweep up",
+   "tags": [
+    "sfx",
+    "ui",
+    "maximize",
+    "grow",
+    "expand",
+    "up"
+   ],
+   "duration_ms": 287
+  },
+  {
+   "path": "sfx/ui/hover-1.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/ui-audio",
+   "page": "https://kenney.nl/assets/ui-audio",
+   "creator": "Kenney (kenney.nl)",
+   "title": "hover blip",
+   "tags": [
+    "sfx",
+    "ui",
+    "hover",
+    "rollover",
+    "blip"
+   ],
+   "duration_ms": 261
+  },
+  {
+   "path": "sfx/ui/hover-2.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/ui-audio",
+   "page": "https://kenney.nl/assets/ui-audio",
+   "creator": "Kenney (kenney.nl)",
+   "title": "hover blip, lower",
+   "tags": [
+    "sfx",
+    "ui",
+    "hover",
+    "rollover",
+    "blip"
+   ],
+   "duration_ms": 104
+  },
+  {
+   "path": "sfx/ui/mouse-click.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/ui-audio",
+   "page": "https://kenney.nl/assets/ui-audio",
+   "creator": "Kenney (kenney.nl)",
+   "title": "mouse click",
+   "tags": [
+    "sfx",
+    "ui",
+    "click",
+    "mouse",
+    "cursor"
+   ],
+   "duration_ms": 104
+  },
+  {
+   "path": "sfx/ui/open.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/interface-sounds",
+   "page": "https://kenney.nl/assets/interface-sounds",
+   "creator": "Kenney (kenney.nl)",
+   "title": "open, panel slides in",
+   "tags": [
+    "sfx",
+    "ui",
+    "open",
+    "reveal",
+    "in"
+   ],
+   "duration_ms": 183
+  },
+  {
+   "path": "sfx/ui/pluck-1.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/interface-sounds",
+   "page": "https://kenney.nl/assets/interface-sounds",
+   "creator": "Kenney (kenney.nl)",
+   "title": "pluck, string-like pop",
+   "tags": [
+    "sfx",
+    "ui",
+    "pluck",
+    "pop",
+    "appear"
+   ],
+   "duration_ms": 131
+  },
+  {
+   "path": "sfx/ui/pluck-2.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/interface-sounds",
+   "page": "https://kenney.nl/assets/interface-sounds",
+   "creator": "Kenney (kenney.nl)",
+   "title": "pluck, higher pop",
+   "tags": [
+    "sfx",
+    "ui",
+    "pluck",
+    "pop",
+    "appear"
+   ],
+   "duration_ms": 209
+  },
+  {
+   "path": "sfx/ui/question.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/interface-sounds",
+   "page": "https://kenney.nl/assets/interface-sounds",
+   "creator": "Kenney (kenney.nl)",
+   "title": "question, rising blip",
+   "tags": [
+    "sfx",
+    "ui",
+    "question",
+    "query",
+    "curious"
+   ],
+   "duration_ms": 522
+  },
+  {
+   "path": "sfx/ui/scratch.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/interface-sounds",
+   "page": "https://kenney.nl/assets/interface-sounds",
+   "creator": "Kenney (kenney.nl)",
+   "title": "scratch, record-like",
+   "tags": [
+    "sfx",
+    "ui",
+    "scratch",
+    "rewind"
+   ],
+   "duration_ms": 183
+  },
+  {
+   "path": "sfx/ui/scroll.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/interface-sounds",
+   "page": "https://kenney.nl/assets/interface-sounds",
+   "creator": "Kenney (kenney.nl)",
+   "title": "scroll ratchet",
+   "tags": [
+    "sfx",
+    "ui",
+    "scroll",
+    "ratchet",
+    "list"
+   ],
+   "duration_ms": 1045
+  },
+  {
+   "path": "sfx/ui/select-1.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/interface-sounds",
+   "page": "https://kenney.nl/assets/interface-sounds",
+   "creator": "Kenney (kenney.nl)",
+   "title": "select blip",
+   "tags": [
+    "sfx",
+    "ui",
+    "select",
+    "choose",
+    "blip"
+   ],
+   "duration_ms": 418
+  },
+  {
+   "path": "sfx/ui/select-2.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/interface-sounds",
+   "page": "https://kenney.nl/assets/interface-sounds",
+   "creator": "Kenney (kenney.nl)",
+   "title": "select chime",
+   "tags": [
+    "sfx",
+    "ui",
+    "select",
+    "choose",
+    "chime"
+   ],
+   "duration_ms": 392
+  },
+  {
+   "path": "sfx/ui/shrink.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/interface-sounds",
+   "page": "https://kenney.nl/assets/interface-sounds",
+   "creator": "Kenney (kenney.nl)",
+   "title": "shrink, sweep down",
+   "tags": [
+    "sfx",
+    "ui",
+    "minimize",
+    "shrink",
+    "collapse",
+    "down"
+   ],
+   "duration_ms": 287
+  },
+  {
+   "path": "sfx/ui/switch.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/interface-sounds",
+   "page": "https://kenney.nl/assets/interface-sounds",
+   "creator": "Kenney (kenney.nl)",
+   "title": "mechanical switch",
+   "tags": [
+    "sfx",
+    "ui",
+    "switch",
+    "flip"
+   ],
+   "duration_ms": 653
+  },
+  {
+   "path": "sfx/ui/tick.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/interface-sounds",
+   "page": "https://kenney.nl/assets/interface-sounds",
+   "creator": "Kenney (kenney.nl)",
+   "title": "tick, clock-like",
+   "tags": [
+    "sfx",
+    "ui",
+    "tick",
+    "counter",
+    "clock"
+   ],
+   "duration_ms": 104
+  },
+  {
+   "path": "sfx/ui/toggle-off.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/interface-sounds",
+   "page": "https://kenney.nl/assets/interface-sounds",
+   "creator": "Kenney (kenney.nl)",
+   "title": "toggle switch off",
+   "tags": [
+    "sfx",
+    "ui",
+    "toggle",
+    "switch",
+    "off"
+   ],
+   "duration_ms": 183
+  },
+  {
+   "path": "sfx/ui/toggle-on.mp3",
+   "license": "CC0",
+   "source": "https://kenney.nl/assets/interface-sounds",
+   "page": "https://kenney.nl/assets/interface-sounds",
+   "creator": "Kenney (kenney.nl)",
+   "title": "toggle switch on",
+   "tags": [
+    "sfx",
+    "ui",
+    "toggle",
+    "switch",
+    "on"
+   ],
+   "duration_ms": 183
+  }
+ ]
+}
