@@ -33,6 +33,17 @@ describe('rippleTrack', () => {
     expect(rep.stretched).toEqual([]);
   });
 
+  it('opens time after a move that lands exactly at the edit — the move keeps its speed', () => {
+    const rep = emptyReport();
+    const fade = rippleTrack('fade', track(600, [{ t: 0, opacity: 0 }, { t: 600, opacity: 1 }]), { at: 1200, by: 4000 }, rep);
+    expect(fade.keyframes?.map(k => k.t)).toEqual([0, 600]);
+    expect(fade.playback).toMatchObject({ delay: 600, duration: 4600 });
+    // A move STARTING at the edit still goes with it.
+    const next = rippleTrack('next', track(1200, [{ t: 0, x: 0 }, { t: 400, x: 90 }]), { at: 1200, by: 4000 }, rep);
+    expect(next.playback).toMatchObject({ delay: 5200, duration: 400 });
+    expect(rep.stretched).toEqual([]);
+  });
+
   it('names a move under way at the edit, and refuses to close a span a keyframe sits in', () => {
     const rep = emptyReport();
     rippleTrack('pan', track(1000, [{ t: 0, x: 0 }, { t: 2000, x: -500 }]), { at: 2000, by: 500 }, rep);
