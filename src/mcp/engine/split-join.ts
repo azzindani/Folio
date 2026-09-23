@@ -47,7 +47,10 @@ function joined(pieces: Node[]): Layer {
     const ordered = [...l].sort((a, b) => num(a.x) - num(b.x));
     return ordered.map(said).join(ordered.every(p => [...said(p).trim()].length <= 1) ? '' : ' ');
   }).join('\n');
-  const { animation: _a, split_of: _s, ...rest } = first;
+  // Judged as authored: no motion, and no longer a piece.
+  const rest: Record<string, unknown> = { ...first };
+  delete rest['animation'];
+  delete rest['split_of'];
   return { ...rest, x: x0, y: y0, width: x1 - x0, height: y1 - y0, content: { type: 'plain', value: text } } as unknown as Layer;
 }
 
