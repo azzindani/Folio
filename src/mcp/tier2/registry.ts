@@ -105,9 +105,16 @@ export const TIER2_TOOLS: ToolDefinition[] = [
         project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
         dry_run:      { type: 'boolean', description: 'Validate selectors without writing (default false)', default: false },
         selectors: {
-          type: 'object',
-          description: 'Array of {path, value} selectors',
-          items: { type: 'object', properties: { path: { type: 'string' }, value: { type: 'string' } } },
+          type: 'array',
+          description: 'Array of {path, value} selectors. Reaches layers inside LOCKED groups (layers[0].layers[6].y). A path naming a key the layer never reads is routed to the one that renders — typography on a text layer → style.<key>, text → content.value, an icon\'s icon → name — and the reply lists it under `routed`.',
+          items: {
+            type: 'object',
+            description: '{path, value} — value is any JSON value (number, string, boolean, object, array), written as given.',
+            properties: {
+              path:  { type: 'string', description: 'Dot path — layers[3].style.color, layers[id=title].y, pages[id=p2].layers[0].x' },
+            },
+            required: ['path'],
+          },
         },
       },
       required: ['design_path', 'selectors'],

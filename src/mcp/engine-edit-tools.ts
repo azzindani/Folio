@@ -21,6 +21,7 @@ import { trimTrailingDeadBand } from './engine-finalize-geom';
 import { pruneEmptyDrafts } from './engine-project-tools';
 
 import { setNestedValue, inertPresetKeyWarning } from './engine-runtime-tools';
+import { routePatchPath, TYPO_ALIASES } from './engine/patch-route';
 
 // Global hex recolor: walk the whole spec and replace any color string that
 // exactly matches a key in `map` (case-insensitive) with its mapped value.
@@ -44,6 +45,8 @@ function recolorSpec(spec: unknown, map: Record<string, string>): number {
   walk(spec);
   return n;
 }
+const ROUTED_MSG = (n: number): string =>
+  `Routed ${n} path(s) to the field that renders — the path named a key this layer never reads`;
 const isRecolorSelector = (p: string): boolean => p === 'recolor' || p === 'recolor_all';
 const asHexMap = (v: unknown): Record<string, string> | null =>
   v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, string>) : null;
@@ -62,18 +65,25 @@ export function patchDesign(args: { design_path: string; selectors: { path: stri
     const spec = readYAML<Record<string, unknown>>(dPath);
     const wouldPatch: string[] = [];
     const errors: string[] = [];
+    const routed: { from: string; to: string }[] = [];
     for (const sel of args.selectors) {
       if (isRecolorSelector(sel.path)) {
         const map = asHexMap(sel.value);
         if (map && recolorSpec(spec, map) > 0) wouldPatch.push(`recolor (${Object.keys(map).length} color(s))`);
         else errors.push(`recolor: value must be a {oldHex:newHex} map and at least one color must match`);
-      } else if (setNestedValue(spec, sel.path, sel.value)) wouldPatch.push(sel.path);
-      else errors.push(`${sel.path}: path did not resolve (missing parent, out-of-range index, or no filter match)`);
+        continue;
+      }
+      const r = routePatchPath(spec, sel.path);
+      if (setNestedValue(spec, r.path, sel.value)) {
+        wouldPatch.push(r.path);
+        if (r.from) routed.push({ from: r.from, to: r.path });
+      } else errors.push(`${sel.path}: path did not resolve (missing parent, out-of-range index, or no filter match)`);
     }
     progress.push(errors.length === 0 ? pOk(`Dry-run: ${wouldPatch.length} path(s) valid`) : pWarn('Dry-run: some paths invalid', errors.join('; ')));
+    if (routed.length) progress.push(pInfo(ROUTED_MSG(routed.length), routed.map(x => `${x.from} → ${x.to}`).join(', ')));
     const context = buildContext(op, `Dry-run validated ${wouldPatch.length} selector(s)`);
     const handover = buildHandover('PATCH', { design_path: dPath });
-    return okResult(op, { dry_run: true, would_patch: wouldPatch, errors, progress, context, handover });
+    return okResult(op, { dry_run: true, would_patch: wouldPatch, ...(routed.length ? { routed } : {}), errors, progress, context, handover });
   }
 
   const bak = snapshot(dPath);
@@ -82,15 +92,20 @@ export function patchDesign(args: { design_path: string; selectors: { path: stri
   const patched: string[] = [];
   const unresolved: string[] = [];
   const inert: string[] = [];
+  const routed: { from: string; to: string }[] = [];
   for (const sel of args.selectors) {
     if (isRecolorSelector(sel.path)) {
       const map = asHexMap(sel.value);
       const hits = map ? recolorSpec(spec, map) : 0;
       if (hits > 0) patched.push(`recolor:${hits}`);
       else unresolved.push('recolor (no color matched — pass {oldHex:newHex} from the design\'s actual colors)');
-    } else if (setNestedValue(spec, sel.path, sel.value)) {
-      patched.push(sel.path);
-      const w = inertPresetKeyWarning(spec, sel.path);
+      continue;
+    }
+    const r = routePatchPath(spec, sel.path);
+    if (setNestedValue(spec, r.path, sel.value)) {
+      patched.push(r.path);
+      if (r.from) routed.push({ from: r.from, to: r.path });
+      const w = inertPresetKeyWarning(spec, r.path);
       if (w) inert.push(w);
     } else {
       unresolved.push(sel.path);
@@ -108,6 +123,7 @@ export function patchDesign(args: { design_path: string; selectors: { path: stri
   writeYAML(dPath, spec);
   progress.push(pOk(`Patched ${patched.length} field(s)`, patched.join(', ')));
   if (unresolved.length) progress.push(pWarn(`${unresolved.length} path(s) did not resolve — not applied`, unresolved.join(', ')));
+  if (routed.length) progress.push(pInfo(ROUTED_MSG(routed.length), routed.map(x => `${x.from} → ${x.to}`).join(', ')));
   for (const w of inert) progress.push(pWarn('Patch has no render effect', w));
 
   const next_action: NextAction = { tool: 'seal_design', params: { design_path: dPath }, remaining: -1, hint: inert.length ? 'Some patches hit an expanded preset (no effect) — remove_layer + add_layers to change it. Otherwise seal_design.' : 'Fields patched. Call seal_design or make further patches.' };
@@ -115,7 +131,7 @@ export function patchDesign(args: { design_path: string; selectors: { path: stri
     { type: 'design', path: dPath, role: 'updated' },
   ]);
   const handover = buildHandover('PATCH', { design_path: dPath });
-  return okResult(op, { patched_paths: patched, count: patched.length, ...(unresolved.length ? { unresolved } : {}), ...(inert.length ? { inert_no_effect: inert } : {}), next_action, progress, context, handover }, bak);
+  return okResult(op, { patched_paths: patched, count: patched.length, ...(routed.length ? { routed } : {}), ...(unresolved.length ? { unresolved } : {}), ...(inert.length ? { inert_no_effect: inert } : {}), next_action, progress, context, handover }, bak);
 }
 
 // Does the design carry anything that actually RENDERS as content — not just a
@@ -423,17 +439,6 @@ export function pagesWithLayer(spec: DesignSpec, layerId: string): string[] {
  * An endpoint named in the SAME patch wins — the caller said where it goes, so
  * that value is used as given rather than shifted on top.
  */
-/** Flat authoring alias → the canonical `style` key it belongs in. */
-const TYPO_ALIASES: readonly (readonly [string, readonly string[]])[] = [
-  ['font_size', ['font_size', 'size', 'fontSize']],
-  ['font_family', ['font_family', 'font', 'fontFamily']],
-  ['font_weight', ['font_weight', 'weight', 'fontWeight']],
-  ['color', ['color']],
-  ['text_align', ['text_align', 'align', 'textAlign']],
-  ['line_height', ['line_height', 'lineHeight', 'leading']],
-  ['letter_spacing', ['letter_spacing', 'letterSpacing', 'tracking', 'track']],
-];
-
 /**
  * Route a flat authoring alias into the canonical field that would SHADOW it.
  *
