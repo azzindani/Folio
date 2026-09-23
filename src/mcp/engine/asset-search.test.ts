@@ -4,6 +4,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 // against recorded response bodies rather than the live APIs — a test suite
 // that needs the internet is a test suite that fails on a plane.
 const jsonMock = vi.fn();
+// Folio's bundled pack answers first; these tests are about the internet sources.
+process.env['FOLIO_PACK_DIR'] = '/nonexistent-folio-pack';
 vi.mock('./asset-net', async (orig) => {
   const actual = await orig<typeof import('./asset-net')>();
   return { ...actual, httpJSON: (url: string) => jsonMock(url) };

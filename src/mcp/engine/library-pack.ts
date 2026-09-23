@@ -157,6 +157,30 @@ export function seedPack(opts: { dir?: string; root?: string } = {}): SeedReport
   return report;
 }
 
+/**
+ * One pack file, asked for by name (asset_fetch ref "pack:<path>"): its library
+ * entry, copied in first when the library lacks it. An explicit ask outranks the
+ * ledger — a file the operator deleted comes back when they fetch it again.
+ */
+export function ensurePackFile(rel: string, opts: { dir?: string; root?: string } = {}): LibraryEntry | null {
+  const dir = opts.dir ?? packDir();
+  const f = dir ? readPackManifest(dir)?.files.find(x => x.path === rel) : undefined;
+  const libPath = packLibPath(rel);
+  if (!dir || !f || !libPath || !PACK_LICENSES.includes(f.license)) return null;
+  const root = opts.root ?? libraryRoot();
+  const known = readLibraryIndex(root).find(e => e.path === libPath);
+  const dest = path.join(root, ...libPath.slice(LIB_PREFIX.length).split('/'));
+  if (known && fs.existsSync(dest)) return known;
+  const buf = fs.readFileSync(path.join(dir, ...rel.split('/')));
+  if (!fs.existsSync(dest)) writeAtomic(dest, buf);
+  const entry = packEntry(f, libPath, fs.readFileSync(dest), readPackManifest(dir)?.updated || (new Date().toISOString().split('T')[0] ?? ''));
+  writeLibraryIndex(root, [...readLibraryIndex(root).filter(e => e.path !== libPath), entry]);
+  const ledger = readLedger(root);
+  ledger[libPath] = sha256(buf);
+  writeAtomic(ledgerPath(root), `${JSON.stringify(ledger, null, 2)}\n`);
+  return entry;
+}
+
 /** One line for the server log. */
 export function describeSeed(r: SeedReport): string {
   const parts = [`${r.added.length} added`, `${r.updated.length} updated`, `${r.kept.length} kept`];
