@@ -11,6 +11,7 @@ import { lintAiSlop } from './ai-slop-lint';
 import { windowOf, intersectWindows } from '../../animation/lifespan';
 import { findTextOverflows } from './text-measure';
 import { joinSplitPieces } from './split-join';
+import { inkLeft } from '../../export/frame-geometry';
 
 export interface Finding {
   code: string;
@@ -205,10 +206,16 @@ function geometryFindings(layers: Layer[], W: number, H: number, world?: Stage):
   // misalignment (the eye sees "almost lined up"). Suggest snapping. Not when
   // the pair lines up EXACTLY on another line: a 30px label and a 24px note
   // centred on one bar row have tops 3px apart by design (benchmark r2).
-  const edges: Array<{ id: string; edge: string; v: number; b: Box }> = [];
+  // Two texts line up by their letters: a 300 px numeral's ink starts ~12 px inside
+  // its box, a kicker's ~2 px. So two boxes a few px apart are judged by their ink —
+  // on one line is optical alignment; off it, the move is named (benchmark r6, b22).
+  const byId = new Map(layers.map(l => [l.id, l]));
+  const edges: Array<{ id: string; edge: string; v: number; b: Box; ink?: number }> = [];
   for (const b of bs) {
     if (FULL_BG(b, W, H)) continue;
-    edges.push({ id: b.id, edge: 'left', v: b.x, b }, { id: b.id, edge: 'top', v: b.y, b });
+    const layer = byId.get(b.id);
+    const ink = layer ? inkLeft(layer) : null;
+    edges.push({ id: b.id, edge: 'left', v: b.x, b, ...(ink !== null ? { ink } : {}) }, { id: b.id, edge: 'top', v: b.y, b });
   }
   const alignedElsewhere = (p: Box, q: Box, edge: string): boolean => {
     const [a, la, b, lb] = edge === 'top' ? [p.y, p.h, q.y, q.h] : [p.x, p.w, q.x, q.w];
@@ -218,10 +225,26 @@ function geometryFindings(layers: Layer[], W: number, H: number, world?: Stage):
   for (let i = 0; i < edges.length; i++) {
     for (let j = i + 1; j < edges.length; j++) {
       if (edges[i].edge !== edges[j].edge || edges[i].id === edges[j].id) continue;
+      const pi = edges[i].ink, pj = edges[j].ink;
       const d = Math.abs(edges[i].v - edges[j].v);
       const key = [edges[i].id, edges[j].id, edges[i].edge].sort().join('|');
       if (d >= 1 && d <= 6 && !seenPairs.has(key) && !alignedElsewhere(edges[i].b, edges[j].b, edges[i].edge)) {
         seenPairs.add(key);
+        if (pi !== undefined && pj !== undefined) {
+          // Boxes a few px apart with the letters on one line is optical alignment, set on purpose.
+          if (Math.abs(pi - pj) < 1) continue;
+          // By their letters: move the larger type — display type is what drifts off a column.
+          const size = (e: { id: string }): number => Number(((byId.get(e.id) as unknown as { style?: { font_size?: number } } | undefined)?.style?.font_size) ?? 0);
+          const [mover, anchor] = size(edges[j]) > size(edges[i]) ? [edges[j], edges[i]] : [edges[i], edges[j]];
+          const dx = Math.round((anchor.ink ?? 0) - (mover.ink ?? 0));
+          out.push({
+            code: 'misalignment', severity: 'suggestion', layer_id: mover.id,
+            message: `"${edges[i].id}" and "${edges[j].id}" almost line up on the left: their letters are ${Math.abs(pi - pj).toFixed(1)}px apart (ink, not boxes).`,
+            fix: `Move "${mover.id}" ${dx} px so its letters sit on "${anchor.id}"'s — its box edge is not where its ink starts.`,
+            ...(dx ? { call: { tool: 'edit_layer', params: { op: 'move', layer_id: mover.id, dx } } } : {}),
+          });
+          continue;
+        }
         out.push({
           code: 'misalignment', severity: 'suggestion', layer_id: edges[i].id,
           message: `"${edges[i].id}" and "${edges[j].id}" are almost ${edges[i].edge}-aligned (off by ${d.toFixed(1)}px).`,

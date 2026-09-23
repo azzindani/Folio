@@ -83,6 +83,34 @@ function textBox(o: Record<string, unknown>): Box | null {
   return { x: left, y: top, width: widest, height: (layout.lines.length - 1) * layout.lineH + layout.fontSize * (0.8 + below) };
 }
 
+/**
+ * Where a left-set text's letters start, in canvas px: its text origin plus the
+ * smallest left side bearing among its lines' first letters. A 300 px numeral
+ * starts its ink ~12 px inside its box and a 32 px kicker ~2 px, so boxes set
+ * on one x do not line up to the eye — the edge lines are aligned on is the
+ * ink's (benchmark r6, b22). Null when it cannot be known: not plain text, not
+ * set left, or no metrics for the face.
+ */
+export function inkLeft(layer: Layer): number | null {
+  const o = layer as unknown as Record<string, unknown>;
+  const content = o['content'] as { type?: unknown; value?: unknown } | undefined;
+  if (o['type'] !== 'text' || !content || (content.type !== undefined && content.type !== 'plain') || typeof content.value !== 'string') return null;
+  const style = (o['style'] ?? {}) as Record<string, unknown>;
+  const layout = plainTextLayout(content.value, style as never, o as never);
+  if (layout.anchor !== 'start') return null;
+  const family = String(style['font_family'] ?? 'Inter').split(',')[0].trim().replace(/^['"]|['"]$/g, '');
+  const dir = bundledFontsDir();
+  const m = dir ? metricsForFamily(family, [dir], numericWeight(style['font_weight'])) : null;
+  if (!m?.lsb) return null;
+  const bearings = layout.lines.map(line => {
+    const first = line.codePointAt(0);
+    const b = first === undefined ? undefined : m.lsb?.(first);
+    return b === undefined ? Infinity : (b / m.unitsPerEm) * layout.fontSize;
+  });
+  const least = Math.min(...bearings);
+  return Number.isFinite(least) ? layout.textX + least : null;
+}
+
 /** The box a layer draws, in canvas coordinates, or null when it cannot be known. */
 export function drawnBox(layer: Layer): Box | null {
   const o = layer as unknown as Record<string, unknown>;

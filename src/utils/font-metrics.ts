@@ -18,6 +18,8 @@ export interface FontMetrics {
   weight: number;
   /** Advance width in font units for a code point, or undefined if unmapped. */
   advance(cp: number): number | undefined;
+  /** Left side bearing in font units — where the glyph's ink starts past its origin. */
+  lsb?(cp: number): number | undefined;
 }
 
 interface Tables { [tag: string]: { off: number; len: number } }
@@ -99,6 +101,11 @@ export function parseFontMetrics(buf: Buffer): FontMetrics | null {
     const at = hmtx + i * 4;
     return at + 2 <= buf.length ? buf.readUInt16BE(at) : undefined;
   };
+  // hmtx: numH (advance, lsb) pairs, then a bare lsb for every glyph after them.
+  const lsbOf = (gid: number): number | undefined => {
+    const at = gid < numH ? hmtx + gid * 4 + 2 : hmtx + numH * 4 + (gid - numH) * 2;
+    return at + 2 <= buf.length ? buf.readInt16BE(at) : undefined;
+  };
   const os2 = t['OS/2']?.off;
   const weight = os2 !== undefined && os2 + 6 <= buf.length ? buf.readUInt16BE(os2 + 4) || 400 : 400;
   return {
@@ -107,6 +114,10 @@ export function parseFontMetrics(buf: Buffer): FontMetrics | null {
     advance: (cp: number): number | undefined => {
       const gid = cmap.get(cp);
       return gid === undefined ? undefined : advanceOf(gid);
+    },
+    lsb: (cp: number): number | undefined => {
+      const gid = cmap.get(cp);
+      return gid === undefined ? undefined : lsbOf(gid);
     },
   };
 }

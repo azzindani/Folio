@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { analyzeLayers } from './diagnose';
+import { inkLeft } from '../../export/frame-geometry';
 import type { Layer } from '../../schema/types';
 
 const W = 1080, H = 1080;
@@ -37,11 +38,35 @@ describe('analyzeLayers — geometry', () => {
     expect(t?.severity).toBe('warning');
   });
 
-  it('flags near-miss misalignment (edges off by a few px)', () => {
-    const f = analyzeLayers([bg, text('h', 100, 100, 400, 60, 48), text('b', 103, 200, 400, 40, 24)], W, H);
-    const m = f.find(x => x.code === 'misalignment');
+  it('flags near-miss misalignment (edges off by a few px) — two texts by their letters', () => {
+    const h = text('h', 100, 100, 400, 60, 48), b = text('b', 103, 200, 400, 40, 24);
+    const m = analyzeLayers([bg, h, b], W, H).find(x => x.code === 'misalignment');
     expect(m?.severity).toBe('suggestion');
-    expect(m?.message).toMatch(/off by 3/);
+    const off = (inkLeft(b) ?? NaN) - (inkLeft(h) ?? NaN);
+    expect(m?.message).toContain(`their letters are ${Math.abs(off).toFixed(1)}px apart (ink, not boxes)`);
+    expect(m?.call).toEqual({ tool: 'edit_layer', params: { op: 'move', layer_id: 'h', dx: Math.round(off) } });
+  });
+
+  // benchmark r6 b22: a 300 px "30%" set 6 px left of a column of smaller lines to line its letters up.
+  it('judges display type by where its letters start, and names the move that lines them up', () => {
+    const face = { font_family: 'Archivo', font_weight: 900 };
+    const kicker = { ...text('kicker', 90, 320, 600, 44, 32), style: { ...face, font_size: 32, color: '#C5501E' } } as unknown as Layer;
+    const pct = { ...text('pct', 84, 700, 800, 330, 300), content: { type: 'plain', value: '30%' }, style: { ...face, font_size: 300, color: '#C5501E' } } as unknown as Layer;
+    const inkK = inkLeft(kicker) ?? NaN, inkP = inkLeft(pct) ?? NaN;
+    expect(inkP - 84).toBeGreaterThan(inkK - 90 + 4);   // the numeral's letters start further inside its box
+    const m = analyzeLayers([bg, kicker, pct], W, H).find(x => x.code === 'misalignment');
+    expect(m?.layer_id).toBe('pct');
+    expect(m?.call?.params).toEqual({ op: 'move', layer_id: 'pct', dx: Math.round(inkK - inkP) });
+  });
+
+  it('leaves boxes a few px apart alone when their letters line up — optical alignment, set on purpose', () => {
+    const head = { ...text('head', 100, 100, 600, 130, 110), content: { type: 'plain', value: 'Harbour' }, style: { font_family: 'Archivo', font_weight: 900, font_size: 110 } } as unknown as Layer;
+    const body = { ...text('body', 100, 300, 600, 40, 24), content: { type: 'plain', value: 'Harbour walk' }, style: { font_family: 'Archivo', font_size: 24 } } as unknown as Layer;
+    const x = 100 + Math.round((inkLeft(head) ?? NaN) - (inkLeft(body) ?? NaN));
+    expect(x - 100).toBeGreaterThanOrEqual(1);         // the boxes differ by a near-miss…
+    expect(x - 100).toBeLessThanOrEqual(6);
+    const lined = { ...body, x } as unknown as Layer;
+    expect(analyzeLayers([bg, head, lined], W, H).filter(f => f.code === 'misalignment')).toEqual([]);   // …the letters do not
   });
 
   it('stays quiet when the pair is exactly aligned on another line (benchmark r2: a chart row)', () => {
