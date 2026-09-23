@@ -186,19 +186,25 @@ function geometryFindings(layers: Layer[], W: number, H: number, world?: Stage):
   }
 
   // Alignment near-miss — edges within 1–6px of each other read as a sloppy
-  // misalignment (the eye sees "almost lined up"). Suggest snapping.
-  const edges: Array<{ id: string; edge: string; v: number }> = [];
+  // misalignment (the eye sees "almost lined up"). Suggest snapping. Not when
+  // the pair lines up EXACTLY on another line: a 30px label and a 24px note
+  // centred on one bar row have tops 3px apart by design (benchmark r2).
+  const edges: Array<{ id: string; edge: string; v: number; b: Box }> = [];
   for (const b of bs) {
     if (FULL_BG(b, W, H)) continue;
-    edges.push({ id: b.id, edge: 'left', v: b.x }, { id: b.id, edge: 'top', v: b.y });
+    edges.push({ id: b.id, edge: 'left', v: b.x, b }, { id: b.id, edge: 'top', v: b.y, b });
   }
+  const alignedElsewhere = (p: Box, q: Box, edge: string): boolean => {
+    const [a, la, b, lb] = edge === 'top' ? [p.y, p.h, q.y, q.h] : [p.x, p.w, q.x, q.w];
+    return Math.abs((a + la / 2) - (b + lb / 2)) < 0.5 || Math.abs((a + la) - (b + lb)) < 0.5;
+  };
   const seenPairs = new Set<string>();
   for (let i = 0; i < edges.length; i++) {
     for (let j = i + 1; j < edges.length; j++) {
       if (edges[i].edge !== edges[j].edge || edges[i].id === edges[j].id) continue;
       const d = Math.abs(edges[i].v - edges[j].v);
       const key = [edges[i].id, edges[j].id, edges[i].edge].sort().join('|');
-      if (d >= 1 && d <= 6 && !seenPairs.has(key)) {
+      if (d >= 1 && d <= 6 && !seenPairs.has(key) && !alignedElsewhere(edges[i].b, edges[j].b, edges[i].edge)) {
         seenPairs.add(key);
         out.push({
           code: 'misalignment', severity: 'suggestion', layer_id: edges[i].id,

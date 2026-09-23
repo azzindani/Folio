@@ -43,6 +43,15 @@ describe('analyzeLayers — geometry', () => {
     expect(m?.severity).toBe('suggestion');
     expect(m?.message).toMatch(/off by 3/);
   });
+
+  it('stays quiet when the pair is exactly aligned on another line (benchmark r2: a chart row)', () => {
+    // A 30px label and a 24px note centred on the same bar row: tops 3px apart by design.
+    const f = analyzeLayers([bg, text('label', 120, 512, 170, 42, 30), text('note', 600, 515, 200, 36, 24)], W, H);
+    expect(f.filter(x => x.code === 'misalignment')).toEqual([]);
+    // Right-aligned figures of different widths: left edges near, right edges exact.
+    const g = analyzeLayers([bg, text('a', 700, 300, 200, 40, 24), text('b', 704, 400, 196, 40, 24)], W, H);
+    expect(g.filter(x => x.code === 'misalignment')).toEqual([]);
+  });
 });
 
 describe('analyzeLayers — off-canvas content nested inside a preset group', () => {
