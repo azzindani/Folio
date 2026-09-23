@@ -10,6 +10,7 @@
  */
 
 import type { AudioCue, AudioTrack, DesignSpec } from '../schema/types';
+import { videoSoundClips } from './video-sound';
 
 export interface SoundClip {
   id: string;
@@ -28,6 +29,8 @@ export interface SoundClip {
   loop: boolean;
   /** The piece ended before the sound did. */
   cut: boolean;
+  /** A video layer's clip played faster or slower (absent = 1): file time runs `speed`× piece time. */
+  speed?: number;
 }
 
 export interface SoundPlan { clips: SoundClip[]; total_ms: number; notes: string[] }
@@ -110,6 +113,10 @@ export function planSound(spec: DesignSpec, timeline: SoundTimeline, durations: 
     if (clip) clips.push(clip);
   });
   for (const e of early) if (!soundingAt(clips, e.end + 1)) notes.push(e.note);
+  // A video layer's own sound (video-sound.ts): with its scene, or from 0 on a one-page piece.
+  if (spec.pages?.length) {
+    for (const scene of timeline.scenes) clips.push(...videoSoundClips((spec.pages.find(p => p.id === scene.page_id)?.layers) ?? [], scene.start_ms, total, durations));
+  } else clips.push(...videoSoundClips(spec.layers ?? [], 0, total, durations));
   for (const scene of timeline.scenes) {
     const page = (spec.pages ?? []).find(p => p.id === scene.page_id);
     (page?.audio_cues ?? []).forEach((cue, j) => {
@@ -134,6 +141,6 @@ export function clipGain(c: SoundClip, t: number): number {
 
 /** Where in its file a clip is at piece time t, ms. A loop restarts from the file's start. */
 export function clipFilePosition(c: SoundClip, t: number, fileMs?: number): number {
-  const pos = c.offset_ms + Math.max(0, t - c.start_ms);
+  const pos = c.offset_ms + Math.max(0, t - c.start_ms) * (c.speed ?? 1);
   return c.loop && fileMs !== undefined && fileMs > 0 && pos >= fileMs ? pos % fileMs : pos;
 }
