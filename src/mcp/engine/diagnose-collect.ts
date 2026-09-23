@@ -19,10 +19,11 @@
 // Restating the list here would have been the session's most-repeated mistake
 // (a rule with two implementations, drifting), so both callers share this.
 
-import type { DesignSpec, Layer } from '../../schema/types';
+import type { DesignSpec, Layer, Page } from '../../schema/types';
 import { analyzeLayers, flatTextStyleFindings, type Finding } from './diagnose';
 import { auditImageAssets } from './asset-resolve';
 import { renderFailureFindings } from './diagnose-render';
+import { motionFindings } from './diagnose-motion';
 import { validateDesignSpec } from '../../schema/validator';
 
 export type PageFinding = Finding & { page?: string };
@@ -72,17 +73,19 @@ export function collectFindings(
   pageId?: string,
 ): PageFinding[] {
   const W = spec.document?.width ?? 1080, H = spec.document?.height ?? 1080;
-  const run = (layers: Layer[] | undefined, page?: string, world?: DesignSpec['world']): PageFinding[] =>
-    analyzeLayers(layers ?? [], W, H, world).map(f => (page ? { ...f, page } : f));
+  // A moving surface is also judged where each shot rests (diagnose-motion.ts).
+  const run = (layers: Layer[] | undefined, page?: Page): PageFinding[] =>
+    [...analyzeLayers(layers ?? [], W, H, page ? page.world : spec.world), ...motionFindings(spec, layers ?? [], page)]
+      .map(f => (page ? { ...f, page: page.id } : f));
 
   const findings: PageFinding[] = [];
   if (pageId && spec.pages) {
     const page = spec.pages.find(p => p.id === pageId);
-    findings.push(...run(page?.layers, pageId, page?.world));
+    findings.push(...(page ? run(page.layers, page) : []));
   } else if (spec.pages) {
-    for (const page of spec.pages) findings.push(...run(page.layers, page.id, page.world));
+    for (const page of spec.pages) findings.push(...run(page.layers, page));
   } else {
-    findings.push(...run(spec.layers, undefined, spec.world));
+    findings.push(...run(spec.layers));
   }
 
   // Unresolvable image srcs (blank in exports) + distortion/upscale.
