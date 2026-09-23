@@ -157,3 +157,30 @@ describe('analyzeLayers — a camera world', () => {
     expect(analyzeLayers([scene], 1920, 1080, world).filter(f => f.code === 'off_canvas')).toEqual([]);
   });
 });
+
+describe('analyzeLayers — text overflow reaches group children (benchmark r1)', () => {
+  const words = (id: string, value: string, x: number, y: number, w: number, h: number, size: number): Layer =>
+    ({ id, type: 'text', z: 5, x, y, width: w, height: h, content: { type: 'plain', value }, style: { font_size: size, line_height: 1.4 } } as unknown as Layer);
+  const panel = { id: 'panel', type: 'rect', z: 1, x: 80, y: 480, width: 440, height: 110, fill: { type: 'solid', color: '#0F1B2D' } } as unknown as Layer;
+  const fix = words('fix', 'Send a three-line agenda twenty-four hours before. No agenda? Cancel the meeting outright.', 100, 500, 400, 60, 32);
+  const group = (locked: boolean, kids: Layer[]): Layer =>
+    ({ id: 'slide', type: 'group', locked, x: 0, y: 0, width: W, height: H, layers: kids } as unknown as Layer);
+
+  it('sees a spill out of a panel inside a locked group, and names the panel as its ground', () => {
+    const f = analyzeLayers([bg, group(true, [panel, fix])], W, H).find(x => x.code === 'text_overflow');
+    expect(f?.layer_id).toBe('fix');
+    expect(f?.severity).toBe('error');
+    expect(f?.message).toContain('runs out of "panel"');
+    expect(f?.message).not.toContain('overlaps');
+  });
+
+  it('leaves a one-line label in a box trimmed to its cap height alone', () => {
+    const kick = words('kick', 'WHAT IT DOES', 80, 60, 600, 34, 38);
+    expect(analyzeLayers([bg, group(false, [kick])], W, H).some(x => x.code === 'text_overflow')).toBe(false);
+  });
+
+  it('never wraps a single word, whatever its width estimate', () => {
+    const word = words('w1', 'Astra', 140, 462, 126, 101, 96);
+    expect(analyzeLayers([bg, group(false, [word])], W, H).some(x => x.code === 'text_overflow')).toBe(false);
+  });
+});

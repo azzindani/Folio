@@ -37,7 +37,10 @@ export function estTextHeight(text: string, fontSize: number, widthPx: number, l
   return Math.ceil(Math.max(1, lines) * fontSize * lh);
 }
 
-interface TextMetrics { estH: number; declaredH: number; lines: number; fontSize: number; }
+/** No whitespace, hyphen or CJK — nowhere a line can break. */
+const UNBREAKABLE = /^[^\s\-\u2E80-\u9FFF\u3040-\u30FF\uAC00-\uD7AF]+$/;
+
+interface TextMetrics { estH: number; declaredH: number; lines: number; fontSize: number; lineH: number; }
 
 /** Per-layer wrapper: reads a text layer's content + style and returns metrics, or null. */
 export function measureTextLayer(l: Layer): TextMetrics | null {
@@ -59,9 +62,12 @@ export function measureTextLayer(l: Layer): TextMetrics | null {
 
   // UPPERCASE renders ~12% wider → fewer chars per line. Widen by shrinking the effective width.
   const transformed = style.text_transform === 'uppercase' ? width / 1.12 : width;
-  const estH = estTextHeight(text, fontSize, transformed, lh, font);
+  // Text with no break opportunity — one Latin word, as op:text splits a line
+  // into — draws on ONE line whatever the width estimate says ("Astra" at 96px
+  // measured as two lines in a box cut to its width).
+  const estH = UNBREAKABLE.test(text) ? Math.ceil(fontSize * lh) : estTextHeight(text, fontSize, transformed, lh, font);
   const lines = Math.max(1, Math.round(estH / (fontSize * lh)));
-  return { estH, declaredH, lines, fontSize };
+  return { estH, declaredH, lines, fontSize, lineH: fontSize * lh };
 }
 
 export interface TextOverflow {
@@ -72,6 +78,7 @@ export interface TextOverflow {
   declaredH: number;
   spill: number;        // px the rendered text spills past its declared box
   collides: string[];   // ids of layers sitting in the spill band
+  outOf?: string;       // the shape the text sits on, when the spill runs past its edge
   offBottom: boolean;   // spill runs past the canvas bottom
 }
 
@@ -92,17 +99,31 @@ function geom(l: Layer): XYWH | null {
  * vision-less model needs: declared boxes don't overlap, but the WRAPPED text
  * does. `tol` = how much overflow to tolerate before flagging (1.3 = 30%).
  */
+/** True when `outer` covers ≥80% of `inner` and is the larger of the two. */
+function holds(outer: XYWH, inner: XYWH): boolean {
+  const ox = Math.max(0, Math.min(outer.x + outer.w, inner.x + inner.w) - Math.max(outer.x, inner.x));
+  const oy = Math.max(0, Math.min(outer.y + outer.h, inner.y + inner.h) - Math.max(outer.y, inner.y));
+  return outer.w * outer.h > inner.w * inner.h && ox * oy >= 0.8 * inner.w * inner.h;
+}
+
 export function findTextOverflows(layers: Layer[], canvasH: number, tol = 1.3): TextOverflow[] {
   const out: TextOverflow[] = [];
   for (const l of layers) {
     const m = measureTextLayer(l);
     if (!m || m.declaredH <= 0) continue;
     if (m.estH <= m.declaredH * tol) continue;
+    // Spilling means wrapping to MORE LINES than the box holds. A one-line label
+    // in a box trimmed to its cap height draws exactly where it was put; judged
+    // by height alone, every preset kicker read as overflowing once group
+    // children were measured (a sweep of 323 designs: 227 findings, most of them
+    // one-line). A box ¾ of a line tall still holds that line.
+    if (m.lines <= Math.max(1, Math.floor(m.declaredH / m.lineH + 0.25))) continue;
     const b = geom(l);
     if (!b) continue;
     const bandTop = b.y + b.h;
     const bandBottom = b.y + m.estH;
     const collides: string[] = [];
+    let outOf: { id: string; area: number } | undefined;
     for (const o of layers) {
       if (o.id === l.id) continue;
       const ob = geom(o);
@@ -111,11 +132,19 @@ export function findTextOverflows(layers: Layer[], canvasH: number, tol = 1.3): 
       const vInBand = ob.y < bandBottom && ob.y + ob.h > bandTop;
       // skip a full-canvas background sitting underneath
       const isBg = ob.w * ob.h >= b.w * canvasH * 0.85 && ob.x <= 2 && ob.y <= 2;
-      if (hOverlap && vInBand && !isBg) collides.push(o.id);
+      if (isBg) continue;
+      // A shape holding the text's box is its GROUND (a card, a panel, a band) —
+      // not something below it. What matters there is the spill leaving it.
+      if (holds(ob, b)) {
+        const area = ob.w * ob.h;
+        if (bandBottom > ob.y + ob.h + 2 && (!outOf || area < outOf.area)) outOf = { id: o.id, area };
+        continue;
+      }
+      if (hOverlap && vInBand) collides.push(o.id);
     }
     out.push({
       id: l.id, fontSize: m.fontSize, lines: m.lines, estH: m.estH, declaredH: m.declaredH,
-      spill: Math.round(m.estH - m.declaredH), collides,
+      spill: Math.round(m.estH - m.declaredH), collides, ...(outOf ? { outOf: outOf.id } : {}),
       offBottom: bandBottom > canvasH + 8,
     });
   }
