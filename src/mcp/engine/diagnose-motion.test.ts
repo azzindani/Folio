@@ -22,4 +22,14 @@ describe('diagnose_design on a page that moves', () => {
     expect(codes(spec).map(f => f.page)).toEqual(['moving']);
     expect(codes(spec, 'still')).toEqual([]);
   });
+
+  it('does not call two lines on one spot a collision when one leaves before the other arrives', () => {
+    const line = (id: string, value: string, win: object): object =>
+      ({ id, type: 'text', z: 5, x: 80, y: 300, width: 800, height: 90, content: { type: 'plain', value }, style: { font_size: 64 }, ...win });
+    const static_ = (a: object, b: object): string[] =>
+      collectFindings({ ...doc, layers: [ground, line('k1', 'First line here', a), line('k3', 'Second line now', b)] } as unknown as DesignSpec, '/nowhere/d.design.yaml')
+        .filter(f => f.code === 'collision').map(f => f.layer_id ?? '');
+    expect(static_({ out: 3000 }, { in: 3200 })).toEqual([]);
+    expect(static_({ out: 3000 }, { in: 2000 })).toEqual(['k1']);
+  });
 });
