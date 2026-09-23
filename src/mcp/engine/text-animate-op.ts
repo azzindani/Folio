@@ -18,7 +18,8 @@ import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, 
 import { metricsForFamily, numericWeight } from '../../utils/font-metrics';
 import { fontsDir, projectFontsDir } from './fonts';
 import { resolveScope, commitScope, applyMotion } from './motion';
-import { setTrack } from './motion-sequence';
+import { setTrack, sequenceMotion } from './motion-sequence';
+import { readMarkers, resolveTime } from './motion-time';
 import { isMotionPreset } from './motion-presets';
 import { isStaggerOrder, STAGGER_ORDERS } from './motion-order';
 import { findLayer } from './split-text-op';
@@ -33,6 +34,8 @@ type TextAnimArgs = {
   preset?: string;
   keyframes?: unknown;
   playback?: unknown;
+  /** When the run starts on the scene clock: ms, a marker or a layer point ("kicker.end"). Default 0. */
+  at?: number | string;
   stagger_ms?: number;
   order?: string;
   mask?: boolean;
@@ -88,6 +91,9 @@ export function animateText(args: TextAnimArgs): ToolResult {
   if (!src || src.type !== 'text') {
     return errResult(op, src ? `"${id}" is a ${src.type}, not text` : `No such layer: ${id}`, 'manage_design {op:"inspect"} lists the text layers.');
   }
+  // Benchmark r5: a quote that should start after its clock could only be timed with raw keyframes + playback.delay.
+  const when = args.at === undefined ? undefined : resolveTime(args.at, { markers: readMarkers(spec, scoped.page), layers: scoped.scope });
+  if (typeof when === 'string') return errResult(op, `at: ${when}`, 'A time in ms, or a marker / layer time like "hook+200" or "kicker.end".');
 
   const o = src as unknown as Record<string, unknown>;
   const style = (o['style'] ?? {}) as Record<string, unknown>;
@@ -126,11 +132,16 @@ export function animateText(args: TextAnimArgs): ToolResult {
 
   const stagger = Math.max(0, args.stagger_ms ?? DEFAULT_STAGGER[by]);
   const aim = { design_path: dPath, page_id: args.page_id, layer_ids: created, stagger_ms: stagger, order: args.order };
+  // Behind a mask, a 24px rise starts with most of the unit already showing; travel
+  // the mask's own depth so each unit really comes up from under the edge.
+  const distance = args.distance ?? (args.mask ? inkDepth : undefined);
+  const playback = args.playback !== null && typeof args.playback === 'object' ? args.playback as Record<string, unknown> : {};
   const motion = hasFrames
-    ? setTrack({ ...aim, keyframes: args.keyframes, playback: args.playback } as Parameters<typeof setTrack>[0])
-    // Behind a mask, a 24px rise starts with most of the unit already showing; travel
-    // the mask's own depth so each unit really comes up from under the edge.
-    : applyMotion({ ...aim, preset: String(args.preset), duration: args.duration, easing: args.easing, distance: args.distance ?? (args.mask ? inkDepth : undefined) });
+    ? setTrack({ ...aim, keyframes: args.keyframes, playback: when === undefined ? args.playback : { ...playback, delay: when } } as Parameters<typeof setTrack>[0])
+    : when === undefined
+      ? applyMotion({ ...aim, preset: String(args.preset), duration: args.duration, easing: args.easing, distance })
+      : sequenceMotion({ design_path: dPath, page_id: args.page_id, project_path: args.project_path,
+        steps: [{ preset: String(args.preset), layer_ids: created, at: when, stagger_ms: stagger, order: args.order, duration: args.duration, easing: args.easing, distance }] });
   if (!motion.success) {
     if (typeof bak === 'string' && fs.existsSync(bak)) fs.copyFileSync(bak, dPath);
     return errResult(op, `The split was undone: ${String(motion['error'] ?? 'the motion was refused')}`, String(motion['hint'] ?? 'Fix the preset or keyframes and call again.'));

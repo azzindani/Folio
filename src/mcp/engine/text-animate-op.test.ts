@@ -66,6 +66,19 @@ describe('animation op:text', () => {
     expect(delay('body_l2')).toBe(140);
   });
 
+  // Benchmark r5: a quote that had to start after its clock could only be timed with raw keyframes + playback.delay.
+  it('starts the run where `at` says — ms or a marker — with a preset or with keyframes', () => {
+    const r = animateText({ design_path: dPath, layer_id: 'title', by: 'word', preset: 'rise', stagger_ms: 100, at: 1200 });
+    expect(r.success, JSON.stringify(r)).toBe(true);
+    expect([delay('title_w1'), delay('title_w2'), delay('title_w3')]).toEqual([1200, 1300, 1400]);
+    const spec = yaml.load(fs.readFileSync(dPath, 'utf8')) as DesignSpec & { markers?: Record<string, number> };
+    fs.writeFileSync(dPath, yaml.dump({ ...spec, markers: { quote: 3000 } }));
+    const k = animateText({ design_path: dPath, layer_id: 'body', by: 'line', at: 'quote+500', keyframes: [{ t: 0, opacity: 0 }, { t: 400, opacity: 1 }] });
+    expect(k.success, JSON.stringify(k)).toBe(true);
+    expect([delay('body_l1'), delay('body_l2')]).toEqual([3500, 3640]);
+    expect(animateText({ design_path: dPath, layer_id: 'title_w1', preset: 'rise', at: 'nowhere' }).success).toBe(false);
+  });
+
   it('refuses a bad call before touching the file, and undoes the split when the motion is refused', () => {
     const before = fs.readFileSync(dPath, 'utf8');
     expect(animateText({ design_path: dPath, layer_id: 'title', preset: 'nope' }).success).toBe(false);
