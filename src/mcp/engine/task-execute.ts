@@ -99,6 +99,14 @@ export function parseSteps(raw: unknown, known: string[] = []): { steps: Step[] 
     const at = `step ${i + 1}`;
     const o = (s !== null && typeof s === 'object' ? s : {}) as Rec;
     const obj = (v: unknown): Rec => (v !== null && typeof v === 'object' && !Array.isArray(v) ? v as Rec : {});
+    if ('for_each' in o) {
+      const loop = parseLoop(o, at, named);
+      if ('error' in loop) return loop;
+      if (loop.step.as) named.add(loop.step.as);
+      named.add(`step${i + 1}`);
+      steps.push(loop.step);
+      continue;
+    }
     const recipe = typeof o['recipe'] === 'string' ? o['recipe'] : undefined;
     const tool = typeof o['tool'] === 'string' ? o['tool'] : '';
     if (recipe !== undefined && !readRecipe(recipe)) return { error: `${at}: no saved recipe "${recipe}"`, hint: 'tasks {op:"recipes"} lists them; save the inner chain first.' };
@@ -130,7 +138,7 @@ export async function executeSteps(a: { steps?: unknown; dry_run?: boolean }, se
   if (a.dry_run) {
     return okResult(op, {
       dry_run: true, of: steps.length,
-      steps: steps.map((s, i) => ({ step: i + 1, tool: s.recipe !== undefined ? `recipe:${s.recipe}` : `${s.tool ?? ''}${typeof s.args?.['op'] === 'string' ? `:${s.args['op']}` : ''}`, ...(s.as ? { as: s.as } : {}) })),
+      steps: steps.map((s, i) => ({ step: i + 1, tool: s.do ? 'for_each' : s.recipe !== undefined ? `recipe:${s.recipe}` : `${s.tool ?? ''}${typeof s.args?.['op'] === 'string' ? `:${s.args['op']}` : ''}`, ...(s.as ? { as: s.as } : {}) })),
       progress: [pOk('Checked', `${steps.length} step(s): tools exist, names unique, every ref points back — nothing ran`)],
       context: buildContext(op, `dry run of ${steps.length} step(s)`),
     });
@@ -140,12 +148,14 @@ export async function executeSteps(a: { steps?: unknown; dry_run?: boolean }, se
   let last: ToolResult | undefined;
   for (const [i, s] of steps.entries()) {
     const missing: string[] = [];
-    const input = resolveRefs(s.recipe !== undefined ? s.params ?? {} : s.args ?? {}, results, missing) as Rec;
+    const input = resolveRefs(s.do ? {} : s.recipe !== undefined ? s.params ?? {} : s.args ?? {}, results, missing) as Rec;
     const args = s.recipe !== undefined ? input : normalizeProjectPaths(input);
-    const label = s.recipe !== undefined ? `recipe:${s.recipe}` : `${s.tool ?? ''}${typeof args['op'] === 'string' ? `:${args['op']}` : ''}`;
+    const label = s.do ? 'for_each' : s.recipe !== undefined ? `recipe:${s.recipe}` : `${s.tool ?? ''}${typeof args['op'] === 'string' ? `:${args['op']}` : ''}`;
     let r: ToolResult;
     if (missing.length) {
       r = errResult(label, `Refers to ${missing.map(m => `\${${m}}`).join(', ')}, which the earlier result does not have`, 'Check the field name in that step\'s reply.');
+    } else if (s.do) {
+      r = await runLoop(s, results, stack);
     } else if (s.recipe !== undefined) {
       r = await runNested(s.recipe, args, stack);
     } else {
@@ -183,4 +193,37 @@ async function runNested(name: string, params: Rec, stack: string[]): Promise<To
   const missing = Object.keys(recipe.params).filter(p => params[p] === undefined);
   if (missing.length) return errResult(label, `${name} needs ${missing.map(p => `${p} (${recipe.params[p] || 'no description'})`).join(', ')}`, 'Pass them in the step\'s params.');
   return executeSteps({ steps: recipe.steps }, { params }, label, [...stack, name]);
+}
+
+/** A loop step, checked: its list's refs point back and its inner chain parses with item + index known. */
+function parseLoop(o: Rec, at: string, named: Set<string>): { step: Step } | { error: string; hint: string } {
+  const item = typeof o['item'] === 'string' && o['item'] ? o['item'] : 'item';
+  if (!/^[A-Za-z_][\w-]*$/.test(item) || named.has(item) || item === 'index') return { error: `${at}: item:"${item}" is not a usable name`, hint: 'A fresh name, not index or an earlier step\'s.' };
+  const early = refHeads(o['for_each']).find(h => !named.has(h) && !/^step\d+$/.test(h));
+  if (early) return { error: `${at}: for_each reads "\${${early}…}", which no earlier step is named`, hint: 'Loop over a list an earlier step made, a param, or a literal list.' };
+  const inner = parseSteps(o['do'], [...named, item, 'index']);
+  if ('error' in inner) return { error: `${at} do → ${inner.error}`, hint: inner.hint };
+  const as = typeof o['as'] === 'string' && o['as'] ? o['as'] : undefined;
+  if (as && (!/^[A-Za-z_][\w-]*$/.test(as) || named.has(as))) return { error: `${at}: as:"${as}" is not a usable name`, hint: 'Letters, digits, _ and -; unique.' };
+  return { step: { for_each: o['for_each'], item, do: inner.steps, ...(as ? { as } : {}) } };
+}
+
+/** Run a loop step: its inner chain once per item, stopping at the first item that fails. */
+async function runLoop(s: Step, results: Record<string, Rec>, stack: string[]): Promise<ToolResult> {
+  const missing: string[] = [];
+  const list = resolveRefs(s.for_each, results, missing);
+  if (missing.length) return errResult('for_each', `for_each reads ${missing.map(m => `\${${m}}`).join(', ')}, which the earlier result does not have`, 'Check the field name.');
+  if (!Array.isArray(list)) return errResult('for_each', `for_each needs a list — got ${typeof list}`, 'Pass a list, or a ref to one: for_each:"${params.items}".');
+  if (list.length > MAX_STEPS) return errResult('for_each', `${list.length} items — at most ${MAX_STEPS}`, 'Split the list.');
+  const runs: Rec[] = [];
+  for (const [index, x] of list.entries()) {
+    const seed = { ...results, [s.item ?? 'item']: x as Rec, index: index as unknown as Rec };
+    const r = await executeSteps({ steps: s.do }, seed, `for_each[${index}]`, stack);
+    runs.push({ index, ...summarize(r), steps: (r as unknown as Rec)['steps'] });
+    if (!r.success) {
+      const fail = errResult('for_each', `Item ${index + 1} of ${list.length} failed: ${r.error ?? ''}`, `Items 1–${index} ran and stand. ${r.hint ?? ''}`.trim());
+      return { ...fail, runs } as ToolResult;
+    }
+  }
+  return okResult('for_each', { ran: list.length, of: list.length, runs });
 }

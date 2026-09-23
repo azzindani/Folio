@@ -24,7 +24,7 @@ function paramRefs(steps: Step[]): string[] {
     else if (Array.isArray(v)) v.forEach(walk);
     else if (v !== null && typeof v === 'object') Object.values(v).forEach(walk);
   };
-  steps.forEach(s => { walk(s.args); walk(s.params); });
+  steps.forEach(walk);   // the whole step: args, a recipe's params, a loop's list and body
   return [...out];
 }
 

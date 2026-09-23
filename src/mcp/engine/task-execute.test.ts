@@ -70,6 +70,29 @@ describe('tasks {op:"execute"}', () => {
     expect(fs.existsSync(path.join(root, 'half', 'designs', 'never.design.yaml'))).toBe(false);
   }, 30_000);
 
+  it('for_each runs its steps once per item — ${item}, ${index} and earlier replies all readable', async () => {
+    const r = await run({ steps: [
+      { tool: 'create_project', args: { name: 'loop' }, as: 'proj' },
+      { for_each: ['intro', 'middle', 'end'], item: 'slide', as: 'made', do: [
+        { tool: 'create_design', args: { project_path: 'loop', name: '${slide}', width: 1920, height: 1080 }, as: 'd' },
+        { tool: 'add_layers', args: { design_path: '${d.path}', layers_shorthand: [{ id: 't', type: 'text', content: 'Slide ${index} of ${proj.path}', pos: [100, 100, 1600, 120], size: 64 }] } },
+      ] },
+    ] });
+    expect(r).toMatchObject({ success: true, ran: 2 });
+    for (const n of ['intro', 'middle', 'end']) expect(fs.existsSync(path.join(root, 'loop', 'designs', `${n}.design.yaml`))).toBe(true);
+    expect(fs.readFileSync(path.join(root, 'loop', 'designs', 'end.design.yaml'), 'utf8')).toContain('Slide 2 of');
+  }, 30_000);
+
+  it('for_each stops at the first item that fails, and checks its body before anything runs', async () => {
+    const r = await run({ steps: [
+      { for_each: ['ok-one', 'bad'], do: [{ tool: 'manage_design', args: { op: 'inspect', design_path: path.join(root, 'nope', '${item}.design.yaml') } }] },
+    ] });
+    expect(r['success']).toBe(false);
+    expect(String(r['error'])).toMatch(/Step 1 of 1 \(for_each\) failed: Item 1 of 2 failed/);
+    expect(parseSteps([{ for_each: [1], do: [{ tool: 'nope' }] }])).toMatchObject({ error: expect.stringContaining('step 1 do → step 1: unknown tool') });
+    expect(parseSteps([{ for_each: '${later.list}', do: [{ tool: 'create_project' }] }])).toMatchObject({ error: expect.stringContaining('which no earlier step is named') });
+  }, 30_000);
+
   it('dry_run checks the chain and runs nothing', async () => {
     const r = await run({ dry_run: true, steps: [{ tool: 'create_project', args: { name: 'dry' }, as: 'p' }] });
     expect(r).toMatchObject({ success: true, dry_run: true, of: 1 });

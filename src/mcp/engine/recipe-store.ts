@@ -7,8 +7,8 @@ import { libraryRoot } from './asset-library';
 
 type Rec = Record<string, unknown>;
 
-/** One step of a chain: a tool call, or a saved recipe run inline. */
-export interface Step { tool?: string; recipe?: string; args?: Rec; params?: Rec; as?: string }
+/** One step of a chain: a tool call, a saved recipe run inline, or a loop over a list. */
+export interface Step { tool?: string; recipe?: string; args?: Rec; params?: Rec; for_each?: unknown; item?: string; do?: Step[]; as?: string }
 
 export interface Recipe {
   name: string;
