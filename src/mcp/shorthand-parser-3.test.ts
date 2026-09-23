@@ -66,13 +66,13 @@ describe('terse single-letter keys (token-saving small-model shorthand)', () => 
 
   it('maps name→icon for an explicit icon layer (and diagnoses an unreal name)', () => {
     const [ic] = expandShorthandLayers(coerceShorthandLayers({
-      mug: { type: 'icon', name: 'coffee mug', pos: [0, 0, 100, 100] },
+      mug: { type: 'icon', name: 'frobozz gizmo', pos: [0, 0, 100, 100] },
     })) as Array<{ type?: string; name?: string }>;
     expect(ic.type).toBe('icon');
-    expect(ic.name).toBe('coffee mug'); // honored, not silently 'circle'
+    expect(ic.name).toBe('frobozz gizmo'); // honored, not silently 'circle'
     expect(diagnoseLayers(expandShorthandLayers(coerceShorthandLayers({
-      mug: { type: 'icon', name: 'coffee mug', pos: [0, 0, 100, 100] },
-    }))).some(n => n.includes('coffee mug'))).toBe(true);
+      mug: { type: 'icon', name: 'frobozz gizmo', pos: [0, 0, 100, 100] },
+    }))).some(n => n.includes('frobozz gizmo'))).toBe(true);
   });
 
   it('does not turn a stray-named rect into an icon', () => {
@@ -164,7 +164,7 @@ describe('diagnoseShorthandKeys — flags silently-ignored fields', () => {
 describe('diagnoseLayers — self-correction notes for the tool loop', () => {
   it('flags an unknown icon, a local image src, and empty text', () => {
     const layers: Layer[] = [
-      { id: 'ico', type: 'icon', z: 0, x: 0, y: 0, name: 'coffee_cup', size: 24 },
+      { id: 'ico', type: 'icon', z: 0, x: 0, y: 0, name: 'frobozz_widget', size: 24 },
       { id: 'pic', type: 'image', z: 0, x: 0, y: 0, width: 10, height: 10, src: 'coffee.jpg' },
       { id: 'cap', type: 'text', z: 0, x: 0, y: 0, width: 10, height: 10, content: { type: 'plain', value: '' } },
     ] as unknown as Layer[];

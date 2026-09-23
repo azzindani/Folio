@@ -30,6 +30,14 @@ describe('resolveIconName — tolerates the names small models emit', () => {
     expect(resolveIconName('layer')).toBe('layers');
     expect(resolveIconName('stars')).toBe('star');
   });
+  it('resolves an object-modifier name to its object when several tokens are icons', () => {
+    // benchmark r1: "clipboard-x" drew a blank circle — clipboard AND x both matched.
+    expect(resolveIconName('clipboard-x')).toBe('clipboard');
+    expect(resolveIconName('x-clipboard')).toBe('clipboard');
+    expect(resolveIconName('check-square')).toBe('check');
+    expect(resolveIconName('coffee_cup')).toBe('coffee');
+  });
+
   it('resolves via a single known hyphen-token', () => {
     expect(resolveIconName('trash-can')).toBe('trash');
   });
@@ -58,7 +66,6 @@ describe('resolveIconName — tolerates the names small models emit', () => {
     expect(resolveIconName('📊 Analytics')).toBe('bar-chart');
   });
   it('returns null (→ honest placeholder) when there is no confident match', () => {
-    expect(resolveIconName('coffee_cup')).toBeNull();
     expect(resolveIconName('nonexistent-xyz')).toBeNull();
     expect(resolveIconName('')).toBeNull();
   });
