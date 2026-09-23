@@ -60,6 +60,20 @@ describe('add_layers {parent_id} — extending a scene that is already built', (
     expect(kept.style?.font_size).toBe(2.1);
   });
 
+  it('stacks what it adds on top of the group, unless told a z', () => {
+    addLayers({ design_path: dPath, layers: scene(true) });
+    const lines = [1, 2, 3].map(i => ({ id: `line${i}`, type: 'rect', z: i + 1, x: 300 * i, y: 0, width: 2, height: 1080, fill: '#18222D' }));
+    addLayers({ design_path: dPath, parent_id: 'scene', layers: lines as unknown as Layer[] });
+    addLayers({ design_path: dPath, parent_id: 'scene', layers_shorthand: [{ id: 'mark', type: 'rect', pos: [280, 300, 400, 40], fill: '#C6F432' }, { id: 'under', type: 'rect', z: 1, pos: [0, 0, 10, 10], fill: '#000000' }] } as never);
+    const kids = findGroup(load().layers ?? [], 'scene')?.layers ?? [];
+    const z = (id: string): number => Number(kids.find(l => l.id === id)?.z);
+    expect(z('mark')).toBeGreaterThan(Math.max(z('line1'), z('line2'), z('line3'), z('card')));
+    expect(z('under')).toBe(1);
+    expect(JSON.stringify(load())).not.toContain('__auto_z');
+    addLayers({ design_path: dPath, layers_shorthand: [{ id: 'top', type: 'rect', pos: [0, 0, 10, 10], fill: '#000000' }] } as never);
+    expect(JSON.stringify(load())).not.toContain('__auto_z');
+  });
+
   it('says so when the parent is not there', () => {
     addLayers({ design_path: dPath, layers: scene(false) });
     const r = addLayers({ design_path: dPath, parent_id: 'nope', layers: tiny });
