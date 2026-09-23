@@ -445,6 +445,9 @@ function normalizeIconKey(s: string): string {
  * the caller then renders an honest placeholder rather than a wrong-but-
  * plausible icon.
  */
+/** Tokens that modify an icon name rather than name the object ("-x", "-plus", "-circle"). */
+const ICON_MODIFIERS = new Set(['x', 'check', 'plus', 'minus', 'circle', 'square', 'off', 'up', 'down', 'left', 'right']);
+
 export function resolveIconName(raw: string): string | null {
   if (!raw || typeof raw !== 'string') return null;
   if (ICON_NAME_SET.has(raw)) return raw;
@@ -458,11 +461,14 @@ export function resolveIconName(raw: string): string | null {
   if (ICON_ALIASES[flat]) return ICON_ALIASES[flat];
   if (key.endsWith('s') && ICON_NAME_SET.has(key.slice(0, -1))) return key.slice(0, -1);
   if (ICON_NAME_SET.has(`${key}s`)) return `${key}s`;
-  // Exactly one hyphen-token is itself a known icon → use it ("trash-can"→trash).
+  // A hyphen-token that is itself a known icon → use it ("trash-can"→trash). Names
+  // run object-then-modifier ("clipboard-x", "user-plus", "file-check"), so when
+  // several tokens are icons the first that is not a bare modifier is the object
+  // meant. "clipboard-x" drew a blank circle because clipboard AND x both hit.
   const tokens = key.split('-').filter(Boolean);
   if (tokens.length > 1) {
     const hits = tokens.map(t => (ICON_NAME_SET.has(t) ? t : ICON_ALIASES[t])).filter(Boolean) as string[];
-    if (hits.length === 1) return hits[0];
+    if (hits.length) return hits.find(h => !ICON_MODIFIERS.has(h)) ?? hits[0];
   }
   return null;
 }
