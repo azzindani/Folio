@@ -44,6 +44,12 @@ describe('rippleTrack', () => {
     expect(rep.stretched).toEqual([]);
   });
 
+  it('calls a held line held, when its exit frame names only the channel it fades', () => {
+    const rep = emptyReport();
+    rippleTrack('w1', track(1200, [{ t: 0, opacity: 0, y: 26 }, { t: 480, opacity: 1, y: 0 }, { t: 8500, opacity: 1 }, { t: 8950, opacity: 0 }]), { at: 3600, by: 700 }, rep);
+    expect(rep.stretched).toEqual([]);
+  });
+
   it('names a move under way at the edit, and refuses to close a span a keyframe sits in', () => {
     const rep = emptyReport();
     rippleTrack('pan', track(1000, [{ t: 0, x: 0 }, { t: 2000, x: -500 }]), { at: 2000, by: 500 }, rep);

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { Layer } from '../../schema/types';
-import { lintComposition } from './motion-lint';
+import { lintComposition, shotRests } from './motion-lint';
 
 const text = (id: string, x: number, y: number, value: string, extra: object = {}): Layer =>
   ({ id, type: 'text', z: 2, x, y, width: 600, height: 80, content: { type: 'plain', value }, style: { font_size: 60 }, ...extra } as unknown as Layer);
@@ -55,6 +55,16 @@ describe('lintComposition', () => {
     const two = text('two', 110, 110, 'Overlap');
     const notes = lintComposition([one, two], canvas, [{ id: 's1', at: 0 }, { id: 's2', at: 800 }], 1600);
     expect(kinds(notes)).toEqual(expect.arrayContaining(['overlap', 'reading']));
+  });
+
+  it('lands a line with its entrance, not its exit — and a held line is still, not drifting', () => {
+    // Benchmark r5: rise, hold, fade out — the merged exit frame names opacity alone.
+    const quote = text('quote', 100, 300, 'I booked a plumber at nine and he came', { animation: {
+      keyframes: [{ t: 0, opacity: 0, y: 26 }, { t: 480, opacity: 1, y: 0 }, { t: 7800, opacity: 1 }, { t: 8250, opacity: 0 }],
+      playback: { duration: 8250, delay: 1200, origin: 'offset' } } });
+    const marks = [{ id: 'quote', at: 0 }, { id: 'brand', at: 9500 }];
+    expect(kinds(lintComposition([quote], canvas, marks, 15000))).not.toContain('reading');
+    expect(shotRests([quote], marks, 15000)[0]?.still_ms).toBeGreaterThan(5000);
   });
 
   it('reads a short line in a wide box at its font size — the box is the ink, not the scale', () => {
