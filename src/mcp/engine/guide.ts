@@ -41,8 +41,8 @@ z = stacking order (higher = front)
 ✏️ EDIT / RESTYLE an existing design ("make it darker", "flip to a pastel palette",
    "boxier", "airier", "declutter"): a rename is NOT an edit — you MUST change the
    actual design. For a RECOLOR/restyle, read the design's current hexes (manage_design(op:inspect)
-   or read it), then patch_design with ONE {path:"recolor", value:{"#OLD":"#NEW", …}}
-   selector mapping every bg/text/accent hex to its new shade — that swaps the whole
+   or read it), then patch_design selectors:[{path:"recolor", value:{"#OLD":"#NEW", …}}] (ONE entry)
+   mapping every bg/text/accent hex to its new shade — that swaps the whole
    palette in one call. (themes(op:apply) does NOT recolor a design; it only sets the project
    default, and designs use baked-in hexes.) For structural edits (airier/declutter →
    remove layers + add whitespace; boxier → swap radii, add panels) use edit_layer(op:remove) +
