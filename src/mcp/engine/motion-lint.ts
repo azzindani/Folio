@@ -181,6 +181,24 @@ function quietest(moves: Segment[], from: number, until: number): { start: numbe
   return best;
 }
 
+/** Drawn area × opacity at t: how much is on screen, from the boxes. */
+const painted = (layers: Layer[], t: number): number =>
+  canvasBoxes(layersAt(layers, t)).reduce((sum, b) => sum + area(b.box) * b.opacity, 0);
+
+/**
+ * Where a shot is judged: its longest still stretch — unless that is the
+ * shot's pre-roll, before its first move, and the shot shows more at its end.
+ * A piece that fades its lines in at 300 ms and stops at 900 has no rest after
+ * them, and was judged on its empty opening frame: three lines flashed for a
+ * frame and the lint called it clean (found live, A4).
+ */
+function restOf(layers: Layer[], moves: Segment[], from: number, until: number): { start: number; end: number } {
+  const rest = quietest(moves, from, until);
+  const first = moves.filter(m => m.end > from && m.start < until).reduce((at, m) => Math.min(at, m.start), Infinity);
+  const preRoll = rest.start <= from && rest.end <= first && rest.end < until;
+  return preRoll && painted(layers, until - 1) > painted(layers, rest.end - 1) ? { start: until, end: until } : rest;
+}
+
 /** What a shot shows where it rests — measured once, so a later shot can look back at it. */
 interface ShotView {
   mark: LintMark; until: number; t: number;
@@ -239,7 +257,7 @@ function shotViews(layers: Layer[], canvas: { width: number; height: number }, m
   ordered.forEach((mark, i) => {
     const until = Math.min(ordered[i + 1]?.at ?? endMs, endMs);
     if (until <= mark.at) return;
-    const quiet = quietest(moves, mark.at, until);
+    const quiet = restOf(layers, moves, mark.at, until);
     const t = Math.max(mark.at, quiet.end - 1);
     const frame = layersAt(layers, t);
     const up = ancestry(frame);
@@ -464,7 +482,7 @@ export function shotRests(layers: Layer[], marks: LintMark[], endMs: number): Sh
   return shots.flatMap((m, i) => {
     const until = Math.min(shots[i + 1]?.at ?? endMs, endMs);
     if (until <= m.at) return [];
-    const rest = quietest(moves, m.at, until);
+    const rest = restOf(layers, moves, m.at, until);
     const still = quietest([...moves, ...drifts], m.at, until);
     return [{ shot: m.id, at: m.at, until, t: Math.max(m.at, rest.end - 1), rest_ms: rest.end - rest.start, still_ms: still.end - still.start }];
   });
