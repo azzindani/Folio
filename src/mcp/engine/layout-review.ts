@@ -14,6 +14,7 @@ import { renderToSVGString } from './svg-export';
 import { rasterizeSync } from '../../utils/resvg-isolate';
 import { resvgFontOption } from './fonts';
 import { cullUnseenClips } from '../../export/frame-cull';
+import { IDENTITY, poseAffine, compose, mapBox, type Affine } from './layout-pose';
 import {
   inkGrid, occupancy, emptyRects, balance, thirds, contentBox, round2,
   type Rect, type Balance,
@@ -83,14 +84,19 @@ export function groundLayers(layers: Layer[], W: number, H: number): Layer[] {
 /** What the page is built from: top-level layers, and the members of any
  *  full-canvas container (a preset group spans the page; its cards are the
  *  components). Largest first. */
-export function components(layers: Layer[], W: number, H: number, ground: Set<Layer>, depth = 0): Component[] {
+export function components(layers: Layer[], W: number, H: number, ground: Set<Layer>, depth = 0, at: Affine = IDENTITY): Component[] {
   const out: Component[] = [];
   for (const l of layers) {
     if (ground.has(l)) continue;
-    const g = geo(l);
+    // Measured where it is SEEN: a posed layer (a camera, a moving group)
+    // carries its children with it.
+    const pose = poseAffine(l);
+    const here = pose ? compose(at, pose) : at;
+    const authored = geo(l);
+    const g = authored ? mapBox(here, authored) : null;
     const inner = kids(l);
     if (inner && depth < 3 && (!g || (g.w * g.h) / (W * H) >= 0.85)) {
-      out.push(...components(inner, W, H, ground, depth + 1));
+      out.push(...components(inner, W, H, ground, depth + 1, here));
       continue;
     }
     if (!g || g.w <= 0 || g.h <= 0 || fullBleed(g, W, H)) continue;
@@ -124,6 +130,9 @@ export function typeScale(layers: Layer[], H: number): PageLayout['type_scale'] 
 const pct = (v: number): string => `${Math.round(v * 100)}%`;
 /** Backdrop shapes: a big one is a panel, not an oversized component. */
 const PANEL = new Set(['rect', 'ellipse', 'circle', 'path', 'polygon', 'background', 'shape', 'line']);
+/** A text box is not its ink — short copy in a wide box reaches no edge — so
+ *  edge facts are only stated for layers whose box IS what they draw. */
+const BOX_IS_INK = (type: string): boolean => type !== 'text' && type !== 'rich_text' && !PANEL.has(type);
 
 /** Facts worth a sentence — where the page crosses a line a viewer notices. */
 export function layoutNotes(p: Omit<PageLayout, 'notes'>): string[] {
@@ -133,8 +142,17 @@ export function layoutNotes(p: Omit<PageLayout, 'notes'>): string[] {
   const b = p.balance;
   if (b && Math.abs(b.offset.x) >= 0.08) out.push(`Visual weight sits ${pct(Math.abs(b.offset.x))} ${b.offset.x > 0 ? 'right' : 'left'} of centre (left/right ${b.left_right[0]}/${b.left_right[1]}).`);
   if (b && Math.abs(b.offset.y) >= 0.08) out.push(`Visual weight sits ${pct(Math.abs(b.offset.y))} ${b.offset.y > 0 ? 'below' : 'above'} centre (top/bottom ${b.top_bottom[0]}/${b.top_bottom[1]}).`);
-  for (const c of p.components) if (c.share.area >= 0.4 && !PANEL.has(c.type)) out.push(`"${c.id}" (${c.type}) covers ${pct(c.share.area)} of the canvas.`);
-  const [W] = p.canvas.split('×').map(Number);
+  const [W, H] = p.canvas.split('×').map(Number);
+  for (const c of p.components) {
+    if (PANEL.has(c.type)) continue;
+    if (c.share.area >= 0.4) out.push(`"${c.id}" (${c.type}) covers ${pct(c.share.area)} of the canvas.`);
+    if (!BOX_IS_INK(c.type)) continue;
+    if (c.share.area < 0.4 && c.share.w >= 0.94) out.push(`"${c.id}" (${c.type}) runs edge to edge: ${c.box.width} of ${W} px wide.`);
+    const b = c.box;
+    if (W && H && (b.x < 0 || b.y < 0 || b.x + b.width > W || b.y + b.height > H)) {
+      out.push(`"${c.id}" (${c.type}) is cut by the canvas edge: x ${b.x}–${b.x + b.width}, y ${b.y}–${b.y + b.height}.`);
+    }
+  }
   if (p.content_box && W && p.content_box.width / W < 0.6) out.push(`Content spans ${pct(p.content_box.width / W)} of the width.`);
   return out;
 }

@@ -10,7 +10,7 @@ const box = (id: string, x: number, y: number, w: number, h: number, extra: obje
   ({ id, type: 'rect', x, y, width: w, height: h, z: 2, fill: { type: 'solid', color: '#1f2937' }, ...extra }) as unknown as Layer;
 const bg = { id: 'bg', type: 'rect', x: 0, y: 0, width: 1920, height: 1080, z: 0, fill: { type: 'solid', color: '#ffffff' } } as unknown as Layer;
 const shot = (s: Partial<ShotLayout>): ShotLayout =>
-  ({ shot: 's', at: 0, t: 0, rest_ms: 2000, still_ms: 2000, ink: 0, occupied: 0, empty: [], balance: null, notes: [], ...s });
+  ({ shot: 's', at: 0, t: 0, rest_ms: 2000, still_ms: 2000, ink: 0, occupied: 0, empty: [], balance: null, components: [], notes: [], ...s });
 
 describe('shotRests', () => {
   it('finds each shot\'s quiet stretch and its truly still time', () => {
