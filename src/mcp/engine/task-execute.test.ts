@@ -59,6 +59,17 @@ describe('tasks {op:"execute"}', () => {
     if (prev === undefined) delete process.env['FOLIO_PROJECTS_DIR']; else process.env['FOLIO_PROJECTS_DIR'] = prev;
   });
 
+  it('reads ${x.design_path} / ${x.project_path} from the handover a reply carries forward (A1 live check)', async () => {
+    const r = await run({ steps: [
+      { tool: 'create_project', args: { name: 'natural' }, as: 'p' },
+      { tool: 'create_design', args: { project_path: '${p.project_path}', name: 'hero', width: 800, height: 600 }, as: 'd' },
+      { tool: 'add_layers', args: { design_path: '${d.design_path}', layers_shorthand: [{ id: 't', type: 'text', content: 'Hi', pos: [40, 40, 400, 80], size: 48 }] } },
+    ] });
+    expect(r['success'], String(r['error'])).toBe(true);
+    const miss = await run({ steps: [{ tool: 'create_project', args: { name: 'natural' }, as: 'p' }, { tool: 'create_design', args: { project_path: '${p.nope}', name: 'x' } }] });
+    expect(String(miss['hint'])).toMatch(/p has: .*path/);
+  });
+
   it('runs a build in one call — each step through the real tool — and hands back the last step\'s baton', async () => {
     const r = await run({ steps: [
       { tool: 'create_project', args: { name: 'chain' } },

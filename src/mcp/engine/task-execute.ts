@@ -41,7 +41,24 @@ export function lookup(results: Record<string, Rec>, ref: string): unknown {
   const [head, ...rest] = ref.split('.');
   let v: unknown = head !== undefined ? results[head] : undefined;
   for (const k of rest) v = v !== null && typeof v === 'object' ? (v as Rec)[k] : undefined;
+  // create_design replies `path`, the next tool asks for design_path: a chain
+  // written the natural way (${d.design_path}) failed (A1 live check). The
+  // reply's handover.carry_forward holds exactly the values meant for the next
+  // step, under the next step's names.
+  if (v === undefined && head !== undefined && rest.length === 1 && rest[0] !== undefined) {
+    const carry = (results[head]?.['handover'] as Rec | undefined)?.['carry_forward'];
+    if (carry !== null && typeof carry === 'object') v = (carry as Rec)[rest[0]];
+  }
   return v;
+}
+
+/** What a referenced reply does have — for the error when a ref misses. */
+function fieldsOf(results: Record<string, Rec>, refs: string[]): string {
+  const heads = [...new Set(refs.map(r => r.split('.')[0] ?? ''))];
+  return heads.map(h => {
+    const r = results[h];
+    return r ? `${h} has: ${Object.keys(r).filter(k => !DROP.has(k)).slice(0, 12).join(', ')}` : `no earlier step is named "${h}"`;
+  }).join('; ');
 }
 
 const WHOLE = /^\$\{([\w.-]+)\}$/;
@@ -178,7 +195,7 @@ export async function executeSteps(a: { steps?: unknown; dry_run?: boolean }, se
     const label = s.do ? 'for_each' : s.recipe !== undefined ? `recipe:${s.recipe}` : `${s.tool ?? ''}${typeof args['op'] === 'string' ? `:${args['op']}` : ''}`;
     let r: ToolResult;
     if (missing.length) {
-      r = errResult(label, `Refers to ${missing.map(m => `\${${m}}`).join(', ')}, which the earlier result does not have`, 'Check the field name in that step\'s reply.');
+      r = errResult(label, `Refers to ${missing.map(m => `\${${m}}`).join(', ')}, which the earlier result does not have`, `Check the field name — ${fieldsOf(results, missing)}.`);
     } else if (s.do) {
       r = await runLoop(s, results, stack);
     } else if (s.recipe !== undefined) {
