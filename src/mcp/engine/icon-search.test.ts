@@ -43,4 +43,13 @@ describe('icon_search — look a name up instead of guessing it', () => {
   it('honours limit', () => {
     expect((run({ query: 'a', limit: 5 }).icons ?? []).length).toBeLessThanOrEqual(5);
   });
+
+  // benchmark r6 b23: "router", "plug", "lightbulb" are Lucide glyphs the bundled slice lacks; the reply read as a dead end.
+  it('hands over the fetch for a glyph the bundled set lacks, and none for one it has', () => {
+    const r = run({ query: 'router' }) as Res & { fetch?: { tool: string; params: Record<string, unknown> } };
+    expect(r.resolves_to).toBeNull();
+    expect(r.fetch).toEqual({ tool: 'manage_design', params: { op: 'asset_fetch', ref: 'iconify:lucide:router', icon_color: '#…' } });
+    expect(String(r.note)).toMatch(/asset_search \{what:"icon"/);
+    expect((run({ query: 'wifi' }) as Res & { fetch?: unknown }).fetch).toBeUndefined();
+  });
 });

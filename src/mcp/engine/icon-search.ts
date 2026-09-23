@@ -118,9 +118,14 @@ export function iconSearch(a: { query?: string; limit?: number } = {}): ToolResu
     total: matches.length,
     icons: matches,
     ...(concepts.length ? { by_concept: concepts } : {}),
+    // The bundled set is a slice of Lucide: a glyph it lacks is one fetch away, as an image.
+    // Only the starter list came back for "router" (benchmark r6, b23), and it read as a dead end.
     ...(resolved
       ? {}
-      : { note: `"${q}" is not itself a bundled icon — that name would render as a blank fallback circle. Pick one of the names above${merged.length ? '' : ' (nothing matched, so these are the common ones)'}. Icons take the layer \`color\` (currentColor by default) — set it explicitly on a dark canvas.` }),
+      : {
+        note: `"${q}" is not itself a bundled icon — that name would render as a blank fallback circle. Pick one of the names above${merged.length ? '' : ' (nothing matched, so these are the common ones)'}, or fetch the glyph itself: fetch below stores Lucide's "${q}" as an SVG in the project (icon_color sets its colour), placed as an image layer with the returned src. Not a Lucide name? asset_search {what:"icon", query:"${q}"} searches 200k icons. Icons take the layer \`color\` (currentColor by default) — set it explicitly on a dark canvas.`,
+        fetch: { tool: 'manage_design', params: { op: 'asset_fetch', ref: `iconify:lucide:${q.replace(/\s+/g, '-')}`, icon_color: '#…' } },
+      }),
     progress: [pOk(`${matches.length} match(es) for "${q}"`, resolved ? `"${q}" resolves to "${resolved}"` : 'no direct resolution')],
     context: buildContext(op, `Icon search "${q}" — ${matches.length} match(es)`),
   });
