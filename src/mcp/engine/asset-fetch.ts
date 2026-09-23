@@ -15,6 +15,8 @@ import {
   type AssetProvenance, type IngestArgs, type AssetEntry,
 } from './assets';
 import { ingestLibraryAsset, libraryBySource, libraryAbsPath } from './asset-library';
+import { assetCap, videoLayerStub } from './asset-media';
+import { resolveWikimediaVideo, resolveNasaVideo } from './asset-video-sources';
 import { readFontNames } from '../../utils/font-name-table';
 import type { ToolResult, NextAction, ProgressItem } from '../types';
 
@@ -24,7 +26,7 @@ export interface ResolvedAsset {
   url: string;                 // direct file URL to download
   suggestedName: string;       // slug, no extension
   ext?: string;                // when the provider is authoritative about it
-  kind?: 'images' | 'icons' | 'fonts' | 'audio';
+  kind?: 'images' | 'icons' | 'fonts' | 'audio' | 'video';
   license?: string;
   attribution?: string;
   creator?: string;
@@ -227,6 +229,8 @@ export async function resolveRef(ref: string, opts: { projectDir: string; icon_p
     case 'openverse': return { resolved: await resolveOpenverse(rest) };
     case 'openverse-audio': return { resolved: await resolveOpenverseAudio(rest) };
     case 'wikimedia': return { resolved: await resolveWikimedia(rest) };
+    case 'wikimedia-video': return { resolved: await resolveWikimediaVideo(rest) };
+    case 'nasa-video': return { resolved: await resolveNasaVideo(rest) };
     case 'iconify':   return { resolved: await resolveIconify(rest, opts.icon_px ?? 512, opts.icon_color) };
     case 'font':      return { resolved: await resolveFont(rest, opts.weight) };
     case 'https': {
@@ -243,7 +247,7 @@ export async function resolveRef(ref: string, opts: { projectDir: string; icon_p
     case 'http':
       throw new NetError('Plain http:// is refused — the response could be tampered with in transit', `Use the https:// form of ${raw}.`);
     default:
-      throw new NetError(`Unknown ref scheme "${scheme}"`, 'Refs look like openverse:<id>, openverse-audio:<id>, wikimedia:<File title>, iconify:<set>:<name>, font:<id>, or a plain https:// URL.');
+      throw new NetError(`Unknown ref scheme "${scheme}"`, 'Refs look like openverse:<id>, openverse-audio:<id>, wikimedia:<File title>, wikimedia-video:<File title>, nasa-video:<id>, iconify:<set>:<name>, font:<id>, or a plain https:// URL.');
   }
 }
 
@@ -286,17 +290,20 @@ export function creditDue(p?: AssetProvenance): string | undefined {
 
 const secs = (e: AssetEntry): string => typeof e.duration_ms === 'number' ? ` (${(e.duration_ms / 1000).toFixed(1)} s)` : '';
 
-/** A ready-to-place layer for an image; a sound is not a layer, so it gets where it goes instead. */
+/** A ready-to-place layer for an image or clip; a sound is not a layer, so it gets where it goes instead. */
 function assetStub(entry: AssetEntry): Record<string, unknown> {
+  if (entry.kind === 'video') return videoLayerStub(entry);
   if (entry.kind !== 'audio') return libraryLayerStub(entry);
   return { note: `Sound stored at ${entry.path}${secs(entry)}. It plays from the timeline, not a layer: animation(op:audio, src:"${entry.path}").` };
 }
 
-/** The call that uses the asset: place the image, or put the sound on the timeline. */
+const TRIM_HINT = ' A clip plays from its first frame for its whole length — once placed, trim it to the moment with animation(op:video, layer_id, in, out).';
+
+/** The call that uses the asset: place the image or clip, or put the sound on the timeline. */
 function nextStep(entry: AssetEntry, stub: Record<string, unknown>, hint: string): NextAction {
-  return entry.kind === 'audio'
-    ? { tool: 'animation', params: { op: 'audio', design_path: '<your .design.yaml>', src: entry.path }, remaining: 0, hint }
-    : { tool: 'add_layers', params: { design_path: '<your .design.yaml>', layers_shorthand: [stub] }, remaining: 0, hint };
+  if (entry.kind === 'audio') return { tool: 'animation', params: { op: 'audio', design_path: '<your .design.yaml>', src: entry.path }, remaining: 0, hint };
+  const trim = entry.kind === 'video' ? TRIM_HINT : '';
+  return { tool: 'add_layers', params: { design_path: '<your .design.yaml>', layers_shorthand: [stub] }, remaining: 0, hint: hint + trim };
 }
 
 /**
@@ -350,7 +357,8 @@ export async function assetFetch(args: {
     const { resolved, allow } = await resolveRef(ref, opts);
     progress.push(pInfo('Source resolved', `${resolved.title ?? resolved.suggestedName} — ${resolved.license ?? 'licence unknown'}`));
 
-    const got = await httpBytes(resolved.url, maxAssetBytes(), allow);
+    // A clip gets the video cap; everything else the artwork cap.
+    const got = await httpBytes(resolved.url, assetCap(resolved.kind ?? '', maxAssetBytes()).bytes, allow);
     // The wire's content-type outranks the provider's guess and the URL's
     // extension: it is the only one describing the bytes we actually hold.
     const ext = extForMime(got.contentType) ?? resolved.ext
@@ -406,7 +414,7 @@ export async function assetFetch(args: {
 
     progress.push(pOk('Fetched', `${entry.path} (${Math.round(entry.bytes / 1024)} KiB${entry.width ? `, ${entry.width}×${entry.height}` : ''})`));
     for (const w of warnings) progress.push(pWarn('Note', w));
-    if (!args.alt && entry.kind !== 'audio') progress.push(pWarn('No alt given', 'The stored alt is the provider\'s title — replace it with what the image actually shows.'));
+    if (!args.alt && entry.kind !== 'audio') progress.push(pWarn('No alt given', `The stored alt is the provider's title — replace it with what the ${entry.kind === 'video' ? 'footage' : 'image'} actually shows.`));
     // The colour is baked at FETCH time (see iconColorParam): a standalone SVG
     // has nothing to inherit from, so an untinted icon is black, and on a dark
     // canvas it is invisible — a failure the reviewer could only find by paying

@@ -6,24 +6,26 @@
 //   wikimedia  → Commons: documentary photos, diagrams, historic + PD material
 //   iconify    → 200k+ icons across 150 open sets, incl. brand marks
 //   fontsource → the Google Fonts / open-source font catalogue
+//   clips      → Commons video + NASA footage (asset-video-sources.ts)
 //
 // Nothing is downloaded here. Search returns CANDIDATES carrying a `ref`; the
 // bytes only land in a project when asset_fetch is called with that ref, and
 // the licence attached to the ref is the provider's word, not the model's.
 import { httpJSON, NetError, netEnabled } from './asset-net';
+import { searchWikimediaVideo, searchNasaVideo } from './asset-video-sources';
 import type { ToolResult, NextAction } from '../types';
 import { okResult, errResult, buildContext, buildHandover, pOk, pInfo, pWarn } from './utils';
 
-export type AssetSourceId = 'openverse' | 'wikimedia' | 'iconify' | 'font';
+export type AssetSourceId = 'openverse' | 'wikimedia' | 'iconify' | 'font' | 'nasa';
 
 export interface AssetCandidate {
   ref: string;                 // hand to asset_fetch
   source: AssetSourceId;
-  kind: 'images' | 'icons' | 'fonts' | 'audio';
+  kind: 'images' | 'icons' | 'fonts' | 'audio' | 'video';
   title: string;
   width?: number;
   height?: number;
-  duration_ms?: number;        // audio: how long the file plays
+  duration_ms?: number;        // audio/video: how long the file plays
   filetype?: string;
   license?: string;            // human label, e.g. "CC BY-SA 2.0" / "OFL-1.1"
   attribution?: string;        // ready-to-print credit line (when required)
@@ -225,7 +227,7 @@ export async function searchFonts(query: string, limit: number): Promise<AssetCa
 }
 
 // ── Multiplexer ──────────────────────────────────────────────
-export type SearchWhat = 'photo' | 'illustration' | 'diagram' | 'icon' | 'font' | 'logo' | 'sound' | 'music';
+export type SearchWhat = 'photo' | 'illustration' | 'diagram' | 'icon' | 'font' | 'logo' | 'sound' | 'music' | 'clip';
 
 const CATEGORY: Partial<Record<SearchWhat, string>> = {
   photo: 'photograph',
@@ -251,6 +253,10 @@ export async function runSearch(what: SearchWhat, query: string, limit: number)
     jobs.push({ id: 'wikimedia', run: () => searchWikimedia(query, n) });
   } else if (what === 'sound') {
     jobs.push({ id: 'openverse', run: () => searchOpenverseAudio(query, n) });
+  } else if (what === 'clip') {
+    // Footage (asset-video-sources.ts): Commons, short clips first, and NASA.
+    jobs.push({ id: 'wikimedia', run: () => searchWikimediaVideo(query, n) });
+    jobs.push({ id: 'nasa', run: () => searchNasaVideo(query, Math.ceil(n / 2)) });
   } else if (what === 'music') {
     // Few providers tag music, so the tagged set is topped up from an untagged search.
     jobs.push({ id: 'openverse', run: () => searchOpenverseAudio(query, n, 'music') });
@@ -284,9 +290,33 @@ export async function runSearch(what: SearchWhat, query: string, limit: number)
 }
 
 // ── MCP op ───────────────────────────────────────────────────
-const WHATS: SearchWhat[] = ['photo', 'illustration', 'diagram', 'icon', 'font', 'logo', 'sound', 'music'];
-const WHAT_ALIASES: Record<string, SearchWhat> = { audio: 'sound', sfx: 'sound', sound_effect: 'sound', effect: 'sound', song: 'music', image: 'photo' };
+const WHATS: SearchWhat[] = ['photo', 'illustration', 'diagram', 'icon', 'font', 'logo', 'sound', 'music', 'clip'];
+const WHAT_ALIASES: Record<string, SearchWhat> = { audio: 'sound', sfx: 'sound', sound_effect: 'sound', effect: 'sound', song: 'music', image: 'photo',
+  video: 'clip', footage: 'clip', broll: 'clip', 'b-roll': 'clip', b_roll: 'clip', stock_video: 'clip', clips: 'clip' };
 const isAudio = (w: SearchWhat): boolean => w === 'sound' || w === 'music';
+
+/** What to say about a result set, by the kind of thing searched for. */
+function searchHint(what: SearchWhat, any: boolean): string {
+  if (isAudio(what)) {
+    return any
+      ? 'These are candidates, not files. duration_ms is the length of the file: a cue wants well under 2 s, a music bed the length of the piece (or loop:true on op:audio). Prefer CC0 — a CC BY sound needs its credit line on the piece.'
+      : 'No matches. Name the sound plainly — "whoosh", "click", "pop", "piano loop", "ambient pad" — rather than the mood.';
+  }
+  if (what === 'clip') {
+    return any
+      ? 'These are candidates, not files. Shortest first; duration_ms is the whole file — fetch one, place it as a video layer, then trim it to the moment with animation(op:video, in/out). width/height are the source pixels.'
+      : 'No matches. Name what is on screen — "ocean waves", "city traffic", "rocket launch" — rather than the mood.';
+  }
+  return any
+    ? 'These are candidates, not files. Fetch one with op:"asset_fetch" + its ref. width/height are the native pixels — size the layer to that aspect.'
+    : 'No matches. Openverse/Commons index real photographs — for an abstract idea, search the concrete object instead ("stack of paper" not "bureaucracy").';
+}
+
+function fetchHint(what: SearchWhat): string {
+  if (isAudio(what)) return 'Pick a ref and fetch it, then put it on the timeline with animation(op:audio, src). Fetching stores the file AND its licence; a CC BY sound needs its credit line on the piece.';
+  if (what === 'clip') return 'Pick a ref and fetch it; the reply hands back the video layer to add. Fetching stores the file AND its licence; a CC BY clip needs its credit line on the piece.';
+  return 'Pick a ref and fetch it. Fetching stores the file AND its licence; asset_list then reports any credit line you must typeset.';
+}
 
 /**
  * manage_design {op:"asset_search"} — find openly-licensed material.
@@ -331,12 +361,10 @@ export async function assetSearch(args: { query?: string; what?: string; limit?:
       op: 'asset_fetch',
       project_path: args.project_path ?? '<your project>',
       ref: first.ref,
-      alt: isAudio(what) ? '<what the sound is>' : '<describe what the image shows>',
+      alt: isAudio(what) ? '<what the sound is>' : what === 'clip' ? '<describe what the footage shows>' : '<describe what the image shows>',
     },
     remaining: 0,
-    hint: isAudio(what)
-      ? 'Pick a ref and fetch it, then put it on the timeline with animation(op:audio, src). Fetching stores the file AND its licence; a CC BY sound needs its credit line on the piece.'
-      : `Pick a ref and fetch it. Fetching stores the file AND its licence; asset_list then reports any credit line you must typeset.`,
+    hint: fetchHint(what),
   } : undefined;
 
   const context = buildContext(op, `asset_search "${query}" → ${found.results.length}`);
@@ -345,13 +373,7 @@ export async function assetSearch(args: { query?: string; what?: string; limit?:
     query, what, results: found.results,
     ...(found.failures.length ? { unavailable: found.failures } : {}),
     licensing: 'Every result here allows commercial use and modification, but many require a CREDIT LINE. attribution is the exact text; it must appear on the design.',
-    hint: isAudio(what)
-      ? (found.results.length
-        ? 'These are candidates, not files. duration_ms is the length of the file: a cue wants well under 2 s, a music bed the length of the piece (or loop:true on op:audio). Prefer CC0 — a CC BY sound needs its credit line on the piece.'
-        : 'No matches. Name the sound plainly — "whoosh", "click", "pop", "piano loop", "ambient pad" — rather than the mood.')
-      : found.results.length
-        ? 'These are candidates, not files. Fetch one with op:"asset_fetch" + its ref. width/height are the native pixels — size the layer to that aspect.'
-        : 'No matches. Openverse/Commons index real photographs — for an abstract idea, search the concrete object instead ("stack of paper" not "bureaucracy").',
+    hint: searchHint(what, found.results.length > 0),
     ...(next_action ? { next_action } : {}),
     progress, context, handover,
   });

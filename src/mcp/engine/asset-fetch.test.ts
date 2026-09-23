@@ -366,6 +366,22 @@ describe('assetFetch — sound', () => {
     expect((r['provenance'] as Record<string, unknown>)['attribution']).toContain('CC0');
   });
 
+  it.skipIf(!hasProbe)('files a fetched clip under the video cap and hands back a video layer to place', async () => {
+    const dir = makeProject('clip-fetch');
+    const file = path.join(dir, 'c.mp4');
+    spawnSync('ffmpeg', ['-v', 'error', '-f', 'lavfi', '-i', 'testsrc=size=320x180:rate=10:duration=1', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-y', file]);
+    jsonMock.mockResolvedValue({ collection: { items: [{ href: 'http://images-assets.nasa.gov/video/L/L~mobile.mp4' }] } });
+    bytesMock.mockResolvedValue({ buffer: fs.readFileSync(file), contentType: 'video/mp4', finalUrl: 'https://images-assets.nasa.gov/video/L/L~mobile.mp4' });
+    const r = await assetFetch({ project_path: dir, ref: 'nasa-video:L', alt: 'test card' }) as Record<string, unknown>;
+    expect(r['success']).toBe(true);
+    expect(bytesMock.mock.calls[0]?.[1]).toBe(64 * 1024 * 1024);
+    expect(r['asset']).toMatchObject({ kind: 'video', width: 320, height: 180 });
+    expect(r['layer_stub']).toMatchObject({ type: 'video', pos: [120, 120, 320, 180] });
+    const next = r['next_action'] as { tool: string; hint: string };
+    expect(next.tool).toBe('add_layers');
+    expect(next.hint).toContain('op:video');
+  });
+
   it.skipIf(!hasProbe)('refuses bytes with no sound in them instead of filing a silent "track"', async () => {
     const dir = makeProject('sound-junk');
     jsonMock.mockResolvedValue({ url: 'https://cdn.freesound.org/previews/2/2-hq.mp3', title: 'Not A Sound', license: 'cc0', filetype: 'mp3' });
