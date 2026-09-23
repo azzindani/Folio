@@ -25,7 +25,7 @@ const FILES = [
   { path: 'sfx/ui/click-1.mp3', license: 'CC0', title: 'UI click, short and dry', tags: ['sfx', 'ui', 'click'], duration_ms: 90 },
   { path: 'svg/logos/github.svg', license: 'CC0', title: 'GitHub logo', tags: ['logo', 'brand', 'github'] },
   { path: 'svg/flags/jp.svg', license: 'MIT', title: 'flag of Japan', tags: ['flag', 'jp', 'japan', 'asia'] },
-  { path: 'music/lofi/jazz-organ-loop-95.mp3', license: 'CC0', title: 'lo-fi jazz organ loop, 95 BPM', tags: ['music', 'lofi', 'chill', 'loop'], duration_ms: 40464, bpm: 95 },
+  { path: 'music/lofi/jazz-organ-loop-95.mp3', license: 'CC0', title: 'lo-fi jazz organ loop, 95 BPM', tags: ['music', 'lofi', 'chill', 'loop'], duration_ms: 40464, bpm: 95, page: 'https://freesound.org/people/h/sounds/1' },
 ];
 
 beforeAll(() => {
@@ -75,6 +75,15 @@ describe('asset_search with the pack', () => {
       expect(r['next_action']).toMatchObject({ tool: 'animation', params: { op: 'audio', src: 'lib/folio/sfx/ui/click-1.mp3' } });
       expect(JSON.stringify(r['progress'])).toContain('Internet search is off');
     } finally { delete process.env['FOLIO_ASSET_NET']; }
+  });
+
+  it('does not list a track twice when the internet finds the file the pack already holds', async () => {
+    jsonMock.mockResolvedValue({ results: [
+      { id: 'same', title: 'Jazz organ', url: 'https://x/a.mp3', filetype: 'mp3', license: 'cc0', duration: 40000, foreign_landing_url: 'https://freesound.org/people/h/sounds/1/' },
+      { id: 'other', title: 'Chill keys', url: 'https://x/b.mp3', filetype: 'mp3', license: 'cc0', duration: 30000, foreign_landing_url: 'https://freesound.org/people/h/sounds/2' },
+    ] });
+    const r = await assetSearch({ query: 'chill', what: 'music', limit: 6 }) as Record<string, unknown>;
+    expect((r['results'] as Array<{ ref: string }>).map(c => c.ref)).toEqual(['pack:music/lofi/jazz-organ-loop-95.mp3', 'openverse-audio:other']);
   });
 
   it('lists pack hits first online, but never more than half the list', async () => {

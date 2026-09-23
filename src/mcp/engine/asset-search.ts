@@ -373,8 +373,13 @@ export async function assetSearch(args: { query?: string; what?: string; limit?:
     }
   }
   // The pack leads but never crowds the internet out: at most half the list.
+  // A pack file came from somewhere — the same track found online again is
+  // the one already on disk, so it is not listed twice.
   const packShown = online ? pack.slice(0, Math.ceil(n / 2)) : pack;
-  const results = [...packShown, ...found.results].slice(0, n);
+  const pageKey = (u?: string): string => String(u ?? '').replace(/\/+$/, '').toLowerCase();
+  const packPages = new Set(pack.map(c => pageKey(c.page)).filter(Boolean));
+  const fresh = found.results.filter(c => !packPages.has(pageKey(c.page)));
+  const results = [...packShown, ...fresh].slice(0, n);
 
   const progress = [pOk('Searched', `${results.length} result(s) for "${query}" (${what})`)];
   if (packShown.length) progress.push(pOk('Bundled pack', `${packShown.length} already in the library — use their path, no fetch`));
