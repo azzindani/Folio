@@ -40,6 +40,10 @@ describe('classEms — a line within a few percent of the real face', () => {
     // One word — the class average put it 16% wide and it broke mid-token.
     ['Archivo', 900, 'DRIFT'],
     ['Archivo', 900, 'ICE COLD.'],
+    // Symbols were measured at the punctuation average: "40%" drew 30 px past its box (benchmark r4).
+    ['Barlow Condensed', 800, '40%'],
+    ['Anton', 400, '25% OFF'],
+    ['Oswald', 700, 'NOW — $49 @ “HOME”'],
   ];
   for (const [family, weight, text] of cases) {
     it(`${family} ${weight}: "${text}"`, () => {

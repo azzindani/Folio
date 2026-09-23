@@ -9,14 +9,18 @@
 // its narrow I. A family not in the table keeps the old guess.
 import { isWideChar, WIDE_EM } from './text-width';
 
-/** A face's widths: [lower, upper, digit, space, punctuation] in em, and each letter's shape. */
+/** A face's widths: [lower, upper, digit, space, punctuation, symbols] in em, and each glyph's shape. */
 export interface WidthClasses { classes: readonly number[]; shape: ReadonlyMap<string, number> }
 
 // Loaded as its own chunk and awaited at module load: the editor's main entry
 // stays under its size gate while every caller still measures synchronously.
 const TABLE = (await import('./font-widths.json')).default as Record<string, { s: string; w: Record<string, string> }>;
-/** The glyphs the shape covers, in the generator's order (PUNCT last). */
-const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789' + '.,:;!?\'"-()&/';
+/** Symbols — their own class, since a bold face widens them far less than its dots and commas. */
+const SYMBOLS = '%$€£¥@#*+=<>[]~_|×';
+/** The glyphs the shape covers, in the generator's order (PUNCT, then SYMS). */
+const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789' + '.,:;!?\'"-()&/’‘“”–—…•·' + SYMBOLS;
+/** The generator's scale for a glyph's shape (scripts/gen-font-widths.ts). */
+const SHAPE_SCALE = 400;
 const unpack = (s: string): number[] => (s.match(/.{2}/g) ?? []).map(p => parseInt(p, 36));
 const shapes = new Map<string, ReadonlyMap<string, number>>();
 
@@ -24,7 +28,7 @@ function shapeOf(key: string, packed: string): ReadonlyMap<string, number> {
   let m = shapes.get(key);
   if (!m) {
     const v = unpack(packed);
-    m = new Map([...LETTERS].map((ch, i) => [ch, (v[i] ?? 500) / 500]));
+    m = new Map([...LETTERS].map((ch, i) => [ch, (v[i] ?? SHAPE_SCALE) / SHAPE_SCALE]));
     shapes.set(key, m);
   }
   return m;
@@ -47,7 +51,7 @@ export function widthClasses(family: unknown, weight?: unknown): WidthClasses | 
 
 /** Width of `text` in em for a face: letters and digits by their shape, the rest by class, full-width glyphs at WIDE_EM. */
 export function classEms(c: WidthClasses, text: string): number {
-  const [lower = 0.5, upper = 0.6, digit = 0.55, space = 0.25, other = 0.3] = c.classes;
+  const [lower = 0.5, upper = 0.6, digit = 0.55, space = 0.25, other = 0.3, symbol = other] = c.classes;
   let em = 0;
   for (const ch of text) {
     const rel = c.shape.get(ch);
@@ -55,6 +59,7 @@ export function classEms(c: WidthClasses, text: string): number {
     else if (ch === ' ') em += space;
     else if (ch >= '0' && ch <= '9') em += digit * (rel ?? 1);
     else if (ch.toLowerCase() !== ch.toUpperCase()) em += (ch === ch.toUpperCase() ? upper : lower) * (rel ?? 1);
+    else if (SYMBOLS.includes(ch)) em += symbol * (rel ?? 1);
     else em += other * (rel ?? 1);
   }
   return em;
