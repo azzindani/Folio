@@ -9,7 +9,8 @@
 import * as fs from 'fs';
 import type { DesignSpec, Layer } from '../schema/types';
 import type { ToolResult, ProgressItem } from './types';
-import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, pOk, pWarn, buildContext } from './engine/utils';
+import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, pOk, pWarn, pInfo, buildContext } from './engine/utils';
+import { LOCKED_EDIT_NOTE } from './engine/layer-lookup';
 import { buildEditorLink } from './engine/editor-link';
 import { drawnBox, findTargets, scaleAbout, translateSubtree, union, type Rect } from './engine/layer-transform';
 
@@ -40,10 +41,7 @@ function load(op: string, a: Common): Loaded | ToolResult {
   if (!ids.length) return errResult(op, 'No layer named.', 'Pass layer_id, or layer_ids to move/scale several as one block.');
   const { targets, unresolved, locked } = findTargets(layers, ids);
   const block = union(targets.map(drawnBox).filter((b): b is Rect => b !== null));
-  if (!block) {
-    const why = locked.length ? `Inside a LOCKED group: ${locked.join(', ')} — move the locked group itself, or use patch_design.` : `Not found or not positioned: ${ids.join(', ')}.`;
-    return errResult(op, 'Nothing to edit.', why);
-  }
+  if (!block) return errResult(op, 'Nothing to edit.', `Not found or not positioned: ${ids.join(', ')}.`);
   return { dPath, spec, targets, block, unresolved, locked };
 }
 
@@ -55,12 +53,12 @@ function commit(op: string, l: Loaded, before: Rect, detail: string, extra: Reco
   const after = union(l.targets.map(drawnBox).filter((b): b is Rect => b !== null)) ?? before;
   progress.push(pOk(`${op === 'move_layers' ? 'Moved' : 'Scaled'} ${l.targets.length} layer(s)`, detail));
   if (l.unresolved.length) progress.push(pWarn('Not found — left alone', l.unresolved.join(', ')));
-  if (l.locked.length) progress.push(pWarn('Inside a LOCKED group — left alone', l.locked.join(', ')));
+  if (l.locked.length) progress.push(pInfo(LOCKED_EDIT_NOTE, l.locked.join(', ')));
   const link = buildEditorLink(l.dPath);
   return okResult(op, {
     status: 'ok', layers: l.targets.map(t => t.id), ...extra, before: box(before), after: box(after),
     ...(l.unresolved.length ? { unresolved: l.unresolved } : {}),
-    ...(l.locked.length ? { skipped_locked: l.locked } : {}),
+    ...(l.locked.length ? { in_locked_group: l.locked } : {}),
     backup, open_url: link.open_url, share_url: link.short_url, editor_url: link.editor_url, progress,
     context: buildContext(op, `${detail} in "${l.spec.meta.name}"`), _attachments: [link.attachment],
   });

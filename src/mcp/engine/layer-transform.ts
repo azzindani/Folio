@@ -82,10 +82,11 @@ export function drawnBox(l: Layer): Rect | null {
 }
 
 export interface Targets {
-  /** Found, editable, and not inside another target (it would move twice). */
+  /** Found, and not inside another target (it would move twice). */
   targets: Layer[];
   unresolved: string[];
-  /** Inside a LOCKED group — `id (in "group")` — left alone. */
+  /** Targets inside a LOCKED group — `id (in "group")`. Edited all the same (they
+   *  were named — see LOCKED_EDIT_NOTE); listed so the reply can say so. */
   locked: string[];
 }
 
@@ -105,8 +106,8 @@ export function findTargets(layers: Layer[], ids: string[]): Targets {
   walk(layers, undefined, false);
   const all = [...found.values()];
   return {
-    targets: all.filter(f => !f.lockedBy && !f.inTarget).map(f => f.l),
+    targets: all.filter(f => !f.inTarget).map(f => f.l),
     unresolved: ids.filter(id => !found.has(id)),
-    locked: all.filter(f => f.lockedBy).map(f => `${f.l.id} (in "${f.lockedBy}")`),
+    locked: all.filter(f => f.lockedBy && !f.inTarget).map(f => `${f.l.id} (in "${f.lockedBy}")`),
   };
 }

@@ -39,7 +39,7 @@ CONTINUOUS COMPOSITION — one scene, many sub-sequences (a 30 s motion piece)
   pages wiping past. Lay the scene out FIRST, in ONE add_layers call, inside one
   group with locked:true — layers of a continuous scene overlap on purpose (they take
   turns in time) and the layout rescue would push them apart; it leaves a locked group
-  alone, and every motion op still reaches its children by id. A world wider than the
+  alone, and every motion op and edit_layer op still reaches its children by id. A world wider than the
   canvas comes before the layout: animation(op:camera, world:{x:0,y:0,width:3840,height:1080}).
   Then build the scene on that page:
     animation(op:storyboard, shots:[

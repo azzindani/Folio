@@ -10,7 +10,7 @@ import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, 
 
 import { buildEditorLink } from './engine/editor-link';
 import { errorFindings } from './engine/diagnose-collect';
-import { scopesWithLayer, lockedAncestorOf, lockedError, removeDeep } from './engine/layer-lookup';
+import { scopesWithLayer, lockedAncestorOf, removeDeep, LOCKED_EDIT_NOTE } from './engine/layer-lookup';
 
 import type { NextAction } from './types';
 
@@ -523,24 +523,23 @@ export function updateLayer(args: { design_path: string; layer_id: string; props
   const spec = readYAML<DesignSpec>(dPath);
   let found = false;
   let lockedBy: string | null = null; // nearest locked ANCESTOR of the target, if any
-  let lockedAt = '';                  // the target's selector path, for the patch_design hint
 
   // Recurse into groups so children of a group (every MCP poster is ONE
   // group) are editable — matching what the editor can already do. A child
-  // under a LOCKED group is reported, not silently skipped: unlocking the
-  // GROUP itself stays possible because the group has no locked ancestor.
-  const patch = (layers: Layer[], where: string, lockedAncestor?: string): Layer[] =>
-    layers.map((l, i) => {
+  // under a LOCKED group is edited too — it was named — and the reply says so
+  // (LOCKED_EDIT_NOTE); the lock keeps the engine's passes off it, not you.
+  const patch = (layers: Layer[], lockedAncestor?: string): Layer[] =>
+    layers.map((l) => {
       if (l.id === args.layer_id) {
         found = true;
-        if (lockedAncestor) { lockedBy = lockedAncestor; lockedAt = `${where}[${i}]`; return l; }
+        if (lockedAncestor) lockedBy = lockedAncestor;
         const props = canonicalizeProps(l, args.props as Record<string, unknown>);
         return dragEndpoints(l, { ...l, ...props } as Layer, props);
       }
       const children = (l as Layer & { layers?: Layer[] }).layers;
       if (l.type === 'group' && Array.isArray(children)) {
         const nextLock = lockedAncestor ?? ((l as { locked?: unknown }).locked ? l.id : undefined);
-        return { ...l, layers: patch(children, `${where}[${i}].layers`, nextLock) } as Layer;
+        return { ...l, layers: patch(children, nextLock) } as Layer;
       }
       return l;
     });
@@ -551,24 +550,19 @@ export function updateLayer(args: { design_path: string; layer_id: string; props
     const pageIndex = spec.pages?.findIndex(p => p.id === args.page_id) ?? -1;
     const page = spec.pages?.[pageIndex];
     if (!page) return errResult(op, `Page not found: ${args.page_id}`, 'Use manage_design {op:"inspect"} to list page IDs.', progress);
-    if (page.layers) page.layers = patch(page.layers, `pages[${pageIndex}].layers`);
+    if (page.layers) page.layers = patch(page.layers);
   } else {
     const hits = pagesWithLayer(spec, args.layer_id);
     if (hits.length > 1) return errResult(op, `Layer id "${args.layer_id}" exists on ${hits.length} pages (${hits.join(', ')}) — refusing to patch all of them.`, 'Pass page_id to update ONE page (carousel pages share layer IDs).', progress);
-    if (spec.layers) spec.layers = patch(spec.layers, 'layers');
-    if (spec.pages) spec.pages.forEach((page, p) => { if (page.layers) page.layers = patch(page.layers, `pages[${p}].layers`); });
+    if (spec.layers) spec.layers = patch(spec.layers);
+    if (spec.pages) spec.pages.forEach((page) => { if (page.layers) page.layers = patch(page.layers); });
   }
   if (!found) return errResult(op, `Layer not found: ${args.layer_id}`, 'Use manage_design {op:"inspect"} to find layer IDs — group children are listed with a parent field.', progress);
-  if (lockedBy) {
-    // Name the exact selector: a generic "pages[0].layers[…]" sent a model on page 7 to the wrong page.
-    const selectors = Object.entries(args.props).map(([k, v]) => ({ path: `${lockedAt}.${k}`, value: v }));
-    return errResult(op, `Layer "${args.layer_id}" is inside the LOCKED group "${lockedBy}" — not modified.`,
-      `Change it in ONE call without unlocking: patch_design {selectors:${JSON.stringify(selectors)}} — or unlock with edit_layer {op:"update", layer_id:"${lockedBy}", props:{locked:false}}, edit, and re-lock with props:{locked:true}. (locked also exempts the group from engine heal passes.)`, progress);
-  }
 
   spec.meta.modified = new Date().toISOString().split('T')[0];
   writeYAML(dPath, spec);
   progress.push(pOk(`Updated layer "${args.layer_id}"`, Object.keys(args.props).join(', ')));
+  if (lockedBy) progress.push(pInfo(LOCKED_EDIT_NOTE, `"${args.layer_id}" in "${lockedBy}"`));
 
   const next_action: NextAction = { tool: 'seal_design', params: { design_path: dPath }, remaining: -1, hint: 'Continue editing or call seal_design.' };
   const context = buildContext(op, `Updated layer "${args.layer_id}" in ${path.basename(dPath)}`);
@@ -587,12 +581,10 @@ export function removeLayer(args: { design_path: string; layer_id: string; page_
   const spec = readYAML<DesignSpec>(dPath);
   let removed = 0;
   // Flat once — so `remove` answered "Layer not found" for a group child that
-  // `update` had always been able to edit and `inspect` lists by name. A locked
-  // group protects its children here as it does everywhere else; without that
-  // check, teaching remove to descend would have made `locked` weaker than it
-  // was before.
+  // `update` had always been able to edit and `inspect` lists by name. A child
+  // of a LOCKED group goes too when named (LOCKED_EDIT_NOTE); the snapshot
+  // above is the way back.
   const locked = lockedAncestorOf(spec, args.layer_id, args.page_id);
-  if (locked) { const e = lockedError(args.layer_id, locked); return errResult(op, e.error, e.hint, progress); }
   const drop = (layers: Layer[]): Layer[] => { const r = removeDeep(layers, args.layer_id); removed += r.removed; return r.layers; };
   // page_id scopes removal to ONE carousel page. WITHOUT it the same id on
   // sibling pages is removed too (carousel groups share ids) — the footgun that
@@ -612,6 +604,7 @@ export function removeLayer(args: { design_path: string; layer_id: string; page_
   spec.meta.modified = new Date().toISOString().split('T')[0];
   writeYAML(dPath, spec);
   progress.push(pOk(`Removed layer "${args.layer_id}"`, removed > 1 ? `${removed} matches across pages — pass page_id to scope` : undefined));
+  if (locked) progress.push(pInfo(LOCKED_EDIT_NOTE, `"${args.layer_id}" was in "${locked}"`));
 
   const next_action: NextAction = { tool: 'inspect_design', params: { design_path: dPath }, remaining: -1, hint: 'Verify removal with inspect_design, then continue or seal.' };
   const context = buildContext(op, `Removed layer "${args.layer_id}" from ${path.basename(dPath)}`);

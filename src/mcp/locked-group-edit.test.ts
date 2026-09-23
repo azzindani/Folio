@@ -6,7 +6,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { inspectDesign } from './engine-project-tools';
-import { updateLayer } from './engine-edit-tools';
+import { updateLayer, removeLayer } from './engine-edit-tools';
+import { moveLayers } from './engine-transform-tools';
 import type { ToolResult } from './types';
 
 function writeDesign(dir: string, locked: boolean): string {
@@ -57,16 +58,32 @@ describe('locked-group children over MCP', () => {
     expect(r.layers.find(l => l.id === 'rule')).toMatchObject({ x: 20, w: 360 });
   });
 
-  it('update on a locked-group child refuses with the exact unlock recipe', () => {
+  // One-shot benchmark r1: every model locked a group to keep the engine off its
+  // layout (as the guide says), then spent 3 calls per edit on unlock → edit →
+  // re-lock. A NAMED layer is an explicit ask; the lock guards the unnamed.
+  it('update on a locked-group child edits it, keeps the lock, and says so', () => {
     const fp = writeDesign(tmp, true);
     const r = updateLayer({ design_path: fp, layer_id: 'child_rect', props: { fill: '#00FF00' } as never });
-    expect(r.success).toBe(false);
-    expect(r.error).toMatch(/LOCKED group "panel"/);
-    expect(r.hint).toMatch(/props:\{locked:false\}/);
+    expect(r.success).toBe(true);
+    expect(JSON.stringify(r.progress)).toMatch(/inside a LOCKED group.*child_rect.*panel/s);
+    const yaml = fs.readFileSync(fp, 'utf8');
+    expect(yaml).toContain("'#00FF00'");
+    expect(yaml).toContain('locked: true');
   });
 
-  // Found building the GPT-6 Astra promo: the hint said "pages[0].layers[…]" for a child on page 7.
-  it('names the exact patch_design selector for the child, page index included', () => {
+  it('remove and move reach a named child of a locked group too', () => {
+    const fp = writeDesign(tmp, true);
+    const m = moveLayers({ design_path: fp, layer_id: 'child_rect', dx: 5 }) as ToolResult & { in_locked_group?: string[] };
+    expect(m.success).toBe(true);
+    expect(m.in_locked_group).toEqual(['child_rect (in "panel")']);
+    expect(fs.readFileSync(fp, 'utf8')).toMatch(/x: 15/);
+    const r = removeLayer({ design_path: fp, layer_id: 'child_rect' });
+    expect(r.success).toBe(true);
+    expect(fs.readFileSync(fp, 'utf8')).not.toContain('child_rect');
+  });
+
+  // Found building the GPT-6 Astra promo: an edit meant for page 7 went to page 0.
+  it('edits the deep child on the page named, nowhere else', () => {
     const fp = path.join(tmp, 'designs', 'deck.design.yaml');
     fs.mkdirSync(path.dirname(fp), { recursive: true });
     fs.writeFileSync(fp, [
@@ -79,8 +96,10 @@ describe('locked-group children over MCP', () => {
       `      - {id: g2, type: group, locked: true, x: 0, 'y': 0, width: 100, height: 100, layers: [{id: bg, type: rect, x: 0, 'y': 0, width: 100, height: 100}, {id: chip, type: group, x: 0, 'y': 0, width: 50, height: 20, layers: [{id: mark, type: text, x: 0, 'y': 0, width: 20, height: 20}]}]}`,
     ].join('\n'));
     const r = updateLayer({ design_path: fp, page_id: 'p2', layer_id: 'mark', props: { width: 96 } as never });
-    expect(r.success).toBe(false);
-    expect(r.hint).toContain('patch_design {selectors:[{"path":"pages[1].layers[0].layers[1].layers[0].width","value":96}]}');
+    expect(r.success).toBe(true);
+    const doc = fs.readFileSync(fp, 'utf8');
+    expect(doc).toContain('width: 96');
+    expect(doc.split('width: 96').length).toBe(2);
   });
 
   it('unlock group → edit child → re-lock round-trip works', () => {
