@@ -91,3 +91,19 @@ describe('the drag gestures', () => {
     expect(write).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('a loop written out as keys', () => {
+  it('draws as one band from the key it leaves to its last repeat, with no diamond per repeat', () => {
+    const anim = { keyframes: [{ t: 0, y: 40 }, { t: 400, y: 0 }, { t: 700, y: 12 }, { t: 1000, y: 0 },
+      { t: 1300, y: 12, ambient: true }, { t: 1600, y: 0, ambient: true }, { t: 1900, y: 12, ambient: true }, { t: 2200, y: 0, ambient: true }],
+      playback: { duration: 2200, origin: 'offset' } } as unknown as AnimationSpec;
+    const layer = { id: 'ball', type: 'ellipse', z: 1, x: 0, y: 0, width: 10, height: 10, animation: anim } as unknown as Layer;
+    const html = trackHTML(layer, undefined, 2200, 0);
+    const box = document.createElement('div');
+    box.innerHTML = html;
+    expect([...box.querySelectorAll('.tl-keyframe')].map(k => k.getAttribute('data-i'))).toEqual(['0', '1', '2', '3']);
+    const band = box.querySelector<HTMLElement>('.tl-loop-band');
+    expect(band?.style.left).toBe(`${(1000 / 2200) * 100}%`);
+    expect(band?.getAttribute('title')).toMatch(/repeats 1\.000s–2\.200s — a loop written as 4 keys/);
+  });
+});
