@@ -57,6 +57,13 @@ describe('lintComposition', () => {
     expect(kinds(notes)).toEqual(expect.arrayContaining(['overlap', 'reading']));
   });
 
+  it('counts a masked split word rising letter by letter as one thing moving', () => {
+    const letter = (i: number): Layer => ({ id: `name_mask${i}`, type: 'group', z: 2, clip: true, x: 100 + 60 * i, y: 300, width: 60, height: 120,
+      layers: [text(`name_c${i}`, 100 + 60 * i, 300, 'DEVNORTH'[i] ?? 'X', { split_of: 'name', width: 60, animation: move(40 * i, 520, { y: 230 }, { y: 0 }) })] } as unknown as Layer);
+    const others = ['a', 'b', 'c'].map((id, i) => text(id, 100, 600 + 90 * i, 'Other', { animation: move(0, 700 + 100 * i, { x: -40 }, { x: 0 }) }));
+    expect(kinds(lintComposition([...Array.from({ length: 8 }, (_, i) => letter(i)), ...others], canvas, [], 2000))).not.toContain('busy');
+  });
+
   it('lands a line with its entrance, not its exit — and a held line is still, not drifting', () => {
     // Benchmark r5: rise, hold, fade out — the merged exit frame names opacity alone.
     const quote = text('quote', 100, 300, 'I booked a plumber at nine and he came', { animation: {
