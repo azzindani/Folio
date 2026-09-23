@@ -56,6 +56,9 @@ export function animationDuration(layers: Layer[]): number {
     // produced a single frame of it standing still.
     const mp = (l as unknown as Record<string, unknown>)['motion_path'] as MotionPath | undefined;
     if (mp?.path) total = Math.max(total, (mp.delay ?? 0) + (mp.loop && mp.period ? mp.period : mp.duration ?? 2000));
+    // Footage moves by itself: a page whose only motion is a clip runs as long as the clip (one pass of a loop).
+    const clip = clipEnd(l);
+    if (clip !== null) total = Math.max(total, clip);
     if (Array.isArray(l.layers)) for (const c of l.layers) visit(c as AnimatedLayer);
   };
   // Precomp clocks and links change when tracks run: measure the resolved tree.
@@ -81,10 +84,24 @@ export function oneShotDuration(layers: Layer[]): number {
     if (pb?.duration && !endless) total = Math.max(total, (pb.delay ?? 0) + pb.duration * (pb.loop && pb.iterations ? pb.iterations : 1));
     const mp = (l as unknown as Record<string, unknown>)['motion_path'] as MotionPath | undefined;
     if (mp?.path && !mp.loop) total = Math.max(total, (mp.delay ?? 0) + (mp.duration ?? 2000));
+    // A looping clip never finishes, like any endless loop.
+    const clip = (l as unknown as { video?: VideoTiming }).video?.loop ? null : clipEnd(l);
+    if (clip !== null) total = Math.max(total, clip);
     if (Array.isArray(l.layers)) for (const c of l.layers) visit(c as AnimatedLayer);
   };
   for (const l of resolveTimeline(layers)) visit(l as AnimatedLayer);
   return total;
+}
+
+/** When a video layer's clip has played its used part, on the scene clock — null
+ *  for anything else, or a clip whose length is not written (video-length.ts writes it). */
+function clipEnd(l: AnimatedLayer): number | null {
+  if (l.type !== 'video') return null;
+  const v = (l as unknown as { in?: number; video?: VideoTiming }).video;
+  const used = Number(v?.duration_ms);
+  if (!(used > 0)) return null;
+  const speed = Number(v?.speed) > 0 ? Number(v?.speed) : 1;
+  return (Number((l as unknown as { in?: number }).in) || 0) + used / speed;
 }
 
 interface MotionPath { path: string; duration?: number; delay?: number; loop?: boolean; easing?: string; auto_rotate?: boolean; period?: number; offset?: number }
