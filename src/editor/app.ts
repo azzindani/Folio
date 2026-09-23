@@ -38,6 +38,7 @@ import { resolveStyleRefs } from './style-refs';
 import { EditorAppBase } from './app-base';
 import { wireMobileToolbarOverflow } from './mobile-toolbar';
 import { SAMPLE_DESIGN } from './sample-design';
+import { pageToShow } from './page-index';
 import { makeBlankDesign } from './blank-design';
 import { canvasResizeDialog, type CanvasDocSpec } from '../ui/dialogs/canvas-resize';
 import { wireContextMenuLazily } from './context-menu-lazy';
@@ -315,7 +316,7 @@ export class EditorApp extends EditorAppBase {
 
       // Initial load: open_in_editor produces URLs with ?file=/abs/path
       // pointing at a design YAML on disk. Fetch via /__project_files/*.
-      if (params.designPath) void this.loadFromQueryParam(params.designPath);
+      if (params.designPath) void this.loadFromQueryParam(params.designPath, params.page);
 
       if (!params.mcpUrl) return;
       try {
@@ -325,7 +326,9 @@ export class EditorApp extends EditorAppBase {
           // EventSource doesn't support headers — pass the token in the URL.
           token: this.readEditorToken(),
           onFileChanged: (yamlContent) => {
-            try { this.loadFromYAML(yamlContent); } catch { /* invalid YAML — wait for next event */ }
+            // An MCP edit reloads the design; the page being watched stays on screen.
+            const at = this.state.get().currentPageIndex;
+            try { this.loadFromYAML(yamlContent); this.showPage(at); } catch { /* invalid YAML — wait for next event */ }
             void import('../utils/toast').then(({ showToast }) => showToast('Design updated by MCP', 'info'));
           },
           onError: () => { /* connection blip — EventSource auto-reconnects */ },
@@ -343,7 +346,14 @@ export class EditorApp extends EditorAppBase {
     } catch { return undefined; }
   }
 
-  private async loadFromQueryParam(absDesignPath: string): Promise<void> {
+  /** Show page `index` (0-based) when the design has it. The MCP's open_url
+   *  carries ?page=N; the editor used to open every link on the first page. */
+  private showPage(index: number | undefined): void {
+    const at = pageToShow(index, this.state.get().design?.pages?.length ?? 0);
+    if (at !== undefined) this.state.set('currentPageIndex', at);
+  }
+
+  private async loadFromQueryParam(absDesignPath: string, page?: number): Promise<void> {
     // Map container-side absolute path → relative URL under /files/. The
     // host's bind-mount makes /home/folio/projects/<x> visible at /files/<x>.
     const PROJECTS_PREFIX = '/home/folio/projects/';
@@ -379,6 +389,7 @@ export class EditorApp extends EditorAppBase {
       // would leave relative image srcs broken until the layer changes.
       this.wireProjectAssets(rel);
       this.loadFromYAML(yamlContent);
+      this.showPage(page);
       // Route auto-save (and Ctrl+S) back to this server file so edits persist
       // in the library — no browser file handle needed.
       this.serverDesignRel = rel;
