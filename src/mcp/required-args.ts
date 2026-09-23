@@ -140,6 +140,7 @@ export const PER_OP: Record<string, Record<string, string[]>> = {
     markers: ['design_path'],
     span: ['design_path'],
     retime: ['design_path', 'at', 'shift_ms'],
+    loop: ['design_path', 'layer_id'],
     precomp: ['design_path', 'layer_id'],
     link: ['design_path'],
     parent: ['design_path'],

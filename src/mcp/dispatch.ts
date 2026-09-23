@@ -160,6 +160,7 @@ export function dispatchAnimation(a: Args): ToolResult | Promise<ToolResult> {
     case 'markers':  return engine.markersMotion(a as unknown as Parameters<typeof engine.markersMotion>[0]);
     case 'span':     return engine.spanMotion(a as unknown as Parameters<typeof engine.spanMotion>[0]);
     case 'retime':   return engine.retimeMotion(a as unknown as Parameters<typeof engine.retimeMotion>[0]);
+    case 'loop':     return engine.loopMotion(a as unknown as Parameters<typeof engine.loopMotion>[0]);
     case 'storyboard': return engine.storyboardMotion(a as unknown as Parameters<typeof engine.storyboardMotion>[0]);
     case 'lint':     return engine.lintMotion(a as unknown as Parameters<typeof engine.lintMotion>[0]);
     case 'precomp':  return engine.precompMotion(a as unknown as Parameters<typeof engine.precompMotion>[0]);

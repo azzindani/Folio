@@ -50,6 +50,7 @@ export { beatsMotion } from './engine/motion-beats-op';
 export { captionsMotion } from './engine/motion-captions-op';
 export { markersMotion, spanMotion } from './engine/motion-time-ops';
 export { retimeMotion } from './engine/motion-retime-op';
+export { loopMotion } from './engine/motion-loop-op';
 export { storyboardMotion, lintMotion } from './engine/motion-storyboard-op';
 export { precompMotion, linkMotion } from './engine/motion-precomp-op';
 export { parentMotion, nullMotion } from './engine/motion-rig-op';
