@@ -24,7 +24,8 @@ describe('parseSteps', () => {
     expect(parseSteps([{ tool: 'create_design', args: { project_path: '${p.path}' } }, { tool: 'create_project', as: 'p' }]))
       .toMatchObject({ error: expect.stringContaining('which no earlier step is named') });
     expect(parseSteps([{ tool: 'create_project', as: 'a' }, { tool: 'create_project', as: 'a' }])).toMatchObject({ error: expect.stringContaining('as:"a"') });
-    expect(parseSteps([{ tool: 'tasks', args: { op: 'execute', steps: [] } }])).toMatchObject({ error: expect.stringContaining('cannot run another execute') });
+    expect(parseSteps([{ tool: 'tasks', args: { op: 'execute', steps: [] } }])).toMatchObject({ error: expect.stringContaining('with {recipe, params}, not through tasks') });
+    expect(parseSteps([{ recipe: 'never-saved' }])).toMatchObject({ error: expect.stringContaining('no saved recipe "never-saved"') });
     expect(parseSteps([])).toMatchObject({ error: expect.stringContaining('steps is required') });
   });
 });

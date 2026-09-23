@@ -16,13 +16,16 @@ import type { ToolResult, NextAction } from '../types';
 import { okResult, errResult, buildContext, pOk, pWarn } from './utils';
 import { normalizeProjectPaths } from '../normalize-paths';
 import { withOpScope } from '../design-lineage';
+import { readRecipe, type Step } from './recipe-store';
 
 type Rec = Record<string, unknown>;
 type Runner = (args: Rec) => ToolResult | Promise<ToolResult>;
 
-export interface Step { tool: string; args?: Rec; as?: string }
+export type { Step };
 
 export const MAX_STEPS = 50;
+/** Recipes inside recipes — deep enough to compose, shallow enough to read. */
+export const MAX_DEPTH = 4;
 /** Keys of a result kept in a step's summary — the rest stays reachable by ref. */
 const DROP = new Set(['progress', 'context', 'handover', 'token_estimate', 'next_action', 'suggested_next']);
 
@@ -95,11 +98,15 @@ export function parseSteps(raw: unknown, known: string[] = []): { steps: Step[] 
   for (const [i, s] of raw.entries()) {
     const at = `step ${i + 1}`;
     const o = (s !== null && typeof s === 'object' ? s : {}) as Rec;
+    const obj = (v: unknown): Rec => (v !== null && typeof v === 'object' && !Array.isArray(v) ? v as Rec : {});
+    const recipe = typeof o['recipe'] === 'string' ? o['recipe'] : undefined;
     const tool = typeof o['tool'] === 'string' ? o['tool'] : '';
-    if (!handlers?.[tool]) return { error: `${at}: unknown tool "${tool}"`, hint: `Tools: ${Object.keys(handlers ?? {}).join(', ')}.` };
-    const args = o['args'] !== null && typeof o['args'] === 'object' && !Array.isArray(o['args']) ? o['args'] as Rec : {};
-    if (tool === 'tasks' && args['op'] === 'execute') return { error: `${at}: an execute cannot run another execute`, hint: 'Put those steps in this list.' };
-    const early = refHeads(args).find(h => !named.has(h) && !/^step\d+$/.test(h));
+    if (recipe !== undefined && !readRecipe(recipe)) return { error: `${at}: no saved recipe "${recipe}"`, hint: 'tasks {op:"recipes"} lists them; save the inner chain first.' };
+    if (recipe === undefined && !handlers?.[tool]) return { error: `${at}: unknown tool "${tool}"`, hint: `Tools: ${Object.keys(handlers ?? {}).join(', ')} — or {recipe:"name", params} to run a saved recipe.` };
+    const args = obj(o['args']);
+    const params = obj(o['params']);
+    if (tool === 'tasks' && ['execute', 'run_recipe'].includes(String(args['op']))) return { error: `${at}: run a chain or recipe as a step with {recipe, params}, not through tasks`, hint: 'Or put those steps in this list.' };
+    const early = refHeads(recipe !== undefined ? params : args).find(h => !named.has(h) && !/^step\d+$/.test(h));
     if (early) return { error: `${at} refers to "\${${early}…}", which no earlier step is named`, hint: 'Name the step that produces it with as:"…", and put it first.' };
     const as = typeof o['as'] === 'string' && o['as'] ? o['as'] : undefined;
     if (as && (!/^[A-Za-z_][\w-]*$/.test(as) || /^step\d+$/.test(as) || named.has(as))) {
@@ -107,7 +114,7 @@ export function parseSteps(raw: unknown, known: string[] = []): { steps: Step[] 
     }
     if (as) named.add(as);
     named.add(`step${i + 1}`);
-    steps.push({ tool, args, ...(as ? { as } : {}) });
+    steps.push(recipe !== undefined ? { recipe, params, ...(as ? { as } : {}) } : { tool, args, ...(as ? { as } : {}) });
   }
   return { steps };
 }
@@ -116,14 +123,14 @@ export function parseSteps(raw: unknown, known: string[] = []): { steps: Step[] 
  * Run the chain; stop at the first failure. dry_run checks it and runs nothing.
  * `seed` pre-names values the steps may read — a recipe's ${params.…}.
  */
-export async function executeSteps(a: { steps?: unknown; dry_run?: boolean }, seed: Record<string, Rec> = {}, op = 'execute'): Promise<ToolResult> {
+export async function executeSteps(a: { steps?: unknown; dry_run?: boolean }, seed: Record<string, Rec> = {}, op = 'execute', stack: string[] = []): Promise<ToolResult> {
   const parsed = parseSteps(a.steps, Object.keys(seed));
   if ('error' in parsed) return errResult(op, parsed.error, parsed.hint);
   const { steps } = parsed;
   if (a.dry_run) {
     return okResult(op, {
       dry_run: true, of: steps.length,
-      steps: steps.map((s, i) => ({ step: i + 1, tool: `${s.tool}${typeof s.args?.['op'] === 'string' ? `:${s.args['op']}` : ''}`, ...(s.as ? { as: s.as } : {}) })),
+      steps: steps.map((s, i) => ({ step: i + 1, tool: s.recipe !== undefined ? `recipe:${s.recipe}` : `${s.tool ?? ''}${typeof s.args?.['op'] === 'string' ? `:${s.args['op']}` : ''}`, ...(s.as ? { as: s.as } : {}) })),
       progress: [pOk('Checked', `${steps.length} step(s): tools exist, names unique, every ref points back — nothing ran`)],
       context: buildContext(op, `dry run of ${steps.length} step(s)`),
     });
@@ -133,13 +140,16 @@ export async function executeSteps(a: { steps?: unknown; dry_run?: boolean }, se
   let last: ToolResult | undefined;
   for (const [i, s] of steps.entries()) {
     const missing: string[] = [];
-    const args = normalizeProjectPaths(resolveRefs(s.args ?? {}, results, missing) as Rec);
-    const label = `${s.tool}${typeof args['op'] === 'string' ? `:${args['op']}` : ''}`;
+    const input = resolveRefs(s.recipe !== undefined ? s.params ?? {} : s.args ?? {}, results, missing) as Rec;
+    const args = s.recipe !== undefined ? input : normalizeProjectPaths(input);
+    const label = s.recipe !== undefined ? `recipe:${s.recipe}` : `${s.tool ?? ''}${typeof args['op'] === 'string' ? `:${args['op']}` : ''}`;
     let r: ToolResult;
     if (missing.length) {
       r = errResult(label, `Refers to ${missing.map(m => `\${${m}}`).join(', ')}, which the earlier result does not have`, 'Check the field name in that step\'s reply.');
+    } else if (s.recipe !== undefined) {
+      r = await runNested(s.recipe, args, stack);
     } else {
-      const run = handlers?.[s.tool];
+      const run = handlers?.[s.tool ?? ''];
       try { r = run ? await withOpScope(label, args, () => run(args)) : errResult(label, 'Unknown tool', ''); }
       catch (e) { r = errResult(label, `Unexpected engine error: ${(e as Error).message}`, 'The steps before this one ran; fix this one and run the rest.'); }
     }
@@ -161,4 +171,16 @@ export async function executeSteps(a: { steps?: unknown; dry_run?: boolean }, se
     progress: [pOk('Ran', `${steps.length} step(s), each through the same door as its own call`)],
     context: buildContext(op, `${steps.length} step(s) ran`),
   });
+}
+
+/** A saved recipe run as one step — a function calling a function. */
+async function runNested(name: string, params: Rec, stack: string[]): Promise<ToolResult> {
+  const label = `recipe:${name}`;
+  if (stack.includes(name)) return errResult(label, `Recipe "${name}" would run itself: ${[...stack, name].join(' → ')}`, 'A recipe cannot run a recipe that runs it.');
+  if (stack.length >= MAX_DEPTH) return errResult(label, `Recipes nested ${stack.length + 1} deep — at most ${MAX_DEPTH}`, 'Flatten one level into its caller.');
+  const recipe = readRecipe(name);
+  if (!recipe) return errResult(label, `No saved recipe "${name}"`, 'tasks {op:"recipes"} lists them.');
+  const missing = Object.keys(recipe.params).filter(p => params[p] === undefined);
+  if (missing.length) return errResult(label, `${name} needs ${missing.map(p => `${p} (${recipe.params[p] || 'no description'})`).join(', ')}`, 'Pass them in the step\'s params.');
+  return executeSteps({ steps: recipe.steps }, { params }, label, [...stack, name]);
 }

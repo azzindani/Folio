@@ -128,15 +128,16 @@ export const TIER1_TOOLS: ToolDefinition[] = [
         params:       { type: 'object', description: 'op:save_recipe — what varies between runs, {name:"what it is"}, read in the steps as ${params.name}. op:run_recipe — the values, {name: value}; every declared one is required.' },
         steps: {
           type: 'array',
-          description: 'op:execute — the chain, run in order in ONE call: [{tool:"create_design", args:{…}, as:"made"}, {tool:"add_layers", args:{design_path:"${made.design_path}", layers_shorthand:[…]}}]. `as` names a step\'s reply; any string in a later step reads it with ${name.field} (${name.list.0.id} indexes a list; a string that is only a ref keeps the value\'s type). Every step is also ${stepN}. At most 50.',
+          description: 'op:execute — the chain, run in order in ONE call: [{tool:"create_design", args:{…}, as:"made"}, {tool:"add_layers", args:{design_path:"${made.design_path}", layers_shorthand:[…]}}]. `as` names a step\'s reply; any string in a later step reads it with ${name.field} (${name.list.0.id} indexes a list; a string that is only a ref keeps the value\'s type). Every step is also ${stepN}. A step {recipe:"name", params:{…}} runs a saved recipe inline — recipes calling recipes, up to 4 deep, a loop refused. At most 50.',
           items: {
             type: 'object',
             properties: {
-              tool: { type: 'string', description: 'Any Folio tool name.' },
-              args: { type: 'object', description: 'That tool\'s arguments, exactly as you would send them.' },
-              as:   { type: 'string', description: 'Name for this step\'s reply.' },
+              tool:   { type: 'string', description: 'Any Folio tool name (or give recipe instead).' },
+              args:   { type: 'object', description: 'That tool\'s arguments, exactly as you would send them.' },
+              recipe: { type: 'string', description: 'A saved recipe to run as this step (instead of tool).' },
+              params: { type: 'object', description: 'The recipe\'s param values (with recipe).' },
+              as:     { type: 'string', description: 'Name for this step\'s reply.' },
             },
-            required: ['tool'],
           },
         },
         dry_run:      { type: 'boolean', description: 'op:execute — check the chain (tools exist, names unique, every ref points back) and run nothing.' },
