@@ -554,10 +554,16 @@ function makeImagePlaceholder(layer: ImageLayer, w: number, h: number, svg: SVGS
 // ── Icon ────────────────────────────────────────────────────
 
 export function renderIcon(layer: IconLayer, svg: SVGSVGElement): SVGElement {
-  const size = layer.size ?? 24;
+  // An icon laid out as the guide writes it — x y width height — fills its box
+  // (the smaller side, centred). Read only from \`size\`, a verbose icon drew at
+  // 24 px whatever box it was given, and one resized with edit_layer stayed 24 px
+  // (benchmark r6, b23: a 160 px Wi-Fi glyph and a 150 px check as specks).
+  const w = (layer as { width?: unknown }).width, h = (layer as { height?: unknown }).height;
+  const box = typeof w === 'number' && typeof h === 'number' && w > 0 && h > 0 ? { w, h } : null;
+  const size = layer.size ?? (box ? Math.min(box.w, box.h) : 24);
   const color = layer.color ?? 'currentColor';
-  const x = layer.x ?? 0;
-  const y = layer.y ?? 0;
+  const x = (layer.x ?? 0) + (layer.size === undefined && box ? (box.w - size) / 2 : 0);
+  const y = (layer.y ?? 0) + (layer.size === undefined && box ? (box.h - size) / 2 : 0);
 
   // Placement lives on an INNER group. The root carries only canvas-space transforms —
   // rotate/flip from applyCommonAttributes (which SETS transform and used to overwrite
