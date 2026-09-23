@@ -1,11 +1,10 @@
 import type { StateManager, EditorState } from '../../editor/state';
-import { EASING_NAMES } from '../../animation/easing';
-import { easingCurveSVG } from './easing-curve';
+import { openEasePopover } from './ease-popover';
 import type { Layer } from '../../schema/types';
 import { MotionPlayer } from '../../editor/motion-player';
 import type { Keyframe } from '../../animation/types';
 import { fromSceneTime } from '../../animation/clock-time';
-import { trackHTML, markerStripHTML, markersOf, fmtMs, HEADER_W, KF_RADIUS } from './timeline-track-view';
+import { trackHTML, markerStripHTML, markersOf, fmtMs, HEADER_W } from './timeline-track-view';
 import { timelineRows, setKeyframeEasing, shiftKeyframes, flattenForTimeline } from './timeline-model';
 import { bindTimelineEdits } from './timeline-edit';
 import { bindTimelineDrags } from './timeline-drag';
@@ -240,7 +239,7 @@ export class TimelinePanelManager {
       kfEl.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        this.openEasingPicker(kfEl, layers);
+        this.openEasingPicker(kfEl);
       });
     });
 
@@ -272,65 +271,22 @@ export class TimelinePanelManager {
   }
 
   /**
-   * A `<select>` of every easing the engine knows, on the keyframe clicked.
-   *
-   * A select rather than a custom menu: thirty curves is too many to lay out
-   * by hand, and the native control already scrolls, keyboard-navigates and
-   * closes itself. Removed as soon as it commits so the track does not collect
-   * dead controls.
+   * The keyframe's easing: a name from the list, or a curve shaped by its
+   * handles (ease-popover.ts). The popover sits on the panel, so it survives
+   * the redraw each write causes; the layer is read fresh at every write.
    */
-  private openEasingPicker(kfEl: HTMLElement, layers: Layer[]): void {
-    this.container.querySelectorAll('.tl-ease-picker').forEach(n => n.remove());
+  private openEasingPicker(kfEl: HTMLElement): void {
     const layerId = kfEl.dataset['layerId'] ?? '';
     const t = parseInt(kfEl.dataset['t'] ?? '0', 10);
-    const current = kfEl.dataset['easing'] ?? '';
-
-    const sel = document.createElement('select');
-    sel.className = 'tl-ease-picker';
-    sel.setAttribute('data-layer-id', layerId);
-    sel.style.cssText = 'position:absolute;z-index:20;font-size:11px;background:var(--color-bg);'
-      + 'color:var(--color-text);border:1px solid var(--color-border);border-radius:3px;'
-      + `left:${kfEl.offsetLeft}px;top:${kfEl.offsetTop + KF_RADIUS * 2 + 2}px`;
-    const opts = ['', ...EASING_NAMES];
-    sel.innerHTML = opts.map(n =>
-      `<option value="${n}"${n === current ? ' selected' : ''}>${n || '(track default)'}</option>`).join('');
-
-    // WRITE FIRST, tear down second. Blur can fire before change (it does in a
-    // scripted selection), which detached the node, and removing it again threw
-    // NotFoundError from inside commit — before the state update ran. The
-    // picker looked like it worked and the easing never left the DOM.
-    let done = false;
-    const close = (): void => { if (sel.parentNode) sel.parentNode.removeChild(sel); };
-    const commit = (): void => {
-      if (done) return;
-      done = true;
-      const value = sel.value;
-      const layer = layers.find(l => l.id === layerId);
-      if (layer?.animation) {
-        this.state.updateLayer(layerId, { animation: setKeyframeEasing(layer.animation, t, value) } as Partial<Layer>);
-      }
-      close();
-    };
-    // Show the curve for whatever is highlighted. Thirty names in a dropdown
-    // cannot distinguish "ease-out-back" from "ease-out-expo"; the shape can,
-    // and the shape is the reason to pick one.
-    const preview = document.createElement('div');
-    preview.className = 'tl-ease-curve';
-    preview.style.cssText = 'position:absolute;z-index:21;pointer-events:none;'
-      + `left:${kfEl.offsetLeft}px;top:${kfEl.offsetTop + KF_RADIUS * 2 + 26}px`;
-    const paint = (): void => { preview.innerHTML = easingCurveSVG(sel.value); };
-    paint();
-    sel.addEventListener('input', paint);
-    sel.addEventListener('keyup', paint);
-
-    const teardown = (): void => { if (preview.parentNode) preview.parentNode.removeChild(preview); close(); };
-    sel.addEventListener('change', () => { commit(); if (preview.parentNode) preview.parentNode.removeChild(preview); });
-    // A blur with no choice made is a cancel, not a commit.
-    sel.addEventListener('blur', () => { if (!done) teardown(); });
-    const host = kfEl.parentElement ?? this.container;
-    host.appendChild(sel);
-    host.appendChild(preview);
-    sel.focus();
+    openEasePopover({
+      anchor: kfEl,
+      host: this.container.querySelector<HTMLElement>('.timeline-panel') ?? this.container,
+      current: kfEl.dataset['easing'] ?? '',
+      commit: value => {
+        const animation = flattenForTimeline(this.player.authoredLayers()).find(r => r.layer.id === layerId)?.layer.animation;
+        if (animation) this.state.updateLayer(layerId, { animation: setKeyframeEasing(animation, t, value) } as Partial<Layer>);
+      },
+    });
   }
 
   /**
