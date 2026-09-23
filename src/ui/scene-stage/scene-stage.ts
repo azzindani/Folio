@@ -23,6 +23,8 @@ import { buildTransport, type Transport } from './scene-stage-controls';
 import { SceneAudio } from '../../editor/scene-audio';
 import { resolveAssetUrl } from '../../renderer/render-context';
 import { buildSoundRow, designSoundSources, type SoundRow } from './scene-stage-sound';
+import { cssMatrix3d } from '../../export/warp';
+import type { DesignSpec, ThemeSpec } from '../../schema/types';
 
 const TYPING = new Set(['INPUT', 'SELECT', 'TEXTAREA']);
 
@@ -142,6 +144,8 @@ export class SceneStage {
       const scale = Math.min(availW / width, availH / height);
       frame.style.width = `${Math.round(width * scale)}px`;
       frame.style.height = `${Math.round(height * scale)}px`;
+      // A turning face is laid out at canvas size and scaled by this (it inherits into the shadow root).
+      frame.style.setProperty('--stage-scale', String(scale));
     };
     if (typeof ResizeObserver !== 'undefined') new ResizeObserver(fit).observe(well);
     window.addEventListener('resize', fit);
@@ -162,6 +166,12 @@ export class SceneStage {
     const composed = theme
       ? composeTheme(theme, { palette: palette ?? undefined, typePack: typePack ?? undefined, effectsPack: effectsPack ?? undefined })
       : undefined;
+    const turn = this.player.turningAt(s.time);
+    if (turn) {
+      this.surface.replaceChildren(this.turning(turn, composed));
+      this.painted = s.time;
+      return;
+    }
     const { svg } = renderEntry(spec, { theme: composed, pageIndex: 0 });
     svg.setAttribute('width', '100%');
     svg.setAttribute('height', '100%');
@@ -169,6 +179,30 @@ export class SceneStage {
     svg.style.display = 'block';
     this.surface.replaceChildren(svg);
     this.painted = s.time;
+  }
+
+  /**
+   * A cube or flip mid-turn: each scene drawn flat and put on its face by a CSS
+   * matrix3d — the export's homography (warp.ts), so the browser's own 3D draws
+   * the perspective exactly — on the stage colour, captions laid over unturned.
+   */
+  private turning(turn: NonNullable<ReturnType<ScenePlayer['turningAt']>>, theme: ThemeSpec | undefined): HTMLElement {
+    const { width: W, height: H } = turn.over.document;
+    const box = document.createElement('div');
+    box.style.cssText = `position:relative;width:${W}px;height:${H}px;transform-origin:0 0;transform:scale(var(--stage-scale,1));background:${turn.stage};`;
+    const flat = (spec: DesignSpec, transform: string): SVGSVGElement => {
+      const { svg } = renderEntry(spec, { theme, pageIndex: 0 });
+      svg.setAttribute('width', String(W));
+      svg.setAttribute('height', String(H));
+      svg.style.cssText = `position:absolute;left:0;top:0;display:block;transform-origin:0 0;transform:${transform};`;
+      return svg;
+    };
+    for (const f of turn.faces) {
+      const m = cssMatrix3d(W, H, f.corners);
+      if (m) box.appendChild(flat(f.spec, m));
+    }
+    box.appendChild(flat(turn.over, 'none'));
+    return box;
   }
 
   private onKey(e: KeyboardEvent): void {

@@ -125,3 +125,17 @@ export function paintTurning(stage: string, faces: Array<{ img: Pixels; corners:
   overOnto(out, top);
   return out;
 }
+
+/**
+ * The same map as a CSS transform, for the browser to draw: an element w×h at
+ * the origin (transform-origin 0 0) lands with its corners on `quad`. A
+ * homography is a 4×4 matrix that leaves z alone, so the browser's own 3D
+ * does the perspective — exact, one element per face.
+ */
+export function cssMatrix3d(w: number, h: number, quad: Pt[]): string | null {
+  const m = homography([[0, 0], [w, 0], [w, h], [0, h]], quad);
+  if (!m) return null;
+  const [a = 1, b = 0, c = 0, d = 0, e = 1, f = 0, g = 0, hh = 0] = m;
+  const n = (v: number): string => String(Number(v.toPrecision(10)));
+  return `matrix3d(${[a, d, 0, g, b, e, 0, hh, 0, 0, 1, 0, c, f, 0, 1].map(n).join(',')})`;
+}
