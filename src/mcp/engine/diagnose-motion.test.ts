@@ -52,6 +52,14 @@ describe('diagnose_design on how a moving page is paced', () => {
     expect(found(lines(150))).not.toContain('motion_crowd');
   });
 
+  it('judges a piece that stops as its lines land on that last frame, not on its empty opening', () => {
+    // Found live: fades 300–900 ms, nothing after — the lint judged the blank 0–300 ms and called it clean.
+    const late = (v: string, i: number): Layer => text(`k${i}`, 200 + i * 150, v, { animation: {
+      keyframes: [{ t: 0, opacity: 0 }, { t: 600, opacity: 1 }], playback: { duration: 600, delay: 300, origin: 'offset' } } });
+    const got = found(['Plan the week on Sunday', 'Batch the small tasks', 'Protect two deep blocks'].map(late));
+    expect(got).toEqual(expect.arrayContaining(['motion_reading', 'motion_crowd']));
+  });
+
   it('says when words leave before they can be read', () => {
     const brief = text('long', 400, 'A long sentence with far too many words to read in half a second', { out: 900, ...fadeIn(0) });
     expect(found([brief])).toContain('motion_reading');
