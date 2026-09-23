@@ -409,6 +409,16 @@ export function isLocked(l: Layer): boolean {
   return (l as unknown as Record<string, unknown>)['locked'] === true;
 }
 
+/** How many children, shifted by (dx, dy), lie at least half inside the box (x, y, w, h). */
+function seatedIn(kids: Layer[], x: number, y: number, w: number, h: number, dx: number, dy: number): number {
+  return kids.filter(k => {
+    const b = layerBBox(k);
+    const kw = b.r - b.x, kh = b.b - b.y;
+    const ow = Math.min(b.r + dx, x + w) - Math.max(b.x + dx, x), oh = Math.min(b.b + dy, y + h) - Math.max(b.y + dy, y);
+    return kw > 0 && kh > 0 && ow > 0 && oh > 0 && ow * oh >= 0.5 * kw * kh;
+  }).length;
+}
+
 export function flattenRelativeGroups(layers: Layer[]): number {
   let moved = 0;
   for (const l of layers) {
@@ -442,6 +452,13 @@ export function flattenRelativeGroups(layers: Layer[]): number {
     // so this never false-fires on a real template (children at X+margin >= X).
     const local = placedKids.some(k => { const p = layerLeftTop(k); return p.x < gx || p.y < gy; });
     if (!local) continue;
+    // One child before the origin is not proof: a label wider than the box the model drew for its
+    // group starts left of it too. Benchmark r5: an absolute clock in a group at (380, 320) whose
+    // time label began at x 340 was read as relative, and every part moved 380/320 px. With a box
+    // to judge by, keep the reading that seats more children inside it.
+    const gw = typeof o['width'] === 'number' ? o['width'] : 0, gh = typeof o['height'] === 'number' ? o['height'] : 0;
+    // A tie keeps the old reading (relative): a big group just off the origin seats its children either way.
+    if (gw > 0 && gh > 0 && seatedIn(placedKids, gx, gy, gw, gh, 0, 0) > seatedIn(placedKids, gx, gy, gw, gh, gx, gy)) continue;
     for (const k of kids) bakeOffsetDeep(k, gx, gy);
     // Re-fit the group box to the children's true extent so the de-collide pass
     // and any bounds logic see the real occupied region, not the old origin.

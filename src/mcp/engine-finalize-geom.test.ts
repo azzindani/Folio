@@ -55,6 +55,16 @@ describe('flattenRelativeGroups — a path does not vote', () => {
     expect(inner?.layers[1]).toMatchObject({ x: 920, y: 222 });
   });
 
+  // Benchmark r5: an absolute clock in a group at (380, 320) whose time label started at x 340, left of the
+  // box, was read as relative — every part moved 380/320 px and two labels left the canvas.
+  it('keeps absolute children when one merely starts left of a box drawn too narrow', () => {
+    const face = { id: 'face', type: 'ellipse', x: 390, y: 330, width: 300, height: 300 };
+    const label = { id: 'time', type: 'text', x: 340, y: 660, width: 400, height: 60, content: { type: 'plain', value: '9:40 pm' } };
+    const clock = { id: 'clock', type: 'group', x: 380, y: 320, width: 320, height: 420, layers: [face, label] } as unknown as Layer;
+    expect(flattenRelativeGroups([clock])).toBe(0);
+    expect((clock as unknown as { layers: Array<Record<string, unknown>> }).layers[1]).toMatchObject({ x: 340, y: 660 });
+  });
+
   it('still bakes a genuinely relative group, and fits its box to the placed children only', () => {
     const rel = g([lines, { ...text, x: 20, y: 22 }]);
     expect(flattenRelativeGroups([rel])).toBe(1);
