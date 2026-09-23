@@ -9,6 +9,7 @@
 import type { Layer } from '../../schema/types';
 import { layerText } from '../../schema/layer-text';
 import { hexToRgb, luminance, saturation, hue, type RGB } from './reference';
+import { contrastRatio } from './marks-contrast';
 import { findTextOverflows } from './text-measure';
 
 interface Rect { x: number; y: number; w: number; h: number }
@@ -73,10 +74,12 @@ function contains(outer: Rect, inner: Rect): boolean {
     && outer.y + outer.h >= inner.y + inner.h - 0.5;
 }
 
+/** WCAG contrast. It was a weighted average of the 0–255 channels, which calls
+ *  saturated mid-tones invisible: a board slide's grey bars and hairline rule,
+ *  a reel's yellow-on-tomato numeral (WCAG 2.5, 760px) all read "nearly
+ *  invisible" (one-shot benchmark r2). The re-light pass moved to WCAG too. */
 function contrast(a: RGB | null, b: RGB | null): number | null {
-  if (!a || !b) return null;
-  const la = luminance(a), lb = luminance(b);
-  return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+  return a && b ? contrastRatio(a, b) : null;
 }
 
 const OPAQUE_BACKDROP = new Set(['image', 'chart', 'video', 'mermaid', 'code', 'math']);
@@ -183,19 +186,32 @@ export function lintComposition(layers: Layer[], canvasW: number, canvasH: numbe
   // 5. Invisible decor — a sized shape whose fill barely contrasts the canvas it
   //    sits on adds NOTHING (the model thinks it added a visual accent, but it's
   //    not there — a vision-less blind spot). Flag only the clearly-invisible.
+  //    Judged against what it is painted ON — a label on a jar, fork marks on a
+  //    cookie — not the page: both read "invisible on the background" in r2.
   if (bgColor) {
     const DECOR = new Set(['rect', 'ellipse', 'circle', 'path', 'polygon']);
-    for (const l of layers) {
-      if (l === bgRect || !DECOR.has(l.type)) continue;
-      if (((l as { opacity?: number }).opacity ?? 1) < 0.5) continue; // intentionally faint
+    const below = (l: Layer, i: number): string => {
+      const r = rectOf(l);
+      let best: { rank: number; hex: string } | null = null;
+      layers.forEach((o, j) => {
+        const rank = z(o) * 1e6 + j, hex = solidColor(o), orr = rectOf(o);
+        if (o === l || o === bgRect || !hex || !orr || !r || rank >= z(l) * 1e6 + i || !contains(orr, r)) return;
+        if (!best || rank > best.rank) best = { rank, hex };
+      });
+      return (best as { rank: number; hex: string } | null)?.hex ?? bgColor;
+    };
+    layers.forEach((l, i) => {
+      if (l === bgRect || !DECOR.has(l.type)) return;
+      if (((l as { opacity?: number }).opacity ?? 1) < 0.5) return; // intentionally faint
       const fc = solidColor(l), r = rectOf(l);
-      if (!fc || !r) continue;
-      if (r.w * r.h >= canvasW * canvasH * 0.6) continue; // large panel, not an accent
-      const cr = contrast(hexToRgb(fc), hexToRgb(bgColor));
-      if (cr !== null && cr < 1.2) {
-        notes.push(`decor "${l.id}" (${fc}) is nearly invisible on the background (${bgColor}, contrast ${cr.toFixed(2)}:1) — it adds no visible element. Give it a contrasting color (or the accent), or remove it.`);
+      if (!fc || !r) return;
+      if (r.w * r.h >= canvasW * canvasH * 0.6) return; // large panel, not an accent
+      const ground = below(l, i);
+      const cr = contrast(hexToRgb(fc), hexToRgb(ground));
+      if (cr !== null && cr < 1.15) {
+        notes.push(`decor "${l.id}" (${fc}) is nearly invisible on what it sits on (${ground}, contrast ${cr.toFixed(2)}:1) — it adds no visible element. Give it a contrasting color or an outline, or remove it.`);
       }
-    }
+    });
   }
 
   return notes.slice(0, 8);
