@@ -7,13 +7,14 @@
 // punctuation) and one letter shape (A–Z a–z 0–9 relative to their class), so
 // a line lands within a few percent of the real face and a single word keeps
 // its narrow I. A family not in the table keeps the old guess.
-import table from './font-widths.json';
 import { isWideChar, WIDE_EM } from './text-width';
 
 /** A face's widths: [lower, upper, digit, space, punctuation] in em, and each letter's shape. */
 export interface WidthClasses { classes: readonly number[]; shape: ReadonlyMap<string, number> }
 
-const TABLE = table as Record<string, { s: string; w: Record<string, string> }>;
+// Loaded as its own chunk and awaited at module load: the editor's main entry
+// stays under its size gate while every caller still measures synchronously.
+const TABLE = (await import('./font-widths.json')).default as Record<string, { s: string; w: Record<string, string> }>;
 /** The glyphs the shape covers, in the generator's order (PUNCT last). */
 const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789' + '.,:;!?\'"-()&/';
 const unpack = (s: string): number[] => (s.match(/.{2}/g) ?? []).map(p => parseInt(p, 36));
