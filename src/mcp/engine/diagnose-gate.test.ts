@@ -62,6 +62,9 @@ describe('diagnose_design {gate:true}', () => {
     if (reading?.call) await call(reading.call.tool, reading.call.params);
     const second = await gate(design);
     expect(second.top.some(i => i.code === 'motion_reading')).toBe(false);
+    // Each measured fact once: a shot's note that repeats its page's is not a second item.
+    const whys = second.top.filter(i => i.code === 'review').map(i => i.why.replace(/^In "[^"]+": /, ''));
+    expect(new Set(whys).size).toBe(whys.length);
     if (second.ready) expect(second.next_action).toMatchObject({ tool: 'animation', params: { op: 'export' } });
   }, 60_000);
 

@@ -78,7 +78,8 @@ function reviewItems(spec: DesignSpec, dPath: string, projectPath: string | unde
     const note = (why: string, page?: string): GateItem => ({ severity: 'note', code: 'review', ...(page ? { page } : {}), why });
     return pages.flatMap(p => [
       ...p.notes.map(n => note(n, p.page)),
-      ...(p.motion?.shots ?? []).flatMap(s => s.notes.map(n => note(`In "${s.shot}": ${n}`, p.page))),
+      // A one-shot piece measures its shot as it measures the page: say each fact once.
+      ...(p.motion?.shots ?? []).flatMap(s => s.notes.filter(n => !p.notes.includes(n)).map(n => note(`In "${s.shot}": ${n}`, p.page))),
       ...(p.motion?.notes ?? []).map(n => note(n, p.page)),
     ]);
   } catch (err) {
