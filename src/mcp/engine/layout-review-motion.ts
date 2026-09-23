@@ -12,6 +12,7 @@
 
 import type { DesignSpec, Layer, Page } from '../../schema/types';
 import { layersAt, animationDuration } from '../../export/gif-frames';
+import { canvasBoxes } from '../../export/frame-cull';
 import { readMarkers } from './motion-time';
 import { shotRests, type ShotRest } from './motion-lint';
 import { measureEntries, pageEntries, type PageLayout, type Box, type Component } from './layout-review';
@@ -88,6 +89,19 @@ export function timeNotes(shots: ShotLayout[], canvasW: number): string[] {
   return out;
 }
 
+const LOOP_SAMPLES = 12;
+
+/** The moment in [from, until) that paints the most — drawn area × opacity, from the boxes, no render. */
+export function fullestAt(layers: Layer[], from: number, until: number): number {
+  let best = until - 1, most = -1;
+  for (let i = 0; i < LOOP_SAMPLES; i++) {
+    const t = Math.round(from + ((until - 1 - from) * i) / (LOOP_SAMPLES - 1));
+    const painted = canvasBoxes(layersAt(layers, t)).reduce((sum, b) => sum + b.box.width * b.box.height * b.opacity, 0);
+    if (painted > most + 1) { most = painted; best = t; }
+  }
+  return best;
+}
+
 /** One moving page: every shot posed at its rest and measured. Null when nothing moves. */
 export function reviewMotionPage(spec: DesignSpec, page: Page | undefined, layers: Layer[], projectDir: string): MotionReview | null {
   const motionEnd = animationDuration(layers);
@@ -100,7 +114,12 @@ export function reviewMotionPage(spec: DesignSpec, page: Page | undefined, layer
   const end = typeof held === 'number' && held > 0 ? held : motionEnd;
   const W = spec.document?.width ?? 0;
   const marks = Object.entries(readMarkers(spec, page)).map(([id, at]) => ({ id, at: Number(at) })).filter(m => Number.isFinite(m.at));
-  const rests = shotRests(layers, marks, end).slice(0, MAX_SHOTS);
+  // A shot that rests from start to end moves only in loops — a sprout that grows,
+  // sways and folds away every 6 s rests the whole shot — and its last frame is
+  // not what it holds: the one-shot benchmark (r4) measured the frame the hero
+  // had folded away. Such a shot is measured at its fullest moment instead.
+  const rests = shotRests(layers, marks, end).slice(0, MAX_SHOTS)
+    .map(r => (r.rest_ms >= r.until - r.at - 1 ? { ...r, t: fullestAt(layers, r.at, r.until) } : r));
   const posed = rests.map(r => ({ id: r.shot, layers: layersAt(layers, r.t) }));
   const measured = measureEntries(spec, posed, projectDir);
   // A shot whose only still moment comes before anything has entered measured
