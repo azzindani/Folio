@@ -271,8 +271,9 @@ Rules:
     text, off-canvas layers, missing background, text_overflow) — read them and fix in
     your next call.
   - VERIFY before sealing: diagnose_design(design_path) lists problems (text_overflow,
-    off-canvas, collisions, near-miss MISALIGNMENT, low contrast, weak hierarchy) each
-    with a fix; FIX EVERY error then re-run it until zero errors. edit_layer(op:align) fixes
+    off-canvas, collisions, near-miss MISALIGNMENT, low contrast, weak hierarchy, words
+    under a 9:16 feed's header/caption/buttons = safe_area, letters inside the 4% edge
+    margin = title_safe) each with a fix; FIX EVERY error then re-run it until zero errors. edit_layer(op:align) fixes
     alignment; render_preview(design_path) returns a PNG so you can SEE the result.
     Fix → re-check → seal.
 
