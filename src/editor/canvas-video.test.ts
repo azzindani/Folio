@@ -77,3 +77,11 @@ describe('CanvasVideo', () => {
     expect(v.currentTime).toBeCloseTo(1.1, 3);
   });
 });
+
+describe('a page whose only motion is footage plays', () => {
+  it('counts a video layer as playing in time — the toolbar shows Play', async () => {
+    const { playsInTime } = await import('../ui/panels/timeline-model');
+    expect(playsInTime({ id: 'c', type: 'video', src: 'a.mp4', z: 1 } as never)).toBe(true);
+    expect(playsInTime({ id: 'r', type: 'rect', z: 1 } as never)).toBe(false);
+  });
+});
