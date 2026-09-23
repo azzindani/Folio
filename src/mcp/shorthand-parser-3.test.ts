@@ -169,7 +169,7 @@ describe('diagnoseLayers — self-correction notes for the tool loop', () => {
       { id: 'cap', type: 'text', z: 0, x: 0, y: 0, width: 10, height: 10, content: { type: 'plain', value: '' } },
     ] as unknown as Layer[];
     const notes = diagnoseLayers(layers);
-    expect(notes.find(n => n.includes('ico') && n.includes('not a known icon'))).toBeTruthy();
+    expect(notes.find(n => n.includes('ico') && n.includes('not a bundled icon'))).toBeTruthy();
     expect(notes.find(n => n.includes('pic') && n.includes('local file'))).toBeTruthy();
     expect(notes.find(n => n.includes('cap') && n.includes('empty'))).toBeTruthy();
   });

@@ -162,7 +162,7 @@ export function diagnoseLayers(layers: Layer[]): string[] {
       if (l.type === 'icon') {
         const name = (l as Layer & { name?: string }).name ?? '';
         const hit = resolveIconName(name);
-        if (!hit) notes.push(`icon "${l.id}": "${name}" is not a known icon → renders as a blank fallback circle. Look one up instead of guessing again: manage_design {op:"icon_search", query:"${name}"}. Common names: ${SUGGESTED_ICONS}.`);
+        if (!hit) notes.push(`icon "${l.id}": "${name}" is not a bundled icon → renders as a blank fallback circle. Look one up: manage_design {op:"icon_search", query:"${name}"} — or fetch that exact glyph from the full Lucide set (and 200k others) as an image: manage_design {op:"asset_fetch", ref:"iconify:lucide:${name}", icon_color:"#…"}, then an image layer with the returned src. Common bundled names: ${SUGGESTED_ICONS}.`);
       } else if (l.type === 'image') {
         const src = (l as Layer & { src?: string }).src ?? '';
         if (src && /^(https?:|\/\/)/i.test(src)) {

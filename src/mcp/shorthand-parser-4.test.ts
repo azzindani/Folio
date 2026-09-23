@@ -207,7 +207,7 @@ describe('diagnoseLayers recurses into auto_layout (catches nested bad icons)', 
         items: [{ icon: 'gauge', title: 'A', desc: 'b' }, { icon: 'zap', title: 'C', desc: 'd' }] },
     ]));
     const notes = diagnoseLayers(layers);
-    expect(notes.some(n => n.includes('gauge') && n.includes('not a known icon'))).toBe(true);
+    expect(notes.some(n => n.includes('gauge') && n.includes('not a bundled icon') && n.includes('iconify:lucide:gauge'))).toBe(true);
   });
 
   it('stays silent when every nested icon resolves', () => {
