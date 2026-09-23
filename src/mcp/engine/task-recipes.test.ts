@@ -53,4 +53,28 @@ describe('recipes', () => {
     const list = await tasks({ op: 'recipes' });
     expect(list['recipes']).toEqual([expect.objectContaining({ recipe: 'fhd-title-card', steps: 2, params: { project: 'p', name: 'n', title: 't' } })]);
   }, 30_000);
+
+  it('a recipe runs recipes — a function calling a function', async () => {
+    await tasks({ op: 'save_recipe', recipe: 'fhd-title-card', params: { project: 'p', name: 'n', title: 't' }, steps: TITLE_CARD });
+    const saved = await tasks({ op: 'save_recipe', recipe: 'two-cards', params: { project: 'which project', title: 'first headline' }, steps: [
+      { recipe: 'fhd-title-card', params: { project: '${params.project}', name: 'first', title: '${params.title}' }, as: 'one' },
+      { recipe: 'fhd-title-card', params: { project: '${params.project}', name: 'second', title: 'After ${params.title}' } },
+    ] });
+    expect(saved['success']).toBe(true);
+    await ALL_HANDLERS['create_project']?.({ name: 'deck' });
+    const r = await tasks({ op: 'run_recipe', recipe: 'two-cards', params: { project: 'deck', title: 'Hello' } });
+    expect(r).toMatchObject({ success: true, ran: 2 });
+    expect((r['steps'] as R[]).map(s => s['tool'])).toEqual(['recipe:fhd-title-card', 'recipe:fhd-title-card']);
+    expect(fs.readFileSync(path.join(root, 'deck', 'designs', 'second.design.yaml'), 'utf8')).toContain('After Hello');
+  }, 30_000);
+
+  it('refuses a recipe that runs itself — directly when saved, through another when run', async () => {
+    await tasks({ op: 'save_recipe', recipe: 'x', steps: [{ tool: 'create_project', args: { name: 'x-proj' } }] });
+    await tasks({ op: 'save_recipe', recipe: 'y', steps: [{ recipe: 'x' }] });
+    expect(String((await tasks({ op: 'save_recipe', recipe: 'y', steps: [{ recipe: 'y' }] }))['error'])).toContain('runs itself');
+    await tasks({ op: 'save_recipe', recipe: 'x', steps: [{ recipe: 'y' }] });
+    const r = await tasks({ op: 'run_recipe', recipe: 'x' });
+    expect(r['success']).toBe(false);
+    expect(JSON.stringify(r)).toContain('would run itself: x → y → x');
+  });
 });
