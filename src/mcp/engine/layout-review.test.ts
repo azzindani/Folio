@@ -52,6 +52,16 @@ describe('components', () => {
   });
 });
 
+describe('components — a group is what its children draw', () => {
+  it('measures a group by its ink, not the box it was given', () => {
+    // Boxed 1080×960 so its pop turns about the hub; it draws a 300×390 clock.
+    const clock = group('clock', 0, 0, 1080, 960, [rect('face', 390, 330, 300, 300, '#13263D'), text('time', 340, 660, 400, 60, '9:40 pm', 46)]);
+    const [c] = components([clock], 1080, 1920, new Set());
+    expect(c?.id).toBe('clock');
+    expect(c?.share.area).toBeLessThan(0.1);
+  });
+});
+
 describe('layoutNotes', () => {
   const base = {
     canvas: '1920×1080', ink: 0.1, occupied: 0.3, content_box: { x: 80, y: 80, width: 700, height: 900, margins: { left: 80, right: 1140, top: 80, bottom: 100 } },
@@ -63,6 +73,14 @@ describe('layoutNotes', () => {
     ],
     type_scale: null,
   };
+  // Benchmark r5 (b17, a 9:16 story): the clear caption band read as "one empty area" — where safe_area says words must not go.
+  it('does not call the band a vertical feed covers with its interface empty space', () => {
+    const band = { x: 0, y: 1440, width: 1080, height: 480, share: 0.25 };
+    const story = { ...base, canvas: '1080×1920', empty: [band], components: [] };
+    expect(layoutNotes(story).some(s => s.includes('one empty area'))).toBe(false);
+    expect(layoutNotes({ ...story, canvas: '1080×1350', empty: [{ ...band, y: 870 }] }).some(s => s.includes('one empty area'))).toBe(true);
+  });
+
   it('states the facts a viewer notices, and only those', () => {
     const n = layoutNotes(base);
     expect(n.some(s => s.startsWith('53% of the canvas is one empty area'))).toBe(true);

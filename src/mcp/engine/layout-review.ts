@@ -17,6 +17,7 @@ import { cullUnseenClips } from '../../export/frame-cull';
 import { animationDuration } from '../../export/gif-frames';
 import { IDENTITY, poseAffine, compose, mapBox, type Affine } from './layout-pose';
 import { drawnBox } from '../../export/frame-geometry';
+import { feedZoneBoxes } from './diagnose-safe';
 import { seenTexts, textMask, textOnGround, legibilityNotes, hardToRead, type TextOnGround } from './layout-legibility';
 import {
   inkGrid, occupancy, emptyRects, balance, thirds, contentBox, round2,
@@ -113,7 +114,10 @@ export function components(layers: Layer[], W: number, H: number, ground: Set<La
     const authored = seenGeo(l);
     const g = authored ? mapBox(here, authored) : null;
     const inner = kids(l);
-    if (inner && depth < 3 && (!g || (g.w * g.h) / (W * H) >= 0.85)) {
+    // A group spanning the canvas (a scene, a camera's world) is looked into; its own box decides that.
+    const own = inner ? geo(l) : null;
+    const span = own ? mapBox(here, own) : g;
+    if (inner && depth < 3 && (!span || (span.w * span.h) / (W * H) >= 0.85)) {
       out.push(...(components(inner, W, H, ground, depth + 1, here, a) as Part[]));
       continue;
     }
@@ -178,20 +182,50 @@ const BOX_IS_INK = (type: string): boolean => type !== 'rich_text' && !PANEL.has
 
 /** A text layer where its glyphs are — the renderer's wrap and anchor — else its box. */
 function seenGeo(l: Layer): Geo | null {
-  if (l.type !== 'text') return geo(l);
-  const b = drawnBox(l);
-  return b ? { x: b.x, y: b.y, w: b.width, h: b.height } : geo(l);
+  if (l.type === 'text') {
+    const b = drawnBox(l);
+    return b ? { x: b.x, y: b.y, w: b.width, h: b.height } : geo(l);
+  }
+  const inner = kids(l);
+  if (!inner) return geo(l);
+  // A group draws nothing of its own: it covers what its children draw (benchmark r5: a clock group
+  // boxed 1080×960 so its pop turned about the hub "covered 50% of the canvas" with 6% of ink).
+  const seen = inner.filter(k => {
+    const o = k as unknown as { opacity?: unknown; visible?: unknown };
+    return o.visible !== false && (typeof o.opacity !== 'number' || o.opacity > UNSEEN);
+  }).map(seenGeo).filter((g): g is Geo => g !== null && g.w > 0 && g.h > 0);
+  if (!seen.length) return geo(l);
+  let x0 = Math.min(...seen.map(g => g.x)), y0 = Math.min(...seen.map(g => g.y));
+  let x1 = Math.max(...seen.map(g => g.x + g.w)), y1 = Math.max(...seen.map(g => g.y + g.h));
+  const own = geo(l);
+  if (own && (l as { clip?: unknown }).clip === true) {
+    x0 = Math.max(x0, own.x); y0 = Math.max(y0, own.y); x1 = Math.min(x1, own.x + own.w); y1 = Math.min(y1, own.y + own.h);
+  }
+  return x1 > x0 && y1 > y0 ? { x: x0, y: y0, w: x1 - x0, h: y1 - y0 } : own;
+}
+
+/**
+ * Empty space a vertical feed covers with its own interface is where words
+ * must not go (diagnose-safe.ts) — not a hole to fill. Benchmark r5: a 9:16
+ * story's clear caption band came back as "25% of the canvas is one empty area".
+ */
+function underFeed(r: { x: number; y: number; width: number; height: number }, W: number, H: number): boolean {
+  const inside = feedZoneBoxes(W, H).reduce((sum, z) => {
+    const w = Math.min(r.x + r.width, z.x + z.width) - Math.max(r.x, z.x), h = Math.min(r.y + r.height, z.y + z.height) - Math.max(r.y, z.y);
+    return sum + (w > 0 && h > 0 ? w * h : 0);
+  }, 0);
+  return inside >= 0.8 * r.width * r.height;
 }
 
 /** Facts worth a sentence — where the page crosses a line a viewer notices. */
 export function layoutNotes(p: Omit<PageLayout, 'notes'>): string[] {
   const out: string[] = [];
   const big = p.empty[0];
-  if (big && big.share >= 0.2) out.push(`${pct(big.share)} of the canvas is one empty area: x ${big.x}–${big.x + big.width}, y ${big.y}–${big.y + big.height}.`);
+  const [W, H] = p.canvas.split('×').map(Number);
+  if (big && big.share >= 0.2 && !underFeed(big, W ?? 0, H ?? 0)) out.push(`${pct(big.share)} of the canvas is one empty area: x ${big.x}–${big.x + big.width}, y ${big.y}–${big.y + big.height}.`);
   const b = p.balance;
   if (b && Math.abs(b.offset.x) >= 0.08) out.push(`Visual weight sits ${pct(Math.abs(b.offset.x))} ${b.offset.x > 0 ? 'right' : 'left'} of centre (left/right ${b.left_right[0]}/${b.left_right[1]}).`);
   if (b && Math.abs(b.offset.y) >= 0.08) out.push(`Visual weight sits ${pct(Math.abs(b.offset.y))} ${b.offset.y > 0 ? 'below' : 'above'} centre (top/bottom ${b.top_bottom[0]}/${b.top_bottom[1]}).`);
-  const [W, H] = p.canvas.split('×').map(Number);
   for (const c of p.components) {
     if (PANEL.has(c.type)) continue;
     if (c.share.area >= 0.4) out.push(`"${c.id}" (${c.type}) covers ${pct(c.share.area)} of the canvas.`);

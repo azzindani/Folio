@@ -48,6 +48,11 @@ function feedZones(W: number, H: number): Zone[] {
   ];
 }
 
+/** Where a vertical feed draws its own interface over the canvas — none unless the canvas is 9:16. */
+export function feedZoneBoxes(W: number, H: number): Box[] {
+  return Math.abs(W / H - VERTICAL) <= 0.02 * VERTICAL ? feedZones(W, H).map(z => z.box) : [];
+}
+
 const area = (b: Box): number => Math.max(0, b.width) * Math.max(0, b.height);
 const meet = (a: Box, b: Box): number => {
   const w = Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x);
