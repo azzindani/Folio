@@ -21,7 +21,7 @@ import { expandPreset, isMotionPreset, PRESET_NAMES, PRESET_NOTES, PRESET_KIND, 
 import { syncAnimationsToSpec } from './animation-sync';
 import { motionTargets, setAnimation, toIdList, resolveScope, commitScope } from './motion';
 import { mergeFragment, MergeError, trackEnd } from './motion-merge';
-import { isKnownEasing, describeEasings } from '../../animation/easing';
+import { isKnownEasing, easingHint, describeEasings } from '../../animation/easing';
 import { REVEAL_FROMS, type RevealFrom } from '../../animation/reveal';
 import { staggerRanks, isStaggerOrder, STAGGER_ORDERS, type StaggerOrder } from './motion-order';
 import { readMarkers, resolveTime } from './motion-time';
@@ -58,7 +58,7 @@ function parseSteps(v: unknown): SequenceStep[] | string {
     if (!s || typeof s !== 'object') return `steps[${i}] is not an object.`;
     const st = s as Record<string, unknown>;
     if (!isMotionPreset(st['preset'])) return `steps[${i}].preset "${String(st['preset'])}" is unknown. Presets: ${PRESET_NAMES.join(', ')}.`;
-    if (st['easing'] !== undefined && !isKnownEasing(st['easing'])) return `steps[${i}].easing "${String(st['easing'])}" is unknown — run animation(op:presets) for the list.`;
+    if (st['easing'] !== undefined && !isKnownEasing(st['easing'])) return `steps[${i}].easing "${String(st['easing'])}" is unknown${easingHint(st['easing'])}`;
     if (st['order'] !== undefined && !isStaggerOrder(st['order'])) return `steps[${i}].order "${String(st['order'])}" is unknown. Orders: ${STAGGER_ORDERS.join(', ')}.`;
     // `layer_id` (singular) is what the sibling op:track takes, so a model that
     // learned the shape there writes it here too. An unrecognised key meant "no
@@ -172,7 +172,7 @@ function validateKeyframes(v: unknown): Keyframe[] | string {
     if (!k || typeof k !== 'object') return `keyframes[${i}] is not an object.`;
     const kf = k as Record<string, unknown>;
     if (typeof kf['t'] !== 'number' || kf['t'] < 0) return `keyframes[${i}].t must be a number of ms ≥ 0.`;
-    if (kf['easing'] !== undefined && !isKnownEasing(kf['easing'])) return `keyframes[${i}].easing "${String(kf['easing'])}" is unknown.`;
+    if (kf['easing'] !== undefined && !isKnownEasing(kf['easing'])) return `keyframes[${i}].easing "${String(kf['easing'])}" is unknown${easingHint(kf['easing'])}`;
     for (const key of Object.keys(kf)) {
       if (key === 't' || key === 'easing' || key === 'hold') continue;
       if (!ANIM_CHANNELS.has(key)) return `keyframes[${i}].${key} is not an animatable channel. Channels: ${[...ANIM_CHANNELS].join(', ')}.`;
@@ -189,7 +189,7 @@ function validatePlayback(v: unknown, frames: Keyframe[]): NonNullable<Animation
   const pb = (v && typeof v === 'object' ? v : {}) as Record<string, unknown>;
   const span = frames[frames.length - 1].t - frames[0].t;
   const duration = typeof pb['duration'] === 'number' && pb['duration'] > 0 ? pb['duration'] : (span > 0 ? span : 1000);
-  if (pb['easing'] !== undefined && !isKnownEasing(pb['easing'])) return `playback.easing "${String(pb['easing'])}" is unknown.`;
+  if (pb['easing'] !== undefined && !isKnownEasing(pb['easing'])) return `playback.easing "${String(pb['easing'])}" is unknown${easingHint(pb['easing'])}`;
   if (pb['anchor'] !== undefined && !ANCHORS.has(String(pb['anchor']))) return `playback.anchor must be one of: ${[...ANCHORS].join(', ')}.`;
   if (pb['reveal_from'] !== undefined && !(REVEAL_FROMS as readonly string[]).includes(String(pb['reveal_from']))) return `playback.reveal_from must be one of: ${REVEAL_FROMS.join(', ')}.`;
   if (pb['origin'] !== undefined && pb['origin'] !== 'first' && pb['origin'] !== 'offset') return 'playback.origin must be "first" or "offset".';

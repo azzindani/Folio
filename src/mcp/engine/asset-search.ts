@@ -213,11 +213,18 @@ async function fontCatalogue(): Promise<FSRow[]> {
 export async function searchFonts(query: string, limit: number): Promise<AssetCandidate[]> {
   const rows = await fontCatalogue();
   const q = query.trim().toLowerCase();
-  // A category word ("serif", "monospace") is a legitimate font query too.
-  const byCat = rows.filter(r => String(r.category ?? '').toLowerCase() === q);
-  const byName = rows.filter(r => String(r.family ?? '').toLowerCase().includes(q));
-  const seen = new Set<string>();
-  const picked = [...byName, ...byCat].filter(r => r.id && !seen.has(r.id) && seen.add(r.id));
+  // A model describes a face as well as naming it — "Fredoka rounded" found
+  // nothing when the whole query had to sit inside a family name. Every word
+  // counts; the whole query in the name still ranks first, and a category word
+  // ("serif", "monospace", "handwriting") is a legitimate query too.
+  const words = q.split(/[\s,]+/).filter(w => w.length >= 3);
+  const score = (r: FSRow): number => {
+    const fam = String(r.family ?? '').toLowerCase(), cat = String(r.category ?? '').toLowerCase();
+    return (fam.includes(q) ? 10 : 0) + (cat === q ? 5 : 0)
+      + words.reduce((n, w) => n + (fam.split(/\s+/).includes(w) ? 3 : fam.includes(w) ? 2 : cat === w ? 1 : 0), 0);
+  };
+  const picked = rows.filter(r => r.id).map(r => ({ r, s: score(r) })).filter(x => x.s > 0)
+    .sort((a, b) => b.s - a.s).map(x => x.r);
   return picked.slice(0, limit).map(r => ({
     ref: `font:${r.id}`, source: 'font' as const, kind: 'fonts' as const,
     title: r.family ?? r.id ?? '',
