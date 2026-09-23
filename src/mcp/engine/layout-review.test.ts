@@ -37,6 +37,19 @@ describe('components', () => {
     expect(cs.map(c => c.id)).toEqual(['card', 'cap']);          // full-bleed + off-canvas left out
     expect(cs[0]?.share.area).toBeCloseTo(0.23, 2);
   });
+
+  // benchmark r2: two glitch ghosts at opacity 0 topped every shot, and a
+  // 13-letter split title reported as "title_c1, 1%".
+  it('leaves out what cannot be seen, and reads a split headline as one thing', () => {
+    const ghost = { ...(text('ghost', 160, 400, 1600, 170, 'SMALL MACHINES', 132) as unknown as Record<string, unknown>), opacity: 0 } as unknown as Layer;
+    const faded = group('faded', 0, 0, 400, 400, [rect('inside', 10, 10, 300, 300)]);
+    (faded as unknown as Record<string, unknown>)['opacity'] = 0;
+    const letters = ['S', 'M', 'A'].map((c, i) => ({ ...(text(`title_c${i + 1}`, 200 + i * 130, 400, 120, 132, c, 132) as unknown as Record<string, unknown>), split_of: 'title' }) as unknown as Layer);
+    const cs = components([ghost, faded, ...letters], 1920, 1080, new Set());
+    expect(cs.map(c => c.id)).toEqual(['title']);
+    expect(cs[0]?.box.x).toBeLessThanOrEqual(200);
+    expect(cs[0]?.box.width).toBeGreaterThan(300);
+  });
 });
 
 describe('layoutNotes', () => {
