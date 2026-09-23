@@ -78,6 +78,9 @@ export function hasWideChars(text: string): boolean {
  * Breaking mid-token is a last resort, for a run that cannot fit on any line:
  * a CJK paragraph (no spaces at all) or a long URL.
  */
+/** How far past the box a single word may measure before it is broken — the width table's own error. */
+const TOKEN_SLACK = 1.03;
+
 export function wrapToWidth(text: string, maxWidthPx: number, fontSize: number, narrowEm: number | ((s: string) => number) = NARROW_EM): string[] {
   const lines: string[] = [];
   // A measure function (a bundled face's real widths, utils/font-widths) wins over the flat advance.
@@ -98,7 +101,9 @@ export function wrapToWidth(text: string, maxWidthPx: number, fontSize: number, 
       const candidate = cur ? cur + ' ' + word : word;
       if (width(candidate) <= maxWidthPx) { cur = candidate; continue; }
       if (cur) { lines.push(cur); cur = ''; }
-      cur = width(word) <= maxWidthPx ? word : breakToken(word);
+      // A word within the measure's own error of the box is not broken: a split
+      // piece's box is cut to its exact width, and the table may read it a hair wide.
+      cur = width(word) <= maxWidthPx * TOKEN_SLACK ? word : breakToken(word);
     }
     lines.push(cur);
   }

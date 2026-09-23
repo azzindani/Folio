@@ -188,8 +188,12 @@ describe('analyzeLayers — text overflow reaches group children (benchmark r1)'
     expect(analyzeLayers([bg, group(false, [kick])], W, H).some(x => x.code === 'text_overflow')).toBe(false);
   });
 
-  it('never wraps a single word, whatever its width estimate', () => {
-    const word = words('w1', 'Astra', 140, 462, 126, 101, 96);
-    expect(analyzeLayers([bg, group(false, [word])], W, H).some(x => x.code === 'text_overflow')).toBe(false);
+  it('breaks a word where the renderer breaks it — and not one cut to its own width', () => {
+    // "Astra" at 96 px is ~250 px: in a 126 px box it draws on three lines, as the flipbook shows.
+    const narrow = words('w1', 'Astra', 140, 462, 126, 101, 96);
+    expect(analyzeLayers([bg, group(false, [narrow])], W, H).some(x => x.code === 'text_overflow')).toBe(true);
+    // A split piece's box is its exact width; the measure reading it a hair wide does not break it.
+    const cut = { ...words('w2', 'Astra', 140, 462, 263, 101, 96), style: { font_family: 'Archivo', font_weight: 800, font_size: 96, line_height: 1.4 } } as unknown as Layer;
+    expect(analyzeLayers([bg, group(false, [cut])], W, H).some(x => x.code === 'text_overflow')).toBe(false);
   });
 });

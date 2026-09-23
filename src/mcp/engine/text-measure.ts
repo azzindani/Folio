@@ -39,8 +39,6 @@ export function estTextHeight(text: string, fontSize: number, widthPx: number, l
   return Math.ceil(Math.max(1, lines) * fontSize * lh);
 }
 
-/** No whitespace, hyphen or CJK — nowhere a line can break. */
-const UNBREAKABLE = /^[^\s\-\u2E80-\u9FFF\u3040-\u30FF\uAC00-\uD7AF]+$/;
 
 interface TextMetrics { estH: number; declaredH: number; lines: number; fontSize: number; lineH: number; }
 
@@ -69,10 +67,10 @@ export function measureTextLayer(l: Layer): TextMetrics | null {
   const measured = known && upper ? text.toUpperCase() : text;
   const transformed = upper && !known ? width / 1.12 : width;
   const tracking = typeof style.letter_spacing === 'number' ? style.letter_spacing : 0;
-  // Text with no break opportunity — one Latin word, as op:text splits a line
-  // into — draws on ONE line whatever the width estimate says ("Astra" at 96px
-  // measured as two lines in a box cut to its width).
-  const estH = UNBREAKABLE.test(text) ? Math.ceil(fontSize * lh) : estTextHeight(measured, fontSize, transformed, lh, font, style.font_weight, tracking);
+  // Counted exactly as the renderer wraps — a word too wide for its box IS
+  // broken there ("40%" drew as "40" over "%" into the line below; benchmark r4).
+  // A word within the measure's error of its box stays whole in both (text-width.ts).
+  const estH = estTextHeight(measured, fontSize, transformed, lh, font, style.font_weight, tracking);
   const lines = Math.max(1, Math.round(estH / (fontSize * lh)));
   return { estH, declaredH, lines, fontSize, lineH: fontSize * lh };
 }
