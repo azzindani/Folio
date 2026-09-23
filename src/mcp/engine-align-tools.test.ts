@@ -9,7 +9,7 @@ import { alignLayers } from './engine-align-tools';
 // not see inside a group — which is where 267 of 279 real designs keep their
 // layers, because every MCP poster is ONE group.
 
-type Res = { success: boolean; aligned?: string[]; unresolved?: string[]; skipped_locked?: string[]; error?: string };
+type Res = { success: boolean; aligned?: string[]; unresolved?: string[]; in_locked_group?: string[]; error?: string };
 
 describe('alignLayers', () => {
   let tmp: string;
@@ -51,16 +51,17 @@ describe('alignLayers', () => {
     write(`${box('a', 100, 10)}${box('b', 400, 80)}`);
     const r = alignLayers({ design_path: fp, layer_ids: ['a', 'b'], operation: 'left' }) as unknown as Res;
     expect(r.unresolved).toBeUndefined();
-    expect(r.skipped_locked).toBeUndefined();
+    expect(r.in_locked_group).toBeUndefined();
   });
 
-  it('leaves a child of a LOCKED group alone and reports it', () => {
+  it('aligns a NAMED child of a LOCKED group and says it was locked', () => {
     write(`  - id: g\n    type: group\n    locked: true\n    x: 0\n    'y': 0\n    width: 1000\n    height: 1000\n    layers:\n${box('a', 100, 10, '      ')}\n${box('b', 400, 80)}`);
     const r = alignLayers({ design_path: fp, layer_ids: ['a', 'b'], operation: 'left' }) as unknown as Res;
-    expect(r.aligned).toEqual(['b']);
-    expect(r.skipped_locked?.[0]).toContain('a');
+    expect(r.aligned).toEqual(['a', 'b']);
+    expect(r.in_locked_group).toEqual(['a (in "g")']);
     const kids = (layers()[0]?.['layers'] as Record<string, unknown>[]);
-    expect(kids[0]?.['x']).toBe(100);            // untouched
+    expect(kids[0]?.['x']).toBe(100);            // already the leftmost edge
+    expect(layers()[1]?.['x']).toBe(100);        // b came to it
   });
 
   it('still errors when nothing usable was named', () => {

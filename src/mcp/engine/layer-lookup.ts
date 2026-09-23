@@ -79,13 +79,18 @@ export function lockedAncestorOf(spec: DesignSpec, layerId: string, pageId?: str
   return null;
 }
 
-/** The refusal every mutating op should give, worded the same way. */
-export function lockedError(layerId: string, lockedBy: string): { error: string; hint: string } {
-  return {
-    error: `Layer "${layerId}" is inside the LOCKED group "${lockedBy}" — not modified.`,
-    hint: `Unlock it first: edit_layer {op:"update", layer_id:"${lockedBy}", props:{locked:false}} — or change the child in one call without unlocking: patch_design {selectors:[{path:"pages[<page index>].layers[<i>]….<field>", value}]}, with the indexes from manage_design op:inspect.`,
-  };
-}
+/**
+ * What an edit BY ID says when its target sits inside a LOCKED group.
+ *
+ * A named layer is the caller's explicit ask, so update / remove / move /
+ * scale / align go through. What the lock guards is everything NOT named: the
+ * engine's heal passes skip the subtree, and whole-page motion treats the
+ * group as one unit. These ops used to refuse, and the first one-shot
+ * benchmark showed what that bought: every model that locked a group to keep
+ * the engine off its layout — which the guide tells it to do — then hit the
+ * refusal and spent three calls per edit on unlock → edit → re-lock.
+ */
+export const LOCKED_EDIT_NOTE = 'Edited inside a LOCKED group — you named it; the lock still keeps the engine\'s heal passes and whole-page ops off the group';
 
 /** Drop a layer by id ANYWHERE in the tree; returns how many were removed. */
 export function removeDeep(layers: Layer[], id: string): { layers: Layer[]; removed: number } {

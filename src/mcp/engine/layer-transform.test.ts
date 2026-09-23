@@ -48,12 +48,14 @@ describe('drawnBox + findTargets', () => {
   });
 
   it('finds at any depth, names locked and missing ids, drops a target inside a target', () => {
+    // A named child of a locked group is a target too (it was asked for) and is
+    // listed under `locked` so the reply can say where it lives.
     const tree = [
       L({ id: 'scene', type: 'group', locked: true, layers: [rect('inLocked', 0, 0)] }),
       L({ id: 'card', type: 'group', layers: [rect('title', 0, 0)] }),
     ];
     const r = findTargets(tree, ['inLocked', 'card', 'title', 'nope']);
-    expect(r.targets.map(l => l.id)).toEqual(['card']);          // title moves with card, not twice
+    expect(r.targets.map(l => l.id)).toEqual(['inLocked', 'card']);   // title moves with card, not twice
     expect(r.locked).toEqual(['inLocked (in "scene")']);
     expect(r.unresolved).toEqual(['nope']);
   });

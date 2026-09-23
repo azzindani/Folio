@@ -9,7 +9,8 @@ import * as fs from 'fs';
 import { findTargets, translateSubtree } from './engine/layer-transform';
 import type { DesignSpec, Layer } from '../schema/types';
 import type { ToolResult, ProgressItem } from './types';
-import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, pOk, pWarn, buildContext } from './engine/utils';
+import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, pOk, pWarn, pInfo, buildContext } from './engine/utils';
+import { LOCKED_EDIT_NOTE } from './engine/layer-lookup';
 import { buildEditorLink } from './engine/editor-link';
 
 
@@ -37,8 +38,8 @@ export function alignLayers(args: { design_path: string; layer_ids: string[]; op
   // nothing for 267 of 279 real designs: `align` answered "No positioned target
   // layers found" for the inner layers `update` has always been able to reach.
   // A batch op reports what it could not do rather than quietly doing less
-  // (`unresolved`, patch_design's convention), and a layer inside a LOCKED
-  // group is left alone and named.
+  // (`unresolved`, patch_design's convention). A named layer inside a LOCKED
+  // group is aligned like any other and named in the reply (LOCKED_EDIT_NOTE).
   const { targets, unresolved, locked } = findTargets(arr, args.layer_ids);
   const boxed = targets.map(l => ({ l, b: getXY(l) })).filter((t): t is { l: Layer; b: { x: number; y: number; w: number; h: number } } => !!t.b);
   if (boxed.length < 1) return errResult(op, 'No positioned target layers found.', 'Pass layer_ids that exist on the page and have numeric positions.', progress);
@@ -71,13 +72,13 @@ export function alignLayers(args: { design_path: string; layer_ids: string[]; op
   writeYAML(dPath, spec);
   progress.push(pOk(`Aligned ${boxed.length} layer(s)`, o));
   if (unresolved.length) progress.push(pWarn('Not found — nothing aligned for these', unresolved.join(', ')));
-  if (locked.length) progress.push(pWarn('Inside a LOCKED group — left alone', locked.join(', ')));
+  if (locked.length) progress.push(pInfo(LOCKED_EDIT_NOTE, locked.join(', ')));
   const context = buildContext(op, `Aligned ${boxed.length} layer(s) (${o}) in "${spec.meta.name}"`);
   const link = buildEditorLink(dPath);
   return okResult(op, {
     status: 'ok', operation: o, aligned: boxed.map(t => t.l.id),
     ...(unresolved.length ? { unresolved } : {}),
-    ...(locked.length ? { skipped_locked: locked } : {}),
+    ...(locked.length ? { in_locked_group: locked } : {}),
     backup, open_url: link.open_url, share_url: link.short_url, editor_url: link.editor_url, progress, context, _attachments: [link.attachment],
   });
 }

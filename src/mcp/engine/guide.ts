@@ -593,7 +593,9 @@ Frontier custom composition (you can SEE the render — compose freely, then ver
   {type:"group", locked:true, pos:[0,0,W,H], layers:[…]}. The engine then skips its
   auto-rescue (no reflow / re-light / decollide / recenter) and renders your EXACT
   placement + colors — including intentional overlap and faint ghost tints it would
-  otherwise "fix". You own the geometry; render_preview + iterate.
+  otherwise "fix". You own the geometry; render_preview + iterate. The lock keeps
+  the ENGINE off, not you: edit_layer update/remove/move/scale/align reach any
+  child you name by id, and the group stays locked.
 - DATA VIZ on a custom canvas: {type:"chart", chart:"bar"|"donut"|"line", data:[…]}
   rasterizes to native shapes so it shows in PNG/PDF — even nested inside a (locked)
   group. bar/donut want [{label,value}]; line wants [{x,y}]. Color it to match your
