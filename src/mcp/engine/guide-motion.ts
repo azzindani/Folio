@@ -70,6 +70,9 @@ CONTINUOUS COMPOSITION — one scene, many sub-sequences (a 30 s motion piece)
     author its children from 0, place it at start; duplicate:{id, start, dy} re-uses it.
   • Secondary motion: op:link makes a layer follow another's track lag ms later,
     ×factor travel (a shadow trailing its card, a row whipping after its lead).
+  • Land once, then repeat: op:loop layer_id from:<key index> mode:cycle|pingpong|offset
+    repeats keys from..last to the scene's end (or until) as ordinary keys — an entrance
+    then a bob, a tick, a walk (offset carries each pass on). Re-run to change it.
   • Travel instead of cutting: op:camera world:{x,y,width,height} lays the page out
     larger than the canvas; shots target a layer, "world" or a region and the camera
     pans between sections. Shot t takes marker names. rotation:deg on a shot tilts
