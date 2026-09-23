@@ -82,13 +82,22 @@ export function trackHTML(layer: Layer, timing: RowTiming | undefined, duration:
       + `left:${at(timing.start, duration)}%;width:${at(end, duration) - at(timing.start, duration)}%;background:${fill};opacity:.45;pointer-events:none"></div>`);
   }
 
+  // The layer's own motion as a bar from its first keyframe to its last: drag it to move all of it in time (timeline-drag.ts).
+  const own = timing?.keys ?? [];
+  if (own.length >= 2 && !timing?.link) {
+    const a = Math.min(...own), b = Math.max(...own);
+    parts.push(`<div class="tl-bar" data-layer-id="${esc(layer.id)}" data-ms="${a}" title="${esc(`${layer.id}'s motion ${fmtMs(a)}–${fmtMs(b)} — drag to move it in time`)}"`
+      + ` style="position:absolute;top:${TRACK_H / 2 - 6}px;height:12px;left:${at(a, duration)}%;width:${Math.max(0.4, at(b, duration) - at(a, duration))}%;`
+      + 'background:var(--color-accent);opacity:.22;border-radius:6px;cursor:grab"></div>');
+  }
+
   keyframes.forEach((kf, i) => {
     const ease = String((kf as unknown as Record<string, unknown>)['easing'] ?? '');
     const scene = timing?.keys[i] ?? kf.t;
     const shift = Math.abs(scene - kf.t) > 0.5 ? ` (plays at ${fmtMs(scene)})` : '';
     parts.push(diamond(at(scene, duration), `background:${ease ? 'var(--color-text)' : 'var(--color-accent)'};cursor:pointer`,
-      `class="tl-keyframe" data-layer-id="${esc(layer.id)}" data-t="${kf.t}" data-easing="${esc(ease)}"`,
-      `${fmtMs(kf.t)}${shift}${ease ? ` · ${ease}` : ''} — click to set easing, right-click to delete`));
+      `class="tl-keyframe" data-layer-id="${esc(layer.id)}" data-i="${i}" data-t="${kf.t}" data-easing="${esc(ease)}"`,
+      `${fmtMs(kf.t)}${shift}${ease ? ` · ${ease}` : ''} — drag to retime, click to set easing, right-click to delete`));
   });
 
   // A follower owns no keyframes: it replays its leader's, a beat late. Hollow, and not editable here.

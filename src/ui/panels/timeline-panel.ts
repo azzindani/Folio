@@ -6,8 +6,9 @@ import { MotionPlayer } from '../../editor/motion-player';
 import type { Keyframe } from '../../animation/types';
 import { fromSceneTime } from '../../animation/clock-time';
 import { trackHTML, markerStripHTML, markersOf, fmtMs, HEADER_W, KF_RADIUS } from './timeline-track-view';
-import { timelineRows, setKeyframeEasing, shiftKeyframes } from './timeline-model';
+import { timelineRows, setKeyframeEasing, shiftKeyframes, flattenForTimeline } from './timeline-model';
 import { bindTimelineEdits } from './timeline-edit';
+import { bindTimelineDrags } from './timeline-drag';
 
 // The pure API lives in timeline-model.ts; re-exported for existing importers.
 export * from './timeline-model';
@@ -190,6 +191,17 @@ export class TimelinePanelManager {
       markers: () => { const { design, currentPageIndex } = this.state.get(); return markersOf(design, currentPageIndex); },
       preview: ms => { const tc = this.container.querySelector<HTMLElement>('#tl-timecode'); if (tc) tc.textContent = fmtMs(ms); },
       seek: ms => this.scrubTo(ms),
+    });
+
+    // Drag a keyframe to retime it, a layer's bar to move all of its motion (timeline-drag.ts).
+    bindTimelineDrags(body, {
+      duration: () => this.duration,
+      playhead: () => this.scrubMs,
+      rows: () => this.player.rows(),
+      markers: () => { const { design, currentPageIndex } = this.state.get(); return markersOf(design, currentPageIndex); },
+      preview: ms => { const tc = this.container.querySelector<HTMLElement>('#tl-timecode'); if (tc) tc.textContent = fmtMs(ms); },
+      animationOf: id => flattenForTimeline(layers).find(r => r.layer.id === id)?.layer.animation,
+      write: (id, animation) => this.state.updateLayers(new Map([[id, { animation } as Partial<Layer>]]), true),
     });
 
     // Left-click a diamond opens the easing picker for THAT keyframe. The
