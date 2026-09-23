@@ -59,7 +59,10 @@ function segments(layers: Layer[], followers: Set<string>): { moves: Segment[]; 
             const p = sorted[i], q = sorted[i + 1];
             const changed = changedChannels(sorted, i);
             if (!p || !q || p.hold || p.ambient || !changed.length) continue;
-            const unit = followers.has(l.id) ? '' : gesture(parent, changed, q.t - p.t);
+            // The pieces of one split line are one line, each behind its own mask or not (benchmark r5:
+            // the letters of "DevNorth" rising in turn read as eight separate things moving).
+            const of = (l as unknown as { split_of?: unknown }).split_of;
+            const unit = followers.has(l.id) ? '' : gesture(typeof of === 'string' ? `split:${of}` : parent, changed, q.t - p.t);
             (isDrift(changed, q.t - p.t) ? drifts : moves).push({ id: l.id, unit, start: base + p.t, end: base + q.t });
           }
         }
