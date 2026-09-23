@@ -35,8 +35,9 @@ describe('openEventStream', () => {
 
 describe('targetDesign + mtimeOf', () => {
   it('resolves the design a call targets the way the engine does', () => {
-    expect(targetDesign({ design_path: '/p/x/designs/a.design.yaml' })).toBe('/p/x/designs/a.design.yaml');
-    expect(targetDesign({ design_path: 'designs/a.design.yaml', project_path: '/p/x' })).toBe('/p/x/designs/a.design.yaml');
+    const want = path.resolve('/p/x/designs/a.design.yaml');   // a drive letter on Windows
+    expect(targetDesign({ design_path: '/p/x/designs/a.design.yaml' })).toBe(want);
+    expect(targetDesign({ design_path: 'designs/a.design.yaml', project_path: '/p/x' })).toBe(want);
     expect(targetDesign({ project_path: '/p/x' })).toBeNull();
     expect(targetDesign({ design_path: '/p/x/exports/a.png' })).toBeNull();
   });
