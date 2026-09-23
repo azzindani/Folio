@@ -26,8 +26,8 @@ describe('diagnose_design', () => {
     const p = writeDesign([
       { id: 'bg', type: 'rect', z: 0, x: 0, y: 0, width: 1080, height: 1080, fill: { type: 'solid', color: '#FAF5EC' } },
       { id: 'stray', type: 'rect', z: 1, x: -40, y: 0, width: 200, height: 200, fill: { type: 'solid', color: '#000' } },
-      { id: 'a', type: 'text', z: 2, x: 100, y: 100, width: 300, height: 80, content: { type: 'plain', value: 'a' }, style: { font_size: 40, color: '#000' } },
-      { id: 'b', type: 'text', z: 3, x: 120, y: 110, width: 300, height: 80, content: { type: 'plain', value: 'b' }, style: { font_size: 40, color: '#000' } },
+      { id: 'a', type: 'text', z: 2, x: 100, y: 100, width: 300, height: 80, content: { type: 'plain', value: 'Summer sale' }, style: { font_size: 40, color: '#000' } },
+      { id: 'b', type: 'text', z: 3, x: 120, y: 110, width: 300, height: 80, content: { type: 'plain', value: 'Summer sale' }, style: { font_size: 40, color: '#000' } },
     ]);
     const r = diagnoseDesign({ design_path: p });
     expect(r.success).toBe(true);

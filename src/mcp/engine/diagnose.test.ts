@@ -22,8 +22,14 @@ describe('analyzeLayers — geometry', () => {
   });
 
   it('flags colliding same-kind content (text pile-up)', () => {
-    const f = analyzeLayers([bg, text('a', 100, 100, 300, 80, 40), text('b', 120, 110, 300, 80, 40)], W, H);
+    const words = (id: string, x: number, y: number): Layer => ({ ...text(id, x, y, 300, 80, 40), content: { type: 'plain', value: 'Summer sale' } } as unknown as Layer);
+    const f = analyzeLayers([bg, words('a', 100, 100), words('b', 120, 110)], W, H);
     expect(f.some(x => x.code === 'collision')).toBe(true);
+    // Judged by the letters: a generous box that reaches the line below is not a pile-up.
+    const quote = { ...text('quote', 300, 330, 1320, 340, 96), content: { type: 'plain', value: 'The best way to predict the future is to invent it.' },
+      style: { font_family: 'Fraunces', font_weight: 300, font_size: 96, line_height: 1.18, color: '#111111' } } as unknown as Layer;
+    const name = { ...text('name', 300, 668, 800, 50, 34), content: { type: 'plain', value: 'Alan Kay' } } as unknown as Layer;
+    expect(analyzeLayers([bg, quote, name], 1920, 1080).some(x => x.code === 'collision')).toBe(false);
   });
 
   it('does NOT flag a text over a (different-kind) card as a collision', () => {
