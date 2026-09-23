@@ -118,11 +118,25 @@ export const TIER1_TOOLS: ToolDefinition[] = [
   },
   {
     name: 'tasks',
-    description: 'Multi-page carousel/deck task planning — pick `op`:\n• create — plan a multi-page design + scaffold it; returns the first append_page baton (req: project_path, task_name, brief, pages:[{label,hints}]).\n• list — task files in a project with progress status (req: project_path).\n• resume — read a task\'s state and get the exact next tool call, e.g. after a context reset (req: task_path).',
+    description: 'Multi-page carousel/deck task planning — pick `op`:\n• create — plan a multi-page design + scaffold it; returns the first append_page baton (req: project_path, task_name, brief, pages:[{label,hints}]).\n• list — task files in a project with progress status (req: project_path).\n• resume — read a task\'s state and get the exact next tool call, e.g. after a context reset (req: task_path).\n• execute — run a CHAIN of Folio tool calls in one call, as data: steps:[{tool, args, as?}], later steps reading earlier replies by ${name.field}. Each step goes through the same checks, snapshots and lineage as its own call; the chain stops at the first failure and says which step, with every reply so far (req: steps; opt: dry_run). Use it for a build you already know — create → add layers → review → export — instead of one round-trip per call.',
     inputSchema: {
       type: 'object',
       properties: {
-        op:           { type: 'string', enum: ['create', 'list', 'resume'], description: 'create, list or resume.' },
+        op:           { type: 'string', enum: ['create', 'list', 'resume', 'execute'], description: 'create, list, resume or execute.' },
+        steps: {
+          type: 'array',
+          description: 'op:execute — the chain, run in order in ONE call: [{tool:"create_design", args:{…}, as:"made"}, {tool:"add_layers", args:{design_path:"${made.design_path}", layers_shorthand:[…]}}]. `as` names a step\'s reply; any string in a later step reads it with ${name.field} (${name.list.0.id} indexes a list; a string that is only a ref keeps the value\'s type). Every step is also ${stepN}. At most 50.',
+          items: {
+            type: 'object',
+            properties: {
+              tool: { type: 'string', description: 'Any Folio tool name.' },
+              args: { type: 'object', description: 'That tool\'s arguments, exactly as you would send them.' },
+              as:   { type: 'string', description: 'Name for this step\'s reply.' },
+            },
+            required: ['tool'],
+          },
+        },
+        dry_run:      { type: 'boolean', description: 'op:execute — check the chain (tools exist, names unique, every ref points back) and run nothing.' },
         project_path: { type: 'string', description: 'Path to project directory (op:create/list).' },
         task_name:    { type: 'string', description: 'op:create — task / design name.' },
         brief:        { type: 'string', description: 'op:create — one-sentence description of the full design.' },
