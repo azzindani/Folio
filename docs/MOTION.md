@@ -186,8 +186,9 @@ A clip is a project asset under `assets/video/` (mp4, m4v, mov, webm; its own 64
 | File | `asset-resolve.ts` | `resolveImageAssets` records the resolved file as `_video_file` (not inlined — each frame is drawn at its own moment), or notes that the src is not a stored clip. |
 | Frame | `src/mcp/engine/video-frame.ts` | `renderToSVGString` — every server render — attaches `_video_frame`: the file's picture at `_video_ms` (or `offset_ms` for a still render) as a JPEG data: URI, one ffmpeg call per distinct moment, cached; a moment past the end shows the last frame. No stored file → `''`. |
 | Draw | `src/renderer/layer-renderers-video.ts` | With a frame (server) the layer draws as an IMAGE — fit, crop, mask, focal, overlay and frame all apply to footage. Without one (the browser) the file plays in a `<video>` inside a foreignObject, `object-fit` from `fit`, `data-video-layer` for the editor's transport. |
+| Sound | `src/export/video-sound.ts` | A clip's own sound joins the soundtrack: from the layer's resolved `in`, `offset_ms` into the file, for the used part (`duration_ms` of file time) at `speed`, never past its `out` or the piece's end, at `volume`; `muted:true` silences it. `planSound` adds these clips (per scene, or from 0 on a one-page piece); `sound-resolve.ts` measures the file and passes over footage with no sound track (and a clip that is not stored) without a note — it is ordinary footage. The mix trims `length × speed` of file time and changes tempo with chained `atempo` stages (0.5–2 each). |
 
-Not yet (next): the clip's own sound in the mix, the editor driving `<video>` from the playhead, trim/speed/split ops, clip search.
+Not yet (next): the editor driving `<video>` from the playhead, trim/speed/split ops, clip search.
 
 ### Captions
 

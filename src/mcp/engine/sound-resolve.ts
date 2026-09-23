@@ -12,6 +12,7 @@ import { planSound, type SoundPlan, type SoundTimeline } from '../../export/audi
 import type { MuxClip } from '../../export/audio-mux';
 import { resolveAssetFile } from './asset-resolve';
 import { probeAudio } from './asset-audio';
+import { videoSources } from '../../export/video-sound';
 
 export interface ResolvedSound {
   plan: SoundPlan;
@@ -25,8 +26,13 @@ const srcOf = (s: unknown): string => (typeof s === 'string' ? s.trim() : '');
 
 /** Every src the design's tracks and cues name. */
 export function soundSources(spec: DesignSpec): string[] {
-  const all = [...(spec.audio ?? []).map(t => srcOf(t.src)), ...(spec.pages ?? []).flatMap(p => (p.audio_cues ?? []).map(c => srcOf(c.src)))];
+  const all = [...(spec.audio ?? []).map(t => srcOf(t.src)), ...(spec.pages ?? []).flatMap(p => (p.audio_cues ?? []).map(c => srcOf(c.src))), ...clipSources(spec)];
   return [...new Set(all.filter(Boolean))];
+}
+
+/** Every file a video layer plays — its sound joins the mix (video-sound.ts). */
+function clipSources(spec: DesignSpec): string[] {
+  return [...videoSources(spec.layers), ...(spec.pages ?? []).flatMap(p => videoSources(p.layers))];
 }
 
 export function hasSound(spec: DesignSpec): boolean {
@@ -37,14 +43,18 @@ export function resolveSound(spec: DesignSpec, dPath: string, timeline: SoundTim
   const files = new Map<string, string>();
   const durations: Record<string, number | undefined> = {};
   const missing: string[] = [];
+  // A clip's own absence is noted where its frames are drawn; a clip with no
+  // sound track is ordinary footage, not a fault — neither is repeated here.
+  const clipsOnly = new Set(clipSources(spec));
   for (const src of soundSources(spec)) {
     const file = resolveAssetFile(src, dPath, projectPath);
+    if (!file && clipsOnly.has(src)) continue;
     if (!file) {
       missing.push(`Sound "${src}" is not in the project or the shared library, so it is left out. Store it with manage_design(op:asset_add) and use the assets/audio/… path it returns.`);
       continue;
     }
     const probe = probeAudio(file);
-    if (probe === 'not-audio') { missing.push(`"${src}" holds no audio, so it is left out.`); continue; }
+    if (probe === 'not-audio') { if (!clipsOnly.has(src)) missing.push(`"${src}" holds no audio, so it is left out.`); continue; }
     files.set(src, file);
     durations[src] = probe?.duration_ms;
   }
@@ -56,6 +66,7 @@ export function resolveSound(spec: DesignSpec, dPath: string, timeline: SoundTim
     pages: (spec.pages ?? []).map(p => (p.audio_cues ? { ...p, audio_cues: p.audio_cues.filter(c => keep(c.src)) } : p)),
   };
   const plan = planSound(found, timeline, durations);
+  plan.clips = plan.clips.filter(c => files.has(c.src));
   plan.notes.unshift(...missing);
   const clips = plan.clips.flatMap(c => {
     const file = files.get(c.src);

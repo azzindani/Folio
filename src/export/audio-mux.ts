@@ -22,12 +22,26 @@ export interface MuxClip extends SoundClip { /** The file on disk. */ file: stri
 
 const sec = (ms: number): string => (Math.max(0, ms) / 1000).toFixed(3);
 
+/** atempo takes 0.5–2 per stage, so a clip at 4× is two stages of 2×. Exported for tests. */
+export function atempoChain(speed: number): string[] {
+  if (!(speed > 0) || speed === 1) return [];
+  const stages: number[] = [];
+  let s = speed;
+  while (s > 2) { stages.push(2); s /= 2; }
+  while (s < 0.5) { stages.push(0.5); s /= 0.5; }
+  stages.push(s);
+  return stages.map(f => `atempo=${Number(f.toFixed(4))}`);
+}
+
 /** The filter graph that places, fades and mixes every clip into [aout]. Exported for tests. */
 export function soundFilter(clips: MuxClip[], totalMs: number): string {
   const chains = clips.map((c, i) => {
     const delay = Math.round(c.start_ms);
+    // A clip at `speed` uses length × speed of its file, then plays it in length.
+    const speed = c.speed ?? 1;
     const steps = [
-      `atrim=start=${sec(c.offset_ms)}`, 'asetpts=PTS-STARTPTS', `atrim=duration=${sec(c.length_ms)}`,
+      `atrim=start=${sec(c.offset_ms)}`, 'asetpts=PTS-STARTPTS', `atrim=duration=${sec(c.length_ms * speed)}`,
+      ...atempoChain(speed),
       'aformat=sample_fmts=fltp:sample_rates=48000:channel_layouts=stereo',
       `volume=${c.volume.toFixed(3)}`,
       ...(c.fade_in_ms > 0 ? [`afade=t=in:st=0:d=${sec(c.fade_in_ms)}`] : []),
