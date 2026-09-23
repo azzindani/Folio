@@ -49,6 +49,16 @@ function solidColor(l: Layer): string | null {
   return null;
 }
 
+/** The colour of a shape's drawn outline, or null when it has none. */
+function outlineColor(l: Layer): string | null {
+  const s = (l as { stroke?: unknown }).stroke;
+  if (typeof s === 'string') return s.startsWith('#') ? s : null;
+  if (!s || typeof s !== 'object') return null;
+  const o = s as { color?: unknown; width?: unknown };
+  const w = typeof o.width === 'number' ? o.width : 1;
+  return w >= 1 && typeof o.color === 'string' && o.color.startsWith('#') ? o.color : null;
+}
+
 function textColor(l: Layer): string | null {
   const c = (l as { style?: { color?: unknown } }).style?.color;
   return typeof c === 'string' && c.startsWith('#') ? c : null;
@@ -207,8 +217,12 @@ export function lintComposition(layers: Layer[], canvasW: number, canvasH: numbe
       if (!fc || !r) return;
       if (r.w * r.h >= canvasW * canvasH * 0.6) return; // large panel, not an accent
       const ground = below(l, i);
+      // An outline is the fix this note asks for: a white bag drawn with a dark
+      // 6px stroke on cream is plainly there (benchmark r2).
+      const sc = outlineColor(l);
+      const outlined = sc !== null && (contrast(hexToRgb(sc), hexToRgb(ground)) ?? 0) >= 1.5;
       const cr = contrast(hexToRgb(fc), hexToRgb(ground));
-      if (cr !== null && cr < 1.15) {
+      if (!outlined && cr !== null && cr < 1.15) {
         notes.push(`decor "${l.id}" (${fc}) is nearly invisible on what it sits on (${ground}, contrast ${cr.toFixed(2)}:1) — it adds no visible element. Give it a contrasting color or an outline, or remove it.`);
       }
     });
