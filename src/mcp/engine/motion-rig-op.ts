@@ -15,7 +15,7 @@ import type { DesignSpec, Layer } from '../../schema/types';
 import type { LinkChannel } from '../../animation/types';
 import type { ToolResult } from '../types';
 import { collectLayerIds } from '../engine-finalize-geom';
-import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, pOk } from './utils';
+import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, pOk, pInfo } from './utils';
 import { resolveScope, commitScope, toIdList } from './motion';
 import { syncAnimationsToSpec } from './animation-sync';
 import { linkMotion, findParentList } from './motion-precomp-op';
@@ -72,5 +72,8 @@ export function nullMotion(args: NullArgs): ToolResult {
   }
   const parented = parentMotion({ design_path: dPath, page_id: args.page_id, layer_ids: kids, to: id });
   // Undo goes back past the null too: the backup is the design before it.
-  return parented.success ? { ...parented, op, null: id, progress: [made, ...parented.progress], backup: bak } : parented;
+  if (!parented.success) return parented;
+  // A new null has no track yet — that is the next step, not a fault.
+  const progress = [made, ...parented.progress.filter(p => p.message !== 'Target does not move'), pInfo('Give the null a track', `op:track / op:sequence on "${id}" — its children follow`)];
+  return { ...parented, op, null: id, progress, backup: bak };
 }
