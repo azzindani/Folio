@@ -36,6 +36,7 @@ export const SEARCH_HOSTS = [
   'commons.wikimedia.org',
   'api.iconify.design',
   'api.fontsource.org',
+  'images-api.nasa.gov',
 ];
 
 /**
@@ -49,7 +50,7 @@ export const SEARCH_HOSTS = [
 export function defaultFetchHosts(): string[] {
   const extra = String(process.env['FOLIO_ASSET_FETCH_HOSTS'] ?? '')
     .split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
-  return [...SEARCH_HOSTS, 'upload.wikimedia.org', 'live.staticflickr.com',
+  return [...SEARCH_HOSTS, 'upload.wikimedia.org', 'live.staticflickr.com', 'images-assets.nasa.gov',
     'cdn.jsdelivr.net', 'fonts.gstatic.com', ...extra];
 }
 

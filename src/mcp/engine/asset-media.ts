@@ -41,6 +41,13 @@ export function probeMedia(kind: string, buf: Buffer, ext: string): { meta: Medi
 
 interface MediaEntry { kind: string; path: string; id: string; duration_ms?: number; width?: number; height?: number }
 
+/** A ready-to-place video layer at the clip's native aspect, at most 960 px on its long side. */
+export function videoLayerStub(e: MediaEntry): Record<string, unknown> {
+  const w = e.width ?? 1280, h = e.height ?? 720;
+  const k = Math.min(1, 960 / Math.max(w, h));
+  return { id: e.id, type: 'video', z: 21, pos: [120, 120, Math.round(w * k), Math.round(h * k)], src: e.path, fit: 'cover' };
+}
+
 /** The next step for a stored sound or clip — neither is an image layer. */
 export function mediaNextAction(e: MediaEntry): NextAction | null {
   const secs = typeof e.duration_ms === 'number' ? ` (${(e.duration_ms / 1000).toFixed(1)} s)` : '';
@@ -51,11 +58,8 @@ export function mediaNextAction(e: MediaEntry): NextAction | null {
     };
   }
   if (e.kind === 'video') {
-    const w = e.width ?? 1280, h = e.height ?? 720;
-    const k = Math.min(1, 960 / Math.max(w, h));
-    const stub = { id: e.id, type: 'video', z: 21, pos: [120, 120, Math.round(w * k), Math.round(h * k)], src: e.path, fit: 'cover' };
     return {
-      tool: 'add_layers', params: { design_path: '<your .design.yaml>', layers_shorthand: [stub] }, remaining: 0,
+      tool: 'add_layers', params: { design_path: '<your .design.yaml>', layers_shorthand: [videoLayerStub(e)] }, remaining: 0,
       hint: `Clip stored${secs}. Place it as a video layer — it plays from its in point; video:{offset_ms, duration_ms, speed, volume, muted, loop} trims and times it.`,
     };
   }
