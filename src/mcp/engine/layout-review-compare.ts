@@ -31,6 +31,10 @@ export function memoryPath(designPath: string): string {
 export function noteKind(note: string): string | null {
   const big = /^"([^"]+)" \([^)]+\) covers/.exec(note);
   if (big) return `oversized:${big[1] ?? ''}`;
+  const wide = /^"([^"]+)" \([^)]+\) runs edge to edge/.exec(note);
+  if (wide) return `edge_to_edge:${wide[1] ?? ''}`;
+  const cut = /^"([^"]+)" \([^)]+\) is cut by the canvas edge/.exec(note);
+  if (cut) return `cut_by_edge:${cut[1] ?? ''}`;
   if (/one empty area/.test(note)) return 'empty_area';
   if (/(left|right) of centre/.test(note)) return 'weight_across';
   if (/(above|below) centre/.test(note)) return 'weight_down';

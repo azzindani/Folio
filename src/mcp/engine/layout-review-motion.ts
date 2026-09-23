@@ -14,7 +14,7 @@ import type { DesignSpec, Layer, Page } from '../../schema/types';
 import { layersAt, animationDuration } from '../../export/gif-frames';
 import { readMarkers } from './motion-time';
 import { shotRests } from './motion-lint';
-import { measureEntries, pageEntries, type PageLayout, type Box } from './layout-review';
+import { measureEntries, pageEntries, type PageLayout, type Box, type Component } from './layout-review';
 import type { Balance } from './layout-measure';
 
 export interface ShotLayout {
@@ -30,6 +30,8 @@ export interface ShotLayout {
   occupied: number;
   empty: Array<Box & { share: number }>;
   balance: Balance['offset'] | null;
+  /** The largest things in frame, measured where the camera puts them. */
+  components: Component[];
   notes: string[];
 }
 
@@ -96,6 +98,7 @@ export function reviewMotionPage(spec: DesignSpec, page: Page | undefined, layer
       ink: m?.ink ?? 0, occupied: m?.occupied ?? 0,
       empty: (m?.empty ?? []).slice(0, 2),
       balance: m?.balance?.offset ?? null,
+      components: (m?.components ?? []).slice(0, 3),
       notes: m?.notes ?? [],
     };
   });
