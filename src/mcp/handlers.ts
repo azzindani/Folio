@@ -16,6 +16,7 @@ import type { ToolResult } from './types';
 import { missingArgs } from './required-args';
 import { decodeJsonStringArgs } from './json-string-args';
 import { unknownArgs, withIgnoredArgs } from './unknown-args';
+import { measureSoundtrack } from './engine/diagnose-beats';
 
 // Most ops are pure local filesystem work and answer synchronously. The asset
 // finder talks to the internet, so a handler may also return a promise; every
@@ -73,9 +74,13 @@ const TIER3_RAW: Record<string, Handler> = {
   render_preview:  (a) => engine.renderPreview(a as Parameters<typeof engine.renderPreview>[0]),
   // heal:true turns the gate into a LOOP — diagnose, fix what is mechanically
   // fixable, re-diagnose, repeat until clean or until a pass changes nothing.
-  diagnose_design: (a) => (a['heal'] === true
-    ? engine.healDesign(a as Parameters<typeof engine.healDesign>[0])
-    : engine.diagnoseDesign(a as Parameters<typeof engine.diagnoseDesign>[0])),
+  // The soundtrack is measured first (ffmpeg, async, cached) so the cuts can be judged against its beat.
+  diagnose_design: async (a) => {
+    await measureSoundtrack(a['design_path'], a['project_path']);
+    return a['heal'] === true
+      ? engine.healDesign(a as Parameters<typeof engine.healDesign>[0])
+      : engine.diagnoseDesign(a as Parameters<typeof engine.diagnoseDesign>[0]);
+  },
   export_design:   (a) => engine.exportDesign(a as Parameters<typeof engine.exportDesign>[0]),
   open_in_editor:  (a) => engine.openInEditor(a as Parameters<typeof engine.openInEditor>[0]),
   templates:       (a) => d.dispatchTemplates(a),
