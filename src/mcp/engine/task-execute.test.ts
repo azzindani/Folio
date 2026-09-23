@@ -32,6 +32,17 @@ describe('summarize', () => {
     expect(s['output_paths']).toEqual(['/p/a.svg', '/p/b.svg']);
     expect(s['progress']).toBeUndefined();
   });
+
+  // benchmark r5: op:text's twelve piece ids came back as "12 item(s)", a chained diagnosis as findings:"1 item(s)".
+  it('keeps ids whole, and findings and review notes as the sentences a model acts on', () => {
+    const ids = Array.from({ length: 12 }, (_, i) => `quote_w${i + 1}`);
+    const s = summarize({ success: true, created: ids,
+      findings: [{ code: 'title_safe', severity: 'suggestion', layer_id: 'sub', message: 'its letters are 28 px from the bottom edge' }],
+      review: [{ page_id: 'p', notes: ['25% of the canvas is one empty area'] }] } as unknown as ToolResult);
+    expect(s['created']).toEqual(ids);
+    expect(s['findings']).toEqual(['suggestion title_safe sub: its letters are 28 px from the bottom edge']);
+    expect(s['review']).toEqual(['p: 25% of the canvas is one empty area']);
+  });
 });
 
 describe('parseSteps', () => {

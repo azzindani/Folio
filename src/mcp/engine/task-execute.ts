@@ -90,8 +90,33 @@ export function resolveRefs(v: unknown, results: Record<string, Rec>, missing: s
 const SAID = new Set(['notes', 'warnings', 'hints', 'skipped', 'dropped', 'ignored']);
 const clip = (s: string): string => (s.length > 200 ? `${s.slice(0, 200)}…` : s);
 
-/** A list, small: words the model acts on stay words (first four); anything else is a count. */
+/** Ids and paths: one token each. A later step names them, so they are kept whole. */
+const TOKEN = /^\S{1,80}$/;
+const MAX_TOKENS = 40;
+const isRec = (x: unknown): x is Rec => x !== null && typeof x === 'object' && !Array.isArray(x);
+
+/** Findings, and a review's pages, as the sentences a model acts on — the first six. */
+function said(v: unknown[]): string[] | null {
+  const lines = v.every(x => isRec(x) && typeof x['code'] === 'string' && typeof x['message'] === 'string')
+    ? (v as Rec[]).map(f => `${String(f['severity'] ?? '')} ${String(f['code'])}${typeof f['layer_id'] === 'string' ? ` ${f['layer_id']}` : ''}: ${String(f['message'])}`.trim())
+    : v.every(x => isRec(x) && Array.isArray(x['notes']))
+      ? (v as Rec[]).flatMap(p => (p['notes'] as unknown[]).filter((n): n is string => typeof n === 'string').map(n => (typeof p['page_id'] === 'string' ? `${p['page_id']}: ${n}` : n)))
+      : null;
+  if (!lines) return null;
+  const kept = lines.slice(0, 6).map(l => (l.length > 160 ? `${l.slice(0, 160)}…` : l));
+  return lines.length > 6 ? [...kept, `…+${lines.length - 6} more`] : kept;
+}
+
+/**
+ * A list, small: ids stay whole, findings and notes become sentences, other
+ * words stay words (first four); anything else is a count. Benchmark r5: the
+ * twelve word pieces op:text made came back as "12 item(s)" — the ids the next
+ * step needed — and a chained diagnosis as findings:"1 item(s)".
+ */
 function listOf(k: string, v: unknown[]): unknown {
+  if (!SAID.has(k) && v.length > 0 && v.length <= MAX_TOKENS && v.every(x => typeof x === 'string' && TOKEN.test(x))) return v;
+  const sentences = v.length > 0 ? said(v) : null;
+  if (sentences) return sentences;
   const words = v.length > 0 && v.every(x => typeof x === 'string');
   if (!words || (!SAID.has(k) && v.length > 6)) return `${v.length} item(s)`;
   const kept = (v as string[]).slice(0, 4).map(clip);
