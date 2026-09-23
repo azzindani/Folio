@@ -10,6 +10,7 @@ import { lintComposition, reviewComposition, type Stage } from './design-lint';
 import { lintAiSlop } from './ai-slop-lint';
 import { windowOf, intersectWindows } from '../../animation/lifespan';
 import { findTextOverflows } from './text-measure';
+import { joinSplitPieces } from './split-join';
 
 export interface Finding {
   code: string;
@@ -229,7 +230,9 @@ function geometryFindings(layers: Layer[], W: number, H: number, world?: Stage):
 }
 
 /** Run all diagnostics over a page's layers. */
-export function analyzeLayers(layers: Layer[], W: number, H: number, world?: Stage): Finding[] {
+export function analyzeLayers(authored: Layer[], W: number, H: number, world?: Stage): Finding[] {
+  // Each split line judged as the one line a reader sees (split-join.ts).
+  const layers = joinSplitPieces(authored);
   const out = geometryFindings(layers, W, H, world);
   // Fold composition lint (render-correctness) as warnings/errors. Skip the
   // overflow note — geometryFindings already emits a richer text_overflow
