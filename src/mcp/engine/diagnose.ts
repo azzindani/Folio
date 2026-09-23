@@ -60,6 +60,23 @@ function contentDescendants(layers: Layer[], out: Box[] = [], depth = 0): Box[] 
   return out;
 }
 
+/**
+ * Every drawn layer, with GROUPS opened (a group's children carry absolute
+ * coordinates, so they are measured where they render). Text checks ran on the
+ * top level only, and every MCP poster is one group: a fix line that wrapped to
+ * three lines and spilled out of its panel came back "Clean" (benchmark r1).
+ * auto_layout children flow in their container's space, so it stays closed.
+ */
+function drawnLeaves(layers: Layer[], out: Layer[] = [], depth = 0): Layer[] {
+  if (depth > 8) return out;
+  for (const l of layers) {
+    const kids = (l as { layers?: Layer[] }).layers;
+    if (l.type === 'group' && Array.isArray(kids)) drawnLeaves(kids, out, depth + 1);
+    else out.push(l);
+  }
+  return out;
+}
+
 function overlapArea(a: Box, b: Box): number {
   const ox = Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x));
   const oy = Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));
@@ -101,7 +118,8 @@ function geometryFindings(layers: Layer[], W: number, H: number, world?: Stage):
   }
 
   // Tiny text.
-  for (const l of layers) {
+  const leaves = drawnLeaves(layers);
+  for (const l of leaves) {
     if (l.type !== 'text') continue;
     const fs = (l as { style?: { font_size?: number } }).style?.font_size;
     if (typeof fs === 'number' && fs > 0 && fs < 12) {
@@ -135,13 +153,14 @@ function geometryFindings(layers: Layer[], W: number, H: number, world?: Stage):
   // collision check below stays silent), but the rendered text does. This is
   // the failure a vision-less model can't see; it's reported as one actionable
   // finding per overflowing layer instead of N pairwise collisions.
-  for (const o of findTextOverflows(layers, H)) {
+  for (const o of findTextOverflows(leaves, H)) {
     const hit = o.collides.length;
     const where = hit
       ? ` and overlaps ${hit} layer(s) below (${o.collides.slice(0, 4).join(', ')}${hit > 4 ? '…' : ''})`
-      : o.offBottom ? ' and runs off the bottom of the canvas' : '';
+      : o.offBottom ? ' and runs off the bottom of the canvas'
+      : o.outOf ? ` and runs out of "${o.outOf}", the shape it sits on` : '';
     out.push({
-      code: 'text_overflow', severity: hit || o.offBottom ? 'error' : 'warning', layer_id: o.id,
+      code: 'text_overflow', severity: hit || o.offBottom || o.outOf ? 'error' : 'warning', layer_id: o.id,
       message: `text "${o.id}" (${o.fontSize}px) wraps to ~${o.lines} lines (~${o.estH}px) but its box is only ${o.declaredH}px tall — it spills ~${o.spill}px past the box${where}.`,
       fix: `Raise its height to ≥${o.estH}px, reduce font_size, shorten the copy, or use the editorial/feature_grid preset (auto-sizes blocks so text never collides).`,
     });
