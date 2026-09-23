@@ -95,7 +95,14 @@ export function rippleTrack(id: string, anim: AnimationSpec, r: Ripple, rep: Rip
   const f0 = sorted[0]?.t ?? 0;
   const scene = sorted.map(k => delay + k.t - f0);
   const end = delay + (pb.duration ?? (sorted[sorted.length - 1]?.t ?? f0) - f0);
-  const moved = scene.map(s => rippled(s, r));
+  // Opening exactly where a move LANDS leaves the landing where it is: the time
+  // opens after it. Found live: a hold opened at 1200 ms, where a fade finished,
+  // stretched the 600 ms fade to 4.6 s ("under way" — it had just ended).
+  const moves = (i: number): boolean => {
+    const p = sorted[i], q = sorted[i + 1];
+    return Boolean(p && q && !p.hold && pose(p) !== pose(q));
+  };
+  const moved = scene.map((s, i) => (r.by > 0 && s === r.at && i > 0 && moves(i - 1) && !moves(i) ? s : rippled(s, r)));
   const paced = paceLoops(id, sorted, scene, moved, r, rep);
   const endAt = rippled(end, r);
   const first = moved[0];
