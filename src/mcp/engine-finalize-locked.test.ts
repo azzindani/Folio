@@ -246,3 +246,24 @@ describe('clampShorthandToCanvas respects an intentional circle/ellipse bleed', 
     expect(posOf(r)[2]).toBe(380);                         // 1080 - 700
   });
 });
+
+describe('decollideHandPlaced only rescues text (one-shot benchmark r1)', () => {
+  const rect = (id: string, x: number, y: number, w: number, h: number): Layer =>
+    ({ id, type: 'rect', z: 5, x, y, width: w, height: h, fill: '#E8501F' } as unknown as Layer);
+
+  it('leaves a shape on a shape where it was put — a progress fill on its track', () => {
+    const track = rect('track', 88, 1222, 904, 4);
+    const fill = rect('fill', 88, 1222, 129, 4);
+    const byline = txt('byline', 88, 1250, { width: 500, height: 30, content: { type: 'plain', value: 'A. Name' }, style: { font_size: 22 } });
+    expect(decollideHandPlaced([track, fill, byline], W, H)).toBe(0);
+    expect([yOf(fill), yOf(byline)]).toEqual([1222, 1250]);
+  });
+
+  it('does not pad apart two text rows set flush — only a real overprint moves', () => {
+    const style = { font_size: 100, line_height: 1 };
+    const head = txt('head', 88, 196, { width: 904, height: 306, content: { type: 'plain', value: '5 signs\nyour team\nmeetings are' }, style });
+    const accent = txt('accent', 88, 496, { width: 904, height: 110, content: { type: 'plain', value: 'wasting time.' }, style });
+    expect(decollideHandPlaced([head, accent], W, H)).toBe(0);
+    expect(yOf(accent)).toBe(496);
+  });
+});
