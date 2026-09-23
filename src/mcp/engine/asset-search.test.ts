@@ -125,6 +125,14 @@ describe('providers', () => {
     expect((await searchFonts('serif', 5)).map(r => r.title)).toContain('Lora');
   });
 
+  it('hears a described face — every word counts, the name ranks first', async () => {
+    // Found in a blind build: "Fredoka rounded" returned nothing.
+    resetFontCache();
+    jsonMock.mockResolvedValue(FONTS);
+    expect((await searchFonts('Manrope rounded geometric', 5)).map(r => r.ref)).toEqual(['font:manrope']);
+    expect((await searchFonts('elegant serif for a book', 5)).map(r => r.title)).toEqual(['Lora']);
+  });
+
   it('fetches the font catalogue once, then serves from cache', async () => {
     jsonMock.mockResolvedValue(FONTS);
     await searchFonts('lora', 5);

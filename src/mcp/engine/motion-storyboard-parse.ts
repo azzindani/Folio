@@ -9,7 +9,7 @@
 
 import type { Layer } from '../../schema/types';
 import type { TimeMarkers } from '../../animation/types';
-import { isKnownEasing } from '../../animation/easing';
+import { isKnownEasing, easingHint } from '../../animation/easing';
 import { isMotionPreset, PRESET_KIND, type MotionPreset } from './motion-presets';
 import { isStaggerOrder, staggerRanks, STAGGER_ORDERS, type StaggerOrder } from './motion-order';
 import { motionTargets } from './motion';
@@ -54,7 +54,7 @@ function readState(raw: unknown, where: string): { state: LayerState; duration?:
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return `${where} must be an object or a word ("hidden", "rise", "fade_out").`;
   const o = raw as Record<string, unknown>;
   for (const k of NUMERIC) if (o[k] !== undefined && (typeof o[k] !== 'number' || !Number.isFinite(o[k]))) return `${where}.${k} must be a number.`;
-  if (o['easing'] !== undefined && !isKnownEasing(o['easing'])) return `${where}.easing "${String(o['easing'])}" is unknown.`;
+  if (o['easing'] !== undefined && !isKnownEasing(o['easing'])) return `${where}.easing "${String(o['easing'])}" is unknown${easingHint(o['easing'])}`;
   for (const k of ['fill.color', 'stroke.color']) if (o[k] !== undefined && typeof o[k] !== 'string') return `${where}.${k} must be a colour string.`;
   const state: LayerState = {};
   for (const k of ['x', 'y', 'dx', 'dy', 'scale', 'scale_x', 'scale_y', 'rotation', 'opacity', 'blur', 'skew_x', 'skew_y'] as const) {
@@ -119,7 +119,7 @@ export function parseStoryboard(raw: unknown, scope: Layer[], markers: TimeMarke
     for (const k of ['duration', 'stagger_ms', 'hold'] as const) {
       if (o[k] !== undefined && (typeof o[k] !== 'number' || (o[k] as number) < 0)) return `${where}.${k} must be a number of ms ≥ 0.`;
     }
-    if (o['easing'] !== undefined && !isKnownEasing(o['easing'])) return `${where}.easing "${String(o['easing'])}" is unknown.`;
+    if (o['easing'] !== undefined && !isKnownEasing(o['easing'])) return `${where}.easing "${String(o['easing'])}" is unknown${easingHint(o['easing'])}`;
     if (o['order'] !== undefined && !isStaggerOrder(o['order'])) return `${where}.order must be one of: ${STAGGER_ORDERS.join(', ')}.`;
     const states = o['states'];
     if (!states || typeof states !== 'object' || Array.isArray(states)) return `${where}.states must be an object of layer id → state.`;

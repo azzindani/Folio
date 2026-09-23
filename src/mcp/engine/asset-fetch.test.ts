@@ -15,7 +15,7 @@ vi.mock('./asset-net', async (orig) => {
   };
 });
 
-const { resolveRef, slugify, projectAllowHosts, assetFetch } = await import('./asset-fetch');
+const { resolveRef, slugify, projectAllowHosts, assetFetch, creditDue } = await import('./asset-fetch');
 
 const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=', 'base64');
 // Distinct bytes per test: the library deduplicates on content, so reusing one
@@ -35,6 +35,18 @@ function makeProject(name: string, yaml = 'name: x\n'): string {
 
 beforeEach(() => { jsonMock.mockReset(); bytesMock.mockReset(); });
 afterAll(() => fs.rmSync(projectsDir, { recursive: true, force: true }));
+
+describe('creditDue', () => {
+  const p = (license: string): Parameters<typeof creditDue>[0] => ({ source: 'x', url: 'u', fetched: '', license, attribution: 'X by Y' });
+  it('asks for a credit line only where the licence asks for one on the artwork', () => {
+    for (const free of ['CC0 1.0', 'Public domain', 'OFL-1.1', 'SIL Open Font License', 'MIT', 'Apache-2.0', 'ISC', 'NASA media (not copyrighted unless noted)']) {
+      expect(creditDue(p(free))).toBeUndefined();
+    }
+    for (const due of ['CC BY 4.0', 'CC BY-SA 3.0', 'see file page', 'unverified — you are responsible for the rights']) {
+      expect(creditDue(p(due))).toBe('X by Y');
+    }
+  });
+});
 
 describe('slugify', () => {
   it('produces a filename stem, never an empty one', () => {

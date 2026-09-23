@@ -18,7 +18,7 @@ import type { ToolResult } from '../types';
 import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, pOk } from './utils';
 import { resolveScope, commitScope, motionTargets, toIdList, setAnimation } from './motion';
 import { syncAnimationsToSpec } from './animation-sync';
-import { isKnownEasing } from '../../animation/easing';
+import { isKnownEasing, easingHint } from '../../animation/easing';
 import { drawnBox } from '../../export/frame-geometry';
 import { isFullCanvasBgRect } from '../engine-layer-predicates';
 import { framePose, type Box } from './motion-camera';
@@ -40,7 +40,7 @@ function parseShots(v: unknown, ctx: TimeContext): Shot[] | string {
     const o = (s && typeof s === 'object' ? s : {}) as Record<string, unknown>;
     const t = resolveTime(o['t'], ctx);
     if (typeof t === 'string') return `shots[${i}].t: ${t}`;
-    if (o['easing'] !== undefined && !isKnownEasing(o['easing'])) return `shots[${i}].easing "${String(o['easing'])}" is unknown.`;
+    if (o['easing'] !== undefined && !isKnownEasing(o['easing'])) return `shots[${i}].easing "${String(o['easing'])}" is unknown${easingHint(o['easing'])}`;
     const raw = o['target'];
     const target = raw === undefined || raw === 'all' ? 'all' : raw === 'world' ? 'world' : isBox(raw) ? raw : toIdList(raw);
     if (!target) return `shots[${i}].target must be "all", "world", a region {x, y, width, height}, a layer id or a list of ids.`;

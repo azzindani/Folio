@@ -96,3 +96,16 @@ describe('easing library', () => {
     expect(d['ease-out-back']).toContain('pop');
   });
 });
+
+describe('naming a curve that does not exist', () => {
+  it('knows the sine family, and suggests the nearest names for an unknown one', async () => {
+    const { isKnownEasing, nearestEasings, easingHint } = await import('./easing');
+    // Found in a blind build: "ease-in-out-sine" was rejected with no list to pick from.
+    expect(isKnownEasing('ease-in-out-sine')).toBe(true);
+    const near = nearestEasings('ease-in-out-sinus');
+    expect(near[0]).toBe('ease-in-out-sine');
+    expect(near.every(n => n.startsWith('ease-in-out'))).toBe(true);
+    expect(easingHint('ease-in-out-sinus')).toMatch(/^ — try ease-in-out-sine, .*or cubic-bezier/);
+    expect(easingHint('zzz')).toMatch(/names: linear, ease/);
+  });
+});

@@ -285,10 +285,17 @@ function libraryLayerStub(entry: AssetEntry): Record<string, unknown> {
  * sentence for every file, CC0 and public-domain ones included ("… is marked
  * with CC0 1.0"), and passing that on as "REQUIRED" put needless credits on
  * finished pieces. It stays in the provenance record either way.
+ *
+ * The software licences fonts and icon sets ship under — OFL, MIT, Apache, ISC,
+ * BSD — ask for their notice to travel with the FILE, not for a credit on the
+ * artwork made with it; a blind build was told an OFL font's credit was
+ * REQUIRED on a Slack GIF. Only CC BY-family and unknown terms need the line.
  */
+const NO_CREDIT = /^(cc0|public domain|pdm|ofl|sil open font|mit\b|apache|isc\b|bsd|nasa media)/i;
+
 export function creditDue(p?: AssetProvenance): string | undefined {
   if (!p?.attribution) return undefined;
-  return /^(cc0|public domain)/i.test(String(p.license ?? '').trim()) ? undefined : p.attribution;
+  return NO_CREDIT.test(String(p.license ?? '').trim()) ? undefined : p.attribution;
 }
 
 const secs = (e: AssetEntry): string => typeof e.duration_ms === 'number' ? ` (${(e.duration_ms / 1000).toFixed(1)} s)` : '';

@@ -117,6 +117,9 @@ export const EASINGS: Record<string, EasingDef> = {
   'ease-in-out': { fn: bezierFn(0.42, 0, 0.58, 1), css: 'ease-in-out', note: 'slow both ends — loops and moves between two rest states' },
 
   // Penner family — the vocabulary every motion designer already has.
+  'ease-in-sine':     bez(0.12, 0, 0.39, 0, 'the gentlest acceleration'),
+  'ease-out-sine':    bez(0.61, 1, 0.88, 1, 'the gentlest deceleration'),
+  'ease-in-out-sine': bez(0.37, 0, 0.63, 1, 'the gentlest both ends — breathing, bobbing, steam'),
   'ease-in-quad':     bez(0.11, 0, 0.5, 0, 'soft acceleration'),
   'ease-out-quad':    bez(0.5, 1, 0.89, 1, 'soft deceleration'),
   'ease-in-out-quad': bez(0.45, 0, 0.55, 1, 'soft both ends'),
@@ -174,6 +177,23 @@ export function describeEasings(): Record<string, string> {
 }
 
 /** True when the string names a curve this engine can evaluate. */
+/**
+ * The names closest to an unknown one, by shared words — "ease-in-out-sin"
+ * suggests the in-out curves — so an error says what WOULD work.
+ */
+export function nearestEasings(name: string, n = 4): string[] {
+  const words = String(name).toLowerCase().split(/[^a-z]+/).filter(Boolean);
+  return EASING_NAMES
+    .map(k => ({ k, s: k.split('-').filter(w => words.includes(w)).length - Math.abs(k.split('-').length - words.length) * 0.1 }))
+    .filter(x => x.s > 0).sort((a, b) => b.s - a.s).slice(0, n).map(x => x.k);
+}
+
+/** " — try a, b, c (or cubic-bezier(…))": the tail every "easing is unknown" message ends with. */
+export function easingHint(name: unknown): string {
+  const near = nearestEasings(String(name ?? ''));
+  return ` — ${near.length ? `try ${near.join(', ')}` : `names: ${EASING_NAMES.slice(0, 12).join(', ')}…`}, or cubic-bezier(x1, y1, x2, y2).`;
+}
+
 export function isKnownEasing(s: unknown): s is string {
   if (typeof s !== 'string') return false;
   return s in EASINGS || parseCubicBezier(s) !== null || parseSteps(s) !== null;
