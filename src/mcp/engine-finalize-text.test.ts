@@ -21,6 +21,19 @@ const pillLabel = (color: string): Layer =>
   ({ id: 't', type: 'text', z: 2, x: 120, y: 856, width: 230, height: 32, content: { type: 'plain', value: '3 STEPS' }, style: { color, font_size: 24 } } as unknown as Layer);
 
 describe('fixInvisibleText', () => {
+  it('leaves text on a photo in the author\'s colour, and still judges it on a scrim over the photo', () => {
+    // A1 live check: white type over a sky photo was darkened to #141414, judged
+    // against the cream wash hidden under the photo.
+    const photo = { id: 'photo', type: 'image', z: 1, x: 0, y: 0, width: W, height: H, src: 'lib/photos/sky.jpg' } as unknown as Layer;
+    const over = { ...text('head', 'Look up tonight', { color: '#FFFFFF', font_size: 96 }), z: 3 } as Layer;
+    const layers = [bgRect('#F4EFE3'), photo, over];
+    expect(fixInvisibleText(layers, W, H)).toBe(0);
+    expect(styleColor(over)).toBe('#FFFFFF');
+    const scrim = shapeAt('#F8F8F8', 40, 60, 1000, 200, 2);
+    const onScrim = { ...text('head', 'Look up tonight', { color: '#FFFFFF', font_size: 96 }), z: 3 } as Layer;
+    expect(fixInvisibleText([bgRect('#F4EFE3'), photo, scrim, onScrim], W, H)).toBe(1);
+  });
+
   it('recovers the model\'s legible flat color when a nested style color is invisible', () => {
     // dark nested #1A1A1A on black bg, but the model\'s flat intent is white.
     const layers = [bgRect('#0A0A0A'), text('t', 'IRONCLAD', { color: '#1A1A1A', font_size: 60 }, '#FFFFFF')];

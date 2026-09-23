@@ -147,6 +147,8 @@ function paintRank(o: Record<string, unknown>, idx: number): number {
 // on the card (suite-079 Streaky). A wrapper with no fill resolves to null and is
 // skipped, so only painted containers count; tree order makes a card outrank + cover
 // its own text, so each label is judged against the card it sits on.
+/** Grounds with no single colour — a text on one is judged by the review's pixels, not here. */
+const PICTURE = new Set(['image', 'video']);
 const BACKDROP_SHAPES = new Set(['rect', 'ellipse', 'circle', 'polygon', 'path', 'auto_layout', 'group', 'background', 'backdrop']);
 // The LOCAL backdrop a text actually sits on: the opaque shape painted directly
 // behind it (highest paint-rank below the text) whose box substantially covers it —
@@ -208,10 +210,13 @@ export function fixInvisibleText(layers: Layer[], docW: number, docH: number, th
   // out and the text falls through to whatever opaque layer shows behind it.
   const shapes: { rank: number; box: { x: number; y: number; r: number; b: number }; hex: string }[] = [];
   flat.forEach((l, i) => {
-    if (!BACKDROP_SHAPES.has(l.type as string)) return;
     const o = l as unknown as Record<string, unknown>;
     const op = typeof o['opacity'] === 'number' ? (o['opacity'] as number) : 1;
     if (op < 0.85) return;
+    // A photo or clip is a ground of unknown colour: '' marks it, so text whose
+    // nearest ground is one keeps the author's colour (see below).
+    if (PICTURE.has(l.type as string)) { shapes.push({ rank: paintRank(o, i), box: layerBBox(l), hex: '' }); return; }
+    if (!BACKDROP_SHAPES.has(l.type as string)) return;
     const hex = rectFillHex(o, theme);
     if (!hex) return;
     shapes.push({ rank: paintRank(o, i), box: layerBBox(l), hex });
@@ -232,6 +237,10 @@ export function fixInvisibleText(layers: Layer[], docW: number, docH: number, th
     if (!effHex) return;            // unevaluable (unknown token) → leave it
     // Judge against the LOCAL backdrop the text sits on, else the dominant wash.
     const local = localBackdropHex(paintRank(o, ti), layerBBox(l), shapes);
+    // Sitting on a photo: no colour to judge against here. Judged against the
+    // wash hidden under it, white type over a sky was darkened to #141414
+    // (A1 live check) — the review reads the real pixels behind it instead.
+    if (local === '') return;
     const bd = local ?? bg;
     const cr = crRatio(effHex, bd);
     if (cr === null || cr >= MIN_TEXT_CR) return;   // already legible on its real backdrop
