@@ -137,9 +137,13 @@ export class SceneAudio {
     const source = ctx.createBufferSource();
     source.buffer = buf;
     source.loop = clip.loop;
+    // A video layer's clip at speed: the buffer runs speed× the piece clock, and
+    // start()'s duration is counted in buffer time (clipFilePosition already is).
+    const speed = clip.speed ?? 1;
+    if (speed !== 1 && source.playbackRate) source.playbackRate.value = speed;
     source.connect(gain);
     gain.connect(ctx.destination);
-    const seconds = (end - from) / 1000;
+    const seconds = ((end - from) / 1000) * speed;
     source.start(when, offset, clip.loop ? seconds : Math.min(seconds, buf.duration - offset));
     this.live.push({ source, gain });
   }

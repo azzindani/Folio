@@ -95,6 +95,8 @@ export abstract class EditorAppBase {
   private sceneStageInstance: SceneStage | null = null;
   private canvasSound: import('./canvas-sound').CanvasSound | null = null;
   private canvasSoundLoading = false;
+  private canvasVideo: import('./canvas-video').CanvasVideo | null = null;
+  private canvasVideoLoading = false;
   /**
    * Sound for a one-page piece on the canvas (canvas-sound.ts). Its chunk loads
    * once a design has sound, BEFORE the first Play — the audio context has to
@@ -104,12 +106,31 @@ export abstract class EditorAppBase {
     const check = (): void => {
       if (this.canvasSound) { this.canvasSound.designChanged(); return; }
       const d = this.state.get().design;
-      const any = (d?.audio?.length ?? 0) > 0 || (d?.pages ?? []).some(p => (p.audio_cues?.length ?? 0) > 0);
+      // A video layer's clip may carry sound, planned with the rest (video-sound.ts).
+      const any = (d?.audio?.length ?? 0) > 0 || (d?.pages ?? []).some(p => (p.audio_cues?.length ?? 0) > 0) || hasVideoLayer(d);
       if (!any || this.canvasSoundLoading) return;
       this.canvasSoundLoading = true;
       void import('./canvas-sound')
         .then(m => { this.canvasSound ??= new m.CanvasSound(this.state, this.motionPlayer); })
         .catch(() => { this.canvasSoundLoading = false; });
+    };
+    this.state.subscribe((_s, keys) => { if (keys.includes('design') && !this.motionPlayer.posing) check(); });
+    check();
+  }
+  /**
+   * Footage on the canvas (canvas-video.ts): its chunk loads once a design has
+   * a video layer; it keeps one <video> per layer across renders and drives it
+   * from the player's clock.
+   */
+  protected wireCanvasVideo(): void {
+    const check = (): void => {
+      if (this.canvasVideo || this.canvasVideoLoading || !hasVideoLayer(this.state.get().design)) return;
+      const container = document.querySelector<HTMLElement>('.canvas-svg-container');
+      if (!container) return;
+      this.canvasVideoLoading = true;
+      void import('./canvas-video')
+        .then(m => { this.canvasVideo ??= new m.CanvasVideo(this.state, this.motionPlayer, container); })
+        .catch(() => { this.canvasVideoLoading = false; });
     };
     this.state.subscribe((_s, keys) => { if (keys.includes('design') && !this.motionPlayer.posing) check(); });
     check();
@@ -618,4 +639,13 @@ export abstract class EditorAppBase {
     );
   }
 
+}
+
+/** Whether any page of a design holds a video layer. */
+function hasVideoLayer(d: { layers?: unknown[]; pages?: Array<{ layers?: unknown[] }> } | null | undefined): boolean {
+  const any = (ls: unknown[] | undefined): boolean => (ls ?? []).some(l => {
+    const o = l as { type?: string; layers?: unknown[] };
+    return o.type === 'video' || any(o.layers);
+  });
+  return any(d?.layers) || (d?.pages ?? []).some(p => any(p.layers));
 }

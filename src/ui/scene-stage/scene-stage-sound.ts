@@ -13,12 +13,17 @@ import type { ScenePlayer } from '../../editor/scene-player';
 import type { SceneAudio } from '../../editor/scene-audio';
 import type { AudioTrack, DesignSpec } from '../../schema/types';
 import { BTN, FIELD, clampMs, el, labelled, secs } from './scene-stage-controls';
+import { videoSources } from '../../export/video-sound';
 
 export interface SoundRow { element: HTMLElement; redraw(): void }
 
 /** Every sound file a design names — its tracks and its scenes' cues. */
 export function designSoundSources(design: DesignSpec | null | undefined): string[] {
-  const all = [...(design?.audio ?? []).map(t => t.src), ...(design?.pages ?? []).flatMap(p => (p.audio_cues ?? []).map(c => c.src))];
+  const all = [
+    ...(design?.audio ?? []).map(t => t.src), ...(design?.pages ?? []).flatMap(p => (p.audio_cues ?? []).map(c => c.src)),
+    // A video layer's own sound is planned too (video-sound.ts); decode it ahead like any other.
+    ...videoSources(design?.layers), ...(design?.pages ?? []).flatMap(p => videoSources(p.layers)),
+  ];
   return [...new Set(all.filter((s): s is string => typeof s === 'string' && s.trim() !== ''))];
 }
 
