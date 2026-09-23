@@ -26,6 +26,7 @@ import { renderFailureFindings } from './diagnose-render';
 import { motionFindings } from './diagnose-motion';
 import { safeAreaFindings } from './diagnose-safe';
 import { beatFindings } from './diagnose-beats';
+import { glyphFindings } from './diagnose-glyphs';
 import { validateDesignSpec } from '../../schema/validator';
 
 export type PageFinding = Finding & { page?: string };
@@ -88,7 +89,8 @@ export function collectFindings(
     const still = analyzeLayers(layers ?? [], W, H, page ? page.world : spec.world)
       .filter(f => f.code !== 'collision' || !atRest.has(pair(f)))
       .filter(f => !(edged && /crowds the edge/.test(f.message)));
-    return [...still, ...moving, ...safe].map(f => (page ? { ...f, page: page.id } : f));
+    const glyphs = glyphFindings(layers ?? [], designPath, projectPath);
+    return [...still, ...moving, ...safe, ...glyphs].map(f => (page ? { ...f, page: page.id } : f));
   };
 
   const findings: PageFinding[] = [];
