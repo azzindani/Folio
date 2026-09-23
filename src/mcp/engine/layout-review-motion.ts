@@ -13,7 +13,7 @@
 import type { DesignSpec, Layer, Page } from '../../schema/types';
 import { layersAt, animationDuration } from '../../export/gif-frames';
 import { readMarkers } from './motion-time';
-import { shotRests } from './motion-lint';
+import { shotRests, type ShotRest } from './motion-lint';
 import { measureEntries, pageEntries, type PageLayout, type Box, type Component } from './layout-review';
 import type { Balance } from './layout-measure';
 
@@ -94,14 +94,20 @@ export function reviewMotionPage(spec: DesignSpec, page: Page | undefined, layer
   // A shot whose only still moment comes before anything has entered measured
   // a blank frame and called a full scene "100% empty" (found on a 7-scene
   // promo). Such a shot is measured at its last frame instead, and says so.
-  const blankAt = rests.flatMap((r, i) => ((measured[i]?.ink ?? 0) < BLANK_INK && r.until - 1 > r.t ? [i] : []));
+  // Also a shot whose still stretch is its opening — the first frames, content
+  // still arriving (a promo scene read "71% empty" at 299 ms): candidates are
+  // re-measured at their last frame and replaced if that frame is fuller.
+  const opening = (r: ShotRest): boolean => r.t + 1 - r.rest_ms <= r.at;
+  const blankAt = rests.flatMap((r, i) => (((measured[i]?.ink ?? 0) < BLANK_INK || opening(r)) && r.until - 1 > r.t ? [i] : []));
   if (blankAt.length) {
     const again = blankAt.map(i => ({ id: rests[i]?.shot, layers: layersAt(layers, (rests[i]?.until ?? 1) - 1) }));
     const remeasured = measureEntries(spec, again, projectDir);
     blankAt.forEach((i, j) => {
       const r = rests[i], m = remeasured[j], pose = again[j];
-      if (!r || !m || !pose || m.ink < BLANK_INK) return;
-      measured[i] = { ...m, notes: [`Its only still moment (${r.rest_ms} ms at ${r.t} ms) shows nothing yet — measured at its last frame, ${r.until - 1} ms.`, ...m.notes] };
+      const before = measured[i]?.ink ?? 0;
+      if (!r || !m || !pose || m.ink < BLANK_INK || (before >= BLANK_INK && m.ink < before * 2)) return;
+      const why = before < BLANK_INK ? 'shows nothing yet' : `comes before its content has arrived (ink ${before} vs ${m.ink})`;
+      measured[i] = { ...m, notes: [`Its only still moment (${r.rest_ms} ms at ${r.t} ms) ${why} — measured at its last frame, ${r.until - 1} ms.`, ...m.notes] };
       rests[i] = { ...r, t: r.until - 1 };
       posed[i] = pose;
     });

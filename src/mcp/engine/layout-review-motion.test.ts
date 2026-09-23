@@ -72,6 +72,21 @@ describe('reviewMotionPage (rendered)', () => {
     expect(shot?.notes[0]).toMatch(/shows nothing yet — measured at its last frame, 2999 ms/);
   }, 30_000);
 
+  it('an opening still moment with the content still arriving is measured at the last frame; a composed opening is kept', () => {
+    // One small card is already in at the start; the big one arrives after the only still stretch.
+    const small = box('small', 80, 80, 200, 150);
+    const big = box('big', 400, 200, 1200, 700, { animation: move(300, 2700, { x: 2000 }, { x: 0 }) });
+    const arriving = spec([bg, small, big]);
+    const shot = reviewMotionPage(arriving, undefined, arriving.layers ?? [], '/tmp')?.shots[0];
+    expect(shot?.t).toBe(2999);
+    expect(shot?.notes[0]).toMatch(/comes before its content has arrived/);
+    // Composed from the start, then the card leaves: the opening IS the shot.
+    const leaving = spec([bg, box('card', 400, 200, 1200, 700, { animation: move(2000, 1000, { x: 0 }, { x: 2000 }) })]);
+    const kept = reviewMotionPage(leaving, undefined, leaving.layers ?? [], '/tmp')?.shots[0];
+    expect(kept?.t).toBe(1999);
+    expect(kept?.notes.some(n => n.includes('last frame'))).toBe(false);
+  }, 30_000);
+
   it('a still page gets no motion block', () => {
     const s = spec([bg, box('card', 100, 100, 400, 400)]);
     expect(reviewMotionPage(s, undefined, s.layers ?? [], '/tmp')).toBeNull();
