@@ -38,3 +38,34 @@ describe('diagnose_design on a page that moves', () => {
     expect(both.filter(f => /collision|overlap/.test(f.code)).map(f => f.code)).toEqual(['motion_overlap']);
   });
 });
+
+describe('diagnose_design on how a moving page is paced', () => {
+  const text = (id: string, y: number, value: string, extra: object = {}): Layer =>
+    ({ id, type: 'text', z: 5, x: 80, y, width: 900, height: 80, content: { type: 'plain', value }, style: { font_size: 48, color: '#111111' }, ...extra } as unknown as Layer);
+  const fadeIn = (at: number): object => ({ animation: { keyframes: [{ t: 0, opacity: 0 }, { t: 400, opacity: 1 }], playback: { duration: 400, delay: at, origin: 'offset' } } });
+  const found = (layers: Layer[]): string[] => codes({ ...doc, layers: [ground, ...layers] }).map(f => f.code);
+
+  it('says when three sentences land together, and not when they are staggered', () => {
+    const lines = (step: number): Layer[] => ['First thing to read', 'Second thing to read', 'Third thing to read here']
+      .map((v, i) => text(`l${i}`, 200 + i * 150, v, fadeIn(i * step)));
+    expect(found(lines(0))).toContain('motion_crowd');
+    expect(found(lines(150))).not.toContain('motion_crowd');
+  });
+
+  it('says when words leave before they can be read', () => {
+    const brief = text('long', 400, 'A long sentence with far too many words to read in half a second', { out: 900, ...fadeIn(0) });
+    expect(found([brief])).toContain('motion_reading');
+  });
+
+  it('says when nothing holds still for seconds, and not when a beat lands and rests', () => {
+    // Back and forth every 0.8 s; `hold` ms of stillness after the third hop.
+    const hops = (hold: number): Layer => {
+      const at = [0, 800, 1600, 2400, 2400 + hold, 3200 + hold, 4000 + hold, 4800 + hold];
+      const x = [0, 300, 0, 300, 300, 0, 300, 0];
+      const keyframes = at.map((t, i) => ({ t, x: x[i] })).filter((k, i) => i !== 4 || hold > 0);
+      return rect('hop', 100, 600, 80, 80, { animation: { keyframes, playback: { duration: 4800 + hold, origin: 'offset' } } });
+    };
+    expect(found([hops(0)])).toContain('motion_restless');
+    expect(found([hops(1200)])).not.toContain('motion_restless');
+  });
+});

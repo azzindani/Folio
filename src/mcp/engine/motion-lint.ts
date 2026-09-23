@@ -18,8 +18,9 @@ import { parentBases, chainOf } from './motion-rig-stack';
 import { canvasBoxes, type CanvasBox } from '../../export/frame-cull';
 import { buriedTexts, ancestry } from './motion-lint-buried';
 import { frameUnits, collisions, type Unit } from './motion-lint-collide';
+import { crowdNotes, restlessNotes, readingLines, type ReadLine, type Shown } from './motion-lint-pace';
 
-export type LintKind = 'overlap' | 'collision' | 'off_canvas' | 'buried' | 'idle' | 'busy' | 'reading' | 'link';
+export type LintKind = 'overlap' | 'collision' | 'off_canvas' | 'buried' | 'idle' | 'busy' | 'reading' | 'link' | 'crowd' | 'restless';
 export interface LintNote { kind: LintKind; note: string; at_ms?: number; shot?: string; layers?: string[] }
 /** A named moment of the piece — a storyboard shot or a marker — and when the next one starts. */
 export interface LintMark { id: string; at: number }
@@ -149,9 +150,14 @@ function idleNotes(moves: Segment[], loops: string[], rests: Rest[]): LintNote[]
   return notes;
 }
 
-const words = (l: Layer): number => {
+const said = (l: Layer): string => {
   const c = (l as unknown as { content?: { value?: unknown } }).content;
-  return typeof c?.value === 'string' ? c.value.split(/\s+/).filter(Boolean).length : 0;
+  return typeof c?.value === 'string' ? c.value : '';
+};
+/** The line a split piece belongs to — itself when whole. */
+const blockOf = (l: Layer): string => {
+  const of = (l as unknown as { split_of?: unknown }).split_of;
+  return typeof of === 'string' ? of : l.id;
 };
 const area = (b: { width: number; height: number }): number => Math.max(0, b.width) * Math.max(0, b.height);
 function overlapArea(a: CanvasBox['box'], b: CanvasBox['box']): number {
@@ -184,8 +190,8 @@ interface ShotView {
   fresh: CanvasBox[];
   /** Shown, inside the frame and drawn large enough to be read, not glanced at. */
   readable: Set<string>;
-  /** The fresh readable lines: new words to read. */
-  reads: Landing[];
+  /** The fresh readable lines: new words to read — a split line as one, an echo not again. */
+  reads: ReadLine[];
   /** Each drawn layer's box with the camera's transform taken out — where things really sit. */
   world: Map<string, CanvasBox>;
   /** This shot brought the layer in or moved it — itself or through a parent. */
@@ -203,11 +209,14 @@ interface ShotView {
  */
 interface Landing { id: string; words: number; settle: number; x: number; y: number }
 
-/** A text's drawn size: its font size times whatever scales it on the way to the canvas. */
+/**
+ * A text's drawn size: its font size times whatever scales it on the way to the
+ * canvas. Not its box's width over its layer's: the box is the INK, so a short
+ * line in a wide box came out a third of its size and was never read (A4).
+ */
 function drawnSize(b: CanvasBox): number {
-  const l = b.layer as unknown as { style?: { font_size?: number }; width?: number };
-  const size = l.style?.font_size ?? 16;
-  return typeof l.width === 'number' && l.width > 0 ? size * (b.box.width / l.width) : size;
+  const l = b.layer as unknown as { style?: { font_size?: number } };
+  return (l.style?.font_size ?? 16) * (b.scale ?? 1);
 }
 
 function shotViews(layers: Layer[], canvas: { width: number; height: number }, marks: LintMark[], moves: Segment[], endMs: number): ShotView[] {
@@ -249,18 +258,20 @@ function shotViews(layers: Layer[], canvas: { width: number; height: number }, m
     const shown = new Set(texts.filter(b => b.opacity > 0.5).map(b => b.layer.id));
     const fresh = texts.filter(b => shown.has(b.layer.id) && !shownBefore.has(b.layer.id));
     const readable = new Set(texts.filter(b => shown.has(b.layer.id) && overlapArea(b.box, frameBox) / area(b.box) >= 0.9 && drawnSize(b) >= minRead).map(b => b.layer.id));
+    // A split line is readable while any of its pieces is.
+    for (const b of texts) if (readable.has(b.layer.id)) readable.add(blockOf(b.layer));
     const freshIds = new Set(fresh.map(b => b.layer.id));
     const inShot = moves.filter(m => m.end > mark.at && m.start < until);
     const lastEnd = (ms: Segment[]): number => ms.reduce((at, m) => Math.max(at, m.end), mark.at);
-    const reads = fresh.filter(b => readable.has(b.layer.id)).map((b): Landing => {
+    const reads = readingLines(fresh.filter(b => readable.has(b.layer.id)).map((b): Shown => {
       // The camera is an ancestor of everything and moves on its own schedule;
       // its part is judged below, by whether it was already moving when the line landed.
       const by = new Set([b.layer.id, ...(up.get(b.layer.id) ?? [])].filter(id => id !== CAMERA_ID));
       const own = lastEnd(inShot.filter(m => by.has(m.id)));
       // A pan that starts after the line landed is the camera leaving, not arriving.
       const camera = lastEnd(inShot.filter(m => m.id === CAMERA_ID && m.start <= own));
-      return { id: b.layer.id, words: words(b.layer), settle: Math.max(own, camera), x: b.box.x, y: b.box.y };
-    });
+      return { id: b.layer.id, text: said(b.layer), block: blockOf(b.layer), settle: Math.max(own, camera), x: b.box.x, y: b.box.y, entered: entered(b.layer.id) };
+    }));
     views.push({
       mark, until, t, texts, fresh, readable, reads,
       entered,
@@ -338,7 +349,8 @@ function restNotes(layers: Layer[], canvas: { width: number; height: number }, m
         note: `In "${mark.id}", "${b.text}" lands under "${b.under}", which is painted over it at ${t}ms — it is there but cannot be seen. Give it (or its group) a z above "${b.under}", or move one of them.` });
     }
   }
-  return [...notes, ...readingNotes(views, endMs, rests)];
+  const crowd = crowdNotes(views.map(v => ({ shot: v.mark.id, lines: v.reads })));
+  return [...notes, ...readingNotes(views, endMs, rests), ...crowd];
 }
 
 /**
@@ -427,6 +439,7 @@ export function lintComposition(layers: Layer[], canvas: { width: number; height
     ...atRest,
     ...idleNotes([...moves, ...drifts], loops, rests),
     ...busyNotes(moves, endMs),
+    ...restlessNotes(moves),
   ].slice(0, 24);
 }
 
