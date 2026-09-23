@@ -12,13 +12,14 @@
 
 import * as fs from 'fs';
 import type { DesignSpec, Layer } from '../../schema/types';
-import type { LinkChannel } from '../../animation/types';
+import type { LinkChannel, LayerLink } from '../../animation/types';
 import type { ToolResult } from '../types';
 import { collectLayerIds } from '../engine-finalize-geom';
 import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, pOk, pInfo } from './utils';
 import { resolveScope, commitScope, toIdList } from './motion';
 import { syncAnimationsToSpec } from './animation-sync';
 import { linkMotion, findParentList } from './motion-precomp-op';
+import { parentBases, chainOf, mirrorsOf, mirrorId, wrapperPivot, BASE_SUFFIX, type RigNode } from './motion-rig-stack';
 
 /** What a child inherits: where the parent goes, how it turns, grows and leans — never its fade. */
 export const PARENT_CHANNELS: LinkChannel[] = ['x', 'y', 'rotation', 'scale', 'scale_x', 'scale_y', 'skew_x', 'skew_y'];
@@ -26,7 +27,75 @@ export const PARENT_CHANNELS: LinkChannel[] = ['x', 'y', 'rotation', 'scale', 's
 type ParentArgs = { design_path: string; page_id?: string; project_path?: string; layer_id?: string; layer_ids?: unknown; to?: string; clear?: boolean };
 
 export function parentMotion(args: ParentArgs): ToolResult {
-  return linkMotion({ ...args, lag: 0, factor: 1, stagger_ms: 0, channels: PARENT_CHANNELS, pivot: 'target' });
+  const r = linkMotion({ ...args, lag: 0, factor: 1, stagger_ms: 0, channels: PARENT_CHANNELS, pivot: 'target' });
+  const dPath = (r as ToolResult & { design_path?: string }).design_path;
+  if (!r.success || !dPath) return r;
+  // Parenting (or unparenting) changes what every child of these layers rides too.
+  const spec = readYAML<DesignSpec>(dPath);
+  const scoped = resolveScope(spec, args.page_id);
+  if ('error' in scoped) return r;
+  const { seated, changed } = seatChains(scoped.scope);
+  if (!changed) return r;
+  commitScope(spec, scoped.page, scoped.scope);
+  syncAnimationsToSpec(spec);
+  writeYAML(dPath, spec);
+  return seated.length
+    ? { ...r, progress: [...r.progress, pOk('Rides its parent\'s parents too', `${seated.join(', ')} — one <id>_link<n> wrapper per motion the parent itself rides, so the child moves with the parent's whole world`)] }
+    : r;
+}
+
+/** Bring every parented child's mirror levels in step with its parent's stack; drop mirrors whose child was unparented. */
+export function seatChains(scope: Layer[]): { seated: string[]; changed: boolean } {
+  const seated = new Set<string>();
+  let changed = unwrapOrphans(scope);
+  // A child's stack mirrors its parent's, which may itself have just been re-seated: repeat until still.
+  for (let pass = 0; pass < 8; pass++) {
+    let moved = false;
+    for (const base of parentBases(scope)) {
+      const { want, inStep } = chainOf(scope, base);
+      if (inStep || !reseat(scope, base, want)) continue;
+      seated.add(base.layers?.[0]?.id ?? base.id);
+      moved = changed = true;
+    }
+    if (!moved) break;
+  }
+  return { seated: [...seated], changed };
+}
+
+/** Replace a base's mirror levels with one per wrapper in `want`, innermost first. */
+function reseat(scope: Layer[], base: RigNode, want: RigNode[]): boolean {
+  const mirrors = mirrorsOf(scope, base);
+  const outer = mirrors[mirrors.length - 1] ?? base;
+  const spot = findParentList(scope, outer.id);
+  const child = base.layers?.[0]?.id;
+  if (!spot || !child) return false;
+  const box = { x: base.x, y: base.y, width: base.width, height: base.height };
+  let node: Layer = base;
+  want.forEach((w, i) => {
+    const pivot = wrapperPivot(w);
+    const link: LayerLink = { to: w.id, lag: 0, channels: PARENT_CHANNELS, ...(pivot ? { pivot } : {}) };
+    node = { id: mirrorId(child, i + 2), type: 'group', z: base.z ?? 1, ...box, link, layers: [node] } as unknown as Layer;
+  });
+  spot.list.splice(spot.index, 1, node);
+  return true;
+}
+
+const MIRROR = /^(.+)_link(\d+)$/;
+
+/** Unwrap mirror levels left around a child whose `<id>_link` base is gone (op:parent clear). */
+function unwrapOrphans(layers: Layer[]): boolean {
+  let any = false;
+  layers.forEach((l, i) => {
+    let node = l as RigNode;
+    const name = MIRROR.exec(node.id)?.[1];
+    if (name) {
+      let inner = node;
+      while (MIRROR.test(inner.id) && inner.layers?.length === 1 && inner.layers[0]) inner = inner.layers[0] as RigNode;
+      if (!(inner.id === `${name}${BASE_SUFFIX}` && inner.link?.pivot)) { layers[i] = inner; node = inner; any = true; }
+    }
+    if (Array.isArray(node.layers)) any = unwrapOrphans(node.layers) || any;
+  });
+  return any;
 }
 
 type NullArgs = {
