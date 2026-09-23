@@ -37,6 +37,28 @@ function absoluteFrames(f: Fragment): Keyframe[] {
   }));
 }
 
+const NOT_A_CHANNEL = new Set(['t', 'easing', 'hold', 'spring']);
+
+/**
+ * How two poses differ while the layer is seen ("opacity 1 → 0"), or null when
+ * they meet. Only channels BOTH frames name: the engine tweens a channel between
+ * the frames that set it, so one named by the later frame alone snaps at the
+ * gap's end rather than drifting across it (a morph ahead of a fade-in).
+ */
+function poseGap(from: Keyframe, to: Keyframe): string | null {
+  const f = from as unknown as Record<string, unknown>, g = to as unknown as Record<string, unknown>;
+  const opa = (r: Record<string, unknown>): number => (typeof r['opacity'] === 'number' ? r['opacity'] as number : 1);
+  if (opa(f) <= 0.01 && opa(g) <= 0.01) return null;
+  const diffs: string[] = [];
+  for (const c of Object.keys(f)) {
+    const x = f[c], y = g[c];
+    if (NOT_A_CHANNEL.has(c) || typeof x !== 'number' || typeof y !== 'number') continue;
+    if (Math.abs(x - y) <= (c === 'opacity' || c.startsWith('scale') ? 0.01 : 0.5)) continue;
+    diffs.push(`${c} ${+x.toFixed(2)} → ${+y.toFixed(2)}`);
+  }
+  return diffs.length ? diffs.join(', ') : null;
+}
+
 export class MergeError extends Error {
   constructor(message: string, public hint: string) { super(message); this.name = 'MergeError'; }
 }
@@ -70,6 +92,21 @@ export function mergeFragment(existing: AnimationSpec | undefined, add: Fragment
     throw new MergeError(
       `Motions overlap on this layer (${aStart}–${aEnd}ms and ${bStart}–${bEnd}ms).`,
       'Move the second one later with `at`, or clear the layer and write one combined track with animation(op:track).',
+    );
+  }
+
+  // The gap between two motions is a tween from the earlier one's last pose to
+  // the later one's first — invisible only when the two agree: an entrance ends
+  // at rest, an exit starts there. A second ENTRANCE does not: re-sequencing a
+  // line to move its fade earlier kept the old one, and the line faded out over
+  // the 4.5 s between them (A1b live check). Refused, naming the ways to say it.
+  const [early, late] = aStart <= bStart ? [a, b] : [b, a];
+  const from = early[early.length - 1], to = late[0];
+  const drift = from && to ? poseGap(from, to) : null;
+  if (drift && from && to) {
+    throw new MergeError(
+      `The motions on this layer do not meet: it would drift ${drift} over the ${Math.round(to.t - from.t)} ms between ${Math.round(from.t)} and ${Math.round(to.t)} ms.`,
+      'To MOVE a motion, clear the layer first (animation op:clear) and sequence it again, or shift it with op:retime. To leave and come back, put an exit (fade_out, sink…) between two entrances.',
     );
   }
 
