@@ -102,9 +102,10 @@ function writeMarkers(ctx: TimelineEditContext, next: TimeMarkers): void {
 /**
  * Follow one pointer from `el` across `area`. Under DRAG_PX of travel it is a
  * click (`done(null)`); past it every move reports the snapped scene ms.
+ * Shared with timeline-drag.ts.
  */
-function follow(e: PointerEvent, el: HTMLElement, area: HTMLElement, ctx: TimelineEditContext, snaps: number[],
-  move: (ms: number) => void, done: (ms: number | null) => void): void {
+export function follow(e: PointerEvent, el: HTMLElement, area: HTMLElement, ctx: Pick<TimelineEditContext, 'duration' | 'preview'>, snaps: number[],
+  move: (ms: number) => void, done: (ms: number | null) => void, offsetPx = 0): void {
   e.preventDefault();
   e.stopPropagation();
   const rect = area.getBoundingClientRect();
@@ -113,7 +114,8 @@ function follow(e: PointerEvent, el: HTMLElement, area: HTMLElement, ctx: Timeli
   try { el.setPointerCapture(e.pointerId); } catch { /* a synthetic event has no live pointer */ }
   const onMove = (ev: PointerEvent): void => {
     if (ms === null && Math.abs(ev.clientX - x0) < DRAG_PX) return;
-    ms = msAt(ev.clientX, rect, ctx.duration(), snaps);
+    // `offsetPx`: the grip's distance from what is placed — a bar is dropped by its start, not by where it was held.
+    ms = msAt(ev.clientX - offsetPx, rect, ctx.duration(), snaps);
     el.classList.add('tl-dragging');
     ctx.preview(ms);
     move(ms);
