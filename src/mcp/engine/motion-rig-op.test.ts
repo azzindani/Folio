@@ -85,6 +85,72 @@ describe('animation op:parent', () => {
   });
 });
 
+/** Where the flipbook puts a canvas point riding on `id` and every group around it, at time t. */
+const world = (id: string, t: number, p: [number, number]): number[] => {
+  const walk = (ls: Node[], pt: [number, number][]): [number, number] | null => {
+    for (const l of ls) {
+      const m = parseTransform(String(l['transform'] ?? '')) ?? [1, 0, 0, 1, 0, 0];
+      if (l.id === id) return pt[0] ?? null;
+      const hit = walk(l.layers ?? [], pt);
+      // Unwind: this group's transform applies after everything inside it.
+      if (hit) return [m[0] * hit[0] + m[2] * hit[1] + m[4], m[1] * hit[0] + m[3] * hit[1] + m[5]];
+    }
+    return null;
+  };
+  // Apply the layer's own transform first, then its ancestors' on the way out.
+  const at = specAt(spec(), 0, t).layers as unknown as Node[];
+  const self = find(id, at);
+  const m = parseTransform(String(self?.['transform'] ?? '')) ?? [1, 0, 0, 1, 0, 0];
+  const own: [number, number] = [m[0] * p[0] + m[2] * p[1] + m[4], m[1] * p[0] + m[3] * p[1] + m[5]];
+  return (walk(at, [own]) ?? own).map(v => Math.round(v));
+};
+
+describe('animation op:parent — chains', () => {
+  // planet turns 90° about (200,160); the moon, parented to it, also turns 90° about its own
+  // centre (500,160); the tag rides the moon. Its centre (800,160) → (500,460) by the moon's
+  // turn → (-100,460) by the planet's. Without the planet's level it would stop at (500,460).
+  const rig = async (): Promise<void> => {
+    fs.writeFileSync(dPath, yaml.dump({ ...spec(), layers: [...(spec().layers ?? []).filter(l => l.id !== 'tag'), box('tag', 700, 100)] }));
+    await call({ op: 'track', layer_id: 'planet', ...spin });
+    await call({ op: 'track', layer_id: 'moon', ...spin });
+  };
+
+  it('a grandchild rides its parent\'s whole world, whichever order the rig is built in', async () => {
+    await rig();
+    await call({ op: 'parent', layer_id: 'moon', to: 'planet' });
+    const r = await call({ op: 'parent', layer_id: 'tag', to: 'moon' });
+    expect(JSON.stringify(r.progress)).toContain('Rides its parent');
+    expect(find('tag_link2')?.['link']).toMatchObject({ to: 'moon_link', pivot: { x: 200, y: 160 } });
+    expect(world('tag', 2000, [800, 160])).toEqual([-100, 460]);
+    // Built the other way round: parenting the moon later re-seats the tag.
+    await call({ op: 'parent', layer_id: 'moon', clear: true });
+    expect(find('tag_link2')).toBeUndefined();
+    expect(world('tag', 2000, [800, 160])).toEqual([500, 460]);
+    await call({ op: 'parent', layer_id: 'moon', to: 'planet' });
+    expect(world('tag', 2000, [800, 160])).toEqual([-100, 460]);
+  });
+
+  it('unparenting the grandchild takes every level off it', async () => {
+    await rig();
+    await call({ op: 'parent', layer_id: 'moon', to: 'planet' });
+    await call({ op: 'parent', layer_id: 'tag', to: 'moon' });
+    await call({ op: 'parent', layer_id: 'tag', clear: true });
+    expect(find('tag_link')).toBeUndefined();
+    expect(find('tag_link2')).toBeUndefined();
+    expect(find('tag')).toBeTruthy();
+  });
+
+  it('notes a child whose parent took on motion after it was parented', async () => {
+    await rig();
+    await call({ op: 'parent', layer_id: 'tag', to: 'moon' });
+    await call({ op: 'link', layer_id: 'moon', to: 'planet', lag: 80 });
+    const notes = ((await call({ op: 'lint' }))['notes'] as Array<{ note: string }>).map(x => x.note).join(' ');
+    expect(notes).toContain('Run op:parent on "tag" again');
+    await call({ op: 'parent', layer_id: 'tag', to: 'moon' });
+    expect(JSON.stringify((await call({ op: 'lint' }))['notes'] ?? [])).not.toContain('again');
+  });
+});
+
 describe('animation op:null', () => {
   it('adds an invisible controller at a point and parents layers to it in one call', async () => {
     const r = await call({ op: 'null', layer_id: 'rig', x: 500, y: 300, layer_ids: ['moon', 'tag'] });

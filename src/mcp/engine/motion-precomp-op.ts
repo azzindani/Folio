@@ -50,15 +50,6 @@ export function contains(layer: Layer, id: string): boolean {
   return Array.isArray(kids) && kids.some(k => k.id === id || contains(k, id));
 }
 
-/** True when `list` is the inside of a <id>_link wrapper — its first layer rides another's motion. */
-function insideLinkWrapper(layers: Layer[], list: Layer[]): boolean {
-  return layers.some(l => {
-    const kids = (l as Node).layers;
-    if (!Array.isArray(kids)) return false;
-    return kids === list ? !!(l as Node & { link?: LayerLink }).link : insideLinkWrapper(kids, list);
-  });
-}
-
 /** Shift an all-absolute path by (dx, dy); null when it has relative commands or arcs. */
 function shiftPath(d: string, dx: number, dy: number): string | null {
   if (!/^[MLHVCSQTZ\s\d.,eE+-]*$/.test(d)) return null;
@@ -328,7 +319,6 @@ export function linkMotion(args: LinkArgs): ToolResult {
     : pOk(`Linked ${wrappers.length} layer(s) to "${to}"`, `${lag}ms behind${stagger ? `, +${stagger}ms each` : ''}${factor !== 1 ? `, ×${factor} travel` : ''} — each on a <id>_link wrapper`)];
   const moves = (target.list[target.index] as Node).animation?.keyframes?.length;
   if (!moves) progress.push(pWarn('Target does not move', `"${to}" has no track yet — the followers stay still until it gets one.`));
-  if (pivot && insideLinkWrapper(scope, target.list)) progress.push(pWarn('Parent is itself linked', `"${to}" rides a wrapper; the children follow its own motion, not what it inherits.`));
   return okResult(op, {
     design_path: dPath, ...(pivot ? { pivot } : {}), wrappers: wrappers.map(w => ({ ...w, ...resolvedSpan(scope, w.wrapper) })),
     progress,

@@ -14,6 +14,7 @@ import type { AnimationSpec, Keyframe, LayerLink } from '../../animation/types';
 import { resolveTimeline } from '../../animation/timeline-resolve';
 import { layersAt } from '../../export/gif-frames';
 import { pivotOf } from '../../export/frame-pose';
+import { parentBases, chainOf } from './motion-rig-stack';
 import { canvasBoxes, type CanvasBox } from '../../export/frame-cull';
 import { buriedTexts, ancestry } from './motion-lint-buried';
 
@@ -354,18 +355,26 @@ function linkNotes(layers: Layer[]): LintNote[] {
   const notes: LintNote[] = [];
   for (const l of ids.values()) {
     if (!l.link) continue;
-    // Name the layer the author linked, not the wrapper the op made around it.
-    const who = (l.id.endsWith('_link') ? l.layers?.[0]?.id : undefined) ?? l.id;
+    // Name the layer the author linked, not the wrappers the ops made around it.
+    let inner: Node = l;
+    while (/_link\d*$/.test(inner.id) && inner.layers?.length === 1 && inner.layers[0]) inner = inner.layers[0] as Node;
+    const who = inner.id;
     const target = ids.get(l.link.to);
     if (!target) notes.push({ kind: 'link', layers: [who], note: `"${who}" follows "${l.link.to}", which is not on this page.` });
     else if (!target.animation?.keyframes?.length && !target.link) notes.push({ kind: 'link', layers: [who, target.id], note: `"${who}" follows "${target.id}", which has no motion — so it never moves.` });
     else if (l.link.pivot) {
-      // A parent's own pivot is read live; an anchor was measured when parented.
+      // A parent's own pivot is read live; an anchor was measured when parented, a wrapper's when it was made.
       const pb = target.animation?.playback, was = l.link.pivot;
-      const now = pb?.pivot ? null : pivotOf(target, pb?.anchor);
+      const now = pb?.pivot ? null : target.link?.pivot ?? pivotOf(target, pb?.anchor);
       if (now && Math.hypot(now.x - was.x, now.y - was.y) > 1) notes.push({ kind: 'link', layers: [who, target.id],
         note: `"${who}" turns about (${was.x}, ${was.y}), where "${target.id}"'s anchor was when parented — it is now at (${Math.round(now.x)}, ${Math.round(now.y)}). Run op:parent again to re-seat it.` });
     }
+  }
+  // A parent that has since been parented, linked or wiggled moves in ways its child does not ride yet.
+  for (const base of parentBases(layers)) {
+    const who = base.layers?.[0]?.id ?? base.id, to = base.link?.to ?? '';
+    if (chainOf(layers, base).inStep || notes.some(n => n.layers?.[0] === who)) continue;
+    notes.push({ kind: 'link', layers: [who, to], note: `"${to}" rides motion "${who}" does not — it was parented, linked or wiggled after "${who}" was parented to it. Run op:parent on "${who}" again.` });
   }
   return notes;
 }
