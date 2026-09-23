@@ -281,6 +281,15 @@ describe('decollideHandPlaced only rescues text (one-shot benchmark r1)', () => 
     expect(yOf(line)).toBe(300);
   });
 
+  // benchmark r3 (a bar chart): each value label's line box ran 4px into its bar,
+  // and the bars were pushed off the axis — one by 126px.
+  it('leaves bars on their axis under their value labels — a text floors by its ink', () => {
+    const bars = [129, 226, 366].map((h, i) => rect(`b${i}`, 330 + i * 330, 900 - h, 200, h));
+    const labels = [129, 226, 366].map((h, i) => txt(`v${i}`, 290 + i * 330, 900 - h - 80, { width: 280, height: 70, content: { type: 'plain', value: String(100 + i * 110) }, style: { font_size: 60, align: 'center' } }));
+    expect(decollideHandPlaced([...bars, ...labels], 1920, 1080)).toBe(0);
+    expect(bars.map(yOf)).toEqual([771, 674, 534]);
+  });
+
   it('never pushes a layer off the bottom of the canvas', () => {
     const a = txt('a', 80, 1200, { width: 600, height: 60 });
     const b = txt('b', 80, 1230, { width: 600, height: 60 });

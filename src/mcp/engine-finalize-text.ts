@@ -456,6 +456,7 @@ export function decollideHandPlaced(layers: Layer[], W: number, H: number): numb
     const r = o(l);
     const text = l.type === 'text';
     const drawn = text ? drawnBox(l) : null;
+    const y0 = Number(r['y']);
     const x = drawn ? drawn.x : Number(r['x']);
     const w = (drawn ? drawn.width : Number(r['width'])) || 1;
     const mh = measuredH(l);
@@ -477,8 +478,14 @@ export function decollideHandPlaced(layers: Layer[], W: number, H: number): numb
     // Never off the canvas: a push that would carry it past the bottom edge is
     // not a fix — the overprint is left for spreadStackedText, which re-stacks
     // the pile and clamps it on-canvas.
-    if (hit > top + 1 && !isGroup && Math.round(hit + gap) + mh <= H) { top = Math.round(hit + gap); r['y'] = top; moved++; }
-    placed.push({ x, w, top, bot: top + mh, text });
+    // Ink meets ink: a text's letters start ~0.2 em below its box top.
+    const inkTop = drawn ? Math.max(0, drawn.y - y0) : 0;
+    if (hit > top + inkTop + 1 && !isGroup && Math.round(hit + gap - inkTop) + mh <= H) { top = Math.round(hit + gap - inkTop); r['y'] = top; moved++; }
+    // What a text leaves as a floor is its INK, not its line box: a 60px number
+    // set 20px above the bar it labels owned 24px of empty line under its
+    // baseline, and each bar was pushed off its axis (one-shot benchmark r3).
+    const reach = drawn ? Math.max(1, drawn.y + drawn.height - y0) : mh;
+    placed.push({ x, w, top, bot: top + reach, text });
   }
   return moved;
 }
