@@ -24,6 +24,7 @@ import { analyzeLayers, flatTextStyleFindings, type Finding } from './diagnose';
 import { auditImageAssets } from './asset-resolve';
 import { renderFailureFindings } from './diagnose-render';
 import { motionFindings } from './diagnose-motion';
+import { safeAreaFindings } from './diagnose-safe';
 import { validateDesignSpec } from '../../schema/validator';
 
 export type PageFinding = Finding & { page?: string };
@@ -80,8 +81,13 @@ export function collectFindings(
     // The static message names its pair first: "a" and "b" (both text) overlap …
     const pair = (f: Finding): string => (f.layers ?? [...f.message.matchAll(/"([^"]+)"/g)].slice(0, 2).map(m => m[1] ?? '')).slice().sort().join('+');
     const atRest = new Set(moving.filter(f => f.code === 'motion_overlap' || f.code === 'motion_collision').map(pair));
-    const still = analyzeLayers(layers ?? [], W, H, page ? page.world : spec.world).filter(f => f.code !== 'collision' || !atRest.has(pair(f)));
-    return [...still, ...moving].map(f => (page ? { ...f, page: page.id } : f));
+    const safe = safeAreaFindings(spec, layers ?? [], page);
+    // The critic's left-edge note is the old, narrower form of title_safe (declared boxes, one edge).
+    const edged = safe.some(f => f.code === 'title_safe');
+    const still = analyzeLayers(layers ?? [], W, H, page ? page.world : spec.world)
+      .filter(f => f.code !== 'collision' || !atRest.has(pair(f)))
+      .filter(f => !(edged && /crowds the edge/.test(f.message)));
+    return [...still, ...moving, ...safe].map(f => (page ? { ...f, page: page.id } : f));
   };
 
   const findings: PageFinding[] = [];
