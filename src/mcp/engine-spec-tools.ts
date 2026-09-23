@@ -74,7 +74,7 @@ function finalizeAfterRespec(layers: Layer[], design: DesignSpec): void {
     }
   }
   fixInvisibleText(layers, doc.width, doc.height, resolveThemeSpec(design));
-  fixCapsTracking(layers);
+  fixCapsTracking(layers, Math.min(doc.width, doc.height));
 }
 
 export function getDesignSpec(args: { design_path: string; page_id?: string; layer_id?: string; project_path?: string }): ToolResult {

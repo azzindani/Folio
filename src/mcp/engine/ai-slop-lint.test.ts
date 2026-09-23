@@ -58,6 +58,13 @@ describe('lintAiSlop', () => {
     expect(lintAiSlop([txt('u', 'NEW ARRIVALS', { font_size: 40, letter_spacing: 3 })]).join(' ')).not.toMatch(/caps/i);
   });
 
+  it('does not ask display caps for tracking — a tight big headline is a choice', () => {
+    // r1 benchmark: a 1250px condensed JAZZ on an A3 poster was told to track out.
+    expect(lintAiSlop([txt('j', 'JAZZ', { font_size: 1250, letter_spacing: -4 })], 3508).join(' ')).not.toMatch(/caps/i);
+    expect(lintAiSlop([txt('h', 'FILL IT WITH ICE.', { font_size: 160, letter_spacing: -3 })], 1080).join(' ')).not.toMatch(/caps/i);
+    expect(lintAiSlop([txt('b', 'DOORS AT EIGHT', { font_size: 150 })], 3508).join(' ')).toMatch(/caps/i);
+  });
+
   it('flags accent overuse across many layers', () => {
     const layers = Array.from({ length: 7 }, (_, i) => L({ id: `r${i}`, type: 'rect', fill: '#E11D48' }));
     expect(lintAiSlop(layers).join(' ')).toMatch(/accent hue appears/i);
