@@ -435,23 +435,32 @@ export function decollideHandPlaced(layers: Layer[], W: number, H: number): numb
   const movable = layers.filter(l => l && !isFullBleed(l) && !isMotifLayer(l) && !isWire(l) && !bleedsOffCanvas(l) && !isBackdropPanel(l) && !containerShapes.has(l) && !isLocked(l) && !inTime(l) && typeof o(l)['x'] === 'number' && typeof o(l)['y'] === 'number');
   if (movable.length < 2) return 0;
   const ordered = [...movable].sort((a, b) => (Number(o(a)['y']) - Number(o(b)['y'])) || (Number(o(a)['x']) - Number(o(b)['x'])));
-  const placed: { x: number; w: number; bot: number }[] = [];
+  // What this pass rescues is TEXT the model could not see wrap. A shape's size is
+  // exact and the model chose it, so two shapes overlapping — a progress fill on
+  // its track, a badge on a card — are composition, never a collision; only a pair
+  // with text in it is. And a row moves only when something above really runs
+  // into it: two rows set flush (a headline split in two layers to colour its
+  // last words) are the model's spacing, not an overprint to pad apart. Both
+  // came from the first one-shot benchmark, where this pass pushed a carousel's
+  // progress fill off its track and opened a gap inside its headline.
+  const placed: { x: number; w: number; bot: number; text: boolean }[] = [];
   const gap = Math.round(W * 0.014);
   let moved = 0;
   for (const l of ordered) {
     const r = o(l);
     const x = Number(r['x']); const w = Number(r['width']) || 1;
+    const text = l.type === 'text';
     const mh = measuredH(l);
-    if (l.type === 'text' && mh > (Number(r['height']) || 0)) r['height'] = mh;
+    if (text && mh > (Number(r['height']) || 0)) r['height'] = mh;
     let top = Number(r['y']);
-    let floor = -Infinity;
-    for (const p of placed) if (x < p.x + p.w && p.x < x + w) floor = Math.max(floor, p.bot + gap);
+    let hit = -Infinity;
+    for (const p of placed) if ((text || p.text) && x < p.x + p.w && p.x < x + w) hit = Math.max(hit, p.bot);
     // A group's children carry their own coordinates: moving its declared box
     // leaves the drawing where it was, and the box — the pivot of every pose on
     // the group — no longer matches it. It stays put and is a floor for what is below.
     const isGroup = Array.isArray(r['layers']);
-    if (floor > top + 1 && !isGroup) { top = Math.round(floor); r['y'] = top; moved++; }
-    placed.push({ x, w, bot: top + mh });
+    if (hit > top + 1 && !isGroup) { top = Math.round(hit + gap); r['y'] = top; moved++; }
+    placed.push({ x, w, bot: top + mh, text });
   }
   return moved;
 }

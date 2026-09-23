@@ -5,6 +5,8 @@ import type { Layer, ThemeSpec } from '../schema/types';
 import { resolveToken } from '../engine/token-resolver';
 import { layerBBox, layerText, isLocked } from './engine-finalize-geom';
 import { capsFloorPx, isDisplaySize } from './engine/caps-tracking';
+import { hexToRgb } from './engine/color-math';
+import { contrastRatio } from './engine/marks-contrast';
 
 // ── Invisible text rescue ───────────────────────────────────
 // A vision-less model regularly ships text whose color is near-invisible on its
@@ -17,19 +19,23 @@ import { capsFloorPx, isDisplaySize } from './engine/caps-tracking';
 // default overrode); only if that is ALSO invisible do we force a neutral matched
 // to the backdrop. 2.5 sits below WCAG AA-large (3.0), so legitimately-styled
 // muted text is untouched while dark-on-dark / pale-on-pale (which render
-// unreadable) are rescued. (#222 on #0A0A0A ≈ 2.05 → caught; #555 ≈ 4.3 → left.)
+// unreadable) are rescued. (#222 on #0A0A0A ≈ 1.2 → caught; #555 ≈ 2.7 → left.)
+//
+// The ratio is WCAG's, on gamma-LINEARISED luminance. It used a plain weighted
+// average of the 0–255 channels until the first one-shot benchmark, which reads
+// every saturated mid-tone as near-invisible: orange #E8501F on cream measured
+// 2.1 (WCAG 3.3), a #8A8F99 muted label on white 1.7 (WCAG 3.3). One carousel
+// slide had 11 texts re-lit — its accent turned brown, its muted times black.
 const MIN_TEXT_CR = 2.5;
 
-function hexLum(hex: string): number | null {
-  const h = (hex || '').replace('#', '');
-  if (h.length < 6 || /[^0-9a-fA-F]/.test(h.slice(0, 6))) return null;
-  const r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16);
-  return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
-}
+/** WCAG contrast of two hexes, or null when either is not a hex. */
 function crRatio(a: string, b: string): number | null {
-  const la = hexLum(a), lb = hexLum(b);
-  if (la === null || lb === null) return null;
-  return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+  const ra = hexToRgb(a), rb = hexToRgb(b);
+  return ra && rb ? contrastRatio(ra, rb) : null;
+}
+/** True when dark text reads better on this ground than light text does. */
+function wantsDarkText(ground: string): boolean {
+  return (crRatio('#000000', ground) ?? 0) >= (crRatio('#FFFFFF', ground) ?? 0);
 }
 // All layers + descendants, flattened (references preserved so in-place edits stick).
 function flattenLayers(layers: Layer[]): Layer[] {
@@ -51,7 +57,7 @@ function flattenLayers(layers: Layer[]): Layer[] {
 function resolveCol(c: string | undefined, theme: ThemeSpec | undefined): string | null {
   if (!c) return null;
   const hex = c.startsWith('$') ? (theme ? resolveToken(c, { theme }) : null) : c;
-  if (!hex || hexLum(hex) === null) return null;
+  if (!hex || !hexToRgb(hex)) return null;
   return hex;
 }
 // Average a set of hexes channel-wise → one representative hex (for a gradient
@@ -126,7 +132,7 @@ function backdropColor(flat: Layer[], docW: number, docH: number, theme: ThemeSp
   }
   if (best) return best.color;
   const themeBg = theme?.colors?.background ?? theme?.colors?.surface;
-  return typeof themeBg === 'string' && hexLum(themeBg) !== null ? themeBg : null;
+  return typeof themeBg === 'string' && hexToRgb(themeBg) ? themeBg : null;
 }
 
 // Paint-order rank — higher paints later (on top). z dominates; document order
@@ -174,13 +180,13 @@ function localBackdropHex(
 // keeping — and a saturated one that can't reach the target even at full black/white
 // — fall back to a backdrop-matched neutral. 3.0 = WCAG AA-large.
 const RELIGHT_TARGET_CR = 3.0;
-function relight(hex: string, bgHex: string, bgLum: number): string {
-  const neutral = bgLum < 0.5 ? '#FAFAFA' : '#141414';
-  const h = hex.replace('#', '');
-  if (h.length < 6) return neutral;
-  const r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16);
+function relight(hex: string, bgHex: string): string {
+  const darken = wantsDarkText(bgHex);                              // light ground → darken the hue
+  const neutral = darken ? '#141414' : '#FAFAFA';
+  const rgb = hexToRgb(hex);
+  if (!rgb) return neutral;
+  const [r, g, b] = rgb;
   if (Math.max(r, g, b) - Math.min(r, g, b) < 40) return neutral;   // greyscale → no hue to keep
-  const darken = bgLum >= 0.5;                                      // light bg → darken the hue
   for (let t = 0.15; t <= 1.0001; t += 0.15) {
     const nr = darken ? Math.round(r * (1 - t)) : Math.round(r + (255 - r) * t);
     const ng = darken ? Math.round(g * (1 - t)) : Math.round(g + (255 - g) * t);
@@ -195,9 +201,7 @@ function relight(hex: string, bgHex: string, bgLum: number): string {
 export function fixInvisibleText(layers: Layer[], docW: number, docH: number, theme?: ThemeSpec): number {
   const flat = flattenLayers(layers);
   const bg = backdropColor(flat, docW, docH, theme);
-  if (!bg) return 0;               // unknown (theme-only) backdrop → don't guess
-  const bgLum = hexLum(bg);
-  if (bgLum === null) return 0;
+  if (!bg || !hexToRgb(bg)) return 0;   // unknown (theme-only) backdrop → don't guess
   // Opaque shape backdrops (≥0.85 opacity, resolvable fill) ranked by paint order,
   // so each text is judged against the panel/band/badge it actually sits on — not
   // just the dominant wash. A translucent panel isn't a solid ground, so it's left
@@ -216,6 +220,11 @@ export function fixInvisibleText(layers: Layer[], docW: number, docH: number, th
   flat.forEach((l, ti) => {
     if (l.type !== 'text' || !layerText(l).trim()) return;
     const o = l as unknown as Record<string, unknown>;
+    // A text with in/out points is on screen at ITS moment, over whatever the
+    // scene shows then — not this static stack. Judged here, a label set for a
+    // later cream scene read as cobalt-on-cobalt and was recoloured (benchmark
+    // r1). Timed text is diagnose's to judge at its rest, like decollide leaves it.
+    if (o['in'] !== undefined || o['out'] !== undefined) return;
     const st = (o['style'] as Record<string, unknown>) ?? {};
     const flatCol = typeof o['color'] === 'string' ? o['color'] as string : undefined;
     const eff = typeof st['color'] === 'string' ? st['color'] as string : flatCol;
@@ -224,8 +233,6 @@ export function fixInvisibleText(layers: Layer[], docW: number, docH: number, th
     // Judge against the LOCAL backdrop the text sits on, else the dominant wash.
     const local = localBackdropHex(paintRank(o, ti), layerBBox(l), shapes);
     const bd = local ?? bg;
-    const bdLum = local ? hexLum(local) : bgLum;
-    if (bdLum === null) return;
     const cr = crRatio(effHex, bd);
     if (cr === null || cr >= MIN_TEXT_CR) return;   // already legible on its real backdrop
     // 1. Prefer the model's own flat color when IT is legible (recovers intent).
@@ -237,7 +244,7 @@ export function fixInvisibleText(layers: Layer[], docW: number, docH: number, th
     }
     // 2. Else re-light the model's OWN color — keep its hue, push the lightness
     //    until legible (a backdrop-matched neutral only when it's greyscale).
-    if (!next) next = relight(effHex, bd, bdLum);
+    if (!next) next = relight(effHex, bd);
     // relight can cap out — e.g. pure white on a saturated mid-tone still
     // misses the target ratio, so the best candidate IS the current color.
     // Writing it back is a no-op, but counting it made every re-seal of a

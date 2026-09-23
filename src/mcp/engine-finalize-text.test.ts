@@ -133,15 +133,35 @@ describe('fixInvisibleText', () => {
   });
 
   it('re-lights a muted SATURATED color by darkening its hue, not nuking to black', () => {
-    // terracotta eyebrow on cream (CR ≈ 2.06 < 2.5) → re-lit, but it must stay
-    // terracotta (reddish), not flatten to #141414.
-    const layers = [bgRect('#F1E7D6'), text('t', 'BACK IN STOCK', { color: '#BD5733', font_size: 26 })];
+    // pale terracotta eyebrow on cream (WCAG ≈ 1.8 < 2.5) → re-lit, but it must
+    // stay terracotta (reddish), not flatten to #141414.
+    const layers = [bgRect('#F1E7D6'), text('t', 'BACK IN STOCK', { color: '#E8A07A', font_size: 26 })];
     expect(fixInvisibleText(layers, W, H)).toBe(1);
     const c = styleColor(layers[1]).replace('#', '');
     expect(c).not.toBe('141414');
     const r = parseInt(c.slice(0, 2), 16), g = parseInt(c.slice(2, 4), 16), b = parseInt(c.slice(4, 6), 16);
     expect(r).toBeGreaterThan(g);   // still reddish/warm, hue preserved
     expect(r).toBeGreaterThan(b);
+  });
+
+  it('leaves saturated mid-tones alone — they read (one-shot benchmark r1)', () => {
+    // Measured on a plain channel average these all fell under 2.5 and were
+    // "rescued": the accent went brown, muted times went black, white on the
+    // orange pill went #FAFAFA. WCAG puts every one of them above 3:1.
+    const layers = [bgRect('#F4F1EA'),
+      text('accent', 'wasting time.', { color: '#E8501F', font_size: 96 }),
+      text('swipe', 'Swipe →', { color: '#E8501F', font_size: 30 })];
+    expect(fixInvisibleText(layers, W, H)).toBe(0);
+    const card = [bgRect('#FFFFFF'), text('t1', '09:00', { color: '#8A8F99', font_size: 22 })];
+    expect(fixInvisibleText(card, W, H)).toBe(0);
+    const pill = [bgRect('#F4F1EA'), shapeAt('#E8501F', 120, 840, 230, 64, 1), pillLabel('#FFFFFF')];
+    expect(fixInvisibleText(pill, W, H)).toBe(0);
+  });
+
+  it('leaves timed text to be judged at its moment, not over the opening frame', () => {
+    const later = { ...(text('lab', 'REFILL. REPEAT.', { color: '#1537F0', font_size: 30 }) as unknown as Record<string, unknown>), in: 6550, out: 9600 } as unknown as Layer;
+    expect(fixInvisibleText([bgRect('#1537F0'), later], W, H)).toBe(0);
+    expect(styleColor(later)).toBe('#1537F0');
   });
 
   it('falls back to a neutral for a greyscale invisible color (no hue to keep)', () => {
@@ -163,7 +183,7 @@ describe('fixInvisibleText', () => {
 
   it('still counts a REAL relight, and the follow-up run is a no-op', () => {
     const pill = shapeAt('#c4552a', 120, 840, 230, 64, 1);
-    const lbl = pillLabel('#f4efe6');                    // low-contrast cream → re-lit
+    const lbl = pillLabel('#d98a66');                    // pale terracotta on terracotta (WCAG ≈ 1.7) → re-lit
     const layers = [bgRect('#f4efe6'), pill, lbl];
     expect(fixInvisibleText(layers, W, H)).toBe(1);
     expect(fixInvisibleText(layers, W, H)).toBe(0);      // idempotent in count, not just bytes
