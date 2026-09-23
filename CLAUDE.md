@@ -100,6 +100,15 @@ Never:   --no-verify · --force without approval
 PRs:     only when user explicitly requests
 ```
 
+### 0.6 No Sub-Agents
+
+```
+NEVER spawn sub-agents in this project — no Agent/Task tool, no forks,
+no multi-agent workflows, for ANY purpose (research, refactors, builds,
+benchmarks, reviews). Do the work yourself, in this session.
+Why: sub-agents burn tokens (user decision, 2026-09-23).
+```
+
 ---
 
 ## 1. PROJECT BRIEF
