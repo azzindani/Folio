@@ -56,8 +56,10 @@ export function flattenForTimeline(layers: Layer[], depth = 0): Array<{ layer: L
  */
 export function playsInTime(l: Layer): boolean {
   const o = l as unknown as Record<string, unknown>;
+  // Footage moves by itself: a page holding only a clip still plays (found live —
+  // the Play button stayed hidden on a video-only page).
   return (l.animation?.keyframes ?? []).length > 0 || Boolean(o['motion_path']) || Boolean(o['link'])
-    || typeof o['in'] === 'number' || typeof o['out'] === 'number';
+    || typeof o['in'] === 'number' || typeof o['out'] === 'number' || l.type === 'video';
 }
 const hasMotion = playsInTime;
 
