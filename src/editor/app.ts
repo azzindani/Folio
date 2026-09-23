@@ -56,6 +56,7 @@ export class EditorApp extends EditorAppBase {
     this.state = new StateManager();
     this.motionPlayer = new MotionPlayer(this.state);
     this.wireCanvasSound();
+    this.wireCanvasVideo();
   }
   async init(): Promise<void> {
     this.buildLayout();
