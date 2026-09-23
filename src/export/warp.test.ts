@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { homography, invert3, warpOnto, type Pixels, type Pt } from './warp';
+import { homography, invert3, warpOnto, cssMatrix3d, type Pixels, type Pt } from './warp';
 
 const apply = (m: number[], [x, y]: Pt): Pt => {
   const w = (m[6] ?? 0) * x + (m[7] ?? 0) * y + (m[8] ?? 1);
@@ -68,5 +68,24 @@ describe('warpOnto', () => {
     expect(edge[0]).toBe(255);
     expect(edge[1]).toBeGreaterThan(100);
     expect(edge[1]).toBeLessThan(155);
+  });
+});
+
+describe('cssMatrix3d', () => {
+  it('sends each corner of the element where the quad puts it, as a browser applies it', () => {
+    const quad: Pt[] = [[10, 5], [90, 20], [85, 50], [12, 58]];
+    const css = cssMatrix3d(100, 60, quad) ?? '';
+    const m = (/matrix3d\(([^)]+)\)/.exec(css)?.[1] ?? '').split(',').map(Number);
+    expect(m).toHaveLength(16);
+    // Column-major 4×4 on (x, y, 0, 1).
+    const at = (x: number, y: number): Pt => {
+      const w = (m[3] ?? 0) * x + (m[7] ?? 0) * y + (m[15] ?? 0);
+      return [((m[0] ?? 0) * x + (m[4] ?? 0) * y + (m[12] ?? 0)) / w, ((m[1] ?? 0) * x + (m[5] ?? 0) * y + (m[13] ?? 0)) / w];
+    };
+    ([[0, 0], [100, 0], [100, 60], [0, 60]] as Pt[]).forEach((p, i) => {
+      const q = at(p[0], p[1]);
+      expect(q[0]).toBeCloseTo(quad[i]?.[0] ?? NaN, 4);
+      expect(q[1]).toBeCloseTo(quad[i]?.[1] ?? NaN, 4);
+    });
   });
 });

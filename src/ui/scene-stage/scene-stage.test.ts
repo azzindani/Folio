@@ -10,16 +10,16 @@ const page = (id: string, fill: string, extra: object = {}): object => ({
   layers: [{ id: `${id}_bg`, type: 'rect', z: 0, x: 0, y: 0, width: 400, height: 300, fill }],
 });
 
-const deck = (): DesignSpec => ({
+const deck = (enter = 'fade'): DesignSpec => ({
   _protocol: 'design/v1', meta: { id: 'd', name: 'd', type: 'carousel', created: '', modified: '' },
   document: { width: 400, height: 300, unit: 'px', dpi: 96 },
-  pages: [page('a', '#FF0000', { auto_advance: 1000 }), page('b', '#0000FF', { auto_advance: 1000, transition: { type: 'fade', duration: 400 } })],
+  pages: [page('a', '#FF0000', { auto_advance: 1000 }), page('b', '#0000FF', { auto_advance: 1000, transition: { type: enter, duration: 400 } })],
 } as unknown as DesignSpec);
 
-function setup(): { stage: SceneStage; player: ScenePlayer; setPageScene: ReturnType<typeof vi.fn> } {
+function setup(enter?: string): { stage: SceneStage; player: ScenePlayer; setPageScene: ReturnType<typeof vi.fn> } {
   const setPageScene = vi.fn();
   const state = {
-    get: () => ({ design: deck(), currentPageIndex: 0 }),
+    get: () => ({ design: deck(enter), currentPageIndex: 0 }),
     subscribe: () => () => undefined,
     setPageScene,
   } as unknown as StateManager;
@@ -88,6 +88,23 @@ describe('SceneStage — Play all', () => {
     const svg = frameSvg()?.outerHTML ?? '';
     expect(svg).toContain('__scene_from');
     expect(svg).toContain('__scene_to');
+    stage.close();
+  });
+
+  it('turns a cube in CSS 3D: each scene flat on its face, captions over it unturned, on a stage', () => {
+    const { stage, player } = setup('cube-left');
+    stage.open();
+    player.seek(1200);
+    const root = $('.scene-stage-frame')?.shadowRoot;
+    const svgs = Array.from(root?.querySelectorAll('svg') ?? []);
+    expect(svgs).toHaveLength(3);
+    expect(svgs.slice(0, 2).map(s => s.style.transform.slice(0, 9))).toEqual(['matrix3d(', 'matrix3d(']);
+    expect(svgs[0]?.outerHTML).toContain('a_bg');
+    expect(svgs[1]?.outerHTML).toContain('b_bg');
+    expect(svgs[2]?.style.transform).toBe('none');
+    expect(root?.innerHTML).not.toContain('__scene_from');
+    player.seek(1900);
+    expect(root?.querySelectorAll('svg')).toHaveLength(1);
     stage.close();
   });
 

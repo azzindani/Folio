@@ -7,13 +7,14 @@
  * two pages on screen at once, and neither of them is the page being edited. So
  * this never touches the design. A frame is composeSceneFrame(design, plan, t) —
  * the export's own function, scene plan and transition poses — rendered by the
- * stage as a single page. What plays here is what exports.
+ * stage as a single page; mid cube or flip it is turningAt(t), the scenes the
+ * export warps onto their faces. What plays here is what exports.
  */
 
 import type { StateManager } from './state';
 import type { DesignSpec } from '../schema/types';
 import { planScenes, sceneAt, type ScenePlan } from '../export/scene-plan';
-import { composeSceneFrame } from '../export/scene-compose';
+import { composeSceneFrame, turningFrame, blankPage, type TurningFrame } from '../export/scene-compose';
 import { planCaptions, type CaptionPlan } from '../export/caption-plan';
 import { withCaptions } from '../export/caption-layers';
 import { PREVIEW_FRAME_MS } from '../export/motion-blur';
@@ -74,6 +75,21 @@ export class ScenePlayer {
     this.cachedCaptions ??= planCaptions(design, plan);
     // Motion blur as a 30 fps video frame would show it (export/motion-blur.ts).
     return withCaptions(composeSceneFrame(design, plan, t, PREVIEW_FRAME_MS), this.cachedCaptions, design.captions?.style, t);
+  }
+
+  /**
+   * When a face turns at `t` (cube, flip): each scene flat with the corners it
+   * lands on, and the captions over them — for the stage to draw in CSS 3D, as
+   * the export warps them. Null otherwise; frameAt draws the moment.
+   */
+  turningAt(t: number = this.t): (TurningFrame & { over: DesignSpec }) | null {
+    const design = this.state.get().design;
+    const plan = this.plan();
+    if (!design || !plan) return null;
+    const turn = turningFrame(design, plan, t, PREVIEW_FRAME_MS);
+    if (!turn) return null;
+    this.cachedCaptions ??= planCaptions(design, plan);
+    return { ...turn, over: withCaptions(blankPage(design), this.cachedCaptions, design.captions?.style, t) };
   }
 
   sceneIndexAt(t: number = this.t): number {

@@ -10,9 +10,11 @@
  * face is then clipped to the exact quadrilateral it projects to, so its
  * edges are straight lines and the steps between strips never show. The
  * count follows the depth range, so the content inside moves smoothly. That
- * is the vector frame — the editor's. A raster frame (GIF, MP4, op:frame)
- * instead draws each scene once and warps it onto the face's corners exactly
- * (warp.ts): strips cost a text layout per strip, the warp two renders.
+ * is the moment as one vector page (composeSceneFrame). Where there is more
+ * than an SVG to draw with, a face is drawn exactly from its corners instead:
+ * raster frames (GIF, MP4, op:frame) warp each scene once onto them (warp.ts),
+ * and the editor's stage puts it there with a CSS matrix3d — strips cost a
+ * text layout each, and a browser anti-aliases every strip's clip edge.
  */
 
 import type { ClipRect } from '../renderer/clip-rect';
