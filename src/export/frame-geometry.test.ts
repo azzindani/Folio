@@ -53,7 +53,7 @@ describe('anchorPoint', () => {
   it('measures a lone quote mark by the top of its line, where its ink is', () => {
     const mark = drawnBox(L({ type: 'text', x: 200, y: 100, width: 200, height: 260, content: { type: 'plain', value: '“' }, style: { font_family: 'Fraunces', font_size: 260 } }));
     const letter = drawnBox(L({ type: 'text', x: 200, y: 100, width: 200, height: 260, content: { type: 'plain', value: 'T' }, style: { font_family: 'Fraunces', font_size: 260 } }));
-    expect(mark?.height).toBeCloseTo(260 * 0.42, 5);
+    expect(mark?.height).toBeCloseTo(260 * 0.33, 5);
     expect((mark?.y ?? 0) + (mark?.height ?? 0)).toBeLessThan((letter?.y ?? 0) + (letter?.height ?? 0) - 90);   // ~0.38 em higher
   });
 });

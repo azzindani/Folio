@@ -11,7 +11,7 @@ import { lintAiSlop } from './ai-slop-lint';
 import { windowOf, intersectWindows } from '../../animation/lifespan';
 import { findTextOverflows } from './text-measure';
 import { joinSplitPieces } from './split-join';
-import { inkLeft } from '../../export/frame-geometry';
+import { inkLeft, drawnBox } from '../../export/frame-geometry';
 
 export interface Finding {
   code: string;
@@ -179,6 +179,12 @@ function geometryFindings(layers: Layer[], W: number, H: number, world?: Stage):
   // Collisions — two same-kind content layers (text↔text, icon↔icon) that overlap
   // are almost always an accidental pile-up (the #1 hand-placement failure).
   const content = bs.filter(b => !FULL_BG(b, W, H) && (b.type === 'text' || b.type === 'icon' || b.type === 'kpi_card'));
+  const layerOf = new Map(layers.map(l => [l.id, l]));
+  const inkOf = (b: Box): Box => {
+    const l = layerOf.get(b.id);
+    const d = l ? drawnBox(l) : null;
+    return d ? { ...b, x: d.x, y: d.y, w: d.width, h: d.height } : b;
+  };
   // Two layers whose in/out points never meet are never on screen together —
   // headlines on one spot, one leaving before the other lands, is a composition.
   const life = new Map(layers.map(l => [l.id, windowOf(l)]));
@@ -190,8 +196,11 @@ function geometryFindings(layers: Layer[], W: number, H: number, world?: Stage):
     for (let j = i + 1; j < content.length; j++) {
       const a = content[i], c = content[j];
       if (a.type !== c.type || !together(a.id, c.id)) continue;
-      const ov = overlapArea(a, c);
-      const minArea = Math.min(a.w * a.h, c.w * c.h);
+      // Two texts meet where their letters do, not their boxes: a two-line quote in a
+      // 340 px box "overlapped" the name 100 px under its last line by 60% (benchmark r6, b24).
+      const [pa, pc] = a.type === 'text' ? [inkOf(a), inkOf(c)] : [a, c];
+      const ov = overlapArea(pa, pc);
+      const minArea = Math.min(pa.w * pa.h, pc.w * pc.h);
       if (minArea > 0 && ov / minArea > 0.3) {
         out.push({
           code: 'collision', severity: 'warning', layer_id: a.id,

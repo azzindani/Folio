@@ -80,11 +80,12 @@ function textBox(o: Record<string, unknown>): Box | null {
   // digits stop at the baseline. Counting the band anyway made a 400px "24"
   // reach 80px into the "HOURS" set tight under it, and the motion lint called
   // two lines that never touch an overlap (one-shot benchmark r1).
-  // Quote marks alone — an oversized hanging “ — ink only the top of the line:
-  // measured as a full letter, a 260 px mark floored the quote under it and the
-  // rescue pushed the quote 113 px off its layout (benchmark r6, b24).
+  // Quote marks alone — an oversized hanging “ — ink only the top of the line,
+  // from about cap height down to ~0.45 em above the baseline (Fraunces: 0.76 →
+  // 0.51). Measured as a full letter, a 260 px mark floored the quote under it and
+  // the rescue pushed the quote 113 px off its layout (benchmark r6, b24).
   if (layout.lines.length === 1 && HIGH_MARKS.test(content.value.trim())) {
-    return { x: left, y: layout.textY - layout.fontSize * 0.78, width: widest, height: layout.fontSize * 0.42 };
+    return { x: left, y: layout.textY - layout.fontSize * 0.78, width: widest, height: layout.fontSize * 0.33 };
   }
   const top = layout.textY - layout.fontSize * 0.8;
   const last = layout.lines[layout.lines.length - 1] ?? '';
