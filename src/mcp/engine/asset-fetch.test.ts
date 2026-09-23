@@ -41,6 +41,8 @@ describe('slugify', () => {
     expect(slugify('Morning Desk — 2024!', 'x')).toBe('morning-desk-2024');
     expect(slugify('  ***  ', 'fallback')).toBe('fallback');
     expect(slugify('a'.repeat(90), 'x')).toHaveLength(48);
+    // Cut at 48 on a word boundary: no dangling hyphen in the file name.
+    expect(slugify('Ocean waves northeast of northern South America (CIRA)', 'x')).toBe('ocean-waves-northeast-of-northern-south-america');
   });
 });
 
