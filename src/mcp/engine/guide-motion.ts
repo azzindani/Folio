@@ -73,6 +73,9 @@ CONTINUOUS COMPOSITION — one scene, many sub-sequences (a 30 s motion piece)
   • Land once, then repeat: op:loop layer_id from:<key index> mode:cycle|pingpong|offset
     repeats keys from..last to the scene's end (or until) as ordinary keys — an entrance
     then a bob, a tick, a walk (offset carries each pass on). Re-run to change it.
+  • One channel from another: op:drive layer_id channel driver:{layer_id?, channel}
+    factor add? lag? — a shadow's scale from its ball's y, a needle from a bar;
+    roll:true turns a wheel by its own x. Exact keys; re-run after the driver changes.
   • Travel instead of cutting: op:camera world:{x,y,width,height} lays the page out
     larger than the canvas; shots target a layer, "world" or a region and the camera
     pans between sections. Shot t takes marker names. rotation:deg on a shot tilts
