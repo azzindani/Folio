@@ -21,6 +21,7 @@ import { ToolboxManager } from '../ui/tools/toolbox';
 import { CommandPalette } from '../ui/palette/command-palette';
 import { KeyboardManager } from './keyboard';
 import { parseDesign, serializeYAML } from '../schema/parser';
+import { withAnimationMirror } from '../animation/page-animations';
 import { validateDesignSpec } from '../schema/validator';
 import type { DesignSpec, ThemeSpec } from '../schema/types';
 import { ensureDesignFonts } from '../styles/font-loader';
@@ -536,7 +537,8 @@ export class EditorApp extends EditorAppBase {
   getYAML(): string {
     const design = this.state.get().design;
     if (!design) return '';
-    return serializeYAML(design);
+    // The top-level animations map is a mirror of the tracks: refresh it, never write back the one loaded.
+    return serializeYAML(withAnimationMirror(design));
   }
 
   /** Manual save (Ctrl+S / Save button). Persists through the active sink — the

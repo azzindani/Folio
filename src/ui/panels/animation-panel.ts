@@ -1,5 +1,6 @@
 import type { StateManager, EditorState } from '../../editor/state';
 import type { AnimationSpec } from '../../animation/types';
+import type { Layer } from '../../schema/types';
 import type {
   EnterAnimationType, ExitAnimationType, LoopAnimationType, EasingFunction,
 } from '../../animation/types';
@@ -54,7 +55,9 @@ export class AnimationPanel {
       return;
     }
 
-    const anim: AnimationSpec = animations[layerId] ?? {};
+    // The layer's own track is the source; the map is a mirror loaded with the file.
+    const own = this.state.findLayer(layerId) as (Layer & { animation?: AnimationSpec }) | undefined;
+    const anim: AnimationSpec = own?.animation ?? animations[layerId] ?? {};
 
     this.container.innerHTML = `
       <div class="anim-panel">
@@ -159,7 +162,7 @@ export class AnimationPanel {
       const t = kfs.length ? (kfs[kfs.length - 1].t ?? 0) + 500 : 0;
       kfs.push({ t, opacity: 1 });
       const updated = { ...anim, keyframes: kfs };
-      this.state.set('animations', { ...this.state.get().animations, [layerId]: updated }, false);
+      this.write(layerId, updated);
     });
 
     // Delete keyframe
@@ -168,9 +171,18 @@ export class AnimationPanel {
         const idx = parseInt(btn.dataset.kfIndex!, 10);
         const kfs = (anim.keyframes ?? []).filter((_, i) => i !== idx);
         const updated = { ...anim, keyframes: kfs };
-        this.state.set('animations', { ...this.state.get().animations, [layerId]: updated }, false);
+        this.write(layerId, updated);
       });
     });
+  }
+
+  /**
+   * Write the layer's own track — what Play, the timeline, the export and the
+   * saved file read — and keep the map the canvas was loaded with in step.
+   */
+  private write(layerId: string, updated: AnimationSpec): void {
+    this.state.updateLayer(layerId, { animation: updated } as Partial<Layer>);
+    this.state.set('animations', { ...this.state.get().animations, [layerId]: updated }, false);
   }
 
   private applyChange(layerId: string, anim: AnimationSpec, kind: string, field: string, value: unknown): void {
@@ -199,6 +211,6 @@ export class AnimationPanel {
       }
     }
 
-    this.state.set('animations', { ...this.state.get().animations, [layerId]: updated }, false);
+    this.write(layerId, updated);
   }
 }
