@@ -127,14 +127,16 @@ describe('httpBytes — a slow download is not a dead one', () => {
     });
   }
 
-  // Margins are 10×: under a full parallel suite a timer can fire tens of ms late.
+  // The margin is 20×: at 10× (1 s idle timeout, 100 ms chunks) CI failed it —
+  // coverage under a parallel suite stalled the event loop past a second.
+  // Fake timers do not drive the stream's own reads, so the clock stays real.
   it('keeps going past the timeout while bytes keep arriving', async () => {
-    process.env['FOLIO_ASSET_NET_TIMEOUT'] = '1000';
-    trickle(12, 100);                                 // 1.2 s in all, never 1 s without a chunk
+    process.env['FOLIO_ASSET_NET_TIMEOUT'] = '2000';
+    trickle(24, 100);                                 // 2.4 s in all, never 2 s without a chunk
     const got = await httpBytes('https://cdn.freesound.org/a.mp3', 1000);
-    expect(got.buffer.length).toBe(120);
+    expect(got.buffer.length).toBe(240);
     expect(got.contentType).toBe('audio/mpeg');
-  });
+  }, 15_000);
 
   it('gives up on a stream that goes quiet, and says which host', async () => {
     process.env['FOLIO_ASSET_NET_TIMEOUT'] = '300';
