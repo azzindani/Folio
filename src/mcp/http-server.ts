@@ -30,6 +30,7 @@ const MAX_BROADCAST_BYTES = Number(process.env['FOLIO_MAX_BROADCAST_BYTES'] ?? 1
 
 import type { MCPRequest, MCPResponse, ToolResult, ToolDefinition, ContextField } from './types';
 import { withOpScope } from './design-lineage';
+import { openEventStream, targetDesign, mtimeOf } from './editor-stream';
 
 type Handler = (args: Record<string, unknown>) => ToolResult | Promise<ToolResult>;
 
@@ -287,10 +288,7 @@ async function router(req: http.IncomingMessage, res: http.ServerResponse): Prom
 
   if (pathOnly === '/mcp/sse' && method === 'GET') {
     setCORS(res);
-    // X-Accel-Buffering: no stops a reverse proxy (we sit behind Caddy) from
-    // accumulating events instead of passing them straight through.
-    res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive', 'X-Accel-Buffering': 'no' });
-    res.write(`data: {"status":"connected"}\n\n`);
+    openEventStream(req, res, `data: {"status":"connected"}\n\n`);
     sseClients.add(res);
     req.on('close', () => sseClients.delete(res));
     return;
@@ -301,10 +299,7 @@ async function router(req: http.IncomingMessage, res: http.ServerResponse): Prom
   // <base>/editor/events and reloads the design when file_changed fires.
   if (pathOnly === '/editor/events' && method === 'GET') {
     setCORS(res);
-    // X-Accel-Buffering: no stops a reverse proxy (we sit behind Caddy) from
-    // accumulating events instead of passing them straight through.
-    res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive', 'X-Accel-Buffering': 'no' });
-    res.write(`event: connected\ndata: {"status":"connected"}\n\n`);
+    openEventStream(req, res, `event: connected\ndata: {"status":"connected"}\n\n`);
     editorClients.add(res);
     req.on('close', () => editorClients.delete(res));
     return;
@@ -363,6 +358,12 @@ async function router(req: http.IncomingMessage, res: http.ServerResponse): Prom
         return;
       }
     }
+    // The design this call targets, and how it stood before: a reply need not
+    // name the file it changed for the editor to hear of it. See editor-stream.ts.
+    const target = parsed.method === 'tools/call'
+      ? targetDesign(normalizeProjectPaths((parsed.params as { arguments?: Record<string, unknown> } | undefined)?.arguments ?? {}))
+      : null;
+    const before = mtimeOf(target);
     const { response, raw, toolName } = await handleMCP(parsed, modern);
     // On the modern transport an unimplemented method is 404 + -32601, which is
     // how a dual-era client tells "method I don't have" from "not an MCP
@@ -378,7 +379,7 @@ async function router(req: http.IncomingMessage, res: http.ServerResponse): Prom
     sseBroadcast(response);
     // Notify any connected editor that a design file just changed.
     if (raw && raw.success && toolName && FILE_MUTATING_TOOLS.has(toolName)) {
-      const filePath = findChangedDesignPath(raw);
+      const filePath = findChangedDesignPath(raw) ?? (target && mtimeOf(target) !== before ? target : null);
       if (filePath) editorBroadcast('file_changed', filePath, toolName);
     }
     jsonReply(res, 200, response);
