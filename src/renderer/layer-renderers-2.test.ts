@@ -411,6 +411,23 @@ describe('renderCircle', () => {
   });
 });
 
+// ── Icon size ────────────────────────────────────────────────
+// benchmark r6 b23: laid out as x y width height (as the guide writes it), a 160 px Wi-Fi glyph drew at 24 px.
+describe('renderIcon — size', () => {
+  const glyph = (extra: Record<string, unknown>): SVGSVGElement | null =>
+    renderIcon({ id: 'i', type: 'icon', z: 1, name: 'wifi', x: 100, y: 50, ...extra } as unknown as IconLayer, makeSVG()).querySelector('svg');
+  it('fills its box, centred on the long side, when it has no size of its own', () => {
+    const svg = glyph({ width: 200, height: 160 });
+    expect(svg?.getAttribute('width')).toBe('160');
+    expect(svg?.parentElement?.getAttribute('transform')).toBe('translate(120, 50)');
+  });
+  it('keeps an explicit size where it is, and 24 px with no box at all', () => {
+    expect(glyph({ width: 200, height: 160, size: 48 })?.getAttribute('width')).toBe('48');
+    expect(glyph({ size: 48 })?.parentElement?.getAttribute('transform')).toBe('translate(100, 50)');
+    expect(glyph({})?.getAttribute('width')).toBe('24');
+  });
+});
+
 // ── Icon fallback ────────────────────────────────────────────
 describe('renderIcon — fallback for unknown icon', () => {
   it('renders a clean circle (not a raw-name label) for unknown icon name', () => {
