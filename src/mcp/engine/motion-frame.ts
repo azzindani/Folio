@@ -70,11 +70,13 @@ const str = (v: unknown): string | undefined => (typeof v === 'string' && v ? v 
 function animatedPoses(original: Layer[], resolved: Layer[]): { poses: Pose[]; at_rest: string[] } {
   const out: Pose[] = [];
   const atRest: string[] = [];
-  const walk = (o: Layer[], r: Layer[]): void => {
+  // `outer` is every ancestor's transform, outermost first — a child's world is its groups' too.
+  const walk = (o: Layer[], r: Layer[], outer: string): void => {
     o.forEach((ol, i) => {
       const rl = r[i] as (Layer & Record<string, unknown>) | undefined;
       // Outside its in/out window (or hidden) a layer is not in the frame, nor is anything inside it.
       if (!rl || rl['visible'] === false) return;
+      const world = `${outer} ${str(rl['transform']) ?? ''}`.trim();
       // A layer travelling a motion_path is animated too. Reporting only
       // keyframed layers left the numbers empty for a design whose whole motion
       // was a path — the render moved, the readout said nothing moved, and the
@@ -110,26 +112,31 @@ function animatedPoses(original: Layer[], resolved: Layer[]): { poses: Pose[]; a
           ...(pose && (pose.scale_x !== 1 || pose.scale_y !== 1) ? { scale: [r2(pose.scale_x), r2(pose.scale_y)] as [number, number] } : {}),
           ...(pose && (pose.skew_x !== 0 || pose.skew_y !== 0) ? { skew: [r2(pose.skew_x), r2(pose.skew_y)] as [number, number] } : {}),
           transform: str(rl['transform']),
-          ...orbitCenter(ol, rl),
+          ...orbitCenter(ol, world),
           stroke_dasharray: typeof dash === 'number' ? dash : str(dash),
           stroke_dashoffset: num(rl['stroke_dashoffset']),
         });
       }
       const ok = (ol as Layer & { layers?: Layer[] }).layers;
       const rk = (rl as Layer & { layers?: Layer[] }).layers;
-      if (Array.isArray(ok) && Array.isArray(rk)) walk(ok, rk);
+      if (Array.isArray(ok) && Array.isArray(rk)) walk(ok, rk, world);
     });
   };
-  walk(original, resolved);
+  walk(original, resolved, '');
   return { poses: out, at_rest: atRest };
 }
 
-/** The drawn centre after the pose, when the layer turns about a canvas pivot (a parented child). */
-function orbitCenter(authored: Layer, posed: Layer & Record<string, unknown>): { center?: [number, number] } {
+/**
+ * Where the middle of what a layer draws is on the canvas, when it turns about a
+ * canvas pivot (a parented child) — through every group around it. In a chain
+ * only the innermost wrapper says it: the levels outside it hold the same layer.
+ */
+function orbitCenter(authored: Layer, world: string): { center?: [number, number] } {
   // The sampled layer has no track left; the authored one says what it turns about.
-  const o = authored as Layer & { animation?: AnimationSpec; link?: LayerLink };
+  const o = authored as Layer & { animation?: AnimationSpec; link?: LayerLink; layers?: Array<Layer & { link?: LayerLink }> };
   if (!o.link?.pivot && !o.animation?.playback?.pivot) return {};
-  const box = drawnBox(authored), m = parseTransform(str(posed['transform']) ?? '');
+  if (o.layers?.length === 1 && o.layers[0]?.link) return {};
+  const box = drawnBox(authored), m = parseTransform(world);
   if (!box || !m) return {};
   const cx = box.x + box.width / 2, cy = box.y + box.height / 2;
   return { center: [Math.round(m[0] * cx + m[2] * cy + m[4]), Math.round(m[1] * cx + m[3] * cy + m[5])] };

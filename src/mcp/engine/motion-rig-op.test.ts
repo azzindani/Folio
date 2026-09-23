@@ -122,6 +122,10 @@ describe('animation op:parent — chains', () => {
     expect(JSON.stringify(r.progress)).toContain('Rides its parent');
     expect(find('tag_link2')?.['link']).toMatchObject({ to: 'moon_link', pivot: { x: 200, y: 160 } });
     expect(world('tag', 2000, [800, 160])).toEqual([-100, 460]);
+    // op:frame says where the tag really is — through both levels — once, on the innermost.
+    const poses = (await call({ op: 'frame', t: 2000 }))['poses'] as Array<Record<string, unknown>>;
+    expect(poses.find(p => p['id'] === 'tag_link')?.['center']).toEqual([-100, 460]);
+    expect(poses.find(p => p['id'] === 'tag_link2')?.['center']).toBeUndefined();
     // Built the other way round: parenting the moon later re-seats the tag.
     await call({ op: 'parent', layer_id: 'moon', clear: true });
     expect(find('tag_link2')).toBeUndefined();
