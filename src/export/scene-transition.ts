@@ -6,16 +6,18 @@
  * transform, an opacity, a clip — and the frame renders once, as vectors: a
  * zoom stays sharp and no pixels are blended by hand.
  *
- * 3D names have no flat equivalent. cube-left/right play as slides and
- * flip-h/v as a squash through the centre line; APPROXIMATED names them so a
- * reply can say so rather than swap them silently.
+ * Cube and flip turn in perspective, drawn as strips (scene-transition-3d.ts).
+ * What is still approximated is named in APPROXIMATED, so a reply can say so
+ * rather than swap it silently.
  */
 
 import type { PageTransitionType } from '../schema/types';
 import type { ClipRect } from '../renderer/clip-rect';
 import { resolveEasing } from '../animation/easing';
+import { faceStrips, cubeFace, cardFace, type Face } from './scene-transition-3d';
 
-export interface ScenePose { transform?: string; opacity?: number; clip_rect?: ClipRect }
+/** How a scene is drawn mid-change: one pose, or — for a turning face — its strips (scene-transition-3d.ts). */
+export interface ScenePose { transform?: string; opacity?: number; clip_rect?: ClipRect; face?: Face }
 
 export interface TransitionPoses {
   from: ScenePose;
@@ -24,13 +26,11 @@ export interface TransitionPoses {
   fromOnTop: boolean;
   /** Part of the canvas is uncovered mid-transition — paint a backdrop under both. */
   backdrop: boolean;
+  /** The backdrop is a stage a turning face moves in front of — darkened, so the face reads against it. */
+  stage?: boolean;
 }
 
 export const APPROXIMATED: Partial<Record<PageTransitionType, string>> = {
-  'cube-left': 'plays as slide-left — a flat frame has no 3D',
-  'cube-right': 'plays as slide-right — a flat frame has no 3D',
-  'flip-h': 'plays as a horizontal squash through the centre',
-  'flip-v': 'plays as a vertical squash through the centre',
   dissolve: 'plays as a fade',
 };
 
@@ -38,6 +38,9 @@ const f = (n: number): string => String(Number(n.toFixed(2)));
 const move = (dx: number, dy: number): string => `translate(${f(dx)} ${f(dy)})`;
 const scaleAbout = (sx: number, sy: number, cx: number, cy: number): string =>
   `translate(${f(cx)} ${f(cy)}) scale(${f(sx)} ${f(sy)}) translate(${f(-cx)} ${f(-cy)})`;
+
+/** A turning face's pose — or nothing drawn when it is turned away. */
+const turned = (face: Face | null): ScenePose => (face ? { face } : { opacity: 0 });
 
 export function transitionPoses(type: PageTransitionType, progress: number, w: number, h: number, easing?: string): TransitionPoses {
   const p = resolveEasing(easing ?? 'ease-in-out')(Math.min(1, Math.max(0, progress)));
@@ -49,11 +52,15 @@ export function transitionPoses(type: PageTransitionType, progress: number, w: n
     case 'dissolve':
       return both({}, { opacity: p });
     case 'slide-left':
-    case 'cube-left':
       return both({ transform: move(-p * w, 0) }, { transform: move((1 - p) * w, 0) });
     case 'slide-right':
-    case 'cube-right':
       return both({ transform: move(p * w, 0) }, { transform: move(-(1 - p) * w, 0) });
+    case 'cube-left':
+    case 'cube-right': {
+      // The cube turns a quarter: the outgoing face swings away, its neighbour comes round to face us.
+      const turn = (type === 'cube-left' ? -90 : 90) * p, next = turn + (type === 'cube-left' ? 90 : -90);
+      return { ...both(turned(faceStrips('y', w, h, cubeFace(turn, w))), turned(faceStrips('y', w, h, cubeFace(next, w))), true), stage: true };
+    }
     case 'slide-up':
       return both({ transform: move(0, -p * h) }, { transform: move(0, (1 - p) * h) });
     case 'slide-down':
@@ -77,15 +84,9 @@ export function transitionPoses(type: PageTransitionType, progress: number, w: n
       return both({}, { clip_rect: { x: (1 - p) * w, y: 0, width: p * w, height: h } });
     case 'flip-h':
     case 'flip-v': {
-      const firstHalf = p < 0.5;
-      const k = firstHalf ? 1 - 2 * p : 2 * p - 1;
-      const squash = type === 'flip-h' ? scaleAbout(k, 1, cx, cy) : scaleAbout(1, k, cx, cy);
-      return {
-        from: firstHalf ? { transform: squash } : { opacity: 0 },
-        to: firstHalf ? { opacity: 0 } : { transform: squash },
-        fromOnTop: firstHalf,
-        backdrop: true,
-      };
+      // A card turning over about its centre line: the front shows to the half-turn, the back after.
+      const axis = type === 'flip-h' ? 'y' : 'x', turn = 180 * p;
+      return { ...both(turned(faceStrips(axis, w, h, cardFace(turn))), turned(faceStrips(axis, w, h, cardFace(turn - 180))), true), stage: true };
     }
     default:
       return both({}, {}); // 'none' — the caller plays it as a cut

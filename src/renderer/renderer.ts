@@ -388,6 +388,14 @@ function shapeToClipElement(layer: Layer): SVGElement | null {
     return el;
   }
 
+  // A path clips by its own outline — a scene transition's turning face (export/scene-transition-3d.ts).
+  const d = (layer as { d?: unknown }).d;
+  if (layer.type === 'path' && typeof d === 'string') {
+    const el = document.createElementNS(SVG_NS, 'path');
+    el.setAttribute('d', d);
+    return el;
+  }
+
   if (layer.type === 'polygon') {
     const sides = typeof l.sides === 'number' ? l.sides : 6;
     const cx = x + w / 2, cy = y + h / 2, rx = w / 2, ry = h / 2;

@@ -20,7 +20,7 @@ import { startExportJob, BACKGROUND_FRAMES } from './export-jobs';
 import { tryFfmpeg } from '../../export/animation-export';
 import { specAt, animationDuration } from '../../export/gif-frames';
 import { planScenes } from '../../export/scene-plan';
-import { composeSceneFrame } from '../../export/scene-compose';
+import { composeSceneFrame, turningFrame, blankPage, type TurningFrame } from '../../export/scene-compose';
 import { APPROXIMATED } from '../../export/scene-transition';
 import type { SoundTimeline } from '../../export/audio-plan';
 import type { MuxClip } from '../../export/audio-mux';
@@ -113,7 +113,11 @@ export async function exportAnimation(args: ExportAnimationArgs): Promise<ToolRe
       .flatMap(t => (t && APPROXIMATED[t] ? [`${t} ${APPROXIMATED[t]}.`] : []));
     const sound = soundFor(spec, dPath, { total_ms: args.duration ?? plan.total_ms, scenes: plan.scenes.map(s => ({ page_id: s.page_id, start_ms: s.start_ms })) }, args);
     const captions = args.captions === false ? null : planCaptions(spec, plan);
-    return raster(spec, dPath, { durationMs: plan.total_ms, at: (t, frameMs) => withCaptions(composeSceneFrame(spec, plan, t, frameMs), captions, spec.captions?.style, t) }, outputPath, {
+    const turning = (t: number, frameMs?: number): (TurningFrame & { over: DesignSpec }) | null => {
+      const f = turningFrame(spec, plan, t, frameMs);
+      return f && { ...f, over: withCaptions(blankPage(spec), captions, spec.captions?.style, t) };
+    };
+    return raster(spec, dPath, { durationMs: plan.total_ms, at: (t, frameMs) => withCaptions(composeSceneFrame(spec, plan, t, frameMs), captions, spec.captions?.style, t), turning }, outputPath, {
       ...base,
       sound: sound.clips,
       notes: [...plan.warnings, ...approximated, ...sound.notes, ...(captions?.notes ?? [])],

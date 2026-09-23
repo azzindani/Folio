@@ -2,10 +2,11 @@ import { describe, it, expect } from 'vitest';
 import { Resvg } from '@resvg/resvg-js';
 import { renderToSVGString } from '../mcp/engine/svg-export';
 import { planScenes } from './scene-plan';
-import { composeSceneFrame, backdropColor } from './scene-compose';
+import { composeSceneFrame, backdropColor, turningFrame, blankPage } from './scene-compose';
+import { paintTurning } from './warp';
 import type { DesignSpec, Layer } from '../schema/types';
 
-const RED = [255, 0, 0], BLUE = [0, 0, 255], WHITE = [255, 255, 255];
+const RED = [255, 0, 0], BLUE = [0, 0, 255];
 
 // Both pages give their ground the SAME id, as carousel pages built from one
 // preset do — a transition frame holds both at once.
@@ -53,11 +54,45 @@ describe('composeSceneFrame', () => {
     expect(px(75, 20)).toEqual(BLUE);
   });
 
-  it('paints the outgoing ground under a flip, so the squash never shows white', () => {
-    // progress 0.25 squashes the old scene to half width around the centre: x 25–75.
+  it('turns a flip in front of a stage made from the outgoing ground — never white', () => {
+    // At progress 0.25 the card is 45° round: its near edge lands at x ≈ 8.6, so x 5 is stage.
     const px = frameAt({ type: 'flip-h' }, 1100);
-    expect(px(5, 20)).toEqual(RED);
-    expect(px(5, 20)).not.toEqual(WHITE);
+    expect(px(5, 20)).toEqual([77, 0, 0]);
+    expect(px(50, 20)).toEqual(RED);
+  });
+});
+
+describe('turningFrame — a turning face as scenes to warp', () => {
+  const at = (type: string, t: number): ReturnType<typeof turningFrame> => {
+    const spec = deck({ type });
+    return turningFrame(spec, planScenes(spec, { hold_ms: 1000 }), t);
+  };
+
+  it('is nothing outside a transition, or in one that does not turn', () => {
+    expect(at('cube-left', 500)).toBeNull();
+    expect(at('slide-left', 1200)).toBeNull();
+  });
+
+  it('gives both faces of a turning cube, corners where the vector outline goes, on the darkened ground', () => {
+    const spec = deck({ type: 'cube-left' });
+    const plan = planScenes(spec, { hold_ms: 1000 });
+    const turn = turningFrame(spec, plan, 1150);
+    expect(turn?.faces.length).toBe(2);
+    expect(turn?.stage).toBe('#4d0000');
+    const outline = JSON.stringify(composeSceneFrame(spec, plan, 1150)).match(/"d":"M [^"]+"/)?.[0] ?? '';
+    const [x, y] = turn?.faces[0]?.corners[0] ?? [NaN, NaN];
+    expect(outline).toContain(`M ${Number(x.toFixed(2))} ${Number(y.toFixed(2))}`);
+  });
+
+  it('warped, draws what the vector frame draws', () => {
+    const spec = deck({ type: 'flip-h' });
+    const turn = turningFrame(spec, planScenes(spec, { hold_ms: 1000 }), 1100);
+    const draw = (s: DesignSpec): { width: number; height: number; pixels: Buffer } => new Resvg(renderToSVGString(s)).render();
+    const img = turn ? paintTurning(turn.stage, turn.faces.map(f => ({ img: draw(f.spec), corners: f.corners })), draw(blankPage(spec)), 100) : null;
+    const px = (x: number, y: number): number[] => Array.from(img?.pixels.subarray((y * 100 + x) * 4, (y * 100 + x) * 4 + 3) ?? []);
+    const vector = frameAt({ type: 'flip-h' }, 1100);
+    expect(px(5, 20)).toEqual(vector(5, 20));
+    expect(px(50, 20)).toEqual(vector(50, 20));
   });
 });
 
