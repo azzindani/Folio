@@ -84,8 +84,14 @@ export function timeNotes(shots: ShotLayout[], canvasW: number): string[] {
 
 /** One moving page: every shot posed at its rest and measured. Null when nothing moves. */
 export function reviewMotionPage(spec: DesignSpec, page: Page | undefined, layers: Layer[], projectDir: string): MotionReview | null {
-  const end = animationDuration(layers);
-  if (end <= 0) return null;
+  const motionEnd = animationDuration(layers);
+  if (motionEnd <= 0) return null;
+  // A page held on screen for a set time (op:scene length_ms) rests after its
+  // motion lands. Measured over the motion alone, every scene of a 30 s
+  // explainer "never held still", and one scene's rest fell in a 50 ms gap
+  // between two entrances (benchmark r2).
+  const held = page?.auto_advance;
+  const end = typeof held === 'number' && held > 0 ? held : motionEnd;
   const W = spec.document?.width ?? 0;
   const marks = Object.entries(readMarkers(spec, page)).map(([id, at]) => ({ id, at: Number(at) })).filter(m => Number.isFinite(m.at));
   const rests = shotRests(layers, marks, end).slice(0, MAX_SHOTS);

@@ -87,6 +87,19 @@ describe('reviewMotionPage (rendered)', () => {
     expect(kept?.notes.some(n => n.includes('last frame'))).toBe(false);
   }, 30_000);
 
+  it('a page held for a set length rests after its motion, not between two entrances (benchmark r2)', () => {
+    // Two chips pop at 900 and 1400; op:scene holds the page 6500 ms.
+    const a = box('a', 200, 300, 400, 120, { animation: move(900, 450, { opacity: 0 }, { opacity: 1 }) });
+    const b = box('b', 200, 500, 400, 120, { animation: move(1400, 450, { opacity: 0 }, { opacity: 1 }) });
+    const s = spec([bg, a, b]);
+    const page = { id: 'mix', layers: [bg, a, b], auto_advance: 6500 } as unknown as NonNullable<DesignSpec['pages']>[number];
+    const m = reviewMotionPage(s, page, page.layers ?? [], '/tmp');
+    expect(m?.scene_ms).toBe(6500);
+    expect(m?.shots[0]?.t).toBe(6499);
+    expect(m?.shots[0]?.still_ms).toBeGreaterThanOrEqual(4600);
+    expect(m?.notes.join(' ')).not.toMatch(/never hold still/);
+  }, 30_000);
+
   it('a still page gets no motion block', () => {
     const s = spec([bg, box('card', 100, 100, 400, 400)]);
     expect(reviewMotionPage(s, undefined, s.layers ?? [], '/tmp')).toBeNull();
