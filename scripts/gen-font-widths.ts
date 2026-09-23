@@ -21,7 +21,15 @@ const dir = path.resolve(import.meta.dir, '../src/mcp/fonts');
 const out = path.resolve(import.meta.dir, '../src/utils/font-widths.json');
 const LOWER = 'abcdefghijklmnopqrstuvwxyz', UPPER = LOWER.toUpperCase(), DIGITS = '0123456789';
 const FREQ = [8.2, 1.5, 2.8, 4.3, 12.7, 2.2, 2.0, 6.1, 7.0, 0.15, 0.77, 4.0, 2.4, 6.7, 7.5, 1.9, 0.095, 6.0, 6.3, 9.1, 2.8, 0.98, 2.4, 0.15, 2.0, 0.074];
-const PUNCT = '.,:;!?\'"-()&/';
+const PUNCT = '.,:;!?\'"-()&/’‘“”–—…•·';
+// The symbols copy leans on, a class of their own: "40%" measured every % at the
+// punctuation average (~0.3 em for a ~0.8 em glyph), so a sale's headline drew
+// 30 px past its box into the words beside it (one-shot benchmark r4) — and a
+// bold face widens its dots and commas far more than its %, so the two classes
+// cannot share one weight scaling.
+const SYMS = '%$€£¥@#*+=<>[]~_|×';
+/** A glyph's shape is stored as its width relative to its class average, times this (src/utils/font-widths.ts reads it back). */
+const SHAPE_SCALE = 400;
 /** Two base-36 digits: 0 … 1295. */
 const pack = (v: number): string => Math.max(0, Math.min(1295, Math.round(v))).toString(36).padStart(2, '0');
 
@@ -31,10 +39,11 @@ const familyOf = (file: string): string | undefined =>
 
 function classes(m: FontMetrics): number[] {
   const em = (c: string): number => (m.advance(c.codePointAt(0) ?? 0) ?? 0) / m.unitsPerEm;
-  const mean = (s: string): number => [...s].reduce((a, c) => a + em(c), 0) / s.length;
+  // Averaged over the glyphs the face HAS — a missing one would pull the class toward zero.
+  const mean = (s: string): number => { const e = [...s].map(em).filter(v => v > 0); return e.length ? e.reduce((a, v) => a + v, 0) / e.length : 0; };
   let lower = 0, sum = 0;
   LOWER.split('').forEach((c, i) => { lower += em(c) * (FREQ[i] ?? 0); sum += FREQ[i] ?? 0; });
-  return [lower / sum, mean(UPPER), mean(DIGITS), em(' '), mean(PUNCT)];
+  return [lower / sum, mean(UPPER), mean(DIGITS), em(' '), mean(PUNCT), mean(SYMS)];
 }
 
 const faces = new Map<string, Array<{ weight: number; m: FontMetrics }>>();
@@ -52,10 +61,12 @@ for (const [key, list] of faces) {
   if (!base) continue;
   const c = classes(base.m);
   const em = (ch: string): number => (base.m.advance(ch.codePointAt(0) ?? 0) ?? 0) / base.m.unitsPerEm;
-  const rel = (s: string, avg: number): string => [...s].map(ch => pack(avg > 0 ? (em(ch) / avg) * 500 : 500)).join('');
+  // A glyph the face lacks is drawn by a fallback face; the class average stands in for it.
+  // ×SHAPE_SCALE: up to 3.24× the class average — Anton's % and Oswald's em dash passed 2.59 (×500).
+  const rel = (s: string, avg: number): string => [...s].map(ch => pack(avg > 0 && em(ch) > 0 ? (em(ch) / avg) * SHAPE_SCALE : SHAPE_SCALE)).join('');
   const w: Record<string, string> = {};
   for (const f of list) w[String(f.weight)] = classes(f.m).map(v => pack(v * 1000)).join('');
-  table[key] = { s: rel(UPPER, c[1] ?? 0) + rel(LOWER, c[0] ?? 0) + rel(DIGITS, c[2] ?? 0) + rel(PUNCT, c[4] ?? 0), w };
+  table[key] = { s: rel(UPPER, c[1] ?? 0) + rel(LOWER, c[0] ?? 0) + rel(DIGITS, c[2] ?? 0) + rel(PUNCT, c[4] ?? 0) + rel(SYMS, c[5] ?? 0), w };
 }
 fs.writeFileSync(out, JSON.stringify(table) + '\n');
 process.stdout.write(`font-widths: ${Object.keys(table).length} families, ${fs.statSync(out).size} bytes\n`);
