@@ -70,7 +70,7 @@ export const TIER2_TOOLS: ToolDefinition[] = [
         height:       { type: 'number', description: 'op:scale — the height the block should draw at (instead of factor).' },
         anchor:       { type: 'string', enum: ['center', 'top_left', 'top', 'top_right', 'left', 'right', 'bottom_left', 'bottom', 'bottom_right'], description: 'op:scale — the point of the block that stays put (default center).' },
         changes:      { type: 'object', description: 'op:patch_spec — spec fields to merge into the preset\'s authored spec. Only what you want different: {accent:"#0EA5E9"} keeps every other field. Objects merge, arrays replace, null deletes.', properties: {} },
-        dry_run:      { type: 'boolean', description: 'op:patch_spec — return the changed keys and resulting layer count without writing.' },
+        dry_run:      { type: 'boolean', description: 'op:patch_spec only — return the changed keys and resulting layer count without writing. Any other op refuses dry_run rather than write.' },
       },
       required: ['op', 'design_path'],
     },

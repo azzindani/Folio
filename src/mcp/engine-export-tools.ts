@@ -21,7 +21,7 @@ import { collectFindings, rankForDisplay } from './engine/diagnose-collect';
 import { echoFinding } from './design-history';
 import { buildEditorLink } from './engine/editor-link';
 import { willOverwrite, collisionReport } from './engine/export-collisions';
-import { readBaseline, writeBaseline, diffPages } from './engine/preview-diff';
+import { readBaseline, writeBaseline, diffPages, baselineAfter } from './engine/preview-diff';
 import { buildManifest, embedManifest, sourceHash } from './engine/export-manifest';
 import { exportKey, findReusable, recordExport } from './engine/export-receipt';
 
@@ -579,10 +579,11 @@ export function renderPreview(args: { design_path: string; project_path?: string
         id: p.id,
         svg: renderToSVGString({ ...spec, layers: p.layers ?? [], pages: undefined } as DesignSpec, undefined, undefined, componentRegistry),
       }));
-      const { diffs, next } = diffPages(readBaseline(dPath), rendered);
-      const stored = writeBaseline(dPath, next);
+      const baseline = readBaseline(dPath);
+      const { diffs, next } = diffPages(baseline, rendered);
       const show = diffs.filter(d => d.changed || d.first_look);
       const shown = show.slice(0, PREVIEW_DIFF_MAX);
+      const stored = writeBaseline(dPath, baselineAfter(baseline, next, show.slice(PREVIEW_DIFF_MAX).map(d => d.id)));
       const _attachments = shown.map(d => ({
         type: 'image' as const,
         data: rasterise(rendered[d.index]?.svg ?? '', projDir).toString('base64'),

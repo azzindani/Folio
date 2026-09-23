@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 
-import { baselinePath, hashSVG, canonicalSVG, readBaseline, writeBaseline, diffPages } from './preview-diff';
+import { baselinePath, hashSVG, canonicalSVG, readBaseline, writeBaseline, diffPages, baselineAfter } from './preview-diff';
 
 const root = fs.mkdtempSync(path.join(os.tmpdir(), 'folio-pdiff-'));
 let designPath = '';
@@ -138,5 +138,17 @@ describe('diffPages', () => {
     const { next } = diffPages({ version: 1, pages: { p1: 'stale' } }, [page('p1', '<a/>'), page('p2', '<b/>')]);
     expect(Object.keys(next).sort()).toEqual(['p1', 'p2']);
     expect(next['p1']).toBe(hashSVG('<a/>'));
+  });
+});
+
+describe('baselineAfter — pages held back by the cap stay pending', () => {
+  it('keeps a held-back page\'s old hash, drops a held-back first look, stores the rest', () => {
+    const base = { version: 1 as const, pages: { a: 'old-a', b: 'old-b' } };
+    const next = { a: 'new-a', b: 'new-b', c: 'new-c' };
+    expect(baselineAfter(base, next, ['b', 'c'])).toEqual({ a: 'new-a', b: 'old-b' });
+    // so the next diff still asks for b (changed) and c (first look)
+    const again = diffPages({ version: 1, pages: baselineAfter(base, next, ['b', 'c']) },
+      [page('a', 'x'), page('b', 'y'), page('c', 'z')]);
+    expect(again.diffs.filter(d => d.changed || d.first_look).map(d => d.id)).toEqual(expect.arrayContaining(['b', 'c']));
   });
 });
