@@ -8,6 +8,7 @@ import type { ShorthandLayer } from './shorthand-parser';
 
 import { layerBBox, layerText, isMotifLayer, isLocked } from './engine-finalize-geom';
 import { isFullBleedContentPreset, isFullCanvasBackdrop } from './engine-finalize-presets';
+import { drawnBox } from '../export/frame-geometry';
 
 export function spreadStackedText(layers: Layer[], docW: number, docH: number): number {
   const fontOf = (l: Layer): number => { const st = (l as unknown as Record<string, unknown>)['style'] as Record<string, unknown> | undefined; return st && typeof st['font_size'] === 'number' ? st['font_size'] as number : 16; };
@@ -443,24 +444,41 @@ export function decollideHandPlaced(layers: Layer[], W: number, H: number): numb
   // last words) are the model's spacing, not an overprint to pad apart. Both
   // came from the first one-shot benchmark, where this pass pushed a carousel's
   // progress fill off its track and opened a gap inside its headline.
-  const placed: { x: number; w: number; bot: number; text: boolean }[] = [];
+  //
+  // Text is as wide as its drawn lines, not its box: a 1100px box holding
+  // "Less waste." grazed a disc on the right and the line was pushed under it.
+  // And a layer sitting INSIDE an earlier one is on it, not below it — chip
+  // labels on chips on a disc were each floored by the disc (benchmark r2).
+  const placed: { x: number; w: number; top: number; bot: number; text: boolean }[] = [];
   const gap = Math.round(W * 0.014);
   let moved = 0;
   for (const l of ordered) {
     const r = o(l);
-    const x = Number(r['x']); const w = Number(r['width']) || 1;
     const text = l.type === 'text';
+    const drawn = text ? drawnBox(l) : null;
+    const x = drawn ? drawn.x : Number(r['x']);
+    const w = (drawn ? drawn.width : Number(r['width'])) || 1;
     const mh = measuredH(l);
     if (text && mh > (Number(r['height']) || 0)) r['height'] = mh;
     let top = Number(r['y']);
+    // A ground is a SHAPE larger than what sits on it — never a peer text, or
+    // two overprinting lines would each count as the other's ground.
+    const inside = (p: { x: number; w: number; top: number; bot: number; text: boolean }): boolean => {
+      if (p.text || p.w * (p.bot - p.top) <= w * Math.max(1, mh)) return false;
+      const ox = Math.min(x + w, p.x + p.w) - Math.max(x, p.x), oy = Math.min(top + mh, p.bot) - Math.max(top, p.top);
+      return ox > 0 && oy > 0 && ox * oy >= 0.8 * w * Math.max(1, mh);
+    };
     let hit = -Infinity;
-    for (const p of placed) if ((text || p.text) && x < p.x + p.w && p.x < x + w) hit = Math.max(hit, p.bot);
+    for (const p of placed) if ((text || p.text) && x < p.x + p.w && p.x < x + w && !inside(p)) hit = Math.max(hit, p.bot);
     // A group's children carry their own coordinates: moving its declared box
     // leaves the drawing where it was, and the box — the pivot of every pose on
     // the group — no longer matches it. It stays put and is a floor for what is below.
     const isGroup = Array.isArray(r['layers']);
-    if (hit > top + 1 && !isGroup) { top = Math.round(hit + gap); r['y'] = top; moved++; }
-    placed.push({ x, w, bot: top + mh, text });
+    // Never off the canvas: a push that would carry it past the bottom edge is
+    // not a fix — the overprint is left for spreadStackedText, which re-stacks
+    // the pile and clamps it on-canvas.
+    if (hit > top + 1 && !isGroup && Math.round(hit + gap) + mh <= H) { top = Math.round(hit + gap); r['y'] = top; moved++; }
+    placed.push({ x, w, top, bot: top + mh, text });
   }
   return moved;
 }
