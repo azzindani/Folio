@@ -58,7 +58,7 @@ export function motionBlurMotion(args: BlurArgs): ToolResult {
   const peaks = peakStreaks(scope, ids);
   const progress: ProgressItem[] = [pOk(`Motion blur on ${ids.length} layer(s) at ${shutter ?? DEFAULT_SHUTTER}°`, 'smears in gif/mp4/webm frames, op:frame and Play all; the SVG/HTML exports play without it')];
   const still = ids.filter(id => !peaks[id]);
-  if (still.length) progress.push(pWarn('Never smears', `${still.join(', ')} never travel more than a pixel over a shutter — only moves smear, not turns, zooms or fades.`));
+  if (still.length) progress.push(pWarn('Never smears', `${still.map(id => `"${id}"`).join(', ')}: never more than a pixel of travel over a shutter — only moves smear, not turns, zooms or fades.`));
   return okResult(op, {
     design_path: dPath, shutter: shutter ?? DEFAULT_SHUTTER, streaks: peaks, progress,
     next_action: { tool: 'animation', params: { op: 'frame', design_path: dPath, ...(args.page_id ? { page_id: args.page_id } : {}) }, remaining: 0,
