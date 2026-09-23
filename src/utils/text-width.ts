@@ -78,9 +78,10 @@ export function hasWideChars(text: string): boolean {
  * Breaking mid-token is a last resort, for a run that cannot fit on any line:
  * a CJK paragraph (no spaces at all) or a long URL.
  */
-export function wrapToWidth(text: string, maxWidthPx: number, fontSize: number, narrowEm: number = NARROW_EM): string[] {
+export function wrapToWidth(text: string, maxWidthPx: number, fontSize: number, narrowEm: number | ((s: string) => number) = NARROW_EM): string[] {
   const lines: string[] = [];
-  const width = (s: string): number => textWidthPx(s, fontSize, narrowEm);
+  // A measure function (a bundled face's real widths, utils/font-widths) wins over the flat advance.
+  const width = (s: string): number => (typeof narrowEm === 'function' ? narrowEm(s) * fontSize : textWidthPx(s, fontSize, narrowEm));
 
   const breakToken = (token: string): string => {
     let chunk = '';
