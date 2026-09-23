@@ -4,6 +4,7 @@
 import type { Layer, ThemeSpec } from '../schema/types';
 import { resolveToken } from '../engine/token-resolver';
 import { layerBBox, layerText, isLocked } from './engine-finalize-geom';
+import { capsFloorPx, isDisplaySize } from './engine/caps-tracking';
 
 // ── Invisible text rescue ───────────────────────────────────
 // A vision-less model regularly ships text whose color is near-invisible on its
@@ -255,14 +256,13 @@ function isLiteralCaps(v: string): boolean {
 }
 
 /**
- * ALL-CAPS without letter-spacing is a generic "AI" tell AND reads cramped — caps
- * always wants ≥0.06em tracking (a UNIVERSAL typographic rule; see the craft/type
- * rulebook). This is a MECHANICAL fix, not an aesthetic one (§0.4): it adds tracking
- * only to caps text that has effectively none, and never touches the model's own
- * tracking, colors, or layout — so it can't make outputs more uniform. Mutates the
- * layers in place; returns the count fixed.
+ * ALL-CAPS at text sizes with NO letter-spacing is a generic "AI" tell AND reads
+ * cramped — it wants ~0.06em (see caps-tracking.ts). A MECHANICAL fix, not an
+ * aesthetic one (§0.4): it fills tracking only where the model left it unset, on
+ * caps below display size. Any tracking the model set — negative, zero, tight —
+ * is its decision and stays. Mutates the layers in place; returns the count fixed.
  */
-export function fixCapsTracking(layers: Layer[]): number {
+export function fixCapsTracking(layers: Layer[], canvasShort?: number): number {
   let fixed = 0;
   for (const l of flattenLayers(layers)) {
     if (l.type !== 'text') continue;
@@ -270,14 +270,13 @@ export function fixCapsTracking(layers: Layer[]): number {
     if (!v) continue;
     const o = l as unknown as Record<string, unknown>;
     const st = (o['style'] as Record<string, unknown>) ?? {};
+    if (typeof st['letter_spacing'] === 'number') continue;   // the model's own tracking
     const upper = st['text_transform'] === 'uppercase' || isLiteralCaps(v);
     if (!upper) continue;
     const size = typeof st['font_size'] === 'number' ? st['font_size'] as number
       : (typeof o['size'] === 'number' ? o['size'] as number : 16);
-    const cur = typeof st['letter_spacing'] === 'number' ? st['letter_spacing'] as number : 0;
-    const floor = Math.max(1, Math.round(size * 0.06));   // ~0.06em
-    if (cur >= floor) continue;                            // model already tracked it
-    o['style'] = { ...st, letter_spacing: floor };
+    if (isDisplaySize(size, canvasShort)) continue;           // display caps: designer's call
+    o['style'] = { ...st, letter_spacing: capsFloorPx(size) };
     fixed++;
   }
   return fixed;

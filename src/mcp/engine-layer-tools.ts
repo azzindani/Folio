@@ -459,10 +459,10 @@ export function addLayers(args: {
   const relit = fixInvisibleText(activeLayers, spec.document.width, spec.document.height, relitTheme);
   if (relit) progress.push(pInfo(`Re-lit ${relit} near-invisible text(s)`, 'text that rendered invisible on its background was recolored to read'));
 
-  // Mechanical typographic fix: ALL-CAPS always needs ≥0.06em tracking (the #1
-  // AI tell in blind-model output). Adds it only where missing; never overrides
-  // the model's own tracking/look (§0.4 — engine assists, doesn't redesign).
-  const tracked = fixCapsTracking(activeLayers);
+  // Mechanical typographic fix: ALL-CAPS at text sizes wants ~0.06em tracking
+  // (the #1 AI tell in blind-model output). Fills it only where the model set
+  // none; display caps and any tracking the model chose stay (§0.4).
+  const tracked = fixCapsTracking(activeLayers, Math.min(spec.document.width, spec.document.height));
   if (tracked) progress.push(pInfo(`Tracked ${tracked} ALL-CAPS text(s)`, 'caps without letter-spacing read cramped/generic — added ~0.06em'));
 
   // Re-center a title the model anchored at the canvas mid-line (docW/2 used as a
@@ -504,7 +504,7 @@ export function addLayers(args: {
   // Quality critic — advisory; only when the page looks "complete" (the full
   // poster has been composed, not a 2-layer partial), so we guide, not nag.
   const review = activeLayers.length >= 6
-    ? [...reviewComposition(activeLayers, spec.document.width, spec.document.height), ...lintAiSlop(activeLayers)]
+    ? [...reviewComposition(activeLayers, spec.document.width, spec.document.height), ...lintAiSlop(activeLayers, Math.min(spec.document.width, spec.document.height))]
     : [];
   // Heal touched hand-placed layers → lead with the locked-group opt-out (lets a
   // strong model keep deliberate art-direction; surfaces only when heal fired).

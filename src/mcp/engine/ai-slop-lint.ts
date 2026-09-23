@@ -12,6 +12,7 @@
 import type { Layer } from '../../schema/types';
 import { layerText } from '../../schema/layer-text';
 import { hexToRgb, hue, saturation, type RGB } from './reference';
+import { isDisplaySize } from './caps-tracking';
 
 // The Tailwind indigo/violet family — the single most common AI accent tell.
 const AI_INDIGO = ['#6366f1', '#4f46e5', '#4338ca', '#3730a3', '#8b5cf6', '#7c3aed', '#a855f7'];
@@ -112,8 +113,9 @@ function vividBucket(hex: string): number | null {
   return Math.round(hue(rgb) / 30);
 }
 
-/** Returns AI-slop notes (empty = clean). Capped so it guides, not nags. */
-export function lintAiSlop(layers: Layer[]): string[] {
+/** Returns AI-slop notes (empty = clean). Capped so it guides, not nags.
+ *  `canvasShort` (the canvas's short side) tells display caps from text caps. */
+export function lintAiSlop(layers: Layer[], canvasShort?: number): string[] {
   const notes: string[] = [];
   const all = flatten(layers);
 
@@ -176,18 +178,20 @@ export function lintAiSlop(layers: Layer[]): string[] {
     if (notes.length >= 6) break;
   }
 
-  // 6. ALL-CAPS without tracking — a tell, and it reads cramped.
+  // 6. ALL-CAPS at text sizes without tracking — a tell, and it reads cramped.
+  // Display caps are left alone: tight tracking on a big headline is a choice.
   const capsNoTrack = all.find(l => {
     if (l.type !== 'text') return false;
     const v = textValue(l).trim();
     if (!v || !isUpper(l, v)) return false;
     const ls = (l as { style?: { letter_spacing?: number; font_size?: number } }).style;
     const size = typeof ls?.font_size === 'number' ? ls.font_size : 16;
+    if (isDisplaySize(size, canvasShort)) return false;
     const track = typeof ls?.letter_spacing === 'number' ? ls.letter_spacing : 0;
     return track < Math.max(1, size * 0.04);   // ~0.06em floor, conservative
   });
   if (capsNoTrack && notes.length < 7) {
-    notes.push(`text "${capsNoTrack.id}" is ALL-CAPS with little/no letter_spacing — caps always needs ≥0.06em tracking (set letter_spacing) or it reads cramped + generic (type rule).`);
+    notes.push(`text "${capsNoTrack.id}" is ALL-CAPS at text size with little/no letter_spacing — caps this small wants ≥0.06em tracking (set letter_spacing) or it reads cramped + generic (type rule).`);
   }
 
   // 7. Accent overuse — one vivid hue spread across many SURFACES. Counted per
