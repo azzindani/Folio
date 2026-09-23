@@ -12,6 +12,7 @@ import { readBodyCapped, PayloadTooLargeError } from '../utils/http-body';
 import { normalizeProjectPaths } from './normalize-paths';
 import { rateLimiterFromEnv } from './rate-limit';
 import { startUpdateChecks, getUpdateStatus, currentVersion } from './update-check';
+import { seedPack, describeSeed } from './engine/library-pack';
 import {
   MCP_ERROR, FOLIO_ERROR, isSupportedVersion, isModernRequest, requestedVersion,
   negotiateLegacyVersion, validateModernHeaders, unsupportedVersionError,
@@ -411,6 +412,11 @@ export function startHttpServer(): void {
     process.stderr.write(`folio-mcp-http listening on :${port}\n`);
     process.stderr.write(`[mcp] auth: ${describeAuth()}\n`);
     startUpdateChecks();
+    // The bundled asset pack (library/) — after listen, so it never delays a request.
+    setImmediate(() => {
+      try { process.stderr.write(`[mcp] asset pack: ${describeSeed(seedPack())}\n`); }
+      catch (e) { process.stderr.write(`[mcp] asset pack: not seeded — ${(e as Error).message}\n`); }
+    });
     if (rateLimiter) {
       process.stderr.write(`[mcp] rate limit: ${rateLimiter.burst} burst, ${rateLimiter.perSec}/s per token+IP\n`);
       // Evict idle buckets so the Map can't grow unbounded. unref() keeps the
