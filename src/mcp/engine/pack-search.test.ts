@@ -25,6 +25,7 @@ const FILES = [
   { path: 'sfx/ui/click-1.mp3', license: 'CC0', title: 'UI click, short and dry', tags: ['sfx', 'ui', 'click'], duration_ms: 90 },
   { path: 'svg/logos/github.svg', license: 'CC0', title: 'GitHub logo', tags: ['logo', 'brand', 'github'] },
   { path: 'svg/flags/jp.svg', license: 'MIT', title: 'flag of Japan', tags: ['flag', 'jp', 'japan', 'asia'] },
+  { path: 'music/lofi/jazz-organ-loop-95.mp3', license: 'CC0', title: 'lo-fi jazz organ loop, 95 BPM', tags: ['music', 'lofi', 'chill', 'loop'], duration_ms: 40464, bpm: 95 },
 ];
 
 beforeAll(() => {
@@ -52,6 +53,8 @@ describe('searchPack', () => {
     expect(hits.map(h => h.path)).toEqual(['lib/folio/sfx/impact/punch.mp3', 'lib/folio/sfx/impact/punch-heavy.mp3']);
     expect(hits[0]).toMatchObject({ ref: 'pack:sfx/impact/punch.mp3', source: 'folio-pack', kind: 'audio', license: 'CC0', duration_ms: 470 });
     expect(searchPack('music', 'punch', 8)).toEqual([]);
+    // A bed says its tempo and whether it loops — what a cut is timed against.
+    expect(searchPack('music', 'chill', 8)[0]?.note).toMatch(/95 BPM\. Loops seamlessly/);
     expect(searchPack('photo', 'punch', 8)).toEqual([]);
   });
 

@@ -3,6 +3,442 @@
  "updated": "2026-09-23",
  "files": [
   {
+   "path": "music/ambient/soft-ambience.mp3",
+   "license": "CC0",
+   "source": "https://freesound.org/people/yewbic/sounds/66015",
+   "page": "https://freesound.org/people/yewbic/sounds/66015",
+   "creator": "yewbic",
+   "title": "soft ambient bed",
+   "tags": [
+    "music",
+    "ambient",
+    "atmosphere",
+    "pad",
+    "calm",
+    "background"
+   ],
+   "duration_ms": 45035
+  },
+  {
+   "path": "music/ambient/space-drone.mp3",
+   "license": "CC0",
+   "source": "https://freesound.org/people/Elektrocell/sounds/20705",
+   "page": "https://freesound.org/people/Elektrocell/sounds/20705",
+   "creator": "Elektrocell",
+   "title": "spacey ambient drone",
+   "tags": [
+    "music",
+    "ambient",
+    "space",
+    "drone",
+    "atmosphere",
+    "calm"
+   ],
+   "duration_ms": 45035
+  },
+  {
+   "path": "music/cinematic/epic-orchestra.mp3",
+   "license": "CC0",
+   "source": "https://freesound.org/people/edtijo/sounds/218744",
+   "page": "https://freesound.org/people/edtijo/sounds/218744",
+   "creator": "edtijo",
+   "title": "epic orchestra",
+   "tags": [
+    "music",
+    "cinematic",
+    "epic",
+    "orchestra",
+    "trailer",
+    "heroic"
+   ],
+   "duration_ms": 45035,
+   "bpm": 87
+  },
+  {
+   "path": "music/cinematic/epic-orchestral-intro.mp3",
+   "license": "CC0",
+   "source": "https://freesound.org/people/dominictreis/sounds/725162",
+   "page": "https://freesound.org/people/dominictreis/sounds/725162",
+   "creator": "dominictreis",
+   "title": "epic orchestral intro",
+   "tags": [
+    "music",
+    "cinematic",
+    "epic",
+    "orchestra",
+    "trailer",
+    "intro"
+   ],
+   "duration_ms": 24033
+  },
+  {
+   "path": "music/corporate/company-intro.mp3",
+   "license": "CC0",
+   "source": "https://freesound.org/people/Bertsz/sounds/524308",
+   "page": "https://freesound.org/people/Bertsz/sounds/524308",
+   "creator": "Bertsz",
+   "title": "corporate company intro",
+   "tags": [
+    "music",
+    "corporate",
+    "business",
+    "intro",
+    "inspiring",
+    "presentation"
+   ],
+   "duration_ms": 45035
+  },
+  {
+   "path": "music/corporate/unpretentious-reveal.mp3",
+   "license": "CC0",
+   "source": "https://freesound.org/people/Drakensson/sounds/529381",
+   "page": "https://freesound.org/people/Drakensson/sounds/529381",
+   "creator": "Drakensson",
+   "title": "gentle reveal, no drums",
+   "tags": [
+    "music",
+    "corporate",
+    "business",
+    "reveal",
+    "calm",
+    "soft"
+   ],
+   "duration_ms": 45035,
+   "bpm": 129
+  },
+  {
+   "path": "music/electronic/catchy-synth-loop-112.mp3",
+   "license": "CC0",
+   "source": "https://freesound.org/people/newagesoup/sounds/415922",
+   "page": "https://freesound.org/people/newagesoup/sounds/415922",
+   "creator": "newagesoup",
+   "title": "catchy reverb synth loop, 112 BPM",
+   "tags": [
+    "music",
+    "electronic",
+    "synth",
+    "catchy",
+    "reverb",
+    "loop",
+    "loop"
+   ],
+   "duration_ms": 17189,
+   "bpm": 112
+  },
+  {
+   "path": "music/electronic/electro-pop-loop.mp3",
+   "license": "CC0",
+   "source": "https://freesound.org/people/frankum/sounds/208520",
+   "page": "https://freesound.org/people/frankum/sounds/208520",
+   "creator": "frankum",
+   "title": "electro-pop loop",
+   "tags": [
+    "music",
+    "electronic",
+    "synth",
+    "pop",
+    "dance",
+    "loop",
+    "loop"
+   ],
+   "duration_ms": 22570,
+   "bpm": 113
+  },
+  {
+   "path": "music/funk/funk-drum-groove.mp3",
+   "license": "CC0",
+   "source": "https://freesound.org/people/RutgerMuller/sounds/50719",
+   "page": "https://freesound.org/people/RutgerMuller/sounds/50719",
+   "creator": "RutgerMuller",
+   "title": "funk drum groove",
+   "tags": [
+    "music",
+    "funk",
+    "groove",
+    "drums",
+    "funky",
+    "loop",
+    "loop"
+   ],
+   "duration_ms": 13009
+  },
+  {
+   "path": "music/funk/funky-beat.mp3",
+   "license": "CC0",
+   "source": "https://freesound.org/people/Spol/sounds/337671",
+   "page": "https://freesound.org/people/Spol/sounds/337671",
+   "creator": "Spol",
+   "title": "funky beat",
+   "tags": [
+    "music",
+    "funk",
+    "groove",
+    "funky",
+    "drums",
+    "bass"
+   ],
+   "duration_ms": 23171,
+   "bpm": 83
+  },
+  {
+   "path": "music/hiphop/boom-bap-loop-95.mp3",
+   "license": "CC0",
+   "source": "https://freesound.org/people/holizna/sounds/629142",
+   "page": "https://freesound.org/people/holizna/sounds/629142",
+   "creator": "holizna",
+   "title": "boom bap drum loop, 95 BPM",
+   "tags": [
+    "music",
+    "hiphop",
+    "beat",
+    "boom-bap",
+    "drums",
+    "loop",
+    "loop"
+   ],
+   "duration_ms": 13740,
+   "bpm": 95
+  },
+  {
+   "path": "music/hiphop/chill-hiphop-beat.mp3",
+   "license": "CC0",
+   "source": "https://freesound.org/people/bdazzle/sounds/545333",
+   "page": "https://freesound.org/people/bdazzle/sounds/545333",
+   "creator": "bdazzle",
+   "title": "chill hip-hop beat",
+   "tags": [
+    "music",
+    "hiphop",
+    "beat",
+    "chill",
+    "urban",
+    "drums"
+   ],
+   "duration_ms": 32784
+  },
+  {
+   "path": "music/lofi/chill-melody-loop-95.mp3",
+   "license": "CC0",
+   "source": "https://freesound.org/people/holizna/sounds/629147",
+   "page": "https://freesound.org/people/holizna/sounds/629147",
+   "creator": "holizna",
+   "title": "chill lo-fi melody loop, 95 BPM",
+   "tags": [
+    "music",
+    "lofi",
+    "chill",
+    "melody",
+    "relax",
+    "study",
+    "loop",
+    "loop"
+   ],
+   "duration_ms": 40464,
+   "bpm": 95
+  },
+  {
+   "path": "music/lofi/jazz-organ-loop-95.mp3",
+   "license": "CC0",
+   "source": "https://freesound.org/people/holizna/sounds/629154",
+   "page": "https://freesound.org/people/holizna/sounds/629154",
+   "creator": "holizna",
+   "title": "lo-fi jazz organ loop, 95 BPM",
+   "tags": [
+    "music",
+    "lofi",
+    "chill",
+    "jazz",
+    "organ",
+    "study",
+    "loop",
+    "loop"
+   ],
+   "duration_ms": 40464,
+   "bpm": 95
+  },
+  {
+   "path": "music/piano/lofi-piano-loop-80.mp3",
+   "license": "CC0",
+   "source": "https://freesound.org/people/holizna/sounds/629174",
+   "page": "https://freesound.org/people/holizna/sounds/629174",
+   "creator": "holizna",
+   "title": "lo-fi piano loop, 80 BPM",
+   "tags": [
+    "music",
+    "piano",
+    "piano",
+    "chill",
+    "soft",
+    "loop"
+   ],
+   "duration_ms": 45035,
+   "bpm": 80
+  },
+  {
+   "path": "music/piano/soft-piano-loop.mp3",
+   "license": "CC0",
+   "source": "https://freesound.org/people/Orboram/sounds/663687",
+   "page": "https://freesound.org/people/Orboram/sounds/663687",
+   "creator": "Orboram",
+   "title": "soft piano loop",
+   "tags": [
+    "music",
+    "piano",
+    "piano",
+    "soft",
+    "gentle",
+    "loop",
+    "loop"
+   ],
+   "duration_ms": 12042,
+   "bpm": 160
+  },
+  {
+   "path": "music/playful/bird-on-a-fence-120.mp3",
+   "license": "CC0",
+   "source": "https://freesound.org/people/elaineaeris/sounds/505686",
+   "page": "https://freesound.org/people/elaineaeris/sounds/505686",
+   "creator": "elaineaeris",
+   "title": "playful song, 120 BPM",
+   "tags": [
+    "music",
+    "playful",
+    "cute",
+    "happy",
+    "whistle",
+    "light"
+   ],
+   "duration_ms": 45035,
+   "bpm": 120
+  },
+  {
+   "path": "music/playful/music-box-loop.mp3",
+   "license": "CC0",
+   "source": "https://freesound.org/people/ZHR%C3%98/sounds/676722",
+   "page": "https://freesound.org/people/ZHR%C3%98/sounds/676722",
+   "creator": "ZHR\u00d8",
+   "title": "sweet music box loop",
+   "tags": [
+    "music",
+    "playful",
+    "cute",
+    "kids",
+    "music-box",
+    "gentle",
+    "loop",
+    "loop"
+   ],
+   "duration_ms": 40046,
+   "bpm": 60
+  },
+  {
+   "path": "music/synthwave/cyberpunk-beat.mp3",
+   "license": "CC0",
+   "source": "https://freesound.org/people/Disquantic/sounds/525290",
+   "page": "https://freesound.org/people/Disquantic/sounds/525290",
+   "creator": "Disquantic",
+   "title": "cyberpunk beat",
+   "tags": [
+    "music",
+    "synthwave",
+    "retro",
+    "cyberpunk",
+    "synth",
+    "beat"
+   ],
+   "duration_ms": 31269,
+   "bpm": 62
+  },
+  {
+   "path": "music/synthwave/dx7-chords.mp3",
+   "license": "CC0",
+   "source": "https://freesound.org/people/ValentinSosnitskiy/sounds/554256",
+   "page": "https://freesound.org/people/ValentinSosnitskiy/sounds/554256",
+   "creator": "ValentinSosnitskiy",
+   "title": "synthwave chords, DX7",
+   "tags": [
+    "music",
+    "synthwave",
+    "retro",
+    "80s",
+    "synth",
+    "chords"
+   ],
+   "duration_ms": 44957
+  },
+  {
+   "path": "music/tension/suspense-motif.mp3",
+   "license": "CC0",
+   "source": "https://freesound.org/people/jhumbucker/sounds/250542",
+   "page": "https://freesound.org/people/jhumbucker/sounds/250542",
+   "creator": "jhumbucker",
+   "title": "suspense motif",
+   "tags": [
+    "music",
+    "tension",
+    "suspense",
+    "thriller",
+    "dark",
+    "sting"
+   ],
+   "duration_ms": 15177
+  },
+  {
+   "path": "music/tension/tense-bass-loop.mp3",
+   "license": "CC0",
+   "source": "https://freesound.org/people/Stereo%20Surgeon/sounds/261218",
+   "page": "https://freesound.org/people/Stereo%20Surgeon/sounds/261218",
+   "creator": "Stereo Surgeon",
+   "title": "tense bass loop",
+   "tags": [
+    "music",
+    "tension",
+    "suspense",
+    "dark",
+    "bass",
+    "loop",
+    "loop"
+   ],
+   "duration_ms": 29205,
+   "bpm": 100
+  },
+  {
+   "path": "music/upbeat/full-of-energy.mp3",
+   "license": "CC0",
+   "source": "https://freesound.org/people/code_box/sounds/520192",
+   "page": "https://freesound.org/people/code_box/sounds/520192",
+   "creator": "code_box",
+   "title": "upbeat, full of energy",
+   "tags": [
+    "music",
+    "upbeat",
+    "energetic",
+    "happy",
+    "bright",
+    "advert"
+   ],
+   "duration_ms": 34821,
+   "bpm": 138
+  },
+  {
+   "path": "music/upbeat/fun-dance-track.mp3",
+   "license": "CC0",
+   "source": "https://freesound.org/people/evanjones4/sounds/320089",
+   "page": "https://freesound.org/people/evanjones4/sounds/320089",
+   "creator": "evanjones4",
+   "title": "fun dance track",
+   "tags": [
+    "music",
+    "upbeat",
+    "dance",
+    "happy",
+    "party",
+    "pop"
+   ],
+   "duration_ms": 45035,
+   "bpm": 70
+  },
+  {
    "path": "sfx/digital/blip-down.mp3",
    "license": "CC0",
    "source": "https://kenney.nl/assets/digital-audio",

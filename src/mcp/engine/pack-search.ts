@@ -35,7 +35,11 @@ function candidate(f: PackFile, libPath: string): AssetCandidate {
     ref: `pack:${f.path}`, source: 'folio-pack', kind: KIND_BY_EXT[ext] ?? 'images',
     title: f.title ?? libPath.split('/').pop() ?? f.path, filetype: ext, license: f.license,
     path: libPath,
-    note: `Already in the library — use src:"${libPath}" directly, nothing to fetch.`,
+    note: [
+      `Already in the library — use src:"${libPath}" directly, nothing to fetch.`,
+      f.bpm ? `${f.bpm} BPM.` : '',
+      f.tags?.includes('loop') ? 'Loops seamlessly: loop:true on op:audio runs it under any length.' : '',
+    ].filter(Boolean).join(' '),
   };
   if (f.duration_ms !== undefined) c.duration_ms = f.duration_ms;
   if (f.creator) c.creator = f.creator;
