@@ -184,8 +184,8 @@ export abstract class CanvasBase {
   }
 
   protected injectAnimationCSS(svg: SVGSVGElement): void {
+    // The layers' own tracks first: a file with no top-level map still animates.
     const { animations, design } = this.state.get();
-    if (Object.keys(animations).length === 0) return;
     // Only the page on screen is painted; ids repeated across pages take the
     // layer's own track, since the flat map holds just one page's entry.
     const layers = this.state.getCurrentLayers();

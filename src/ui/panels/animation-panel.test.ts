@@ -134,4 +134,17 @@ describe('AnimationPanel', () => {
     sel.dispatchEvent(new Event('change'));
     expect(state.get().animations['r1']?.loop).toBeUndefined();
   });
+
+  // The map was never saved: an entrance picked here vanished on save, and Play and the export never saw it.
+  it('writes the layer\'s own track — what is saved and played — and shows the track over the map', () => {
+    state.set('design', makeDesign());
+    state.set('selectedLayerIds', ['r1']);
+    const sel = container.querySelector<HTMLSelectElement>('[data-kind="enter"][data-field="type"]');
+    if (sel) { sel.value = 'fade_in'; sel.dispatchEvent(new Event('change')); }
+    const track = (state.findLayer('r1') as { animation?: { enter?: { type?: string } } } | undefined)?.animation;
+    expect(track?.enter?.type).toBe('fade_in');
+    state.set('animations', { r1: { enter: { type: 'slide_up' } } } as never, false);
+    expect(container.querySelector<HTMLSelectElement>('[data-kind="enter"][data-field="type"]')?.value).toBe('fade_in');
+  });
 });
+
