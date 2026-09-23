@@ -23,6 +23,8 @@ const FILES = [
   { path: 'sfx/impact/punch-heavy.mp3', license: 'CC0', title: 'heavy punch impact', tags: ['sfx', 'impact', 'punch', 'hit'], duration_ms: 680 },
   { path: 'sfx/impact/punch.mp3', license: 'CC0', title: 'punch impact', tags: ['sfx', 'impact', 'punch', 'hit'], duration_ms: 470 },
   { path: 'sfx/ui/click-1.mp3', license: 'CC0', title: 'UI click, short and dry', tags: ['sfx', 'ui', 'click'], duration_ms: 90 },
+  { path: 'svg/logos/github.svg', license: 'CC0', title: 'GitHub logo', tags: ['logo', 'brand', 'github'] },
+  { path: 'svg/flags/jp.svg', license: 'MIT', title: 'flag of Japan', tags: ['flag', 'jp', 'japan', 'asia'] },
 ];
 
 beforeAll(() => {
@@ -51,6 +53,12 @@ describe('searchPack', () => {
     expect(hits[0]).toMatchObject({ ref: 'pack:sfx/impact/punch.mp3', source: 'folio-pack', kind: 'audio', license: 'CC0', duration_ms: 470 });
     expect(searchPack('music', 'punch', 8)).toEqual([]);
     expect(searchPack('photo', 'punch', 8)).toEqual([]);
+  });
+
+  it('answers logo from svg/logos/ and icon from all of svg/', () => {
+    expect(searchPack('logo', 'github', 8).map(h => h.path)).toEqual(['lib/folio/svg/logos/github.svg']);
+    expect(searchPack('logo', 'japan', 8)).toEqual([]);
+    expect(searchPack('icon', 'flag japan', 8)[0]).toMatchObject({ path: 'lib/folio/svg/flags/jp.svg', kind: 'images', license: 'MIT' });
   });
 });
 

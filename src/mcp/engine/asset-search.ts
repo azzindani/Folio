@@ -294,6 +294,7 @@ export async function runSearch(what: SearchWhat, query: string, limit: number)
 // ── MCP op ───────────────────────────────────────────────────
 const WHATS: SearchWhat[] = ['photo', 'illustration', 'diagram', 'icon', 'font', 'logo', 'sound', 'music', 'clip'];
 const WHAT_ALIASES: Record<string, SearchWhat> = { audio: 'sound', sfx: 'sound', sound_effect: 'sound', effect: 'sound', song: 'music', image: 'photo',
+  emoji: 'icon', flag: 'icon', brand: 'logo',
   video: 'clip', footage: 'clip', broll: 'clip', 'b-roll': 'clip', b_roll: 'clip', stock_video: 'clip', clips: 'clip' };
 const isAudio = (w: SearchWhat): boolean => w === 'sound' || w === 'music';
 

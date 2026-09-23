@@ -17,8 +17,20 @@ is not in the allowed list (`src/mcp/engine/library-pack.ts`).
 | Folder | Source | Licence |
 |---|---|---|
 | `sfx/ui`, `sfx/impact`, `sfx/digital` | Kenney — Interface Sounds, UI Audio, Impact Sounds, Digital Audio (<https://kenney.nl>) | CC0 1.0 |
+| `svg/logos` | Simple Icons 16.32 (<https://simpleicons.org>) — each brand's own colour baked in | CC0 1.0 |
+| `svg/emoji` | Microsoft Fluent Emoji, color (<https://github.com/microsoft/fluentui-emoji>) | MIT |
+| `svg/flags` | flag-icons 7.5, 4:3 (<https://flagicons.lipis.dev>) | MIT |
 
-Processing: leading silence trimmed, peak normalised to −1 dBFS, re-encoded as
+Brand logos: the SVG files are CC0, but the marks are TRADEMARKS of their
+owners — use one to refer to the product (a tool stack, "works with", a
+comparison), never in a way that implies the owner made or endorses the piece.
+Follow the brand's own guidelines for colour and clear space.
+
+MIT (emoji, flags): the copyright and permission notices ship with the pack in
+`licenses/` (with the CC0 deeds of Simple Icons and Kenney). MIT asks for the notice to travel
+with the files, not for a credit line on a design.
+
+Sound processing: leading silence trimmed, peak normalised to −1 dBFS, re-encoded as
 128 kbps MP3. The originals' licence carries over unchanged.
 
 ## Turning it off
