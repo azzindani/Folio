@@ -41,8 +41,8 @@ export function backdropColor(layers: Layer[], w: number, h: number): string {
   return find(layers) ?? FALLBACK_BACKDROP;
 }
 
-function sceneLayers(spec: DesignSpec, scene: PlannedScene, localMs: number): Layer[] {
-  return specAt(spec, scene.index, localMs).pages?.[0]?.layers ?? [];
+function sceneLayers(spec: DesignSpec, scene: PlannedScene, localMs: number, frameMs?: number): Layer[] {
+  return specAt(spec, scene.index, localMs, frameMs).pages?.[0]?.layers ?? [];
 }
 
 function posed(id: string, z: number, layers: Layer[], pose: ScenePose, w: number, h: number): Layer {
@@ -58,15 +58,15 @@ const onePage = (spec: DesignSpec, id: string, layers: Layer[]): DesignSpec =>
   ({ ...spec, pages: [{ id, layers }] } as DesignSpec);
 
 /** The piece at global time t, as one page. */
-export function composeSceneFrame(spec: DesignSpec, plan: ScenePlan, t: number): DesignSpec {
+export function composeSceneFrame(spec: DesignSpec, plan: ScenePlan, t: number, frameMs?: number): DesignSpec {
   const m = sceneAt(plan, t);
   const w = spec.document.width, h = spec.document.height;
-  const incoming = sceneLayers(spec, m.scene, m.local_ms);
+  const incoming = sceneLayers(spec, m.scene, m.local_ms, frameMs);
   const tr = m.scene.transition;
   if (!m.from || !tr) return onePage(spec, m.scene.page_id, incoming);
 
   const poses = transitionPoses(tr.type, m.from.progress, w, h, tr.easing);
-  const outgoing = sceneLayers(spec, m.from.scene, m.from.local_ms);
+  const outgoing = sceneLayers(spec, m.from.scene, m.from.local_ms, frameMs);
   const layers: Layer[] = [];
   if (poses.backdrop) {
     layers.push({ id: '__scene_backdrop', type: 'rect', z: 0, x: 0, y: 0, width: w, height: h, fill: backdropColor(outgoing, w, h) } as unknown as Layer);

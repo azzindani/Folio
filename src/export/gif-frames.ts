@@ -8,7 +8,7 @@
  * would have put them at that instant.
  */
 
-import type { DesignSpec, Layer } from '../schema/types';
+import type { DesignSpec, Effects, Layer } from '../schema/types';
 import type { AnimationSpec, Keyframe } from '../animation/types';
 import { interpolateKeyframes } from '../animation/keyframe-engine';
 import { opacityBase } from '../animation/opacity-base';
@@ -24,6 +24,7 @@ import { drawnBox } from './frame-geometry';
 import { poseTransform, FRAME_POSE, REST_POSE, type FramePose } from './frame-pose';
 import { resolveTimeline } from '../animation/timeline-resolve';
 import { windowOf, aliveAt, windowEnd } from '../animation/lifespan';
+import { shutterOf, smearOf } from './motion-blur';
 
 const fmt = (n: number): string => String(Number(n.toFixed(3)));
 
@@ -369,13 +370,24 @@ function applyValues(layer: AnimatedLayer, t: number): Layer {
  * children that HAVE x/y, and scaled no text — so a card with a connector and
  * a caption fell apart in every GIF.
  */
-export function layersAt(layers: Layer[], t: number): Layer[] {
+export function layersAt(layers: Layer[], t: number, frameMs?: number): Layer[] {
   // Clocks, links and windows first — once per page, cached — so the flipbook
-  // plays exactly the tracks the CSS route is generated from.
-  return sampleLayers(resolveTimeline(layers), t);
+  // plays exactly the tracks the CSS route is generated from. A frame duration
+  // makes it a raster FRAME: motion_blur layers smear over the shutter.
+  return sampleLayers(resolveTimeline(layers), t, frameMs);
 }
 
-function sampleLayers(layers: Layer[], t: number): Layer[] {
+/** The layer with its motion blur for this frame, when it asks for one and moves. */
+function smeared(layer: AnimatedLayer, posed: AnimatedLayer, t: number, frameMs: number): AnimatedLayer {
+  const shutter = shutterOf(layer);
+  if (shutter === null) return posed;
+  const s = smearOf(layer, u => applyMotionPath(applyValues(layer, u), u), t, frameMs, shutter);
+  if (!s) return posed;
+  const fx = (posed['effects' as keyof Layer] as Effects | undefined) ?? {};
+  return { ...posed, effects: { ...fx, motion_blur: s } } as AnimatedLayer;
+}
+
+function sampleLayers(layers: Layer[], t: number, frameMs?: number): Layer[] {
   return layers.map(l => {
     const layer = l as AnimatedLayer;
     // Outside its in/out window the layer is not there. It stays in the tree,
@@ -386,26 +398,27 @@ function sampleLayers(layers: Layer[], t: number): Layer[] {
       void _a;
       return { ...rest, visible: false } as Layer;
     }
-    const resolved = applyMotionPath(applyValues(layer, t), t) as AnimatedLayer;
+    const sampled = applyMotionPath(applyValues(layer, t), t) as AnimatedLayer;
+    const resolved = frameMs ? smeared(layer, sampled, t, frameMs) : sampled;
     // A clip shows the moment of its file that t lands on (video-time.ts).
     if (layer.type === 'video') {
       const v = layer as unknown as { in?: number; video?: VideoTiming };
       return { ...resolved, _video_ms: videoSourceMs(t, v.in, v.video) } as unknown as Layer;
     }
     if (!Array.isArray(layer.layers)) return resolved;
-    return { ...resolved, layers: sampleLayers(layer.layers, t) } as Layer;
+    return { ...resolved, layers: sampleLayers(layer.layers, t, frameMs) } as Layer;
   });
 }
 
 /** A design as it appears at time t — ready to hand to the ordinary render path. */
-export function specAt(spec: DesignSpec, pageIndex: number, t: number): DesignSpec {
+export function specAt(spec: DesignSpec, pageIndex: number, t: number, frameMs?: number): DesignSpec {
   const pages = spec.pages;
   if (pages && pages.length > 0) {
     const idx = Math.min(Math.max(pageIndex, 0), pages.length - 1);
     const page = pages[idx];
-    return { ...spec, pages: [{ ...page, layers: layersAt(page.layers ?? [], t) }] };
+    return { ...spec, pages: [{ ...page, layers: layersAt(page.layers ?? [], t, frameMs) }] };
   }
-  return { ...spec, layers: layersAt(spec.layers ?? [], t) };
+  return { ...spec, layers: layersAt(spec.layers ?? [], t, frameMs) };
 }
 
 /** Evenly spaced sample times covering one full run. */

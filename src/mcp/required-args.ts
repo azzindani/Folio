@@ -144,6 +144,7 @@ export const PER_OP: Record<string, Record<string, string[]>> = {
     link: ['design_path'],
     parent: ['design_path'],
     null: ['design_path', 'layer_id'],
+    motion_blur: ['design_path'],
     lint: ['design_path'],
   },
 };

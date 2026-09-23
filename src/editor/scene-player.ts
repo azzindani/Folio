@@ -16,6 +16,7 @@ import { planScenes, sceneAt, type ScenePlan } from '../export/scene-plan';
 import { composeSceneFrame } from '../export/scene-compose';
 import { planCaptions, type CaptionPlan } from '../export/caption-plan';
 import { withCaptions } from '../export/caption-layers';
+import { PREVIEW_FRAME_MS } from '../export/motion-blur';
 import { playsAsScenes } from './scene-deck';
 
 export interface SceneClock {
@@ -71,7 +72,8 @@ export class ScenePlayer {
     if (!design || !plan) return null;
     // The export burns the same captions into its frames (withCaptions), so the stage shows them too.
     this.cachedCaptions ??= planCaptions(design, plan);
-    return withCaptions(composeSceneFrame(design, plan, t), this.cachedCaptions, design.captions?.style, t);
+    // Motion blur as a 30 fps video frame would show it (export/motion-blur.ts).
+    return withCaptions(composeSceneFrame(design, plan, t, PREVIEW_FRAME_MS), this.cachedCaptions, design.captions?.style, t);
   }
 
   sceneIndexAt(t: number = this.t): number {

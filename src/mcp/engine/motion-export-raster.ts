@@ -47,8 +47,8 @@ export interface RasterMotionArgs {
 export interface FrameSource {
   /** Natural length of the piece, ms. */
   durationMs: number;
-  /** The design at time t, as the single page to render. */
-  at(t: number): DesignSpec;
+  /** The design at time t, as the single page to render — a frame `frameMs` long, for motion blur. */
+  at(t: number, frameMs?: number): DesignSpec;
 }
 
 /** Longest clip. A bound on CPU time — frames stream, so memory is flat at any length. */
@@ -139,7 +139,7 @@ export async function exportRasterMotion(
   const fit = scale < 1 ? { fitTo: { mode: 'zoom' as const, value: scale } } : {};
   const renderAt = (t: number): Promise<Raster> => {
     // A clip far off the canvas aborts resvg outright. See frame-cull.ts.
-    const svg = renderToSVGString(cullFrame(source.at(t)));
+    const svg = renderToSVGString(cullFrame(source.at(t, frameMs)));
     return pool.render({ svg, opts: video ? { font, background: '#FFFFFF', ...fit } : { font, ...fit }, want: 'pixels' });
   };
 

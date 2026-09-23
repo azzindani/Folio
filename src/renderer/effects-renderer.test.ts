@@ -186,3 +186,27 @@ describe('applyEffects — no effects', () => {
     expect(el.getAttribute('filter')).toBeNull();
   });
 });
+
+describe('applyEffects — motion blur', () => {
+  const box = { x: 100, y: 20, width: 200, height: 60 };
+
+  it('averages the copies pairwise along the travel, in a region that holds the whole smear', () => {
+    const svg = makeSvg();
+    applyEffects(makeEl(), { motion_blur: { dx: 6, dy: 0, samples: 4, box } }, svg);
+    const offsets = [...svg.querySelectorAll('feOffset')].map(o => Number(o.getAttribute('dx')));
+    expect(offsets).toEqual([-3, -1, 1, 3]);
+    const sums = [...svg.querySelectorAll('feComposite')];
+    expect(sums).toHaveLength(3);
+    expect(sums.every(c => c.getAttribute('operator') === 'arithmetic' && c.getAttribute('k2') === '0.5' && c.getAttribute('k3') === '0.5')).toBe(true);
+    const f = svg.querySelector('filter');
+    // Half the travel each way plus the usual 40%: 100 − 3 − 80 = 17, 200 + 6 + 160 = 366.
+    expect([f?.getAttribute('filterUnits'), f?.getAttribute('x'), f?.getAttribute('width')]).toEqual(['userSpaceOnUse', '17', '366']);
+    expect(svg.querySelector('feGaussianBlur')).toBeNull();
+  });
+
+  it('closes the gaps with a blur along the travel once the copies stand apart', () => {
+    const svg = makeSvg();
+    applyEffects(makeEl(), { motion_blur: { dx: 0, dy: 310, samples: 32, box } }, svg);
+    expect(svg.querySelector('feGaussianBlur')?.getAttribute('stdDeviation')).toBe('0 5');
+  });
+});

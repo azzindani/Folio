@@ -113,7 +113,7 @@ export async function exportAnimation(args: ExportAnimationArgs): Promise<ToolRe
       .flatMap(t => (t && APPROXIMATED[t] ? [`${t} ${APPROXIMATED[t]}.`] : []));
     const sound = soundFor(spec, dPath, { total_ms: args.duration ?? plan.total_ms, scenes: plan.scenes.map(s => ({ page_id: s.page_id, start_ms: s.start_ms })) }, args);
     const captions = args.captions === false ? null : planCaptions(spec, plan);
-    return raster(spec, dPath, { durationMs: plan.total_ms, at: t => withCaptions(composeSceneFrame(spec, plan, t), captions, spec.captions?.style, t) }, outputPath, {
+    return raster(spec, dPath, { durationMs: plan.total_ms, at: (t, frameMs) => withCaptions(composeSceneFrame(spec, plan, t, frameMs), captions, spec.captions?.style, t) }, outputPath, {
       ...base,
       sound: sound.clips,
       notes: [...plan.warnings, ...approximated, ...sound.notes, ...(captions?.notes ?? [])],
@@ -134,7 +134,7 @@ export async function exportAnimation(args: ExportAnimationArgs): Promise<ToolRe
   const runMs = args.duration ?? animationDuration(layers);
   const sound = soundFor(spec, dPath, { total_ms: runMs, scenes: page ? [{ page_id: page.id, start_ms: 0 }] : [] }, args);
   const captions = args.captions === false ? null : planCaptions(spec, { total_ms: runMs, scenes: page ? [{ page_id: page.id, start_ms: 0, length_ms: runMs }] : [] });
-  return raster(spec, dPath, { durationMs: animationDuration(layers), at: t => withCaptions(specAt(spec, pageIndex, t), captions, spec.captions?.style, t) }, outputPath, {
+  return raster(spec, dPath, { durationMs: animationDuration(layers), at: (t, frameMs) => withCaptions(specAt(spec, pageIndex, t, frameMs), captions, spec.captions?.style, t) }, outputPath, {
     ...base, sound: sound.clips, notes: [...pageNotes, ...sound.notes, ...(captions?.notes ?? [])],
   });
 }

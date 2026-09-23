@@ -12,6 +12,14 @@ function hexToRgb01(hex: string): [number, number, number] {
   return [parseInt(h.slice(0, 2), 16) / 255, parseInt(h.slice(2, 4), 16) / 255, parseInt(h.slice(4, 6), 16) / 255];
 }
 
+const fx = (v: number): string => String(Number(v.toFixed(2)));
+
+/** A smear's filter region: its box grown by half the travel each way, plus the usual 40% for shadows. */
+function smearBox(mb: NonNullable<Effects['motion_blur']>): Record<string, string> {
+  const px = Math.abs(mb.dx) / 2 + 0.4 * mb.box.width, py = Math.abs(mb.dy) / 2 + 0.4 * mb.box.height;
+  return { x: fx(mb.box.x - px), y: fx(mb.box.y - py), width: fx(mb.box.width + 2 * px), height: fx(mb.box.height + 2 * py) };
+}
+
 function feFunc(tag: 'feFuncR' | 'feFuncG' | 'feFuncB', type: string, tableValues: string): SVGElement {
   return createSVGElement(tag, { type, tableValues });
 }
@@ -111,10 +119,41 @@ export function applyEffects(
     }
   }
 
+  // 7. Motion blur — the styled graphic at N points along its travel over the
+  // shutter, averaged in premultiplied colour: the exact mean of N sub-frames
+  // of a move (export/motion-blur.ts). Averaged pairwise, ½ + ½ per level:
+  // resvg keeps each result in 8 bits, and 24 sums of 1/24 came to 94%.
+  const mb = effects.motion_blur;
+  if (mb && mb.samples >= 2) {
+    const src = cur;
+    let level = Array.from({ length: mb.samples }, (_, i) => {
+      const f = i / (mb.samples - 1) - 0.5;
+      prims.push(createSVGElement('feOffset', { in: src, dx: fx(mb.dx * f), dy: fx(mb.dy * f), result: `mb${i}` }));
+      return `mb${i}`;
+    });
+    while (level.length > 1) {
+      const next: string[] = [];
+      for (let i = 0; i + 1 < level.length; i += 2) {
+        const r = `e${++n}`;
+        prims.push(createSVGElement('feComposite', { in: level[i] ?? '', in2: level[i + 1] ?? '', operator: 'arithmetic', k1: '0', k2: '0.5', k3: '0.5', k4: '0', result: r }));
+        next.push(r);
+      }
+      level = next;
+    }
+    cur = level[0] ?? src;
+    // Past the copy cap the copies stand apart; a blur the length of one gap, along the travel, closes them.
+    const gx = Math.abs(mb.dx) / (mb.samples - 1), gy = Math.abs(mb.dy) / (mb.samples - 1);
+    if (Math.hypot(gx, gy) > 3) step(createSVGElement('feGaussianBlur', { stdDeviation: `${fx(gx / 2)} ${fx(gy / 2)}` }));
+  }
+
   if (prims.length > 0) {
     const filterId = defIdFor('fx', effects);
+    // A smear reaches past the usual 40% margin: its region is measured in the layer's own units.
+    const region = mb && mb.samples >= 2
+      ? { filterUnits: 'userSpaceOnUse', ...smearBox(mb) }
+      : { x: '-40%', y: '-40%', width: '180%', height: '180%' };
     const filter = createSVGElement('filter', {
-      id: filterId, x: '-40%', y: '-40%', width: '180%', height: '180%',
+      id: filterId, ...region,
       'color-interpolation-filters': 'sRGB',
     });
     for (const prim of prims) filter.appendChild(prim);
