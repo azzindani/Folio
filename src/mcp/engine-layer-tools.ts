@@ -2,7 +2,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import type { DesignSpec, Layer } from '../schema/types';
-import { addIntoGroup, parentIsLocked } from './engine-layer-parent';
+import { addIntoGroup, parentIsLocked, markAutoZ, clearAutoZ } from './engine-layer-parent';
 import { autoFitPosterCanvas } from './engine-layer-autofit';
 import type { ToolResult } from './types';
 
@@ -176,6 +176,7 @@ export function addLayers(args: {
   const incoming: Layer[] = shorthand.length
     ? expandShorthandLayers(shorthand)
     : (args.layers ?? []);
+  markAutoZ(incoming, shorthand.length ? shorthand : (args.layers ?? []));
   // A preset compressed into a box shorter than its content is a spatial fact
   // the model cannot see — surface it in the same breath as the expansion.
   const fitNotes = drainPresetFitReports().map(r => r.note);
@@ -313,6 +314,7 @@ export function addLayers(args: {
     } else {
       const sunk = demoteCoveringBackdrops(page.layers, incoming, spec.document.width, spec.document.height);
       if (sunk) progress.push(pInfo(`Sank ${sunk} full-canvas backdrop(s) behind page content`, 'a background added last would have blanked the page'));
+      clearAutoZ(incoming);
       page.layers.push(...incoming);
     }
     activeLayers = page.layers;
@@ -326,6 +328,7 @@ export function addLayers(args: {
     } else {
       const sunk = demoteCoveringBackdrops(spec.layers, incoming, spec.document.width, spec.document.height);
       if (sunk) progress.push(pInfo(`Sank ${sunk} full-canvas backdrop(s) behind poster content`, 'a background added last would have blanked the poster'));
+      clearAutoZ(incoming);
       spec.layers.push(...incoming);
     }
     activeLayers = spec.layers;

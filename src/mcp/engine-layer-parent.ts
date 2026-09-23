@@ -12,6 +12,27 @@ import type { Layer } from '../schema/types';
 
 type Group = Layer & { layers?: Layer[]; locked?: boolean };
 
+/**
+ * Marks an incoming layer that arrived without a z. Shorthand fills in its
+ * index in the call (shorthand-expand.ts), which inside a group means under
+ * every sibling stacked higher — so the mark is taken before that. Transient:
+ * addIntoGroup and clearAutoZ remove it; it is never written.
+ */
+const AUTO_Z = '__auto_z';
+
+/** Mark the incoming layers whose source (shorthand or verbose, same order) gave no z. */
+export function markAutoZ(incoming: Layer[], sources: readonly unknown[]): void {
+  incoming.forEach((l, i) => {
+    const src = sources[i] as { z?: unknown } | undefined;
+    if (src && src.z === undefined) (l as unknown as Record<string, unknown>)[AUTO_Z] = true;
+  });
+}
+
+/** Drop the marks — at the top level a layer keeps the z shorthand gave it. */
+export function clearAutoZ(layers: Layer[]): void {
+  for (const l of layers) delete (l as unknown as Record<string, unknown>)[AUTO_Z];
+}
+
 /** A group anywhere in the tree, by id. */
 export function findGroup(layers: Layer[] | undefined, id: string): Group | null {
   for (const l of layers ?? []) {
@@ -34,7 +55,16 @@ export function addIntoGroup(container: Layer[], parentId: string, incoming: Lay
   const host = findGroup(container, parentId);
   if (!host) return `No group "${parentId}" ${where}.`;
   if (host.type !== 'group') return `"${parentId}" is a ${host.type}, not a group — only a group holds layers.`;
-  host.layers = [...(host.layers ?? []), ...incoming];
+  // At the end means on top: a layer given no z was filled in with its index and drew under every
+  // sibling stacked higher (benchmark r5: a chevron added to a scene drew beneath its grid lines).
+  // A z the caller wrote is kept — tucking something under on purpose still works.
+  let top = Math.max(0, ...(host.layers ?? []).map(l => (typeof l.z === 'number' ? l.z : 0)));
+  const placed = incoming.map(l => {
+    const auto = (l as unknown as Record<string, unknown>)[AUTO_Z] === true;
+    clearAutoZ([l]);
+    return auto ? ({ ...l, z: ++top } as Layer) : l;
+  });
+  host.layers = [...(host.layers ?? []), ...placed];
   return null;
 }
 
