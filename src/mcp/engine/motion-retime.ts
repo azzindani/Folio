@@ -10,6 +10,7 @@
 
 import type { Layer } from '../../schema/types';
 import type { AnimationSpec, Keyframe, LayerClock } from '../../animation/types';
+import { changedChannels } from '../../animation/keyframe-segments';
 
 /** Open `by` ms at `at` (by > 0), or close the `-by` ms after it (by < 0). */
 export interface Ripple { at: number; by: number }
@@ -42,9 +43,6 @@ export function rippled(t: number, r: Ripple): number | null {
   if (t <= r.at) return t;
   return t >= end ? t + r.by : null;
 }
-
-const pose = (k: Keyframe): string =>
-  JSON.stringify(Object.entries(k).filter(([key]) => key !== 't' && key !== 'easing' && key !== 'hold').sort());
 
 /** Keyframe index ranges [a, b] whose segments are all a loop the layer rests in (storyboard `loop`, unrolled). */
 function ambientRuns(sorted: Keyframe[]): Array<[number, number]> {
@@ -98,10 +96,7 @@ export function rippleTrack(id: string, anim: AnimationSpec, r: Ripple, rep: Rip
   // Opening exactly where a move LANDS leaves the landing where it is: the time
   // opens after it. Found live: a hold opened at 1200 ms, where a fade finished,
   // stretched the 600 ms fade to 4.6 s ("under way" — it had just ended).
-  const moves = (i: number): boolean => {
-    const p = sorted[i], q = sorted[i + 1];
-    return Boolean(p && q && !p.hold && pose(p) !== pose(q));
-  };
+  const moves = (i: number): boolean => Boolean(sorted[i] && !sorted[i]?.hold && changedChannels(sorted, i).length);
   const moved = scene.map((s, i) => (r.by > 0 && s === r.at && i > 0 && moves(i - 1) && !moves(i) ? s : rippled(s, r)));
   const paced = paceLoops(id, sorted, scene, moved, r, rep);
   const endAt = rippled(end, r);
@@ -113,7 +108,7 @@ export function rippleTrack(id: string, anim: AnimationSpec, r: Ripple, rep: Rip
   if (moved.every((m, i) => m === scene[i]) && endAt === end) return anim;
   for (let i = 0; i + 1 < sorted.length; i++) {
     const p = sorted[i], q = sorted[i + 1], a = moved[i], b = moved[i + 1], sa = scene[i], sb = scene[i + 1];
-    if (!p || !q || a == null || b == null || sa === undefined || sb === undefined || pose(p) === pose(q) || p.hold || paced.has(i)) continue;
+    if (!p || !q || a == null || b == null || sa === undefined || sb === undefined || !changedChannels(sorted, i).length || p.hold || paced.has(i)) continue;
     if (b === a) { rep.blocked.push(`${id} (moves ${sa}–${sb}ms)`); return anim; }
     if (b - a !== sb - sa) rep.stretched.push(`${id} ${sa}–${sb}ms → ${a}–${b}ms`);
   }
