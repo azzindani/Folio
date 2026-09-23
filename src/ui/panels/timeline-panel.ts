@@ -9,10 +9,20 @@ import { trackHTML, markerStripHTML, markersOf, fmtMs, HEADER_W, KF_RADIUS } fro
 import { timelineRows, setKeyframeEasing, shiftKeyframes, flattenForTimeline } from './timeline-model';
 import { bindTimelineEdits } from './timeline-edit';
 import { bindTimelineDrags } from './timeline-drag';
+import { soundLane, analyse, type SoundAnalysis, type SoundDeps } from './timeline-sound';
+import { resolveAssetUrl } from '../../renderer/render-context';
 
 // The pure API lives in timeline-model.ts; re-exported for existing importers.
 export * from './timeline-model';
 export { fmtMs };
+
+/** The browser's way to fetch and decode a sound file — the same mount the canvas sound plays from. */
+const SOUND_DEPS: SoundDeps = {
+  load: src => fetch(resolveAssetUrl(src), { credentials: 'include' })
+    .then(r => (r.ok ? r.arrayBuffer() : Promise.reject(new Error(`HTTP ${r.status}`)))),
+  decode: data => new OfflineAudioContext(1, 1, 44_100).decodeAudioData(data)
+    .then(b => ({ sampleRate: b.sampleRate, channels: Array.from({ length: b.numberOfChannels }, (_, i) => b.getChannelData(i)) })),
+};
 
 export class TimelinePanelManager {
   private container: HTMLElement;
@@ -25,6 +35,11 @@ export class TimelinePanelManager {
   private player: MotionPlayer;
   /** Whether the last render had the resolved rows, or fell back to raw keyframe times. */
   private drawnWithRows = false;
+  /** Sound files measured in the browser (null: unreadable here); absent = not yet asked. */
+  private sounds = new Map<string, SoundAnalysis | null>();
+  /** The soundtrack's beats on the ruler as last drawn — snap points for every drag. */
+  private beats: number[] = [];
+  private asked = new Set<string>();
   /** Set by the app so the checkbox can reach the canvas. */
   onTrailsToggle?: (on: boolean) => void;
 
@@ -153,7 +168,10 @@ export class TimelinePanelManager {
 
     const trackAreaW = body.clientWidth - HEADER_W || 400;
 
-    body.innerHTML = markerStripHTML(markersOf(design, currentPageIndex), this.duration)
+    const sound = soundLane(design, currentPageIndex, this.duration, this.sounds, HEADER_W);
+    this.beats = sound.beats;
+    this.measure(sound.unmeasured);
+    body.innerHTML = markerStripHTML(markersOf(design, currentPageIndex), this.duration) + sound.html
       + rows.map(r => trackHTML(r.layer, timing?.get(r.layer.id), this.duration, r.depth)).join('');
 
     // Scrubber
@@ -168,6 +186,15 @@ export class TimelinePanelManager {
       </div>`);
 
     this.bindTracks(body, layers, trackAreaW);
+  }
+
+  /** Measure sound files not yet measured; redraw as each arrives, so its waveform and beats appear. */
+  private measure(srcs: string[]): void {
+    for (const src of srcs) {
+      if (this.asked.has(src)) continue;   // asked once: a failure stays a failure, never a loop of retries
+      this.asked.add(src);
+      void analyse(src, SOUND_DEPS).then(a => { this.sounds.set(src, a); this.render(); });
+    }
   }
 
   private bindTracks(body: HTMLElement, layers: Layer[], trackAreaW: number): void {
@@ -191,6 +218,7 @@ export class TimelinePanelManager {
       markers: () => { const { design, currentPageIndex } = this.state.get(); return markersOf(design, currentPageIndex); },
       preview: ms => { const tc = this.container.querySelector<HTMLElement>('#tl-timecode'); if (tc) tc.textContent = fmtMs(ms); },
       seek: ms => this.scrubTo(ms),
+      beats: () => this.beats,
     });
 
     // Drag a keyframe to retime it, a layer's bar to move all of its motion (timeline-drag.ts).
@@ -202,6 +230,7 @@ export class TimelinePanelManager {
       preview: ms => { const tc = this.container.querySelector<HTMLElement>('#tl-timecode'); if (tc) tc.textContent = fmtMs(ms); },
       animationOf: id => flattenForTimeline(layers).find(r => r.layer.id === id)?.layer.animation,
       write: (id, animation) => this.state.updateLayers(new Map([[id, { animation } as Partial<Layer>]]), true),
+      beats: () => this.beats,
     });
 
     // Left-click a diamond opens the easing picker for THAT keyframe. The
