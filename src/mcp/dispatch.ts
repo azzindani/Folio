@@ -164,6 +164,8 @@ export function dispatchAnimation(a: Args): ToolResult | Promise<ToolResult> {
     case 'lint':     return engine.lintMotion(a as unknown as Parameters<typeof engine.lintMotion>[0]);
     case 'precomp':  return engine.precompMotion(a as unknown as Parameters<typeof engine.precompMotion>[0]);
     case 'link':     return engine.linkMotion(a as unknown as Parameters<typeof engine.linkMotion>[0]);
+    case 'parent':   return engine.parentMotion(a as unknown as Parameters<typeof engine.parentMotion>[0]);
+    case 'null':     return engine.nullMotion(a as unknown as Parameters<typeof engine.nullMotion>[0]);
     case 'presets':  return engine.listMotionPresets();
     default:         return badOp('animation', a['op']);
   }

@@ -273,7 +273,7 @@ function applyValues(layer: AnimatedLayer, t: number): Layer {
     skew_x: num(v['skew_x']) ?? 0,
     skew_y: num(v['skew_y']) ?? 0,
   };
-  const tf = poseTransform(layer, pose, anim.playback?.anchor);
+  const tf = poseTransform(layer, pose, anim.playback?.pivot ?? anim.playback?.anchor);
   if (tf) {
     const prior = typeof out['transform'] === 'string' ? out['transform'] : '';
     out['transform'] = prior ? `${prior} ${tf}` : tf;

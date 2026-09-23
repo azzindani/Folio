@@ -142,6 +142,8 @@ export const PER_OP: Record<string, Record<string, string[]>> = {
     retime: ['design_path', 'at', 'shift_ms'],
     precomp: ['design_path', 'layer_id'],
     link: ['design_path'],
+    parent: ['design_path'],
+    null: ['design_path', 'layer_id'],
     lint: ['design_path'],
   },
 };

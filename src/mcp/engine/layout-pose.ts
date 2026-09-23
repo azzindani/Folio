@@ -9,9 +9,8 @@
 // Offset and scale only: a camera pans and zooms; a turn is rare and a rotated
 // box's extent is not a component's size anyway.
 import type { Layer } from '../../schema/types';
-import type { AnchorPoint } from '../../animation/types';
-import { FRAME_POSE, type FramePose } from '../../export/frame-pose';
-import { drawnBox, anchorPoint } from '../../export/frame-geometry';
+import type { AnchorPoint, PivotPoint } from '../../animation/types';
+import { FRAME_POSE, type FramePose, pivotOf } from '../../export/frame-pose';
 
 /** p' = s·p + t, per axis. */
 export interface Affine { sx: number; sy: number; tx: number; ty: number }
@@ -23,9 +22,8 @@ export function poseAffine(l: Layer): Affine | null {
   if (!pose) return null;
   const sx = pose.scale_x || 1, sy = pose.scale_y || 1;
   if (pose.dx === 0 && pose.dy === 0 && sx === 1 && sy === 1) return null;
-  const anchor = (l as { animation?: { playback?: { anchor?: AnchorPoint } } }).animation?.playback?.anchor;
-  const box = sx !== 1 || sy !== 1 ? drawnBox(l) : null;
-  const o = box ? anchorPoint(box, anchor) : { x: 0, y: 0 };
+  const pb = (l as { animation?: { playback?: { anchor?: AnchorPoint; pivot?: PivotPoint } } }).animation?.playback;
+  const o = (sx !== 1 || sy !== 1 ? pivotOf(l, pb?.pivot ?? pb?.anchor) : null) ?? { x: 0, y: 0 };
   return { sx, sy, tx: pose.dx + o.x * (1 - sx), ty: pose.dy + o.y * (1 - sy) };
 }
 

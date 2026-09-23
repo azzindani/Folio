@@ -23,6 +23,11 @@ describe('poseTransform', () => {
     expect(t).toBe('translate(10 0) translate(200 150) rotate(90) matrix(1 0 1 1 0 0) scale(2 2) translate(-200 -150)');
   });
 
+  it('turns about a canvas pivot, not its own box — a child orbiting its parent', () => {
+    expect(poseTransform(box, { ...REST_POSE, rotation: 90 }, { x: 540, y: 675 }))
+      .toBe('translate(540 675) rotate(90) translate(-540 -675)');
+  });
+
   it('still translates a layer whose box cannot be measured', () => {
     const unknown = { id: 'u', type: 'rect', z: 1 } as unknown as Layer;
     expect(poseTransform(unknown, { ...REST_POSE, dy: 20, scale_x: 2 })).toBe('translate(0 20)');

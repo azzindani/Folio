@@ -21,6 +21,15 @@ describe('generateKeyframeCSS v2', () => {
     expect(css).toMatch(/animation: kf-a 1000ms linear 0ms 1 normal both/);
   });
 
+  it('a pivot turns the layer about a canvas point, measured in the design\'s px', () => {
+    const css = generateKeyframeCSS('p', {
+      keyframes: [{ t: 0, rotation: 0 }, { t: 1000, rotation: 90 }],
+      playback: { duration: 1000, anchor: 'top', pivot: { x: 540, y: 675.5 } },
+    });
+    expect(css).toContain('transform-box: view-box; transform-origin: 540px 675.5px;');
+    expect(css).not.toContain('fill-box');
+  });
+
   it('bakes bounce into sub-steps CSS can play', () => {
     const css = generateKeyframeCSS('b', {
       keyframes: [{ t: 0, y: -200, easing: 'bounce' }, { t: 800, y: 0 }],

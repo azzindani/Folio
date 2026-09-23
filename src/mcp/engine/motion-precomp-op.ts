@@ -16,7 +16,7 @@
 
 import * as fs from 'fs';
 import type { DesignSpec, Layer } from '../../schema/types';
-import type { AnimationSpec, LayerClock, LinkChannel, LayerLink } from '../../animation/types';
+import type { AnimationSpec, LayerClock, LinkChannel, LayerLink, PivotPoint } from '../../animation/types';
 import type { ToolResult, ProgressItem } from '../types';
 import { collectLayerIds, bakeOffsetDeep } from '../engine-finalize-geom';
 import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, pOk, pInfo, pWarn } from './utils';
@@ -25,6 +25,7 @@ import { syncAnimationsToSpec } from './animation-sync';
 import { readMarkers, resolveTime, type TimeContext } from './motion-time';
 import { resolveTimeline } from '../../animation/timeline-resolve';
 import { drawnBox } from '../../export/frame-geometry';
+import { pivotOf } from '../../export/frame-pose';
 
 type Node = Layer & { layers?: Layer[]; clock?: LayerClock; animation?: AnimationSpec; in?: number; out?: number; motion_path?: unknown };
 
@@ -47,6 +48,15 @@ export function findParentList(layers: Layer[], id: string): { list: Layer[]; in
 export function contains(layer: Layer, id: string): boolean {
   const kids = (layer as Node).layers;
   return Array.isArray(kids) && kids.some(k => k.id === id || contains(k, id));
+}
+
+/** True when `list` is the inside of a <id>_link wrapper — its first layer rides another's motion. */
+function insideLinkWrapper(layers: Layer[], list: Layer[]): boolean {
+  return layers.some(l => {
+    const kids = (l as Node).layers;
+    if (!Array.isArray(kids)) return false;
+    return kids === list ? !!(l as Node & { link?: LayerLink }).link : insideLinkWrapper(kids, list);
+  });
 }
 
 /** Shift an all-absolute path by (dx, dy); null when it has relative commands or arcs. */
@@ -232,10 +242,19 @@ export function precompMotion(args: PrecompArgs): ToolResult {
 type LinkArgs = {
   design_path: string; page_id?: string; project_path?: string;
   layer_id?: string; layer_ids?: unknown; to?: string; channels?: unknown; lag?: number; factor?: number; stagger_ms?: number; clear?: boolean;
+  /** 'target' = parenting: turn and scale about the target's anchor, not the follower's own box. */
+  pivot?: 'target';
 };
 
+/** Where a layer turns: its track's pivot, else its anchor on the box it draws — as both players measure it. */
+export function pivotOfLayer(layer: Layer): PivotPoint | null {
+  const pb = (layer as Node).animation?.playback;
+  const at = pivotOf(layer, pb?.pivot ?? pb?.anchor);
+  return at ? { x: Math.round(at.x * 10) / 10, y: Math.round(at.y * 10) / 10 } : null;
+}
+
 export function linkMotion(args: LinkArgs): ToolResult {
-  const op = 'link';
+  const op = args.pivot === 'target' ? 'parent' : 'link';
   const dPath = resolveDesignPath(args.design_path, args.project_path);
   if (!fs.existsSync(dPath)) return errResult(op, `Design not found: ${dPath}`, 'Check design_path.');
   const ids = toIdList(args.layer_ids) ?? (args.layer_id ? [args.layer_id] : undefined);
@@ -276,6 +295,8 @@ export function linkMotion(args: LinkArgs): ToolResult {
   const lag = typeof args.lag === 'number' ? Math.max(0, args.lag) : 100;
   const factor = typeof args.factor === 'number' ? args.factor : 1;
   const stagger = Math.max(0, args.stagger_ms ?? 0);
+  const pivot = args.pivot === 'target' ? pivotOfLayer(target.list[target.index] as Layer) : null;
+  if (args.pivot === 'target' && !pivot) return errResult(op, `"${to}" has no box to turn about.`, 'Give it x, y, width and height, or parent to an op:null.');
 
   const wrappers: Array<{ wrapper: string; follows: string; lag: number }> = [];
   for (const [i, id] of ids.entries()) {
@@ -284,7 +305,7 @@ export function linkMotion(args: LinkArgs): ToolResult {
     const layer = spot?.list[spot.index];
     if (!spot || !layer) return errResult(op, `No layer "${id}".`, 'manage_design {op:"inspect"} lists the ids.');
     if (contains(layer, to)) return errResult(op, `"${to}" sits inside "${id}" — it would follow its own motion.`, 'Link a sibling, or move the target out of the group.');
-    const link: LayerLink = { to, lag: lag + stagger * i, ...(factor !== 1 ? { factor } : {}), ...(channels ? { channels } : {}) };
+    const link: LayerLink = { to, lag: lag + stagger * i, ...(factor !== 1 ? { factor } : {}), ...(channels ? { channels } : {}), ...(pivot ? { pivot } : {}) };
     const wrapperId = id.endsWith(LINK_WRAP) ? id : `${id}${LINK_WRAP}`;
     const existing = findParentList(scope, wrapperId);
     if (existing) (existing.list[existing.index] as Node & { link?: LayerLink }).link = link;
@@ -302,11 +323,14 @@ export function linkMotion(args: LinkArgs): ToolResult {
   syncAnimationsToSpec(spec);
   writeYAML(dPath, spec);
 
-  const progress: ProgressItem[] = [pOk(`Linked ${wrappers.length} layer(s) to "${to}"`, `${lag}ms behind${stagger ? `, +${stagger}ms each` : ''}${factor !== 1 ? `, ×${factor} travel` : ''} — each on a <id>_link wrapper`)];
+  const progress: ProgressItem[] = [pivot
+    ? pOk(`Parented ${wrappers.length} layer(s) to "${to}"`, `they move, turn and scale with it about (${pivot.x}, ${pivot.y}) — each on a <id>_link wrapper, their own motion plays inside`)
+    : pOk(`Linked ${wrappers.length} layer(s) to "${to}"`, `${lag}ms behind${stagger ? `, +${stagger}ms each` : ''}${factor !== 1 ? `, ×${factor} travel` : ''} — each on a <id>_link wrapper`)];
   const moves = (target.list[target.index] as Node).animation?.keyframes?.length;
   if (!moves) progress.push(pWarn('Target does not move', `"${to}" has no track yet — the followers stay still until it gets one.`));
+  if (pivot && insideLinkWrapper(scope, target.list)) progress.push(pWarn('Parent is itself linked', `"${to}" rides a wrapper; the children follow its own motion, not what it inherits.`));
   return okResult(op, {
-    design_path: dPath, wrappers: wrappers.map(w => ({ ...w, ...resolvedSpan(scope, w.wrapper) })),
+    design_path: dPath, ...(pivot ? { pivot } : {}), wrappers: wrappers.map(w => ({ ...w, ...resolvedSpan(scope, w.wrapper) })),
     progress,
     next_action: { tool: 'animation', params: { op: 'frame', design_path: dPath, ...(args.page_id ? { page_id: args.page_id } : {}) }, remaining: 0,
       hint: 'The link is live: change the target\'s track and the followers follow. clear:true unwraps them.' },

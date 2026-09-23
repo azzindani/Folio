@@ -15,7 +15,7 @@
  */
 
 import type { Layer } from '../schema/types';
-import type { AnchorPoint } from '../animation/types';
+import type { AnchorPoint, PivotPoint } from '../animation/types';
 import { drawnBox, anchorPoint } from './frame-geometry';
 
 /** Where a sampled frame layer keeps its pose for readouts (op:frame). The renderer ignores it. */
@@ -41,13 +41,12 @@ const RAD = Math.PI / 180;
  * the pivot is measured before the offset, which is why the translate comes
  * first — the same composition CSS gets from a transform-origin on the box.
  */
-export function poseTransform(layer: Layer, pose: FramePose, anchor?: AnchorPoint): string {
+export function poseTransform(layer: Layer, pose: FramePose, anchor?: AnchorPoint | PivotPoint): string {
   const parts: string[] = [];
   if (pose.dx !== 0 || pose.dy !== 0) parts.push(`translate(${f(pose.dx)} ${f(pose.dy)})`);
   const pivots = pose.rotation !== 0 || pose.skew_x !== 0 || pose.skew_y !== 0 || pose.scale_x !== 1 || pose.scale_y !== 1;
-  const box = pivots ? drawnBox(layer) : null;
-  if (box) {
-    const o = anchorPoint(box, anchor);
+  const o = pivots ? pivotOf(layer, anchor) : null;
+  if (o) {
     parts.push(`translate(${f(o.x)} ${f(o.y)})`);
     if (pose.rotation !== 0) parts.push(`rotate(${f(pose.rotation)})`);
     // CSS skew(ax, ay) is the matrix [1 tan(ax); tan(ay) 1] — not skewX() then skewY().
@@ -58,4 +57,11 @@ export function poseTransform(layer: Layer, pose: FramePose, anchor?: AnchorPoin
     parts.push(`translate(${f(-o.x)} ${f(-o.y)})`);
   }
   return parts.join(' ');
+}
+
+/** Where a layer's pose pivots: a canvas point as given, else the anchor on the box it draws. */
+export function pivotOf(layer: Layer, anchor?: AnchorPoint | PivotPoint): { x: number; y: number } | null {
+  if (anchor && typeof anchor === 'object') return anchor;
+  const box = drawnBox(layer);
+  return box ? anchorPoint(box, anchor) : null;
 }

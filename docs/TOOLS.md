@@ -198,6 +198,7 @@ Animation timeline + motion export. **Req:** `op`, `design_path`.
   - `markers` (markers:{name: time}) · `span` (layer_id|layer_ids, in, out) — named times; a layer's in/out points.
   - `precomp` (req layer_id; layer_ids, start, speed, loop_ms, duplicate) — a group on its own clock.
   - `link` (layer_id|layer_ids, to, channels, lag, factor, stagger_ms) — follow another layer's track.
+  - `parent` (layer_id|layer_ids, to, clear) — After Effects parenting: move, turn and scale with `to` about its anchor. `null` (req layer_id; x, y, width, height, layer_ids) — an invisible controller to parent to.
   - `lint` — the time-aware checks, read-only. `camera` takes `world` + region targets; every time takes `"marker±ms"` or `"layer.in|out|start|end"`.
 - `motion_path` (layer_ids, path, duration, `delay`, loop, easing, auto_rotate) — travel along a curve; inside a precomp it runs on the precomp's clock.
 - The rest (`sequence`, `track`, `text`, `wiggle`, `camera`, `morph`, `frame`, `scene`, `audio`, `beats`, `captions`, …) — see [MOTION.md](MOTION.md) §3.

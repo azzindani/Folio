@@ -122,6 +122,9 @@ export type AnchorPoint =
   | 'center' | 'top' | 'bottom' | 'left' | 'right'
   | 'top left' | 'top right' | 'bottom left' | 'bottom right';
 
+/** A point on the canvas, in design px. */
+export interface PivotPoint { x: number; y: number }
+
 export interface KeyframeAnimation {
   keyframes: Keyframe[];
   playback: {
@@ -149,6 +152,11 @@ export interface KeyframeAnimation {
     origin?: 'first' | 'offset';
     /** Pivot for rotate/scale/skew. Default 'center'. */
     anchor?: AnchorPoint;
+    /**
+     * An absolute pivot in canvas coordinates; beats `anchor`. What a parented
+     * layer turns about (its parent's anchor), or a clock hand's hub.
+     */
+    pivot?: PivotPoint;
     /** Where a `reveal` wipe starts: the side it uncovers from, or an iris from the centre. Default 'left'. */
     reveal_from?: 'left' | 'right' | 'top' | 'bottom' | 'center';
     /**
@@ -189,6 +197,8 @@ export interface LayerLink {
   channels?: LinkChannel[];
   lag?: number;
   factor?: number;
+  /** Parenting: turn and scale about this canvas point (the parent's anchor), not the follower's own box. */
+  pivot?: PivotPoint;
 }
 
 /** Named points on a scene's clock, ms — what relative times ("hook+200") refer to. */
