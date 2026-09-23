@@ -91,7 +91,22 @@ export function trackHTML(layer: Layer, timing: RowTiming | undefined, duration:
       + 'background:var(--color-accent);opacity:.22;border-radius:6px;cursor:grab"></div>');
   }
 
+  // A loop written out as keys (op:loop, a storyboard resting loop) is one band, not a diamond per repeat:
+  // its keys move together or not at all — op:loop again, or the bar.
+  const sceneOf = (i: number): number => timing?.keys[i] ?? keyframes[i]?.t ?? 0;
+  for (let i = 0; i < keyframes.length; i++) {
+    if (!keyframes[i]?.ambient) continue;
+    let j = i;
+    while (keyframes[j + 1]?.ambient) j++;
+    const a = sceneOf(Math.max(0, i - 1)), b = sceneOf(j);
+    parts.push(`<div class="tl-loop-band" data-layer-id="${esc(layer.id)}" title="${esc(`${layer.id} repeats ${fmtMs(a)}–${fmtMs(b)} — a loop written as ${j - i + 1} keys; animation op:loop changes it`)}"`
+      + ` style="position:absolute;top:${TRACK_H / 2 - 5}px;height:10px;left:${at(a, duration)}%;width:${Math.max(0.4, at(b, duration) - at(a, duration))}%;`
+      + 'background:repeating-linear-gradient(135deg,var(--color-accent) 0 3px,transparent 3px 7px);opacity:.6;border-radius:5px;pointer-events:none"></div>');
+    i = j;
+  }
+
   keyframes.forEach((kf, i) => {
+    if (kf.ambient) return;
     const ease = String((kf as unknown as Record<string, unknown>)['easing'] ?? '');
     const scene = timing?.keys[i] ?? kf.t;
     const shift = Math.abs(scene - kf.t) > 0.5 ? ` (plays at ${fmtMs(scene)})` : '';
