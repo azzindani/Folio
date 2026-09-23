@@ -12,7 +12,7 @@
 
 import type { Layer } from '../schema/types';
 import type { AnchorPoint } from '../animation/types';
-import { plainTextLayout } from '../renderer/layer-renderers-shared';
+import { plainTextLayout, drawnLetterSpacing } from '../renderer/layer-renderers-shared';
 import { flattenPath } from '../animation/motion-path';
 import { metricsForFamily, charOffsets, numericWeight } from '../utils/font-metrics';
 import { bundledFontsDir } from '../utils/bundled-fonts-dir';
@@ -63,8 +63,14 @@ function textBox(o: Record<string, unknown>): Box | null {
   if (!content || (content.type !== undefined && content.type !== 'plain') || typeof content.value !== 'string') return null;
   const style = (o['style'] ?? {}) as Record<string, unknown>;
   const layout = plainTextLayout(content.value, style as never, o as never);
-  // The wrap is the renderer's own; only each line's width is measured.
-  const widest = Math.max(0, ...layout.lines.map((l, i) => lineInk(l, layout.lineWidths[i] ?? 0, style, layout.fontSize)));
+  // The wrap is the renderer's own; only each line's width is measured — at the
+  // spacing it DRAWS with, animated tracking included. Measured without it, a
+  // reveal wipe sized to this box let a tracked-out title's first letter show
+  // before the wipe began (benchmark r6, b21).
+  const extra = drawnLetterSpacing(style as never, o as { tracking_offset?: number }) - (typeof style['letter_spacing'] === 'number' ? style['letter_spacing'] : 0);
+  const spaced = extra ? { ...style, letter_spacing: drawnLetterSpacing(style as never, o as { tracking_offset?: number }) } : style;
+  const widest = Math.max(0, ...layout.lines.map((l, i) =>
+    lineInk(l, (layout.lineWidths[i] ?? 0) + extra * Math.max(0, [...l].length - 1), spaced, layout.fontSize)));
   const left = layout.anchor === 'middle' ? layout.textX - widest / 2 : layout.anchor === 'end' ? layout.textX - widest : layout.textX;
   // First baseline sits at textY; glyphs rise ~0.8em above it. Below the last
   // baseline they fall ~0.2em only when that line HAS a descender — caps and

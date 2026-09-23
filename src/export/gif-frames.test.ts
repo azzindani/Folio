@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { Resvg } from '@resvg/resvg-js';
 import { renderToSVGString } from '../mcp/engine/svg-export';
 import { animationDuration, valuesAt, layersAt, specAt, frameTimes } from './gif-frames';
+import { drawnBox } from './frame-geometry';
 import type { Layer, DesignSpec } from '../schema/types';
 import type { AnimationSpec } from '../animation/types';
 
@@ -269,6 +270,19 @@ describe('skew and draw reach a sampled frame', () => {
     expect(clip.x + clip.width).toBe(200);  // the wiping edge at the middle of the box
     expect(clip.x).toBeLessThan(100);       // the side that is not wiping stays open
     expect((layersAt([l], 1000)[0] as unknown as Record<string, unknown>)['clip_rect']).toBeUndefined();
+  });
+
+  // benchmark r6 b21: a centred title tracked out from 28 px showed its first letter before its wipe began.
+  it('wipes a tracked-out title over the letters as drawn, so reveal 0 hides every one', () => {
+    const title = (): Layer => layer('title', { type: 'text', z: 1, x: 120, y: 440, width: 840, height: 180,
+      content: { type: 'plain', value: 'Parallel' }, style: { font_family: 'Archivo', font_size: 150, font_weight: 900, text_align: 'center', letter_spacing: -4 },
+      animation: anim([{ t: 0, reveal: 0, tracking: 28 }, { t: 700, reveal: 1, tracking: 0 }]) });
+    const posed = layersAt([title()], 0)[0] as unknown as Record<string, unknown>;
+    const clip = posed['clip_rect'] as { x: number; width: number };
+    const inked = drawnBox({ ...title(), tracking_offset: 28 } as unknown as Layer);
+    const plain = drawnBox(title());
+    expect((inked?.width ?? 0) - (plain?.width ?? 0)).toBeCloseTo(28 * 7, 0);
+    expect(clip.x + clip.width).toBeLessThanOrEqual(inked?.x ?? 0);   // the wiping edge waits left of the first letter
   });
 
   it('tracks text at draw time without re-wrapping its lines', () => {
