@@ -26,10 +26,15 @@ describe('diagnose_design on a page that moves', () => {
   it('does not call two lines on one spot a collision when one leaves before the other arrives', () => {
     const line = (id: string, value: string, win: object): object =>
       ({ id, type: 'text', z: 5, x: 80, y: 300, width: 800, height: 90, content: { type: 'plain', value }, style: { font_size: 64 }, ...win });
-    const static_ = (a: object, b: object): string[] =>
+    const pile = (a: object, b: object): string[] =>
       collectFindings({ ...doc, layers: [ground, line('k1', 'First line here', a), line('k3', 'Second line now', b)] } as unknown as DesignSpec, '/nowhere/d.design.yaml')
-        .filter(f => f.code === 'collision').map(f => f.layer_id ?? '');
-    expect(static_({ out: 3000 }, { in: 3200 })).toEqual([]);
-    expect(static_({ out: 3000 }, { in: 2000 })).toEqual(['k1']);
+        .filter(f => /collision|overlap/.test(f.code)).map(f => f.code);
+    expect(pile({ out: 3000 }, { in: 3200 })).toEqual([]);
+    // On screen together from 2.0 s to 3.0 s: reported once, where the shot rests — not again as authored.
+    expect(pile({ out: 3000 }, { in: 2000 })).toEqual(['motion_overlap']);
+    // Where a shot rests on the pair, that is the one report — not a second one as authored.
+    const fading = { out: 3000, animation: { keyframes: [{ t: 0, opacity: 0 }, { t: 600, opacity: 1 }], playback: { duration: 600, origin: 'offset' } } };
+    const both = collectFindings({ ...doc, layers: [ground, line('k1', 'First line here', fading), line('k3', 'Second line now', { in: 200 })] } as unknown as DesignSpec, '/nowhere/d.design.yaml');
+    expect(both.filter(f => /collision|overlap/.test(f.code)).map(f => f.code)).toEqual(['motion_overlap']);
   });
 });

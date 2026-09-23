@@ -35,6 +35,7 @@ export function motionFindings(spec: DesignSpec, layers: Layer[], page?: Page): 
   const marks = Object.entries(readMarkers(spec, page)).map(([id, at]) => ({ id, at: Number(at) })).filter(m => Number.isFinite(m.at));
   return lintComposition(layers, canvas, marks, end).flatMap((n): Finding[] => {
     const how = SPATIAL[n.kind];
-    return how ? [{ code: `motion_${n.kind}`, severity: how.severity, message: n.note, fix: how.fix, ...(n.layers?.[0] ? { layer_id: n.layers[0] } : {}) }] : [];
+    return how ? [{ code: `motion_${n.kind}`, severity: how.severity, message: n.note, fix: how.fix,
+      ...(n.layers?.[0] ? { layer_id: n.layers[0] } : {}), ...(n.layers && n.layers.length > 1 ? { layers: n.layers } : {}) }] : [];
   });
 }
