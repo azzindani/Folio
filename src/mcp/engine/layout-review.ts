@@ -85,10 +85,19 @@ export function groundLayers(layers: Layer[], W: number, H: number): Layer[] {
 /** What the page is built from: top-level layers, and the members of any
  *  full-canvas container (a preset group spans the page; its cards are the
  *  components). Largest first. */
-export function components(layers: Layer[], W: number, H: number, ground: Set<Layer>, depth = 0, at: Affine = IDENTITY): Component[] {
-  const out: Component[] = [];
+/** A component, with the split_text source it belongs to (merged before it is reported). */
+type Part = Component & { of?: string };
+
+/** Layers too faint to see: a glitch ghost waiting at opacity 0 is not on screen. */
+const UNSEEN = 0.02;
+
+export function components(layers: Layer[], W: number, H: number, ground: Set<Layer>, depth = 0, at: Affine = IDENTITY, alpha = 1): Component[] {
+  const out: Part[] = [];
   for (const l of layers) {
     if (ground.has(l)) continue;
+    const o = l as unknown as { opacity?: unknown; visible?: unknown; split_of?: unknown };
+    const a = alpha * (typeof o.opacity === 'number' ? o.opacity : 1);
+    if (o.visible === false || a <= UNSEEN) continue;
     // Measured where it is SEEN: a posed layer (a camera, a moving group)
     // carries its children with it.
     const pose = poseAffine(l);
@@ -97,7 +106,7 @@ export function components(layers: Layer[], W: number, H: number, ground: Set<La
     const g = authored ? mapBox(here, authored) : null;
     const inner = kids(l);
     if (inner && depth < 3 && (!g || (g.w * g.h) / (W * H) >= 0.85)) {
-      out.push(...components(inner, W, H, ground, depth + 1, here));
+      out.push(...(components(inner, W, H, ground, depth + 1, here, a) as Part[]));
       continue;
     }
     if (!g || g.w <= 0 || g.h <= 0 || fullBleed(g, W, H)) continue;
@@ -105,9 +114,32 @@ export function components(layers: Layer[], W: number, H: number, ground: Set<La
     out.push({
       id: l.id, type: l.type, box: { x: Math.round(g.x), y: Math.round(g.y), width: Math.round(g.w), height: Math.round(g.h) },
       share: { w: round2(g.w / W), h: round2(g.h / H), area: round2((g.w * g.h) / (W * H)) },
+      ...(typeof o.split_of === 'string' ? { of: o.split_of } : {}),
     });
   }
-  return depth ? out : out.sort((a, b) => b.share.area - a.share.area).slice(0, 6);
+  if (depth) return out;
+  return mergeSplits(out, W, H).sort((a, b) => b.share.area - a.share.area).slice(0, 6);
+}
+
+/**
+ * The letters of a split headline are ONE thing to a reader. Counted apart,
+ * a 13-letter title animated by op:text reported as "title_c1, 1% of the
+ * canvas" while two invisible ghosts topped the list (one-shot benchmark r2).
+ */
+function mergeSplits(parts: Part[], W: number, H: number): Component[] {
+  const groups = new Map<string, Part[]>();
+  const out: Component[] = [];
+  for (const p of parts) {
+    if (p.of === undefined) { out.push({ id: p.id, type: p.type, box: p.box, share: p.share }); continue; }
+    groups.set(p.of, [...(groups.get(p.of) ?? []), p]);
+  }
+  for (const [id, ps] of groups) {
+    const x = Math.min(...ps.map(p => p.box.x)), y = Math.min(...ps.map(p => p.box.y));
+    const r = Math.max(...ps.map(p => p.box.x + p.box.width)), b = Math.max(...ps.map(p => p.box.y + p.box.height));
+    out.push({ id, type: 'text', box: { x, y, width: r - x, height: b - y },
+      share: { w: round2((r - x) / W), h: round2((b - y) / H), area: round2(((r - x) * (b - y)) / (W * H)) } });
+  }
+  return out;
 }
 
 function fontSizes(layers: Layer[], out: number[] = []): number[] {
