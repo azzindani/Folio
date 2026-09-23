@@ -20,7 +20,7 @@ import { oneShotDuration } from './gif-frames';
 export const DEFAULT_HOLD_MS = 1500;
 export const DEFAULT_TRANSITION_MS = 400;
 /** Comfortable on-screen reading rate for short copy, words per minute. */
-const READ_WPM = 240;
+export const READ_WPM = 240;
 
 export interface SceneTransition { type: PageTransitionType; duration_ms: number; easing?: string }
 
@@ -50,10 +50,10 @@ export interface SceneMoment {
 }
 
 /** The monospace test plainTextLayout uses to widen its wrap — the same faces. */
-const MONO = /\bmono\b|monospace|courier|consolas|menlo/i;
+export const MONO = /\bmono\b|monospace|courier|consolas|menlo/i;
 
 /** Tokens a viewer reads as words: they hold a letter or a digit, so "·" and "—" between labels are not words. */
-const wordCount = (text: string): number => (text.match(/\S+/g) ?? []).filter(w => /[\p{L}\p{N}]/u.test(w)).length;
+export const wordCount = (text: string): number => (text.match(/\S+/g) ?? []).filter(w => /[\p{L}\p{N}]/u.test(w)).length;
 
 /**
  * Words across a layer tree, groups descended: copy, and words set in a
