@@ -16,7 +16,8 @@ import { probeVideo } from './asset-video';
 
 const lengths = new Map<string, number | null>();
 
-function fileLength(file: string): number | null {
+/** A stored clip's length, ms (ffprobe, cached by mtime); null when unreadable. */
+export function clipFileLength(file: string): number | null {
   let mtime = 0;
   try { mtime = fs.statSync(file).mtimeMs; } catch { return null; }
   const key = `${file}|${mtime}`;
@@ -40,7 +41,7 @@ export function stampVideoLengths(data: unknown, designPath: string): void {
       if (Array.isArray(l.layers)) visit(l.layers);
       if (l.type !== 'video' || typeof l.src !== 'string' || !l.src.trim() || typeof l.video?.duration_ms === 'number') continue;
       const file = resolveAssetFile(l.src, designPath, project);
-      const len = file ? fileLength(file) : null;
+      const len = file ? clipFileLength(file) : null;
       if (!len) continue;
       const offset = Math.max(0, Number(l.video?.offset_ms) || 0);
       l.video = { ...(l.video ?? {}), duration_ms: Math.max(1, len - offset) };
