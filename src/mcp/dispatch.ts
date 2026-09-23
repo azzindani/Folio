@@ -80,6 +80,9 @@ export function dispatchThemes(a: Args): ToolResult {
 export function dispatchTasks(a: Args): ToolResult | Promise<ToolResult> {
   switch (a['op']) {
     case 'execute': return engine.executeSteps(a as Parameters<typeof engine.executeSteps>[0]);
+    case 'save_recipe': return engine.saveRecipe(a as Parameters<typeof engine.saveRecipe>[0]);
+    case 'run_recipe':  return engine.runRecipe(a as Parameters<typeof engine.runRecipe>[0]);
+    case 'recipes':     return engine.listRecipes();
     case 'list':   return engine.listTasks(a as Parameters<typeof engine.listTasks>[0]);
     case 'create': return engine.createTask(a as Parameters<typeof engine.createTask>[0]);
     case 'resume': return engine.resumeTask(a as Parameters<typeof engine.resumeTask>[0]);
