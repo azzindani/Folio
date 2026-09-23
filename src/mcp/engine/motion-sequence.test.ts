@@ -92,6 +92,15 @@ describe('mergeFragment', () => {
 });
 
 describe('animation(op:sequence)', () => {
+  // Benchmark r5: after a hold was opened to 15 s, one more step replied scene_ms 10150 while op:timeline said 15000.
+  it('reports the page\'s length, not only where the new steps end', () => {
+    const p = flat();
+    sequenceMotion({ design_path: p, steps: [{ preset: 'rise', layer_ids: ['a'], at: 0 }, { preset: 'fade_out', layer_ids: ['a'], at: 4000, duration: 400 }] });
+    const later = sequenceMotion({ design_path: p, steps: [{ preset: 'pop', layer_ids: ['title'], at: 500, duration: 300 }] });
+    expect(later.success, JSON.stringify(later)).toBe(true);
+    expect(later['scene_ms']).toBe(4400);
+  });
+
   it('chains steps, staggers, folds an exit and reports scene length', () => {
     const p = flat();
     const r = sequenceMotion({ design_path: p, steps: [
