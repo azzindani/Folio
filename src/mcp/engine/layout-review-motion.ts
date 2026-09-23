@@ -16,6 +16,7 @@ import { readMarkers } from './motion-time';
 import { shotRests, type ShotRest } from './motion-lint';
 import { measureEntries, pageEntries, type PageLayout, type Box, type Component } from './layout-review';
 import type { Balance } from './layout-measure';
+import { readingTimes, readingNotes, type ReadingTime } from './layout-reading';
 
 export interface ShotLayout {
   shot: string;
@@ -35,7 +36,12 @@ export interface ShotLayout {
   notes: string[];
 }
 
-export interface MotionReview { scene_ms: number; shots: ShotLayout[]; notes: string[] }
+export interface MotionReview {
+  scene_ms: number; shots: ShotLayout[];
+  /** Texts on screen too briefly to read (layout-reading.ts). */
+  reading?: ReadingTime[];
+  notes: string[];
+}
 
 const MAX_SHOTS = 16;
 /** Under this share of the frame inked, a posed moment shows nothing. */
@@ -131,9 +137,11 @@ export function reviewMotionPage(spec: DesignSpec, page: Page | undefined, layer
       notes: m?.notes ?? [],
     };
   });
-  const notes = timeNotes(shots, W);
+  const H = spec.document?.height ?? 0;
+  const short = readingTimes(layers, end, W, H).filter(r => r.on_ms > 0 && r.on_ms < r.needs_ms);
+  const notes = [...timeNotes(shots, W), ...readingNotes(short)];
   if (marks.length > MAX_SHOTS) notes.push(`Measured the first ${MAX_SHOTS} of ${marks.length} shots.`);
-  return { scene_ms: end, shots, notes };
+  return { scene_ms: end, shots, ...(short.length ? { reading: short } : {}), notes };
 }
 
 /** Add `motion` to each reviewed page that moves (diagnose_design review:true). */
