@@ -13,10 +13,11 @@
 // the licence attached to the ref is the provider's word, not the model's.
 import { httpJSON, NetError, netEnabled } from './asset-net';
 import { searchWikimediaVideo, searchNasaVideo } from './asset-video-sources';
+import { searchPack } from './pack-search';
 import type { ToolResult, NextAction } from '../types';
 import { okResult, errResult, buildContext, buildHandover, pOk, pInfo, pWarn } from './utils';
 
-export type AssetSourceId = 'openverse' | 'wikimedia' | 'iconify' | 'font' | 'nasa';
+export type AssetSourceId = 'openverse' | 'wikimedia' | 'iconify' | 'font' | 'nasa' | 'folio-pack';
 
 export interface AssetCandidate {
   ref: string;                 // hand to asset_fetch
@@ -33,6 +34,7 @@ export interface AssetCandidate {
   page?: string;               // human landing page for provenance
   preview?: string;            // thumbnail URL (for a human, not the engine)
   note?: string;
+  path?: string;               // folio-pack: the lib/ path to use as-is — nothing to fetch
 }
 
 const clampLimit = (n: unknown): number => Math.min(Math.max(1, Number(n) || 8), 24);
@@ -318,17 +320,31 @@ function fetchHint(what: SearchWhat): string {
   return 'Pick a ref and fetch it. Fetching stores the file AND its licence; asset_list then reports any credit line you must typeset.';
 }
 
+/** A pack hit needs no fetch: the next call USES it. */
+function useNow(c: AssetCandidate): NextAction {
+  const src = c.path ?? '';
+  const why = `Bundled with Folio (${c.license ?? 'CC0'}), already in the shared library — nothing to fetch, no credit line.`;
+  if (c.kind === 'audio') {
+    return { tool: 'animation', params: { op: 'audio', design_path: '<your .design.yaml>', src }, remaining: 0,
+      hint: `${why} Under the whole piece as is; with page_id + start_ms it is a cue on that scene.` };
+  }
+  if (c.kind === 'video') {
+    return { tool: 'add_layers', params: { design_path: '<your .design.yaml>', layers_shorthand: [{ type: 'video', src, pos: [0, 0, 960, 540], fit: 'cover' }] }, remaining: 0,
+      hint: `${why} Trim it with animation(op:video) once placed.` };
+  }
+  return { tool: 'add_layers', params: { design_path: '<your .design.yaml>', layers_shorthand: [{ type: 'image', src, pos: [120, 120, 240, 240] }] }, remaining: 0,
+    hint: `${why} Size the layer to the design.` };
+}
+
 /**
  * manage_design {op:"asset_search"} — find openly-licensed material.
  *
  * Returns candidates only. Nothing is written, nothing is downloaded, and the
- * design is untouched until asset_fetch is called with a ref.
+ * design is untouched until asset_fetch is called with a ref. Folio's own pack
+ * answers first: its hits carry a `path` that is already usable.
  */
 export async function assetSearch(args: { query?: string; what?: string; limit?: number; project_path?: string }): Promise<ToolResult> {
   const op = 'asset_search';
-  if (!netEnabled()) {
-    return errResult(op, 'Asset search is disabled on this deployment', 'FOLIO_ASSET_NET=off. Upload files with op:"asset_add" instead.');
-  }
   const query = String(args.query ?? '').trim();
   if (!query) return errResult(op, 'query is required', 'Pass what you are looking for, e.g. query:"office desk overhead", what:"photo".');
   // An unknown `what` still searches photos (a small model's typo should not
@@ -338,24 +354,38 @@ export async function assetSearch(args: { query?: string; what?: string; limit?:
   const named = WHAT_ALIASES[asked] ?? asked;
   const what: SearchWhat = WHATS.includes(named as SearchWhat) ? named as SearchWhat : 'photo';
   const fellBack = what !== named;
+  const n = clampLimit(args.limit);
+  const pack = searchPack(what, query, n);
 
-  let found: { results: AssetCandidate[]; failures: string[] };
-  try {
-    found = await runSearch(what, query, args.limit ?? 8);
-  } catch (e) {
-    const msg = e instanceof NetError ? e.message : (e as Error).message;
-    return errResult(op, `Search failed: ${msg}`, e instanceof NetError ? e.hint : 'Retry, or upload the asset yourself with op:"asset_add".');
+  let found: { results: AssetCandidate[]; failures: string[] } = { results: [], failures: [] };
+  const online = netEnabled();
+  if (!online && !pack.length) {
+    return errResult(op, 'Asset search is disabled on this deployment', 'FOLIO_ASSET_NET=off. Upload files with op:"asset_add" instead.');
   }
+  if (online) {
+    try {
+      found = await runSearch(what, query, n);
+    } catch (e) {
+      const msg = e instanceof NetError ? e.message : (e as Error).message;
+      if (!pack.length) return errResult(op, `Search failed: ${msg}`, e instanceof NetError ? e.hint : 'Retry, or upload the asset yourself with op:"asset_add".');
+      found = { results: [], failures: [msg] };
+    }
+  }
+  // The pack leads but never crowds the internet out: at most half the list.
+  const packShown = online ? pack.slice(0, Math.ceil(n / 2)) : pack;
+  const results = [...packShown, ...found.results].slice(0, n);
 
-  const progress = [pOk('Searched', `${found.results.length} result(s) for "${query}" (${what})`)];
+  const progress = [pOk('Searched', `${results.length} result(s) for "${query}" (${what})`)];
+  if (packShown.length) progress.push(pOk('Bundled pack', `${packShown.length} already in the library — use their path, no fetch`));
+  if (!online) progress.push(pInfo('Internet search is off', 'FOLIO_ASSET_NET=off — only the bundled pack answered.'));
   if (fellBack) progress.push(pWarn(`what:"${String(args.what)}" is not a source — searched photos`, `asset_search finds: ${WHATS.join(', ')}.`));
   for (const f of found.failures) progress.push(pWarn('Source unavailable', f));
-  if (!found.results.length) {
+  if (!results.length) {
     progress.push(pInfo('Nothing matched', 'Try fewer words, or a different `what`.'));
   }
 
-  const first = found.results[0];
-  const next_action: NextAction | undefined = first ? {
+  const first = results[0];
+  const next_action: NextAction | undefined = !first ? undefined : first.path ? useNow(first) : {
     tool: 'manage_design',
     params: {
       op: 'asset_fetch',
@@ -365,15 +395,15 @@ export async function assetSearch(args: { query?: string; what?: string; limit?:
     },
     remaining: 0,
     hint: fetchHint(what),
-  } : undefined;
+  };
 
-  const context = buildContext(op, `asset_search "${query}" → ${found.results.length}`);
+  const context = buildContext(op, `asset_search "${query}" → ${results.length}`);
   const handover = buildHandover('COMPOSE', args.project_path ? { project_path: args.project_path } : {});
   return okResult(op, {
-    query, what, results: found.results,
+    query, what, results,
     ...(found.failures.length ? { unavailable: found.failures } : {}),
-    licensing: 'Every result here allows commercial use and modification, but many require a CREDIT LINE. attribution is the exact text; it must appear on the design.',
-    hint: searchHint(what, found.results.length > 0),
+    licensing: 'Every result here allows commercial use and modification, but many require a CREDIT LINE. attribution is the exact text; it must appear on the design. source "folio-pack" files ship with Folio and need none.',
+    hint: searchHint(what, results.length > 0),
     ...(next_action ? { next_action } : {}),
     progress, context, handover,
   });

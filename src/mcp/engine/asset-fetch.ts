@@ -17,6 +17,7 @@ import {
 import { ingestLibraryAsset, libraryBySource, libraryAbsPath } from './asset-library';
 import { assetCap, videoLayerStub } from './asset-media';
 import { resolveWikimediaVideo, resolveNasaVideo } from './asset-video-sources';
+import { ensurePackFile } from './library-pack';
 import { readFontNames } from '../../utils/font-name-table';
 import type { ToolResult, NextAction, ProgressItem } from '../types';
 
@@ -231,6 +232,8 @@ export async function resolveRef(ref: string, opts: { projectDir: string; icon_p
     case 'wikimedia': return { resolved: await resolveWikimedia(rest) };
     case 'wikimedia-video': return { resolved: await resolveWikimediaVideo(rest) };
     case 'nasa-video': return { resolved: await resolveNasaVideo(rest) };
+    case 'pack':
+      throw new NetError('Folio\'s bundled pack lives in the shared library', `Use src:"lib/folio/${rest}" directly, or fetch it without scope:"project".`);
     case 'iconify':   return { resolved: await resolveIconify(rest, opts.icon_px ?? 512, opts.icon_color) };
     case 'font':      return { resolved: await resolveFont(rest, opts.weight) };
     case 'https': {
@@ -333,7 +336,14 @@ export async function assetFetch(args: {
   // Already fetched from this exact ref? Then there is nothing to download:
   // hand back the file that is already on disk.
   const sourceKey = fetchSourceKey(ref, args);
-  const cached = toLibrary ? libraryBySource(sourceKey) : undefined;
+  // A pack ref (asset_search source "folio-pack") is answered from disk — the
+  // file ships with Folio; it is copied back in if the library lost it.
+  const packRel = ref.startsWith('pack:') ? ref.slice('pack:'.length) : null;
+  const packHit = packRel !== null && toLibrary ? ensurePackFile(packRel) : null;
+  if (packRel !== null && toLibrary && !packHit) {
+    return errResult(op, `Not in Folio's bundled pack: ${packRel}`, 'Use a ref exactly as asset_search returned it.');
+  }
+  const cached = toLibrary ? (packHit ?? (packRel === null ? libraryBySource(sourceKey) : undefined)) : undefined;
   if (cached) {
     progress.push(pOk('Already in the library', `${cached.path} — no download`));
     const stub = assetStub(cached);

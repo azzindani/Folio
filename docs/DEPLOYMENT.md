@@ -391,6 +391,8 @@ Tail it: `docker compose logs -f folio`.
 | `FOLIO_BUILTIN_TEMPLATES_DIR` | auto (install-relative) | Built-in `.template.yaml` catalog dir — set only if it lives outside the install |
 | `FOLIO_BUILTIN_INDEX` | auto (install-relative) | Catalog metadata index (`catalog-index.json`) |
 | `FOLIO_ASSET_FETCH_HOSTS` | unset | Comma-separated extra hosts `asset_fetch` may download from |
+| `FOLIO_PACK` | on | `0` skips seeding the bundled asset pack (`library/` → shared library `lib/folio/…`, see `library/LICENSES.md`) |
+| `FOLIO_PACK_DIR` | auto (install-relative `library/`) | Where the bundled pack lives — set only if it sits outside the install |
 | `FOLIO_OUTPUT_BUDGET` | `1000` | Max tokens per MCP tool response |
 | `FOLIO_MCP_TIER` | `1` | **stdio only:** `1` · `2` · `3` · `all` |
 | `MCP_CONSTRAINED_MODE` | `false` | Halve list/layer/search limits for low-RAM |

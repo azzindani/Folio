@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Recorded response shapes, not the live APIs — see asset-search.test.ts.
 const jsonMock = vi.fn();
+process.env['FOLIO_PACK_DIR'] = '/nonexistent-folio-pack';
 vi.mock('./asset-net', async (orig) => {
   const actual = await orig<typeof import('./asset-net')>();
   return { ...actual, httpJSON: (url: string) => jsonMock(url) };
