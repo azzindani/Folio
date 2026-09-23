@@ -8,6 +8,7 @@ import type { Layer } from '../../schema/types';
 import { findFlatTextStyle } from '../../schema/validator';
 import { lintComposition, reviewComposition, type Stage } from './design-lint';
 import { lintAiSlop } from './ai-slop-lint';
+import { windowOf, intersectWindows } from '../../animation/lifespan';
 import { findTextOverflows } from './text-measure';
 
 export interface Finding {
@@ -169,10 +170,17 @@ function geometryFindings(layers: Layer[], W: number, H: number, world?: Stage):
   // Collisions — two same-kind content layers (text↔text, icon↔icon) that overlap
   // are almost always an accidental pile-up (the #1 hand-placement failure).
   const content = bs.filter(b => !FULL_BG(b, W, H) && (b.type === 'text' || b.type === 'icon' || b.type === 'kpi_card'));
+  // Two layers whose in/out points never meet are never on screen together —
+  // headlines on one spot, one leaving before the other lands, is a composition.
+  const life = new Map(layers.map(l => [l.id, windowOf(l)]));
+  const together = (p: string, q: string): boolean => {
+    const w = intersectWindows(life.get(p) ?? null, life.get(q) ?? null);
+    return !w || w.in < w.out;
+  };
   for (let i = 0; i < content.length; i++) {
     for (let j = i + 1; j < content.length; j++) {
       const a = content[i], c = content[j];
-      if (a.type !== c.type) continue;
+      if (a.type !== c.type || !together(a.id, c.id)) continue;
       const ov = overlapArea(a, c);
       const minArea = Math.min(a.w * a.h, c.w * c.h);
       if (minArea > 0 && ov / minArea > 0.3) {
