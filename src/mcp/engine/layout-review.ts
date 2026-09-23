@@ -17,7 +17,7 @@ import { cullUnseenClips } from '../../export/frame-cull';
 import { animationDuration } from '../../export/gif-frames';
 import { IDENTITY, poseAffine, compose, mapBox, type Affine } from './layout-pose';
 import { drawnBox } from '../../export/frame-geometry';
-import { seenTexts, withoutText, textOnGround, legibilityNotes, type TextOnGround } from './layout-legibility';
+import { seenTexts, textMask, textOnGround, legibilityNotes, hardToRead, type TextOnGround } from './layout-legibility';
 import {
   inkGrid, occupancy, emptyRects, balance, thirds, contentBox, round2,
   type Rect, type Balance,
@@ -45,6 +45,10 @@ export interface PageLayout {
 }
 
 const REVIEW_EDGE = 480;   // px of the longest edge the page is measured at
+/** Text is read finer: at 480 a 30px subtitle's strokes are under a pixel. */
+const LEGIBILITY_EDGE = 960;
+/** A page as seen, finer, with its glyph mask. */
+type Seen = { full: Uint8Array; mask: Uint8Array; w: number; h: number };
 const CELL_PX = 10;        // one grid cell at that size (40 px on a 1920 canvas)
 const GROUNDABLE = new Set(['rect', 'image', 'path', 'ellipse', 'circle', 'polygon', 'shape', 'svg', 'gradient']);
 
@@ -203,7 +207,7 @@ export function layoutNotes(p: Omit<PageLayout, 'notes'>): string[] {
 }
 
 /** Measure one page from its two renders. */
-export function measurePage(full: Uint8Array, ground: Uint8Array, rw: number, rh: number, W: number, H: number, layers: Layer[], groundSet: Set<Layer>, page?: string, backdrop?: Uint8Array): PageLayout {
+export function measurePage(full: Uint8Array, ground: Uint8Array, rw: number, rh: number, W: number, H: number, layers: Layer[], groundSet: Set<Layer>, page?: string, seen?: Seen): PageLayout {
   const cols = Math.max(1, Math.round(rw / CELL_PX)), rows = Math.max(1, Math.round(rh / CELL_PX));
   const g = inkGrid(full, ground, rw, rh, cols, rows);
   const occ = occupancy(g, 1);
@@ -222,8 +226,8 @@ export function measurePage(full: Uint8Array, ground: Uint8Array, rw: number, rh
     components: components(layers, W, H, groundSet),
     type_scale: typeScale(layers, H),
   };
-  const read = backdrop ? textOnGround(backdrop, rw, rh, W, H, seenTexts(layers)) : [];
-  const hard = read.filter(t => t.below >= 0.2);
+  const read = seen ? textOnGround(seen.full, seen.mask, seen.w, seen.h, W, H, seenTexts(layers)) : [];
+  const hard = read.filter(hardToRead);
   return { ...base, ...(hard.length ? { legibility: hard } : {}), notes: [...layoutNotes(base), ...legibilityNotes(read)] };
 }
 
@@ -247,20 +251,23 @@ export function measureEntries(spec: DesignSpec, entries: Entry[], projectDir: s
   const svgOf = (layers: Layer[]): string =>
     renderToSVGString({ ...spec, layers: cullUnseenClips(layers, W, H), pages: undefined } as DesignSpec);
   const grounds = entries.map(e => groundLayers(e.layers, W, H));
-  // Three renders each: the page, its ground, and the page without its text —
-  // what the words sit on, for legibility at the moment they are seen.
+  // Four renders each: the page and its ground to measure space; the page
+  // again, finer, with its glyph mask, to read the text as seen (layout-legibility).
+  const legOpts = { ...opts, fitTo: { mode: 'zoom' as const, value: LEGIBILITY_EDGE / Math.max(W, H) } };
   const rasters = rasterizeSync(entries.flatMap((e, i) => [
     { svg: svgOf(e.layers), opts, want: 'pixels' as const },
     { svg: svgOf(grounds[i] ?? []), opts, want: 'pixels' as const },
-    { svg: svgOf(e.legible === false ? [] : withoutText(e.layers)), opts, want: 'pixels' as const },
+    { svg: svgOf(e.legible === false ? [] : e.layers), opts: legOpts, want: 'pixels' as const },
+    { svg: svgOf(e.legible === false ? [] : textMask(e.layers)), opts: legOpts, want: 'pixels' as const },
   ]));
   return entries.map((e, i) => {
-    const full = rasters[i * 3], ground = rasters[i * 3 + 1], behind = rasters[i * 3 + 2];
+    const full = rasters[i * 4], ground = rasters[i * 4 + 1], fine = rasters[i * 4 + 2], mask = rasters[i * 4 + 3];
     if (!full || !ground || full.width !== ground.width || full.height !== ground.height) {
       return { ...(e.id ? { page: e.id } : {}), canvas: `${W}×${H}`, ink: 0, occupied: 0, content_box: null, empty: [], balance: null, thirds: [], components: [], type_scale: null, notes: ['Could not render this to measure it.'] };
     }
-    const backdrop = e.legible !== false && behind && behind.width === full.width && behind.height === full.height ? new Uint8Array(behind.pixels) : undefined;
-    return measurePage(new Uint8Array(full.pixels), new Uint8Array(ground.pixels), full.width, full.height, W, H, e.layers, flatten(grounds[i] ?? []), e.id, backdrop);
+    const seen = e.legible !== false && fine && mask && fine.width === mask.width && fine.height === mask.height
+      ? { full: new Uint8Array(fine.pixels), mask: new Uint8Array(mask.pixels), w: fine.width, h: fine.height } : undefined;
+    return measurePage(new Uint8Array(full.pixels), new Uint8Array(ground.pixels), full.width, full.height, W, H, e.layers, flatten(grounds[i] ?? []), e.id, seen);
   });
 }
 
