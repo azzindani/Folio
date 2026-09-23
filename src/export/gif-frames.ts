@@ -325,7 +325,9 @@ function applyValues(layer: AnimatedLayer, t: number): Layer {
   // Reveal: a wipe as a clip on the layer's own element, so it travels with the
   // pose above — the same rectangle keyframe-css draws as clip-path: inset().
   const vr = num(v['reveal']);
-  const box = vr !== undefined && vr < 1 ? drawnBox(layer) : null;
+  const vt = num(v['tracking']);
+  // Measured as drawn: tracking spreads the letters past the authored ink.
+  const box = vr !== undefined && vr < 1 ? drawnBox(vt ? ({ ...layer, tracking_offset: vt } as Layer) : layer) : null;
   const wipe = box && vr !== undefined ? revealRect(box, vr, anim.playback?.reveal_from) : null;
   if (wipe) out['clip_rect'] = intersectRect(clipRectFor(layer), wipe);
 
@@ -346,7 +348,6 @@ function applyValues(layer: AnimatedLayer, t: number): Layer {
   }
 
   // Tracking: spacing added at draw time only, so the lines keep their wrap.
-  const vt = num(v['tracking']);
   if (vt !== undefined && vt !== 0) out['tracking_offset'] = vt;
 
   const fill = v['fill.color'];
