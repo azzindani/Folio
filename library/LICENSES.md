@@ -17,6 +17,7 @@ is not in the allowed list (`src/mcp/engine/library-pack.ts`).
 | Folder | Source | Licence |
 |---|---|---|
 | `sfx/ui`, `sfx/impact`, `sfx/digital` | Kenney — Interface Sounds, UI Audio, Impact Sounds, Digital Audio (<https://kenney.nl>) | CC0 1.0 |
+| `music/<mood>/` | Freesound (<https://freesound.org>) — each track's page and uploader in `manifest.json`; picked by downloads × rating, 2 per mood | CC0 1.0 |
 | `svg/logos` | Simple Icons 16.32 (<https://simpleicons.org>) — each brand's own colour baked in | CC0 1.0 |
 | `svg/emoji` | Microsoft Fluent Emoji, color (<https://github.com/microsoft/fluentui-emoji>) | MIT |
 | `svg/flags` | flag-icons 7.5, 4:3 (<https://flagicons.lipis.dev>) | MIT |
@@ -30,8 +31,11 @@ MIT (emoji, flags): the copyright and permission notices ship with the pack in
 `licenses/` (with the CC0 deeds of Simple Icons and Kenney). MIT asks for the notice to travel
 with the files, not for a credit line on a design.
 
-Sound processing: leading silence trimmed, peak normalised to −1 dBFS, re-encoded as
-128 kbps MP3. The originals' licence carries over unchanged.
+Sound processing: effects — leading silence trimmed, peak normalised to −1 dBFS;
+music — at most 45 s (a longer track is cut with a 2 s fade-out; loops kept
+whole), loudness-normalised to −16 LUFS; both re-encoded as 128 kbps MP3. `bpm`
+is the uploader's stated tempo, else Folio's beat detector when confident. The
+originals' licence carries over unchanged.
 
 ## Turning it off
 
