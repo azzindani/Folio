@@ -69,13 +69,38 @@ export function resolveRefs(v: unknown, results: Record<string, Rec>, missing: s
   return v;
 }
 
-/** A step's reply, small: its scalars, and arrays as counts. */
+/** Lists a step says to the model — kept as words, whatever their length. */
+const SAID = new Set(['notes', 'warnings', 'hints', 'skipped', 'dropped', 'ignored']);
+const clip = (s: string): string => (s.length > 200 ? `${s.slice(0, 200)}…` : s);
+
+/** A list, small: words the model acts on stay words (first four); anything else is a count. */
+function listOf(k: string, v: unknown[]): unknown {
+  const words = v.length > 0 && v.every(x => typeof x === 'string');
+  if (!words || (!SAID.has(k) && v.length > 6)) return `${v.length} item(s)`;
+  const kept = (v as string[]).slice(0, 4).map(clip);
+  return v.length > 4 ? [...kept, `…+${v.length - 4} more`] : kept;
+}
+
+/** An object's handles — the id and path a later step refers to — or nothing. */
+function handles(o: Rec): Rec | undefined {
+  const out: Rec = {};
+  for (const k of ['id', 'path', 'src']) if (typeof o[k] === 'string') out[k] = o[k];
+  return Object.keys(out).length ? out : undefined;
+}
+
+/**
+ * A step's reply, small: its scalars, its words, and its handles. Lists used to
+ * become bare counts and objects vanished, so a chain's replies read
+ * notes:"4 item(s)" — the scene's warnings unread — and a fetched asset's path
+ * was nowhere in the reply (one-shot benchmark r2).
+ */
 export function summarize(r: ToolResult): Rec {
   const out: Rec = {};
   for (const [k, v] of Object.entries(r as unknown as Rec)) {
     if (DROP.has(k) || v === undefined) continue;
-    if (Array.isArray(v)) out[k] = `${v.length} item(s)`;
-    else if (v === null || typeof v !== 'object') out[k] = typeof v === 'string' && v.length > 200 ? `${v.slice(0, 200)}…` : v;
+    if (Array.isArray(v)) out[k] = listOf(k, v);
+    else if (v !== null && typeof v === 'object') { const h = handles(v as Rec); if (h) out[k] = h; }
+    else out[k] = typeof v === 'string' ? clip(v) : v;
   }
   return out;
 }

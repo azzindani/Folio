@@ -3,7 +3,8 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import { ALL_HANDLERS } from '../handlers';
-import { resolveRefs, parseSteps } from './task-execute';
+import { resolveRefs, parseSteps, summarize } from './task-execute';
+import type { ToolResult } from '../types';
 
 type R = Record<string, unknown>;
 const run = async (args: R): Promise<R> => (await ALL_HANDLERS['tasks']?.({ op: 'execute', ...args })) as unknown as R;
@@ -15,6 +16,21 @@ describe('refs', () => {
     expect(resolveRefs({ design_path: '${made.path}', ids: '${made.ids}', note: 'saved ${made.path} (${made.ids.1})', gone: '${made.nope}' }, results, missing))
       .toEqual({ design_path: '/p/d.yaml', ids: ['a', 'b'], note: 'saved /p/d.yaml (b)', gone: '${made.nope}' });
     expect(missing).toEqual(['made.nope']);
+  });
+});
+
+describe('summarize', () => {
+  // benchmark r2: a six-scene chain read notes:"4 item(s)" on every step, and an
+  // asset_fetch step's reply carried no path at all.
+  it('keeps what a step says as words, and the handles a later step needs', () => {
+    const s = summarize({ success: true, op: 'scene', notes: ['a', 'b', 'c', 'd', 'e'], scenes: [{ page_id: 'x' }],
+      asset: { id: 'lucide-sprout', path: 'lib/icons/lucide-sprout.svg', width: 512 }, output_paths: ['/p/a.svg', '/p/b.svg'],
+      progress: [{ status: 'ok' }] } as unknown as ToolResult);
+    expect(s['notes']).toEqual(['a', 'b', 'c', 'd', '…+1 more']);
+    expect(s['scenes']).toBe('1 item(s)');
+    expect(s['asset']).toEqual({ id: 'lucide-sprout', path: 'lib/icons/lucide-sprout.svg' });
+    expect(s['output_paths']).toEqual(['/p/a.svg', '/p/b.svg']);
+    expect(s['progress']).toBeUndefined();
   });
 });
 
