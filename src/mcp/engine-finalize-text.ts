@@ -449,8 +449,12 @@ export function decollideHandPlaced(layers: Layer[], W: number, H: number): numb
   // "Less waste." grazed a disc on the right and the line was pushed under it.
   // And a layer sitting INSIDE an earlier one is on it, not below it — chip
   // labels on chips on a disc were each floored by the disc (benchmark r2).
-  const placed: { x: number; w: number; top: number; bot: number; text: boolean }[] = [];
+  const placed: { x: number; w: number; top: number; bot: number; text: boolean; holder: Layer | null }[] = [];
   const gap = Math.round(W * 0.014);
+  // A label rides with its container: only a peer on the same card, pill or node can
+  // push it. Pushed by a line that was itself moved past it, a pill's label was
+  // carried off its pill, and the pill — label gone — was moved next (benchmark r6, b22).
+  const holderOf = new Map<Layer, Layer | null>(movable.map(l => [l, containerOf(l)]));
   let moved = 0;
   for (const l of ordered) {
     const r = o(l);
@@ -464,13 +468,14 @@ export function decollideHandPlaced(layers: Layer[], W: number, H: number): numb
     let top = Number(r['y']);
     // A ground is a SHAPE larger than what sits on it — never a peer text, or
     // two overprinting lines would each count as the other's ground.
+    const holder = holderOf.get(l) ?? null;
     const inside = (p: { x: number; w: number; top: number; bot: number; text: boolean }): boolean => {
       if (p.text || p.w * (p.bot - p.top) <= w * Math.max(1, mh)) return false;
       const ox = Math.min(x + w, p.x + p.w) - Math.max(x, p.x), oy = Math.min(top + mh, p.bot) - Math.max(top, p.top);
       return ox > 0 && oy > 0 && ox * oy >= 0.8 * w * Math.max(1, mh);
     };
     let hit = -Infinity;
-    for (const p of placed) if ((text || p.text) && x < p.x + p.w && p.x < x + w && !inside(p)) hit = Math.max(hit, p.bot);
+    for (const p of placed) if ((text || p.text) && (!holder || p.holder === holder) && x < p.x + p.w && p.x < x + w && !inside(p)) hit = Math.max(hit, p.bot);
     // A group's children carry their own coordinates: moving its declared box
     // leaves the drawing where it was, and the box — the pivot of every pose on
     // the group — no longer matches it. It stays put and is a floor for what is below.
@@ -485,7 +490,7 @@ export function decollideHandPlaced(layers: Layer[], W: number, H: number): numb
     // set 20px above the bar it labels owned 24px of empty line under its
     // baseline, and each bar was pushed off its axis (one-shot benchmark r3).
     const reach = drawn ? Math.max(1, drawn.y + drawn.height - y0) : mh;
-    placed.push({ x, w, top, bot: top + reach, text });
+    placed.push({ x, w, top, bot: top + reach, text, holder });
   }
   return moved;
 }

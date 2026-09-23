@@ -29,6 +29,18 @@ describe('locked layers are exempt from the auto-rescue passes', () => {
     expect(yOf(b)).toBeGreaterThan(110);
   });
 
+  // benchmark r6 b22: a wrapped figure pushed the line under it past a pill, and the sweep carried the pill's label off it.
+  it('decollideHandPlaced leaves a pill\'s label on its pill when a line pushed down past it', () => {
+    const figure = txt('figure', 90, 700, { width: 560, height: 300, content: { type: 'plain', value: '30% off everything' }, style: { font_size: 200, line_height: 1.2 } });
+    const off = txt('off', 90, 1000, { width: 400, height: 130, content: { type: 'plain', value: 'off' }, style: { font_size: 120, line_height: 1.2 } });
+    const pill = { id: 'pill', type: 'rect', z: 3, x: 90, y: 1300, width: 330, height: 96, fill: '#3B2418' } as unknown as Layer;
+    const label = txt('label', 90, 1324, { width: 330, height: 50, content: { type: 'plain', value: 'Today only' }, style: { font_size: 40, line_height: 1.2 } });
+    for (let pass = 0; pass < 2; pass++) decollideHandPlaced([figure, off, pill, label], W, 1920);
+    expect(yOf(off)).toBeGreaterThan(1000);              // the rescue still clears the wrapped figure
+    expect(yOf(pill)).toBe(1300);
+    expect(yOf(label)).toBe(1324);                        // and the label stays on its pill
+  });
+
   it('decollideHandPlaced never moves a group\'s box away from its children — the group is a floor instead', () => {
     const a = txt('a', 80, 100);
     const g = { id: 'g', type: 'group', z: 1, x: 80, y: 110, width: 600, height: 200,
