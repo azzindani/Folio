@@ -86,8 +86,20 @@ export async function beatsMotion(args: BeatsArgs): Promise<ToolResult> {
   if (!fs.existsSync(dPath)) return errResult(OP, `Design not found: ${dPath}`, 'Check design_path.');
   if (!tryFfmpeg()) return errResult(OP, 'Measuring beats needs ffmpeg to decode the music, and this host has none.', 'Install ffmpeg (the Docker image ships it).');
   const spec = readYAML<DesignSpec>(dPath);
-  const timeline = soundTimeline(spec, args.hold_ms);
-  const sound = resolveSound(spec, dPath, timeline, args.project_path);
+  let timeline = soundTimeline(spec, args.hold_ms);
+  let sound = resolveSound(spec, dPath, timeline, args.project_path);
+  // A piece with no length yet — music added before any motion, the natural
+  // order — plans every clip to nothing, and beats answered "no sound to
+  // measure" right after op:audio had placed a track (one-shot benchmark r1).
+  // Measure over the music's own length until the piece has one.
+  const unset = timeline.total_ms <= 0;
+  if (unset) {
+    const musicMs = Math.max(0, ...Object.values(sound.durations).filter((d): d is number => typeof d === 'number'));
+    if (musicMs > 0) {
+      timeline = { ...timeline, total_ms: musicMs };
+      sound = resolveSound(spec, dPath, timeline, args.project_path);
+    }
+  }
   const wanted = typeof args.audio_id === 'string' && args.audio_id ? args.audio_id : undefined;
   const clip = sound.clips.find(c => (wanted ? c.id === wanted : !c.scene)) ?? (wanted ? undefined : sound.clips[0]);
   if (!clip) {
@@ -116,6 +128,7 @@ export async function beatsMotion(args: BeatsArgs): Promise<ToolResult> {
     ...(pulse === 'none' ? [`"${clip.id}" has no steady pulse (confidence ${map.confidence}), so no scene lengths are offered: cut on its onsets, or on the scenes' own motion.`] : []),
     ...(pulse === 'weak' ? [`"${clip.id}" has a weak pulse (confidence ${map.confidence}): hear the grid in Play all before cutting to it.`] : []),
     'Bars assume 4 beats, and the first beat found is not necessarily a downbeat.',
+    ...(unset ? [`The piece has no length yet, so these beats run over the music's own ${timeline.total_ms}ms — give the piece its length (op:storyboard length_ms, or op:scene) on one of them.`] : []),
   ];
   return okResult(OP, {
     design_path: dPath, audio_id: clip.id, src: clip.src,

@@ -92,6 +92,21 @@ describe.skipIf(!hasFfmpeg)('animation(op:beats)', () => {
     expect(r['next_action']).toMatchObject({ tool: 'animation', params: { op: 'scene', page_id: 's1' } });
   }, 60_000);
 
+  // benchmark r1: op:beats straight after op:audio, before any motion set a length.
+  it('measures over the music when the piece has no length yet, and says so', async () => {
+    const fresh = path.join(root, 'designs/fresh.design.yaml');
+    fs.writeFileSync(fresh, yaml.dump({
+      meta: { id: 'f', name: 'F', type: 'poster' }, document: { width: 64, height: 64 },
+      layers: [{ id: 'bg', type: 'rect', z: 0, x: 0, y: 0, width: 64, height: 64, fill: '#FFFFFF' }],
+      audio: [{ id: 'click', src: '../assets/audio/click.wav' }],
+    }));
+    const r = await dispatchAnimation({ op: 'beats', design_path: fresh, project_path: root });
+    expect(r, JSON.stringify(r)).toMatchObject({ success: true, audio_id: 'click' });
+    expect(Number(r['total_ms'])).toBeGreaterThan(15_000);
+    expect((r['beats_ms'] as number[]).length).toBeGreaterThan(20);
+    expect((r['notes'] as string[]).join(' ')).toMatch(/no length yet/);
+  }, 60_000);
+
   it('says there is nothing to measure in a piece without sound', async () => {
     const silent = path.join(root, 'designs/silent.design.yaml');
     fs.writeFileSync(silent, yaml.dump({ meta: { id: 's', name: 'S', type: 'carousel' }, document: { width: 64, height: 64 }, pages: [{ id: 'p1', layers: [] }, { id: 'p2', layers: [] }] }));

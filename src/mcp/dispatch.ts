@@ -20,6 +20,12 @@ function badOp(tool: string, op: unknown): ToolResult {
 // multiplexer may answer with a promise — same arrangement as manage_design.
 // The sync ops are unchanged.
 export function dispatchEditLayer(a: Args): ToolResult | Promise<ToolResult> {
+  // Only patch_spec can preview. Every other op took dry_run:true, ignored it and
+  // WROTE — the one thing a dry run promises not to do (one-shot benchmark r1).
+  if (a['dry_run'] === true && a['op'] !== 'patch_spec') {
+    return errResult('edit_layer', `op:${String(a['op'])} has no dry run — nothing was written.`,
+      'Send it without dry_run: every edit snapshots the design first, and manage_design {op:"restore"} lists the points to go back to. (dry_run previews op:patch_spec only.)');
+  }
   switch (a['op']) {
     case 'add':    return engine.addLayer(a as Parameters<typeof engine.addLayer>[0]);
     case 'update': return engine.updateLayer(a as Parameters<typeof engine.updateLayer>[0]);

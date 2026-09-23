@@ -99,3 +99,20 @@ export function diffPages(
   });
   return { diffs, next };
 }
+
+/**
+ * The baseline to store when only some pages were shown. A page that needed a
+ * look but was held back by the per-call cap keeps its OLD hash (or none), so
+ * the next call shows it. Storing every page's new hash marked held-back pages
+ * as seen, and "call again to advance" never advanced (one-shot benchmark r1:
+ * page 7 of a 7-slide carousel needed its own call).
+ */
+export function baselineAfter(baseline: PreviewBaseline, next: Record<string, string>, heldBack: string[]): Record<string, string> {
+  const out = { ...next };
+  for (const id of heldBack) {
+    const old = baseline.pages[id];
+    if (old === undefined) delete out[id];
+    else out[id] = old;
+  }
+  return out;
+}
