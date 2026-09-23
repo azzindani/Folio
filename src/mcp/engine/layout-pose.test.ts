@@ -33,17 +33,32 @@ describe('components under a camera', () => {
   });
 });
 
+describe('text measured by its drawn lines', () => {
+  const text = (id: string, x: number, w: number, content: string): Layer =>
+    ({ id, type: 'text', x, y: 100, width: w, height: 80, content: { type: 'plain', value: content }, style: { font_size: 48 } }) as unknown as Layer;
+
+  it('short copy in a wide box is as wide as its words, and copy starting off the canvas is cut', () => {
+    const comps = components([text('short', 20, 1880, 'Hi'), text('late', -40, 600, 'release notes')], 1920, 1080, new Set());
+    expect(comps.find(c => c.id === 'short')?.box.width).toBeLessThan(200);
+    const notes = layoutNotes({
+      canvas: '1920×1080', ink: 0.1, occupied: 0.2, content_box: null, empty: [], balance: null, thirds: [], type_scale: null, components: comps,
+    });
+    expect(notes).toHaveLength(1);
+    expect(notes[0]).toMatch(/^"late" \(text\) is cut by the canvas edge: x -40–/);
+  });
+});
+
 describe('edge notes', () => {
   const page = (comps: Array<{ id: string; type: string; x: number; w: number }>): Parameters<typeof layoutNotes>[0] => ({
     canvas: '1920×1080', ink: 0.2, occupied: 0.5, content_box: null, empty: [], balance: null, thirds: [], type_scale: null,
     components: comps.map(c => ({ id: c.id, type: c.type, box: { x: c.x, y: 100, width: c.w, height: 300 }, share: { w: c.w / 1920, h: 0.28, area: (c.w * 300) / (1920 * 1080) } })),
   });
 
-  it('says an image or a card row runs edge to edge or is cut — never a text box, which is not its ink', () => {
+  it('says an image or a card row runs edge to edge or is cut — never a rich-text box, which is not its ink', () => {
     const notes = layoutNotes(page([
       { id: 'row', type: 'auto_layout', x: 20, w: 1880 },
       { id: 'photo', type: 'image', x: 1500, w: 700 },
-      { id: 'headline', type: 'text', x: -40, w: 2000 },
+      { id: 'headline', type: 'rich_text', x: -40, w: 2000 },
     ]));
     expect(notes).toContain('"row" (auto_layout) runs edge to edge: 1880 of 1920 px wide.');
     expect(notes.some(n => n.startsWith('"photo" (image) is cut by the canvas edge'))).toBe(true);

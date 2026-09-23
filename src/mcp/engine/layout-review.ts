@@ -15,6 +15,7 @@ import { rasterizeSync } from '../../utils/resvg-isolate';
 import { resvgFontOption } from './fonts';
 import { cullUnseenClips } from '../../export/frame-cull';
 import { IDENTITY, poseAffine, compose, mapBox, type Affine } from './layout-pose';
+import { drawnBox } from '../../export/frame-geometry';
 import {
   inkGrid, occupancy, emptyRects, balance, thirds, contentBox, round2,
   type Rect, type Balance,
@@ -92,7 +93,7 @@ export function components(layers: Layer[], W: number, H: number, ground: Set<La
     // carries its children with it.
     const pose = poseAffine(l);
     const here = pose ? compose(at, pose) : at;
-    const authored = geo(l);
+    const authored = seenGeo(l);
     const g = authored ? mapBox(here, authored) : null;
     const inner = kids(l);
     if (inner && depth < 3 && (!g || (g.w * g.h) / (W * H) >= 0.85)) {
@@ -130,9 +131,17 @@ export function typeScale(layers: Layer[], H: number): PageLayout['type_scale'] 
 const pct = (v: number): string => `${Math.round(v * 100)}%`;
 /** Backdrop shapes: a big one is a panel, not an oversized component. */
 const PANEL = new Set(['rect', 'ellipse', 'circle', 'path', 'polygon', 'background', 'shape', 'line']);
-/** A text box is not its ink — short copy in a wide box reaches no edge — so
- *  edge facts are only stated for layers whose box IS what they draw. */
-const BOX_IS_INK = (type: string): boolean => type !== 'text' && type !== 'rich_text' && !PANEL.has(type);
+/** Edge facts need a box that IS what the layer draws. A plain text layer is
+ *  measured by its drawn lines (textBox), so it qualifies; rich text is still
+ *  its box — short copy in a wide box reaches no edge. */
+const BOX_IS_INK = (type: string): boolean => type !== 'rich_text' && !PANEL.has(type);
+
+/** A text layer where its glyphs are — the renderer's wrap and anchor — else its box. */
+function seenGeo(l: Layer): Geo | null {
+  if (l.type !== 'text') return geo(l);
+  const b = drawnBox(l);
+  return b ? { x: b.x, y: b.y, w: b.width, h: b.height } : geo(l);
+}
 
 /** Facts worth a sentence — where the page crosses a line a viewer notices. */
 export function layoutNotes(p: Omit<PageLayout, 'notes'>): string[] {
