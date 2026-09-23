@@ -96,6 +96,15 @@ describe('asset ops route between the two stores', () => {
     expect(fs.existsSync(String(del['trash_path']))).toBe(true);
   });
 
+  it('takes the `path` asset_fetch answers with, and says so when no path is given at all', () => {
+    const dir = makeProject('aliases');
+    assetAdd({ project_path: dir, name: 'y.svg', data: uri(SVG), folder: 'inbox', scope: 'library' });
+    expect(body(assetDelete({ project_path: dir, path: 'lib/inbox/y.svg' }))['scope']).toBe('library');
+    const none = body(assetDelete({ project_path: dir }));
+    expect(String(none['error'])).toContain('asset_path is missing');
+    expect(String(none['hint'])).toContain('lib/');
+  });
+
   it('reports a missing library path instead of falling through to the project store', () => {
     const dir = makeProject('missing');
     const r = body(assetDelete({ project_path: dir, asset_path: 'lib/nope/gone.svg' }));

@@ -25,7 +25,7 @@ const MAX_TRANSITION_MS = 3000;
 
 type SceneArgs = {
   design_path: string;
-  page_id: string;
+  page_id?: string;
   transition?: unknown;
   length_ms?: unknown;
   project_path?: string;
@@ -98,8 +98,17 @@ export function setScene(args: SceneArgs): ToolResult {
 
   const spec = readYAML<DesignSpec>(dPath);
   const pages = spec.pages ?? [];
-  const index = pages.findIndex((p: Page) => p.id === args.page_id);
-  if (index < 0) return errResult(op, `Page not found: ${args.page_id}`, 'Run manage_design(op:inspect) to list page ids.');
+  // A single-page piece — a looping GIF, a sting — asked for its length here and
+  // was told "Page not found" (one-shot benchmark r1). With no pages there are no
+  // scenes: the piece lasts as long as its motion, and storyboard sets that.
+  if (!pages.length) {
+    return errResult(op, 'This design has no pages, so it has no scenes — it lasts as long as its motion.',
+      'Set that length with animation(op:storyboard, length_ms), which holds every track to it; a looping layer runs playback.duration × its loops. op:timeline shows the length now.');
+  }
+  const pageId = args.page_id ?? (pages.length === 1 ? pages[0]?.id : undefined);
+  if (pageId === undefined) return errResult(op, 'page_id is needed: this piece has several scenes.', `Pages: ${pages.map(p => p.id).join(', ')}.`);
+  const index = pages.findIndex((p: Page) => p.id === pageId);
+  if (index < 0) return errResult(op, `Page not found: ${pageId}`, 'Run manage_design(op:inspect) to list page ids.');
   const bak = snapshot(dPath);
   const page = pages[index];
 

@@ -84,6 +84,20 @@ describe('animation(op:scene)', () => {
 });
 
 describe('scenes across timeline, frame and export', () => {
+  // benchmark r1: a single-page looping GIF asked op:scene for its length.
+  it('takes the only page without page_id, and points a page-less piece at storyboard', () => {
+    const dir = path.dirname(design);
+    const one = path.join(dir, 'one.design.yaml');
+    fs.writeFileSync(one, yaml.dump({ meta: { id: 'o', name: 'O', type: 'carousel' }, document: { width: 64, height: 64 }, pages: [{ id: 'only', layers: [] }] }));
+    const r = setScene({ design_path: one, length_ms: 4000 });
+    expect(r, JSON.stringify(r)).toMatchObject({ success: true, page_id: 'only', length_ms: 4000 });
+    const poster = path.join(dir, 'poster.design.yaml');
+    fs.writeFileSync(poster, yaml.dump({ meta: { id: 'p', name: 'P', type: 'poster' }, document: { width: 64, height: 64 }, layers: [] }));
+    const none = setScene({ design_path: poster, length_ms: 4000 });
+    expect(none.success).toBe(false);
+    expect(String(none.hint)).toContain('op:storyboard, length_ms');
+  });
+
   it('timeline lays out every scene and marks the transitions', () => {
     setScene({ design_path: design, page_id: 'b', transition: 'fade' });
     const r = sceneTimeline({ design_path: design });

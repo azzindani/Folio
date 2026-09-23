@@ -139,10 +139,17 @@ export function assetList(args: {
 }
 
 // ── asset_delete / asset_move ─────────────────────────────────
-export function assetDelete(args: { project_path?: string; asset_path?: string }): ToolResult {
+export function assetDelete(args: { project_path?: string; asset_path?: string; path?: string }): ToolResult {
   const op = 'asset_delete';
-  const rel = String(args.asset_path ?? '').replace(/^\/+/, '');
-  if (!isLibraryPath(rel)) return projectAssetDelete(args);
+  // asset_fetch / asset_list answer with `path`, so that is the name a caller
+  // reaches for; without it the reply was a format lecture about assets/images/…
+  // that never said the argument was missing, nor that lib/… paths are deleted too.
+  const rel = String(args.asset_path ?? args.path ?? '').replace(/^\/+/, '');
+  if (!rel) {
+    return errResult(op, 'asset_path is missing — name the asset to delete.',
+      `Pass the path asset_fetch or asset_list gave: "${LIB_PREFIX}…" for the shared library, "assets/…" for this project.`);
+  }
+  if (!isLibraryPath(rel)) return projectAssetDelete({ ...args, asset_path: rel });
   try {
     const { trash } = deleteLibraryAsset(rel);
     return okResult(op, {

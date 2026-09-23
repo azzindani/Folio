@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
+import { spawnSync } from 'child_process';
 import { assetProcess } from './asset-process-op';
 import { processAsset, hasWork } from './asset-process';
 import { encodePNG, decodePNG, type RasterImage } from '../../utils/png-codec';
@@ -118,5 +119,42 @@ describe('asset_process — the formats the pipeline can actually read', () => {
     }) as Record<string, unknown>;
     expect(r['success']).toBe(false);
     expect(String(r['hint'])).toContain('JPEG');
+  });
+});
+
+const hasFfmpeg = spawnSync('ffmpeg', ['-version']).error === undefined;
+
+/** A smooth gradient with ±12 of deterministic grain — photo-like, and what
+ *  defeats PNG compression (300px: ~240 KB as PNG, ~76 KB as JPEG). */
+function noise(w: number, h: number, alpha = 255): Buffer {
+  const px = new Uint8ClampedArray(w * h * 4);
+  let seed = 7;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const i = (y * w + x) * 4;
+    for (let c = 0; c < 3; c++) { seed = (seed * 1103515245 + 12345) & 0x7fffffff; px[i + c] = 60 + (x + y * (c + 1)) % 140 + ((seed >> 16) % 25) - 12; }
+    px[i + 3] = alpha;
+  }
+  return encodePNG({ width: w, height: h, pixels: px });
+}
+
+describe.skipIf(!hasFfmpeg)('a processed image too heavy as PNG (benchmark r1)', () => {
+  let capBefore: string | undefined;
+  beforeEach(() => { capBefore = process.env['FOLIO_MAX_ASSET_BYTES']; process.env['FOLIO_MAX_ASSET_BYTES'] = String(120 * 1024); });
+  afterEach(() => { if (capBefore === undefined) delete process.env['FOLIO_MAX_ASSET_BYTES']; else process.env['FOLIO_MAX_ASSET_BYTES'] = capBefore; });
+
+  it('is stored once as JPEG when it is opaque, and says so', () => {
+    fs.writeFileSync(path.join(root, 'demo', 'assets', 'images', 'cover.png'), noise(300, 300));
+    const r = assetProcess({ project_path: 'demo', asset_path: 'assets/images/cover.png', process: { adjust: { contrast: 10 } } });
+    expect(r.success, JSON.stringify(r)).toBe(true);
+    const asset = r['asset'] as { path: string; bytes: number };
+    expect(asset.path).toBe('assets/images/cover-edit.jpg');
+    expect(asset.bytes).toBeLessThanOrEqual(120 * 1024);
+    expect(JSON.stringify(r['progress'])).toContain('Stored as JPEG');
+  });
+
+  it('keeps PNG — and the cap — when the image has transparency', () => {
+    fs.writeFileSync(path.join(root, 'demo', 'assets', 'images', 'cut.png'), noise(300, 300, 128));
+    const r = assetProcess({ project_path: 'demo', asset_path: 'assets/images/cut.png', process: { adjust: { contrast: 10 } } });
+    expect(JSON.stringify(r)).not.toContain('.jpg');
   });
 });
