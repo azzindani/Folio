@@ -25,6 +25,7 @@ import { isKnownEasing, easingHint, describeEasings } from '../../animation/easi
 import { REVEAL_FROMS, type RevealFrom } from '../../animation/reveal';
 import { staggerRanks, isStaggerOrder, STAGGER_ORDERS, type StaggerOrder } from './motion-order';
 import { readMarkers, resolveTime } from './motion-time';
+import { animationDuration } from '../../export/gif-frames';
 
 // ── op:sequence ──────────────────────────────────────────────
 
@@ -139,8 +140,11 @@ export function sequenceMotion(args: SequenceArgs): ToolResult {
   syncAnimationsToSpec(spec);
   writeYAML(dPath, spec);
 
-  const sceneMs = Math.max(...timeline.map(t => t.to), 0);
-  progress.push(pInfo('Scene length', `${sceneMs}ms — export with animation(op:export, type:"svg"|"gif")`));
+  // The page's length, as op:timeline reads it — not just where these steps end. Benchmark r5: after a
+  // hold was opened to 15 s, adding one fade replied scene_ms 10150 while op:timeline said 15000.
+  const stepsEnd = Math.max(...timeline.map(t => t.to), 0);
+  const sceneMs = Math.max(stepsEnd, animationDuration(scope));
+  progress.push(pInfo('Scene length', `${sceneMs}ms${sceneMs > stepsEnd ? ` (these steps end at ${stepsEnd}ms)` : ''} — export with animation(op:export, type:"svg"|"gif")`));
   return okResult(op, {
     design_path: dPath, steps: timeline, scene_ms: sceneMs, progress,
     next_action: {
