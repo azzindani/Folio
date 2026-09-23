@@ -17,6 +17,17 @@ describe('metricsForFamily', () => {
     expect(metricsForFamily('No Such Family Anywhere', FONTS)).toBeNull();
   });
 
+  it('knows where each glyph\'s ink starts: its left side bearing', () => {
+    if (FONTS.length === 0) return;
+    const m = metricsForFamily('Archivo', FONTS, 900);
+    if (!m) return;                          // font not bundled in this checkout
+    const lsb = (ch: string): number => m.lsb?.(ch.codePointAt(0) ?? 0) ?? NaN;
+    expect(lsb('3')).toBeGreaterThan(0);     // ink starts past the origin
+    expect(lsb('I')).toBeGreaterThan(0);
+    expect(lsb('3')).toBeLessThan(m.unitsPerEm * 0.2);
+    expect(m.lsb?.(0x10ffff)).toBeUndefined();
+  });
+
   it('reads a bundled family and reports a sane em size', () => {
     if (FONTS.length === 0) return;
     const m = metricsForFamily('Plus Jakarta Sans', FONTS);
