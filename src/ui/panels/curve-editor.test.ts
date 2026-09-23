@@ -91,6 +91,16 @@ describe('the easing popover', () => {
     expect(host.querySelector<HTMLSelectElement>('.tl-ease-picker')?.value).toMatch(/^cubic-bezier\(0\.1, 0\.9, /);
   });
 
+  it('opens under the keyframe but inside a narrow panel', () => {
+    const host = document.createElement('div'), anchor = document.createElement('div');
+    host.appendChild(anchor);
+    document.body.appendChild(host);
+    Object.defineProperty(host, 'clientWidth', { value: 300 });
+    anchor.getBoundingClientRect = (): DOMRect => ({ left: 220, top: 40, width: 10, height: 10, right: 230, bottom: 50, x: 220, y: 40, toJSON: () => ({}) });
+    openEasePopover({ anchor, host, current: '', commit: vi.fn() });
+    expect(host.querySelector<HTMLElement>('.tl-ease-pop')?.style.left).toBe(`${300 - BOX.w - 4}px`);
+  });
+
   it('commits a picked name and closes; a press outside closes without writing', () => {
     const a = open('');
     const sel = a.host.querySelector<HTMLSelectElement>('.tl-ease-picker');
