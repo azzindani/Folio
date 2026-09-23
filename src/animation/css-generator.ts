@@ -3,6 +3,7 @@ import type {
   EnterAnimationType, ExitAnimationType,
 } from './types';
 import { generateKeyframeCSS } from './keyframe-css';
+import { opacityBase } from './opacity-base';
 import type { Layer } from '../schema/types';
 import { windowOf, lifeCSS, type LifeWindow } from './lifespan';
 
@@ -122,6 +123,21 @@ export function generateStaggerCSS(sequence: AnimationSpec['sequence']): string 
   return rules.join('\n');
 }
 
+// ── Authored opacity per layer ──────────────────────────────
+/** Each layer's own opacity, by id — what its opacity track scales (opacity-base.ts). */
+export function authoredOpacities(layers: Layer[] | undefined): Map<string, number> {
+  const out = new Map<string, number>();
+  const visit = (ls: Layer[]): void => {
+    for (const l of ls) {
+      const o = l as unknown as { id?: unknown; opacity?: unknown; layers?: unknown };
+      if (typeof o.id === 'string' && typeof o.opacity === 'number') out.set(o.id, o.opacity);
+      if (Array.isArray(o.layers)) visit(o.layers as Layer[]);
+    }
+  };
+  if (layers) visit(layers);
+  return out;
+}
+
 // ── Authored letter-spacing per layer ───────────────────────
 /**
  * The letter-spacing each text layer is authored with, by id — what a
@@ -185,6 +201,7 @@ export function generateDesignAnimationCSS(
 ): string {
   const parts: string[] = [];
   const spacing = letterSpacingBases(layers);
+  const opacities = authoredOpacities(layers);
   const morphs = morphSources(layers);
   const lives = new Map<string, { keyframes: string; animation: string }>();
   if (opts.lifespans) {
@@ -199,7 +216,8 @@ export function generateDesignAnimationCSS(
     if (css) parts.push(css);
 
     const life = lives.get(layerId);
-    const kf = generateKeyframeCSS(layerId, anim, spacing.get(layerId) ?? 0, morphs.get(layerId), life ? [life.animation] : []);
+    const kf = generateKeyframeCSS(layerId, anim, spacing.get(layerId) ?? 0, morphs.get(layerId), life ? [life.animation] : [],
+      opacityBase(opacities.get(layerId), anim.keyframes as unknown as Array<Record<string, unknown>>));
     if (kf) {
       parts.push(kf);
       if (life) { parts.push(life.keyframes); lives.delete(layerId); }
