@@ -61,4 +61,21 @@ describe('rememberReview + the revise loop', () => {
     expect(second.since_last?.['page']?.resolved).toContain('weight_across');
     expect(second.since_last?.['page']?.weight_off ?? 0).toBeLessThan(-0.2);
   }, 30_000);
+
+  it('measures a stored image as ink — a photo is not empty space', () => {
+    // Found live: the review rendered without resolving assets, so every photo
+    // drew nothing and an FHD slide's hero image read as "56% empty".
+    fs.mkdirSync(path.join(tmp, 'assets', 'images'), { recursive: true });
+    fs.writeFileSync(path.join(tmp, 'assets', 'images', 'block.svg'),
+      '<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect width="100" height="100" fill="#111827"/></svg>');
+    fs.writeFileSync(fp, `_protocol: design/v1\nmeta:\n  name: T\n  type: poster\ndocument:\n  width: 1920\n  height: 1080\n  unit: px\n  dpi: 96\nlayers:
+  - { id: bg, type: rect, x: 0, 'y': 0, width: 1920, height: 1080, z: 0, fill: { type: solid, color: '#ffffff' } }
+  - { id: hero, type: image, x: 960, 'y': 0, width: 960, height: 1080, z: 1, src: assets/images/block.svg, fit: cover }
+`);
+    const r = diagnoseDesign({ design_path: fp, project_path: tmp, review: true }) as unknown as { review?: PageLayout[] };
+    const p = r.review?.[0];
+    expect(p?.balance?.left_right[1] ?? 0).toBeGreaterThan(90);
+    expect(p?.empty[0]?.x ?? 999).toBeLessThan(100);
+    expect(p?.empty[0]?.width ?? 0).toBeLessThanOrEqual(980);
+  }, 30_000);
 });
