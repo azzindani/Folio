@@ -68,7 +68,7 @@ type DrawMode = 'none' | 'dash' | 'trim';
 const clamp01 = (v: number): number => Math.max(0, Math.min(1, v));
 
 /** The CSS declarations for one pose. */
-function poseDecls(p: Pose, draw: DrawMode, reveal?: RevealFrom, spacing?: number): string[] {
+function poseDecls(p: Pose, draw: DrawMode, reveal?: RevealFrom, spacing?: number, opacityBase = 1): string[] {
   const decls: string[] = [];
   const parts: string[] = [];
   const { n } = p;
@@ -81,7 +81,8 @@ function poseDecls(p: Pose, draw: DrawMode, reveal?: RevealFrom, spacing?: numbe
   // Always emit a transform once any frame moves, so a frame at rest reads as
   // "none" rather than inheriting whatever the previous step set.
   decls.push(`transform: ${parts.length ? parts.join(' ') : 'none'};`);
-  decls.push(`opacity: ${fmt(n.opacity)};`);
+  // The authored opacity scales the track, as in the exported frames (opacity-base.ts).
+  decls.push(`opacity: ${fmt(clamp01(n.opacity * opacityBase))};`);
   decls.push(`filter: ${n.blur > 0 ? `blur(${fmt(n.blur)}px)` : 'none'};`);
   // Reveal: percentages of the fill-box, the same box the transforms pivot on.
   if (reveal) decls.push(`clip-path: ${revealInsetCSS(n.reveal, reveal)};`);
@@ -131,7 +132,7 @@ interface Step { pct: number; decls: string[]; timing: string }
  * Turn a keyframe timeline into a real `@keyframes` rule plus the selector
  * that plays it. Returns '' for anything with fewer than two frames.
  */
-export function generateKeyframeCSS(layerId: string, anim: AnimationSpec, spacingBase = 0, morph?: { from: string; to: string }, extra: string[] = []): string {
+export function generateKeyframeCSS(layerId: string, anim: AnimationSpec, spacingBase = 0, morph?: { from: string; to: string }, extra: string[] = [], opacity = 1): string {
   const frames = anim.keyframes;
   if (!frames || frames.length < 2) return '';
 
@@ -166,7 +167,7 @@ export function generateKeyframeCSS(layerId: string, anim: AnimationSpec, spacin
     const css = easingToCSS(name);
 
     if (isLast || css !== null) {
-      steps.push({ pct: pctOf(kf.t), decls: poseDecls(pose, hasDraw, wipe, tracked), timing: css ?? 'linear' });
+      steps.push({ pct: pctOf(kf.t), decls: poseDecls(pose, hasDraw, wipe, tracked, opacity), timing: css ?? 'linear' });
       morphAt.push(pose.n.morph);
       continue;
     }
@@ -181,7 +182,7 @@ export function generateKeyframeCSS(layerId: string, anim: AnimationSpec, spacin
     for (let k = 0; k < baked.length - 1; k++) {
       const [frac, eased] = baked[k];
       const between = lerpPose(pose, nextPose, eased);
-      steps.push({ pct: p0 + (p1 - p0) * frac, decls: poseDecls(between, hasDraw, wipe, tracked), timing: 'linear' });
+      steps.push({ pct: p0 + (p1 - p0) * frac, decls: poseDecls(between, hasDraw, wipe, tracked, opacity), timing: 'linear' });
       morphAt.push(between.n.morph);
     }
   }

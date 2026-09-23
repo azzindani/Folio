@@ -11,6 +11,7 @@
 import type { DesignSpec, Layer } from '../schema/types';
 import type { AnimationSpec, Keyframe } from '../animation/types';
 import { interpolateKeyframes } from '../animation/keyframe-engine';
+import { opacityBase } from '../animation/opacity-base';
 import { samplePath, type SampledPath } from '../animation/motion-path';
 import { pathAt } from '../animation/path-ease';
 import { roundedRectPath } from '../renderer/layer-renderers-shared';
@@ -281,10 +282,12 @@ function applyValues(layer: AnimatedLayer, t: number): Layer {
 
   const vo = num(v['opacity']);
   if (vo !== undefined) {
-    const existing = num(layer['opacity' as keyof Layer]);
+    // The track scales the authored opacity — and an authored 0 on a layer the
+    // track fades is hidden-until-shown (opacity-base.ts, shared with the CSS).
+    const base = opacityBase(layer['opacity' as keyof Layer], anim.keyframes as unknown as Array<Record<string, unknown>>);
     // An overshooting curve (pop = ease-out-back) swings past 1. The renderer
     // clamps it anyway, but op:frame reports this number as the pose.
-    out['opacity'] = Math.min(1, Math.max(0, (existing ?? 1) * vo));
+    out['opacity'] = Math.min(1, Math.max(0, base * vo));
   }
 
   // Blur rides on the layer's effects, which the renderer turns into a filter.
