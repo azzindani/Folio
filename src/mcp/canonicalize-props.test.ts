@@ -48,6 +48,16 @@ describe('a flat alias is routed into the field that would shadow it', () => {
     expect(out['style']).toEqual({ font_size: 90, color: '#111111', font_family: 'Anton' });
   });
 
+  it('merges an explicit style into the stored one (benchmark r2: a size change wiped the font)', () => {
+    const out = canonicalizeProps(textLayer(), { style: { font_size: 104 } });
+    expect(out['style']).toEqual({ font_size: 104, color: '#111111', font_family: 'Anton' });
+  });
+
+  it('removes a style key patched to null', () => {
+    const out = canonicalizeProps(textLayer(), { style: { color: null } });
+    expect(out['style']).toEqual({ font_size: 40, font_family: 'Anton' });
+  });
+
   it('lets an explicit style in the same patch win over the alias', () => {
     const out = canonicalizeProps(textLayer(), { font_size: 90, style: { font_size: 12 } });
     expect((out['style'] as Record<string, unknown>)['font_size']).toBe(12);

@@ -482,12 +482,16 @@ export function canonicalizeProps(layer: Layer, props: Record<string, unknown>):
         delete out[k];
       }
     }
-    if (alias) {
-      const patched = out['style'];
-      const explicit = (patched && typeof patched === 'object' && !Array.isArray(patched))
-        ? patched as Record<string, unknown> : undefined;
-      const base = explicit ?? (style as Record<string, unknown>);
-      out['style'] = { ...base, ...alias, ...(explicit ?? {}) };
+    const patched = out['style'];
+    const explicit = (patched && typeof patched === 'object' && !Array.isArray(patched))
+      ? patched as Record<string, unknown> : undefined;
+    // style is a bag of independent properties, so a patch MERGES into it
+    // (null removes a key). Replacing it wiped the font, weight, colour and
+    // leading of a title whose size alone was changed (benchmark r2).
+    if (alias || explicit) {
+      const merged: Record<string, unknown> = { ...(style as Record<string, unknown>), ...(alias ?? {}), ...(explicit ?? {}) };
+      for (const [k, v] of Object.entries(merged)) if (v === null) delete merged[k];
+      out['style'] = merged;
     }
   }
   return out;
