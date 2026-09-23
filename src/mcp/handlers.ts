@@ -15,6 +15,7 @@ import { remapToolRefs } from './tool-remap';
 import type { ToolResult } from './types';
 import { missingArgs } from './required-args';
 import { decodeJsonStringArgs } from './json-string-args';
+import { unknownArgs, withIgnoredArgs } from './unknown-args';
 
 // Most ops are pure local filesystem work and answer synchronously. The asset
 // finder talks to the internet, so a handler may also return a promise; every
@@ -37,8 +38,12 @@ const remap = (m: Record<string, Handler>): Record<string, Handler> =>
     // names nothing the caller can act on. See required-args.ts.
     const missing = missingArgs(k, a);
     if (missing) return missing;
+    // An argument the tool does not publish is named in the reply, not dropped
+    // in silence. See unknown-args.ts.
+    const ignored = unknownArgs(k, a);
+    const done = (x: ToolResult): ToolResult => withIgnoredArgs(remapToolRefs(x), ignored);
     const r = h(a);
-    return r instanceof Promise ? r.then(remapToolRefs) : remapToolRefs(r);
+    return r instanceof Promise ? r.then(done) : done(r);
   }]));
 
 // Tier 1 — guidance, project, discovery/library, theming, tasks.
