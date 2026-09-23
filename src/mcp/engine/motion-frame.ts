@@ -11,7 +11,8 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { rasterize } from '../../utils/resvg-isolate';
+import { rasterize, rasterizeSync } from '../../utils/resvg-isolate';
+import { encodePNG } from '../../utils/png-codec';
 import type { DesignSpec, Layer, Page } from '../../schema/types';
 import type { AnimationSpec, LayerLink } from '../../animation/types';
 import type { ToolResult, ProgressItem } from '../types';
@@ -25,7 +26,8 @@ import { PREVIEW_FRAME_MS } from '../../export/motion-blur';
 import { drawnBox } from '../../export/frame-geometry';
 import { planScenes, sceneAt } from '../../export/scene-plan';
 import { FRAME_POSE, type FramePose } from '../../export/frame-pose';
-import { composeSceneFrame } from '../../export/scene-compose';
+import { composeSceneFrame, turningFrame, blankPage } from '../../export/scene-compose';
+import { paintTurning } from '../../export/warp';
 import { planCaptions } from '../../export/caption-plan';
 import { withCaptions } from '../../export/caption-layers';
 
@@ -209,9 +211,22 @@ function renderSceneFrame(spec: DesignSpec, dPath: string, args: FrameArgs): Too
   const scale = typeof args.scale === 'number' && args.scale > 0 ? Math.min(2, args.scale) : 1;
   try {
     const assetNotes = resolveImageAssets(spec, dPath, args.project_path);
-    const svg = renderToSVGString(cullFrame(withCaptions(composeSceneFrame(spec, plan, t, PREVIEW_FRAME_MS), planCaptions(spec, plan), spec.captions?.style, t)));
+    const captions = planCaptions(spec, plan);
     const projDir = args.project_path ?? path.dirname(path.dirname(dPath));
-    const png = rasterize({ svg, opts: { fitTo: { mode: 'zoom', value: scale }, background: '#ffffff', font: resvgFontOption(projDir) } }).png;
+    const opts = { fitTo: { mode: 'zoom' as const, value: scale }, font: resvgFontOption(projDir) };
+    const turn = turningFrame(spec, plan, t, PREVIEW_FRAME_MS);
+    let png: Buffer;
+    if (turn) {
+      // A turning face: each scene drawn once and warped onto it, as the GIF / MP4 export does.
+      const over = withCaptions(blankPage(spec), captions, spec.captions?.style, t);
+      const [top, ...faces] = rasterizeSync([over, ...turn.faces.map(f => f.spec)].map((s, i) =>
+        ({ svg: renderToSVGString(cullFrame(s)), opts: i ? { ...opts, background: '#ffffff' } : opts, want: 'pixels' as const })));
+      if (!top) throw new Error('the frame over a turning face did not render');
+      png = encodePNG(paintTurning(turn.stage, turn.faces.flatMap((f, i) => { const r = faces[i]; return r ? [{ img: r, corners: f.corners }] : []; }), top, spec.document.width));
+    } else {
+      const svg = renderToSVGString(cullFrame(withCaptions(composeSceneFrame(spec, plan, t, PREVIEW_FRAME_MS), captions, spec.captions?.style, t)));
+      png = rasterize({ svg, opts: { ...opts, background: '#ffffff' } }).png;
+    }
     if (args.output_path) {
       fs.mkdirSync(path.dirname(args.output_path), { recursive: true });
       fs.writeFileSync(args.output_path, png);

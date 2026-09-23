@@ -21,6 +21,8 @@ import { resvgFontOption } from './fonts';
 import { resolveImageAssets } from './asset-resolve';
 import { frameTimes } from '../../export/gif-frames';
 import { cullFrame } from '../../export/frame-cull';
+import type { TurningFrame } from '../../export/scene-compose';
+import { paintTurning } from '../../export/warp';
 import { GifStream, fileSink, type GifStreamStats } from '../../export/gif-stream';
 import { VideoPipe, type VideoType } from '../../export/video-encode';
 import { tryFfmpeg } from '../../export/animation-export';
@@ -49,7 +51,11 @@ export interface FrameSource {
   durationMs: number;
   /** The design at time t, as the single page to render — a frame `frameMs` long, for motion blur. */
   at(t: number, frameMs?: number): DesignSpec;
+  /** When a face turns at t: each scene to warp onto it and what lies over them (warp.ts) — else null, and `at` draws it. */
+  turning?(t: number, frameMs?: number): (TurningFrame & { over: DesignSpec }) | null;
 }
+
+type Frame = Pick<Raster, 'width' | 'height' | 'pixels'>;
 
 /** Longest clip. A bound on CPU time — frames stream, so memory is flat at any length. */
 export const MAX_CLIP_MS = 60_000;
@@ -127,7 +133,7 @@ export async function exportRasterMotion(
   // Frames in flight, oldest first. Each is caught once as it is made so a later frame failing
   // while an earlier one is awaited is not an unhandled rejection; awaiting it still throws.
   const window = pool.size * 2;
-  const inflight: Array<Promise<Raster>> = [];
+  const inflight: Array<Promise<Frame>> = [];
   const launch = (t: number): void => {
     const p = renderAt(t);
     p.catch(() => undefined);
@@ -137,10 +143,19 @@ export async function exportRasterMotion(
   // Rendered AT the output size, never rendered big and shrunk: half the size is a quarter of the pixels.
   const scale = exportScale(args.scale);
   const fit = scale < 1 ? { fitTo: { mode: 'zoom' as const, value: scale } } : {};
-  const renderAt = (t: number): Promise<Raster> => {
-    // A clip far off the canvas aborts resvg outright. See frame-cull.ts.
-    const svg = renderToSVGString(cullFrame(source.at(t, frameMs)));
-    return pool.render({ svg, opts: video ? { font, background: '#FFFFFF', ...fit } : { font, ...fit }, want: 'pixels' });
+  // A clip far off the canvas aborts resvg outright. See frame-cull.ts.
+  const draw = (s: DesignSpec, opaque = video): Promise<Raster> =>
+    pool.render({ svg: renderToSVGString(cullFrame(s)), opts: opaque ? { font, background: '#FFFFFF', ...fit } : { font, ...fit }, want: 'pixels' });
+  const renderAt = (t: number): Promise<Frame> => {
+    const turn = source.turning?.(t, frameMs);
+    return turn ? drawTurning(turn) : draw(source.at(t, frameMs));
+  };
+  // Each scene drawn once, flat, and warped onto its face — exact perspective in two renders.
+  const drawTurning = async (turn: TurningFrame & { over: DesignSpec }): Promise<Frame> => {
+    const [over, ...faces] = await Promise.all([draw(turn.over, false), ...turn.faces.map(f => draw(f.spec))]);
+    if (!over) throw new Error('the frame over a turning face did not render');
+    const img = paintTurning(turn.stage, turn.faces.flatMap((f, i) => { const r = faces[i]; return r ? [{ img: r, corners: f.corners }] : []; }), over, spec.document.width);
+    return { width: img.width, height: img.height, pixels: Buffer.from(img.pixels.buffer, img.pixels.byteOffset, img.pixels.byteLength) };
   };
 
   const started = performance.now();
@@ -153,7 +168,7 @@ export async function exportRasterMotion(
     // Held in an object: the pipe is opened inside writeOldest, where flow analysis cannot follow a plain `let`.
     const out: { pipe: VideoPipe | null } = { pipe: null };
     const writeOldest = async (): Promise<void> => {
-      const img = await (inflight.shift() as Promise<Raster>);
+      const img = await (inflight.shift() as Promise<Frame>);
       if (!out.pipe) {
         ({ width, height } = img);
         out.pipe = new VideoPipe({ type, width, height, fps, outputPath });
@@ -190,7 +205,7 @@ export async function exportRasterMotion(
     const sink = fileSink(outputPath);
     const out: { gif: GifStream | null } = { gif: null };
     const addOldest = async (): Promise<void> => {
-      const img = await (inflight.shift() as Promise<Raster>);
+      const img = await (inflight.shift() as Promise<Frame>);
       if (!out.gif) {
         ({ width, height } = img);
         out.gif = new GifStream(sink, { width, height, loopCount: 0 });
