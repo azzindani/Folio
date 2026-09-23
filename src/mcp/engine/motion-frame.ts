@@ -13,14 +13,15 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { rasterize } from '../../utils/resvg-isolate';
 import type { DesignSpec, Layer, Page } from '../../schema/types';
-import type { AnimationSpec } from '../../animation/types';
+import type { AnimationSpec, LayerLink } from '../../animation/types';
 import type { ToolResult, ProgressItem } from '../types';
 import { resolveDesignPath, readYAML, errResult, okResult, pOk, pInfo } from './utils';
 import { renderToSVGString } from './svg-export';
 import { resvgFontOption } from './fonts';
 import { resolveImageAssets } from './asset-resolve';
 import { specAt, animationDuration } from '../../export/gif-frames';
-import { cullFrame } from '../../export/frame-cull';
+import { cullFrame, parseTransform } from '../../export/frame-cull';
+import { drawnBox } from '../../export/frame-geometry';
 import { planScenes, sceneAt } from '../../export/scene-plan';
 import { FRAME_POSE, type FramePose } from '../../export/frame-pose';
 import { composeSceneFrame } from '../../export/scene-compose';
@@ -49,6 +50,8 @@ interface Pose {
   skew?: [number, number];
   /** The transform the renderer applies — offset, rotate, skew and scale in one. */
   transform?: string;
+  /** Where the middle of what it draws is now — for a layer turning about another's pivot, which x/y cannot show. */
+  center?: [number, number];
   /** How `draw` materialises: the dash pattern that hides the untraced part. */
   stroke_dasharray?: string | number;
   stroke_dashoffset?: number;
@@ -77,7 +80,9 @@ function animatedPoses(original: Layer[], resolved: Layer[]): { poses: Pose[]; a
       // was a path — the render moved, the readout said nothing moved, and the
       // readout is the half a blind caller can actually read.
       const hasPath = Boolean((ol as unknown as Record<string, unknown>)['motion_path']);
-      if (hasPath || (ol as Layer & { animation?: AnimationSpec }).animation?.keyframes?.length) {
+      // A link or parent wrapper has no track of its own until the timeline resolves one.
+      const linked = Boolean((ol as unknown as Record<string, unknown>)['link']);
+      if (hasPath || linked || (ol as Layer & { animation?: AnimationSpec }).animation?.keyframes?.length) {
         // skew, scale and draw do not move x/y — they land on `transform` and on
         // the dash pair. Reporting only the box said "nothing changed" about a
         // frame that visibly had, and the readout is the half a blind caller can
@@ -105,6 +110,7 @@ function animatedPoses(original: Layer[], resolved: Layer[]): { poses: Pose[]; a
           ...(pose && (pose.scale_x !== 1 || pose.scale_y !== 1) ? { scale: [r2(pose.scale_x), r2(pose.scale_y)] as [number, number] } : {}),
           ...(pose && (pose.skew_x !== 0 || pose.skew_y !== 0) ? { skew: [r2(pose.skew_x), r2(pose.skew_y)] as [number, number] } : {}),
           transform: str(rl['transform']),
+          ...orbitCenter(ol, rl),
           stroke_dasharray: typeof dash === 'number' ? dash : str(dash),
           stroke_dashoffset: num(rl['stroke_dashoffset']),
         });
@@ -116,6 +122,17 @@ function animatedPoses(original: Layer[], resolved: Layer[]): { poses: Pose[]; a
   };
   walk(original, resolved);
   return { poses: out, at_rest: atRest };
+}
+
+/** The drawn centre after the pose, when the layer turns about a canvas pivot (a parented child). */
+function orbitCenter(authored: Layer, posed: Layer & Record<string, unknown>): { center?: [number, number] } {
+  // The sampled layer has no track left; the authored one says what it turns about.
+  const o = authored as Layer & { animation?: AnimationSpec; link?: LayerLink };
+  if (!o.link?.pivot && !o.animation?.playback?.pivot) return {};
+  const box = drawnBox(authored), m = parseTransform(str(posed['transform']) ?? '');
+  if (!box || !m) return {};
+  const cx = box.x + box.width / 2, cy = box.y + box.height / 2;
+  return { center: [Math.round(m[0] * cx + m[2] * cy + m[4]), Math.round(m[1] * cx + m[3] * cy + m[5])] };
 }
 
 export function renderFrame(args: FrameArgs): ToolResult {

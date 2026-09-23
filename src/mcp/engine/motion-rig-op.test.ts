@@ -56,6 +56,9 @@ describe('animation op:parent', () => {
     expect(mapped('moon_link', 2000, [500, 160])).toEqual([200, 460]);
     const svg = buildAnimatedSVG(spec(), { renderSVG: s => renderToSVGString(s) }).svg;
     expect(svg).toContain('transform-box: view-box; transform-origin: 200px 160px;');
+    // op:frame reads the orbit back as numbers: the wrapper's pose, and where the moon's middle now is.
+    const poses = (await call({ op: 'frame', t: 2000 }))['poses'] as Array<Record<string, unknown>>;
+    expect(poses.find(p => p['id'] === 'moon_link'), JSON.stringify(poses)).toMatchObject({ rotation: 90, center: [200, 460] });
   });
 
   it('keeps the child\'s own motion playing inside, and clear unparents', async () => {
@@ -76,6 +79,7 @@ describe('animation op:parent', () => {
     fs.writeFileSync(dPath, yaml.dump(moved));
     const lint = await call({ op: 'lint' });
     expect(JSON.stringify(lint['notes'])).toContain('Run op:parent again');
+    expect((lint['notes'] as Array<{ note: string }>).map(x => x.note).join(' ')).toContain('"moon" turns about');
     await call({ op: 'parent', layer_id: 'moon', to: 'planet' });
     expect(JSON.stringify((await call({ op: 'lint' }))['notes'] ?? [])).not.toContain('op:parent again');
   });
@@ -87,6 +91,7 @@ describe('animation op:null', () => {
     expect(r.success, JSON.stringify(r)).toBe(true);
     expect(find('rig')).toMatchObject({ type: 'group', visible: false, x: 450, y: 250, width: 100, height: 100, layers: [] });
     expect(r['pivot']).toEqual({ x: 500, y: 300 });
+    expect(JSON.stringify(r.progress)).not.toContain('Target does not move');
     await call({ op: 'track', layer_id: 'rig', ...spin });
     // The tag's centre (500,460) sits 160 below the hub; a quarter turn swings it to (340,300).
     expect(mapped('tag_link', 2000, [500, 460])).toEqual([340, 300]);

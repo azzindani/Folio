@@ -354,15 +354,17 @@ function linkNotes(layers: Layer[]): LintNote[] {
   const notes: LintNote[] = [];
   for (const l of ids.values()) {
     if (!l.link) continue;
+    // Name the layer the author linked, not the wrapper the op made around it.
+    const who = (l.id.endsWith('_link') ? l.layers?.[0]?.id : undefined) ?? l.id;
     const target = ids.get(l.link.to);
-    if (!target) notes.push({ kind: 'link', layers: [l.id], note: `"${l.id}" follows "${l.link.to}", which is not on this page.` });
-    else if (!target.animation?.keyframes?.length && !target.link) notes.push({ kind: 'link', layers: [l.id, target.id], note: `"${l.id}" follows "${target.id}", which has no motion — so it never moves.` });
+    if (!target) notes.push({ kind: 'link', layers: [who], note: `"${who}" follows "${l.link.to}", which is not on this page.` });
+    else if (!target.animation?.keyframes?.length && !target.link) notes.push({ kind: 'link', layers: [who, target.id], note: `"${who}" follows "${target.id}", which has no motion — so it never moves.` });
     else if (l.link.pivot) {
       // A parent's own pivot is read live; an anchor was measured when parented.
       const pb = target.animation?.playback, was = l.link.pivot;
       const now = pb?.pivot ? null : pivotOf(target, pb?.anchor);
-      if (now && Math.hypot(now.x - was.x, now.y - was.y) > 1) notes.push({ kind: 'link', layers: [l.id, target.id],
-        note: `"${l.id}" turns about (${was.x}, ${was.y}), where "${target.id}"'s anchor was when parented — it is now at (${Math.round(now.x)}, ${Math.round(now.y)}). Run op:parent again to re-seat it.` });
+      if (now && Math.hypot(now.x - was.x, now.y - was.y) > 1) notes.push({ kind: 'link', layers: [who, target.id],
+        note: `"${who}" turns about (${was.x}, ${was.y}), where "${target.id}"'s anchor was when parented — it is now at (${Math.round(now.x)}, ${Math.round(now.y)}). Run op:parent again to re-seat it.` });
     }
   }
   return notes;
