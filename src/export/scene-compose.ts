@@ -68,6 +68,7 @@ function posed(id: string, z: number, layers: Layer[], pose: ScenePose, w: numbe
     ...(pose.transform ? { transform: pose.transform } : {}),
     ...(pose.opacity !== undefined ? { opacity: pose.opacity } : {}),
     ...(pose.clip_rect ? { clip_rect: pose.clip_rect } : {}),
+    ...(pose.blur ? { effects: { blur: pose.blur } } : {}),
   } as unknown as Layer;
 }
 

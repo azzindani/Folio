@@ -139,7 +139,8 @@ A deck's pages play one after another as ONE gif/mp4/webm with `scenes:true` —
 | Piece | Where | Rule |
 |---|---|---|
 | Timing | `src/export/scene-plan.ts` | A scene lasts its motion + `hold_ms` (default 1500), or exactly `page.auto_advance` (`op:scene length_ms`). Scenes run end to end; a page's `transition` plays as it ENTERS, overlapping the start of its own scene, while the outgoing scene rests on its final pose. |
-| Transitions | `src/export/scene-transition.ts` | Each `PageTransitionType` is a pose for each scene's full-canvas group — transform, opacity or `clip_rect` — so a frame renders once, as vectors. cube-left/right play as slides, flip-h/v as a squash through the centre, dissolve as a fade; the export reply names them. |
+| Transitions | `src/export/scene-transition.ts` | Each `PageTransitionType` is a pose for each scene's full-canvas group — transform, opacity, blur or `clip_rect` — so a frame renders once, as vectors. dissolve is the slideshow's blurred crossfade. |
+| Cube + flip | `src/export/scene-transition-3d.ts` · `src/export/warp.ts` | A turning face in real perspective. As one vector page: strips scaled by depth, clipped to the face's exact quadrilateral. Raster frames (gif/mp4/webm, op:frame) render each scene once and warp it onto the face's four corners through the plane's homography — bilinear, premultiplied, anti-aliased outline, captions over unwarped. The editor's Play all puts each scene on its face with the same homography as a CSS `matrix3d`. The stage behind is the outgoing ground ×0.3. |
 | Frames | `src/export/scene-compose.ts` | The piece at time t as a single page. Transitions that uncover canvas (zoom-out, flip) paint the outgoing page's own ground underneath. |
 | Clipping | `src/renderer/clip-rect.ts` | `clip_rect` on any layer and `clip: true` on a group (a track matte) — one `<clipPath>` for the editor, the SVG export and every raster. |
 

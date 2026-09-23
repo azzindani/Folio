@@ -3,12 +3,12 @@
  *
  * The HTML slideshow plays a PageTransition as CSS on whole slides. A GIF or
  * MP4 frame has no CSS, so each name becomes a pose for each scene's group — a
- * transform, an opacity, a clip — and the frame renders once, as vectors: a
- * zoom stays sharp and no pixels are blended by hand.
+ * transform, an opacity, a blur, a clip — and the frame renders once, as
+ * vectors: a zoom stays sharp and no pixels are blended by hand.
  *
- * Cube and flip turn in perspective, drawn as strips (scene-transition-3d.ts).
- * What is still approximated is named in APPROXIMATED, so a reply can say so
- * rather than swap it silently.
+ * Cube and flip turn in perspective (scene-transition-3d.ts). Anything a frame
+ * can only approximate is named in APPROXIMATED, so a reply can say so rather
+ * than swap it silently — nothing is, now.
  */
 
 import type { PageTransitionType } from '../schema/types';
@@ -16,8 +16,8 @@ import type { ClipRect } from '../renderer/clip-rect';
 import { resolveEasing } from '../animation/easing';
 import { faceStrips, cubeFace, cardFace, type Face } from './scene-transition-3d';
 
-/** How a scene is drawn mid-change: one pose, or — for a turning face — its strips (scene-transition-3d.ts). */
-export interface ScenePose { transform?: string; opacity?: number; clip_rect?: ClipRect; face?: Face }
+/** How a scene is drawn mid-change: one pose (blur in canvas px), or — for a turning face — its strips (scene-transition-3d.ts). */
+export interface ScenePose { transform?: string; opacity?: number; clip_rect?: ClipRect; blur?: number; face?: Face }
 
 export interface TransitionPoses {
   from: ScenePose;
@@ -30,9 +30,10 @@ export interface TransitionPoses {
   stage?: boolean;
 }
 
-export const APPROXIMATED: Partial<Record<PageTransitionType, string>> = {
-  dissolve: 'plays as a fade',
-};
+export const APPROXIMATED: Partial<Record<PageTransitionType, string>> = {};
+
+/** The slideshow's dissolve blurs each scene this far (canvas px) as it fades (animation/transition-css.ts). */
+const DISSOLVE_BLUR = 8;
 
 const f = (n: number): string => String(Number(n.toFixed(2)));
 const move = (dx: number, dy: number): string => `translate(${f(dx)} ${f(dy)})`;
@@ -49,8 +50,10 @@ export function transitionPoses(type: PageTransitionType, progress: number, w: n
 
   switch (type) {
     case 'fade':
-    case 'dissolve':
       return both({}, { opacity: p });
+    case 'dissolve':
+      // As the HTML slideshow plays it: the old scene blurs out as it fades, the new one sharpens in.
+      return both({ opacity: 1 - p, blur: DISSOLVE_BLUR * p }, { opacity: p, blur: DISSOLVE_BLUR * (1 - p) }, true);
     case 'slide-left':
       return both({ transform: move(-p * w, 0) }, { transform: move((1 - p) * w, 0) });
     case 'slide-right':
