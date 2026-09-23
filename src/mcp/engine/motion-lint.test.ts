@@ -127,6 +127,23 @@ describe('lintComposition', () => {
     expect(kinds(lintComposition([stack], canvas, [{ id: 'a', at: 0 }], 2000))).not.toContain('overlap');
   });
 
+  // benchmark r1: two pairs set tight on a 9:16 reel read as overlapping — the
+  // big line's box reserved a descender band its caps and digits never use.
+  it('does not call caps or digits set tight on the line below an overlap', () => {
+    const st = (font_size: number, line_height: number, extra: object = {}): object => ({ style: { font_family: 'Archivo', font_weight: 900, font_size, line_height, ...extra } });
+    const num = text('num', 70, 300, '24', { width: 620, height: 400, ...st(400, 1, { letter_spacing: -12 }) });
+    const h2 = text('h2', 80, 720, 'HOURS\nICE COLD.', { width: 600, height: 210, ...st(104, 0.95) });
+    const mark = text('mark', 40, 930, 'DRIFT', { width: 1000, height: 300, ...st(290, 1, { align: 'center' }) });
+    const url = text('url', 40, 1250, 'drift.co', { width: 1000, height: 80, style: { font_family: 'Inter', font_weight: 700, font_size: 64, align: 'center' } });
+    const reel = { width: 1080, height: 1920 };
+    expect(kinds(lintComposition([num, h2], reel, [{ id: 'cold', at: 0 }], 3000))).not.toContain('overlap');
+    expect(kinds(lintComposition([mark, url], reel, [{ id: 'brand', at: 0 }], 3000))).not.toContain('overlap');
+    // a line that really descends into the next is still one
+    const low = text('low', 80, 1000, 'gyp', { width: 600, height: 120, ...st(120, 1) });
+    const under = text('under', 80, 1100, 'NEXT', { width: 600, height: 120, ...st(120, 1) });
+    expect(kinds(lintComposition([low, under], reel, [{ id: 's', at: 0 }], 3000))).toContain('overlap');
+  });
+
   it('does not see text a scrim or a clip hides, nor scenery the camera has yet to reach', () => {
     const a = text('a', 100, 100, 'under the scrim'), b = text('b', 110, 110, 'also under it');
     const scrim = { id: 'scrim', type: 'rect', z: 9, x: 0, y: 0, width: 1920, height: 1080, fill: '#141414' } as unknown as Layer;

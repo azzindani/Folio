@@ -54,6 +54,9 @@ function lineInk(line: string, estimate: number, style: Record<string, unknown>,
   return run.exact ? Math.max(0, run.total - spacing) : estimate;
 }
 
+/** Glyphs that fall below the baseline in most faces. */
+const DESCENDS = /[gjpqyQJ,;()[\]{}|/@$§µ]/;
+
 /** The box of what a text layer draws: widest wrapped line × its lines. */
 function textBox(o: Record<string, unknown>): Box | null {
   const content = o['content'] as { type?: unknown; value?: unknown } | undefined;
@@ -63,9 +66,15 @@ function textBox(o: Record<string, unknown>): Box | null {
   // The wrap is the renderer's own; only each line's width is measured.
   const widest = Math.max(0, ...layout.lines.map((l, i) => lineInk(l, layout.lineWidths[i] ?? 0, style, layout.fontSize)));
   const left = layout.anchor === 'middle' ? layout.textX - widest / 2 : layout.anchor === 'end' ? layout.textX - widest : layout.textX;
-  // First baseline sits at textY; glyphs rise ~0.8em above it and fall ~0.2em below the last.
+  // First baseline sits at textY; glyphs rise ~0.8em above it. Below the last
+  // baseline they fall ~0.2em only when that line HAS a descender — caps and
+  // digits stop at the baseline. Counting the band anyway made a 400px "24"
+  // reach 80px into the "HOURS" set tight under it, and the motion lint called
+  // two lines that never touch an overlap (one-shot benchmark r1).
   const top = layout.textY - layout.fontSize * 0.8;
-  return { x: left, y: top, width: widest, height: (layout.lines.length - 1) * layout.lineH + layout.fontSize };
+  const last = layout.lines[layout.lines.length - 1] ?? '';
+  const below = DESCENDS.test(last) ? 0.2 : 0.02;
+  return { x: left, y: top, width: widest, height: (layout.lines.length - 1) * layout.lineH + layout.fontSize * (0.8 + below) };
 }
 
 /** The box a layer draws, in canvas coordinates, or null when it cannot be known. */

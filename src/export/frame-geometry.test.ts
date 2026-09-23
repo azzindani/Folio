@@ -28,6 +28,17 @@ describe('drawnBox', () => {
     const centred = drawnBox(L({ type: 'text', x: 80, y: 100, width: 920, content: { type: 'plain', value: 'Hi' }, style: { ...style, align: 'center' } })) as { x: number; width: number };
     expect(centred.x + centred.width / 2).toBeCloseTo(540, 0);
   });
+
+  it('reserves the descender band only for a last line that descends', () => {
+    // benchmark r1: a 400px "24" reached 80px into the "HOURS" set under it.
+    const style = { font_size: 400, font_family: 'Archivo', line_height: 1 };
+    const box = (value: string): { y: number; height: number } =>
+      drawnBox(L({ type: 'text', x: 0, y: 0, width: 1000, content: { type: 'plain', value }, style })) as { y: number; height: number };
+    const digits = box('24'), lower = box('gy');
+    expect(digits.y).toBe(lower.y);
+    expect(lower.height - digits.height).toBeCloseTo(400 * 0.18, 5);
+    expect(box('quip\nHOME').height).toBeLessThan(box('HOME\nquip').height);   // only the LAST line counts
+  });
 });
 
 describe('anchorPoint', () => {
