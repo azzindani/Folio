@@ -43,6 +43,7 @@ export { cameraMotion } from './engine/motion-camera-op';
 export { morphMotion } from './engine/motion-morph-op';
 export { audioMotion } from './engine/motion-audio-op';
 export { videoMotion } from './engine/motion-video-op';
+export { executeSteps, bindStepHandlers } from './engine/task-execute';
 export { beatsMotion } from './engine/motion-beats-op';
 export { captionsMotion } from './engine/motion-captions-op';
 export { markersMotion, spanMotion } from './engine/motion-time-ops';

@@ -87,3 +87,7 @@ export const TIER3_HANDLERS: Record<string, Handler> = remap(TIER3_RAW);
 export const ALL_HANDLERS: Record<string, Handler> = {
   ...TIER1_HANDLERS, ...TIER2_HANDLERS, ...TIER3_HANDLERS,
 };
+
+// tasks {op:"execute"} runs its steps through this same map — every door the
+// tools have, in-process (engine/task-execute.ts).
+engine.bindStepHandlers(ALL_HANDLERS);

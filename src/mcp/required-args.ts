@@ -75,6 +75,7 @@ export const PER_OP: Record<string, Record<string, string[]>> = {
     list: ['project_path'],
     create: ['project_path', 'task_name'],
     resume: ['task_path'],
+    execute: ['steps'],
   },
   // The largest multiplexer, and the one this table first missed entirely. Its
   // ASSET ops each hand-check their own arguments and name the missing one, so
