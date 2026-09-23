@@ -14,6 +14,7 @@
  */
 
 import { encodePNG, isPNG, PngError, type RasterImage } from '../../utils/png-codec';
+import { isOpaque } from './asset-jpeg';
 import { decodeRaster, DecodeError } from '../../utils/raster-decode';
 import { removeBackgroundPixels, type BgRemoveStats } from '../../utils/bg-remove-core';
 import { adjust, hasAdjust, hexToRgb, type AdjustSpec } from '../../utils/image-adjust';
@@ -49,6 +50,8 @@ export interface ProcessResult {
   notes: string[];
   /** Set when a background was removed, so callers can surface the coverage. */
   bgStats?: BgRemoveStats;
+  /** Every pixel fully opaque — the result could be stored without alpha. */
+  opaque?: boolean;
 }
 
 export class ProcessError extends Error {
@@ -227,5 +230,5 @@ export function processAsset(buf: Buffer, ext: string, spec: ProcessSpec): Proce
 
   const r = processImage(img, spec);
   const notes = isPNG(buf) ? r.notes : [...r.notes, `decoded from ${ext || 'source'} and stored as PNG`];
-  return { buffer: encodePNG(r.img), notes, bgStats: r.bgStats };
+  return { buffer: encodePNG(r.img), notes, bgStats: r.bgStats, opaque: isOpaque(r.img.pixels) };
 }

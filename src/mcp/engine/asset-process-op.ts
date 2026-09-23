@@ -13,8 +13,9 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import type { ToolResult, ProgressItem, NextAction } from '../types';
-import { okResult, errResult, pOk, pWarn, buildContext } from './utils';
-import { ingestAsset, requireProject, isErr, AssetError, type AssetEntry } from './assets';
+import { okResult, errResult, pOk, pWarn, pInfo, buildContext } from './utils';
+import { ingestAsset, requireProject, isErr, AssetError, maxAssetBytes, type AssetEntry } from './assets';
+import { pngToJpeg } from './asset-jpeg';
 import { ingestLibraryAsset, isLibraryPath, libraryAbsPath } from './asset-library';
 import { processAsset, hasWork, ProcessError, PROCESS_KEYS, type ProcessSpec } from './asset-process';
 import { sniffRaster } from '../../utils/raster-decode';
@@ -79,7 +80,7 @@ export function assetProcess(args: Args): ToolResult {
   }
 
   const progress: ProgressItem[] = [];
-  let processed: { buffer: Buffer; notes: string[] };
+  let processed: { buffer: Buffer; notes: string[]; opaque?: boolean };
   try {
     processed = processAsset(src, fmt, args.process);
   } catch (e) {
@@ -88,8 +89,21 @@ export function assetProcess(args: Args): ToolResult {
   }
   for (const n of processed.notes) progress.push(pOk('Applied', n));
 
+  // Over the cap as PNG and fully opaque → one JPEG encode (see asset-jpeg.ts).
+  let ext = 'png';
+  const cap = maxAssetBytes();
+  if (processed.buffer.length > cap && processed.opaque) {
+    const jpg = pngToJpeg(processed.buffer);
+    if (jpg && jpg.length <= cap) {
+      const mb = (n: number): string => (n / 1024 / 1024).toFixed(1);
+      progress.push(pInfo('Stored as JPEG', `as PNG it was ${mb(processed.buffer.length)} MB, over the ${mb(cap)} MB cap (grain and photographic detail defeat PNG compression); one high-quality JPEG encode is ${mb(jpg.length)} MB`));
+      processed = { ...processed, buffer: jpg };
+      ext = 'jpg';
+    }
+  }
+
   const stem = path.basename(args.asset_path).replace(/\.[a-z0-9]+$/i, '');
-  const wantName = (args.name ?? `${stem}-edit.png`).replace(/\.[a-z0-9]+$/i, '') + '.png';
+  const wantName = (args.name ?? `${stem}-edit.${ext}`).replace(/\.[a-z0-9]+$/i, '') + `.${ext}`;
   const toLibrary = args.scope ? String(args.scope).toLowerCase() === 'library' : isLibraryPath(args.asset_path);
   const recipe = JSON.stringify(args.process);
 
