@@ -86,12 +86,12 @@ export function refHeads(v: unknown, out: string[] = []): string[] {
 }
 
 /** The chain, checked whole before any step runs: tools exist, names are unique, refs point back. */
-export function parseSteps(raw: unknown): { steps: Step[] } | { error: string; hint: string } {
+export function parseSteps(raw: unknown, known: string[] = []): { steps: Step[] } | { error: string; hint: string } {
   const example = 'steps:[{tool:"create_design", args:{…}, as:"made"}, {tool:"add_layers", args:{design_path:"${made.design_path}", layers_shorthand:[…]}}]';
   if (!Array.isArray(raw) || !raw.length) return { error: 'steps is required — a list of {tool, args, as?}', hint: example };
   if (raw.length > MAX_STEPS) return { error: `${raw.length} steps — at most ${MAX_STEPS} in one execute`, hint: 'Split the chain into two execute calls.' };
   const steps: Step[] = [];
-  const named = new Set<string>();
+  const named = new Set<string>(known);
   for (const [i, s] of raw.entries()) {
     const at = `step ${i + 1}`;
     const o = (s !== null && typeof s === 'object' ? s : {}) as Rec;
@@ -112,10 +112,12 @@ export function parseSteps(raw: unknown): { steps: Step[] } | { error: string; h
   return { steps };
 }
 
-/** Run the chain; stop at the first failure. dry_run checks it and runs nothing. */
-export async function executeSteps(a: { steps?: unknown; dry_run?: boolean }): Promise<ToolResult> {
-  const op = 'execute';
-  const parsed = parseSteps(a.steps);
+/**
+ * Run the chain; stop at the first failure. dry_run checks it and runs nothing.
+ * `seed` pre-names values the steps may read — a recipe's ${params.…}.
+ */
+export async function executeSteps(a: { steps?: unknown; dry_run?: boolean }, seed: Record<string, Rec> = {}, op = 'execute'): Promise<ToolResult> {
+  const parsed = parseSteps(a.steps, Object.keys(seed));
   if ('error' in parsed) return errResult(op, parsed.error, parsed.hint);
   const { steps } = parsed;
   if (a.dry_run) {
@@ -126,7 +128,7 @@ export async function executeSteps(a: { steps?: unknown; dry_run?: boolean }): P
       context: buildContext(op, `dry run of ${steps.length} step(s)`),
     });
   }
-  const results: Record<string, Rec> = {};
+  const results: Record<string, Rec> = { ...seed };
   const ran: Rec[] = [];
   let last: ToolResult | undefined;
   for (const [i, s] of steps.entries()) {

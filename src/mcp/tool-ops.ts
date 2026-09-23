@@ -17,7 +17,7 @@ export const TOOL_OPS: Record<string, readonly string[]> = {
     'asset_search', 'asset_fetch', 'asset_promote', 'icon_search', 'get_spec', 'resize', 'tokens',
     'lineage', 'restore', 'style_history'],
   themes: ['list', 'apply', 'packs'],
-  tasks: ['list', 'create', 'resume', 'execute'],
+  tasks: ['list', 'create', 'resume', 'execute', 'save_recipe', 'run_recipe', 'recipes'],
   templates: ['list', 'slots', 'inject', 'export', 'save_component', 'components', 'batch'],
   report: ['generate', 'customize', 'bind_data', 'validate', 'export', 'formula', 'debug'],
   presentation: ['create', 'customize', 'export', 'remote', 'collab'],
