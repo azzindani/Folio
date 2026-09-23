@@ -145,4 +145,12 @@ describe('lintComposition contrast — WCAG, judged on what a layer sits on (ben
     expect(notes).not.toMatch(/"jar_lbl"/);
     expect(notes).toMatch(/decor "bag"/);
   });
+
+  it('counts a contrasting outline as visible — the fix the note itself asks for', () => {
+    const ground = rect('bg', 0, 0, 0, W, H, '#FFF1DC');
+    const bag = { ...rect('bag', 1, 110, 860, 220, 280, '#FFFFFF'), stroke: { color: '#3B2314', width: 6 } } as unknown as Layer;
+    expect(lintComposition([ground, bag], W, H).join(' ')).not.toMatch(/decor "bag"/);
+    const faint = { ...bag, stroke: { color: '#FFF4E4', width: 6 } } as unknown as Layer;
+    expect(lintComposition([ground, faint], W, H).join(' ')).toMatch(/decor "bag"/);
+  });
 });
