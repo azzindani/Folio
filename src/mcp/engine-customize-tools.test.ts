@@ -216,6 +216,43 @@ describe('manage_design {op:"resize"} — the twin for create_design\'s shape', 
   });
 });
 
+describe('resize — a hand-built ad carried to another format', () => {
+  // A 1080 square: ground, a full-width band, a ridge path and a headline, in one group.
+  const square = (): string => {
+    if (!fs.existsSync(projectDir)) createProject({ name: 'cz', canvas: '1080x1080' });
+    const d = createDesign({ project_path: projectDir, name: `ad-${Math.random().toString(36).slice(2, 7)}`, type: 'poster', width: 1080, height: 1080 }) as unknown as Rec;
+    const p = d['path'] as string;
+    addLayers({ design_path: p, layers: [{ id: 'ad', type: 'group', z: 1, locked: true, x: 0, y: 0, width: 1080, height: 1080, layers: [
+      { id: 'bg', type: 'rect', z: 0, x: 0, y: 0, width: 1080, height: 1080, fill: '#1D2621' },
+      { id: 'band', type: 'rect', z: 1, x: 0, y: 900, width: 1080, height: 180, fill: '#2E3D33' },
+      { id: 'ridge', type: 'path', z: 2, d: 'M 0 1080 L 0 960 L 540 870 L 1080 960 L 1080 1080 Z', fill: '#26332B' },
+      { id: 'h', type: 'text', z: 3, x: 80, y: 150, width: 920, height: 150, content: { type: 'plain', value: 'BLACK FRIDAY' }, style: { font_size: 120, color: '#E9E1CF' } },
+    ] }] as never });
+    return p;
+  };
+  const byId = (p: string, id: string): Rec | undefined => ((read(p)['layers'] as Rec[])[0]?.['layers'] as Rec[]).find(l => l['id'] === id);
+
+  it('moves paths with everything else when the canvas grows taller', () => {
+    const p = square();
+    resizeDesign({ design_path: p, width: 1080, height: 1920 });
+    // Centred: everything 420 px lower — the ridge's points too, not only the y fields.
+    expect(byId(p, 'h')?.['y']).toBe(570);
+    expect(byId(p, 'ridge')?.['d']).toMatch(/^M0 1500L0 1380L540 1290/);
+  });
+
+  it('spans the new canvas with the ground and the full-width band instead of letterboxing them', () => {
+    const tall = square();
+    resizeDesign({ design_path: tall, width: 1080, height: 1920 });
+    expect(byId(tall, 'bg')).toMatchObject({ x: 0, y: 0, width: 1080, height: 1920 });
+    const wide = square();
+    resizeDesign({ design_path: wide, width: 1920, height: 1080 });
+    expect(byId(wide, 'bg')).toMatchObject({ x: 0, y: 0, width: 1920, height: 1080 });
+    expect(byId(wide, 'band')).toMatchObject({ x: 0, width: 1920, y: 900, height: 180 });
+    // The headline is scaled and centred, never stretched.
+    expect(byId(wide, 'h')).toMatchObject({ x: 500, width: 920 });
+  });
+});
+
 describe('resize then patch_spec — the stored spec must follow the canvas', () => {
   it('does not resurrect the pre-resize box when a preset is patched', () => {
     // A preset that does NOT cover the canvas is SCALED, not rebuilt, and its

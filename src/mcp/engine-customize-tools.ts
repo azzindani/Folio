@@ -105,11 +105,13 @@ export function reflowToCanvas(design: DesignSpec, W: number, H: number): Reflow
           // better carried across at the old layout than dropped.
         }
       }
-      scaleSubtree(l, k, 0, 0, dx);
-      // scaleSubtree only shifts x (it exists to centre a compressed preset
-      // horizontally); a canvas whose ASPECT changed also needs the vertical
-      // offset, or the content sits against the top edge.
-      if (dy) shiftY(l, dy);
+      // Grounds and bands are noted BEFORE scaling: they span the new canvas after it.
+      const spans = edgeSpans(l, oldW, oldH);
+      // The vertical offset goes through scaleSubtree too, so paths and polygon
+      // points move with everything else — shifting y fields alone left a
+      // story's mountains and contour lines where the square had them (benchmark r4).
+      scaleSubtree(l, k, 0, 0, dx, dy);
+      for (const [layer, span] of spans) fillAxes(layer, span, W, H);
       // A SCALED preset keeps its spec, and the spec still described the box it
       // was authored at. patch_spec rebuilds from the spec, so editing a preset
       // after a resize resurrected yesterday's coordinates — a 1520-wide stat
@@ -144,13 +146,31 @@ function syncSpecPos(layer: Layer): void {
 }
 
 /** Move a subtree down by dy (absolute child coordinates, as everywhere here). */
-function shiftY(layer: Layer, dy: number): void {
-  const o = layer as unknown as Record<string, unknown>;
-  for (const key of ['y', 'y1', 'y2'] as const) {
-    if (typeof o[key] === 'number') o[key] = Math.round((o[key] as number) + dy);
-  }
+/** What paints a plain area — stretching one along an axis distorts nothing. */
+const AREA_FILLS = new Set(['rect', 'background', 'image', 'gradient']);
+
+/**
+ * Grounds and bands: the area fills (and boxed groups) that spanned the whole
+ * width or height of the canvas. Uniform scaling letterboxes them — a square
+ * ad resized to a story sat in a white band top and bottom — so after scaling
+ * they span the new canvas along the axes they spanned the old one.
+ */
+function edgeSpans(l: Layer, w: number, h: number, out = new Map<Layer, { w: boolean; h: boolean }>()): Map<Layer, { w: boolean; h: boolean }> {
+  const o = l as unknown as Record<string, unknown>;
   const kids = o['layers'];
-  if (Array.isArray(kids)) for (const c of kids as Layer[]) shiftY(c, dy);
+  if (Array.isArray(kids)) for (const c of kids as Layer[]) edgeSpans(c, w, h, out);
+  const boxed = typeof o['width'] === 'number' && typeof o['height'] === 'number';
+  if (!boxed || (!Array.isArray(kids) && !AREA_FILLS.has(l.type))) return out;
+  const x = Number(o['x']) || 0, y = Number(o['y']) || 0, lw = Number(o['width']), lh = Number(o['height']);
+  const sw = x <= w * 0.01 && x + lw >= w * 0.99, sh = y <= h * 0.01 && y + lh >= h * 0.99;
+  if (sw || sh) out.set(l, { w: sw, h: sh });
+  return out;
+}
+
+function fillAxes(l: Layer, span: { w: boolean; h: boolean }, W: number, H: number): void {
+  const o = l as unknown as Record<string, unknown>;
+  if (span.w) { o['x'] = 0; o['width'] = W; }
+  if (span.h) { o['y'] = 0; o['height'] = H; }
 }
 
 // ── Shared customize body ───────────────────────────────────
