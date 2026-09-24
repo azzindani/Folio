@@ -45,7 +45,7 @@ const union = (a: Box, b: Box): Box => {
 const shareOf = (a: Box, b: Box): number => meet(a, b) / Math.max(1, Math.min(area(a), area(b)));
 
 /** The tree in paint order: siblings by ascending z, ties as written. */
-function paintOrder(layers: Layer[]): Layer[] {
+export function paintOrder(layers: Layer[]): Layer[] {
   return [...(layers as Node[])]
     .sort((a, b) => (a.z ?? 0) - (b.z ?? 0))
     .map(l => (Array.isArray(l.layers) ? ({ ...l, layers: paintOrder(l.layers) } as Layer) : l));
