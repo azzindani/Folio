@@ -25,7 +25,7 @@ import type { Finding, FixCall } from './diagnose';
 import { canvasBoxes, type CanvasBox } from '../../export/frame-cull';
 import { layersAt, animationDuration } from '../../export/gif-frames';
 import { shotRests } from './motion-lint';
-import { readMarkers } from './motion-time';
+import { shotMarks } from './motion-time';
 
 type Box = CanvasBox['box'];
 
@@ -123,7 +123,7 @@ export function moments(spec: DesignSpec, layers: Layer[], page?: Page): Array<{
   if (moving <= 0) return [{ label: '', t: null, frame: layers }];
   const held = page?.auto_advance;
   const end = typeof held === 'number' && held > 0 ? held : moving;
-  const marks = Object.entries(readMarkers(spec, page)).map(([id, at]) => ({ id, at: Number(at) })).filter(m => Number.isFinite(m.at));
+  const marks = shotMarks(spec, layers, page);
   return shotRests(layers, marks, end).slice(0, 12).map(r => ({ label: ` in "${r.shot}" at ${r.t} ms`, t: r.t, frame: layersAt(layers, r.t) }));
 }
 

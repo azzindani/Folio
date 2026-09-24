@@ -16,7 +16,7 @@ import type { ToolResult, ProgressItem } from '../types';
 import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, pOk, pInfo, pWarn } from './utils';
 import { resolveScope, commitScope, setAnimation } from './motion';
 import { syncAnimationsToSpec } from './animation-sync';
-import { readMarkers, writeMarkers, resolveTime } from './motion-time';
+import { readMarkers, writeMarkers, resolveTime, shotMarks } from './motion-time';
 import { compileStates, type CompiledStates } from './motion-states';
 import { parseStoryboard } from './motion-storyboard-parse';
 import { lintComposition, type LintNote } from './motion-lint';
@@ -111,7 +111,7 @@ export function lintMotion(args: { design_path: string; page_id?: string; projec
   if ('error' in scoped) return errResult(op, scoped.error, 'Check page_id.');
   const end = animationDuration(scoped.scope);
   if (end <= 0) return errResult(op, 'Nothing on this page moves, so there is no timeline to check.', 'Build one with animation(op:storyboard) or op:sequence first.');
-  const marks = Object.entries(readMarkers(spec, scoped.page)).map(([id, at]) => ({ id, at })).sort((a, b) => a.at - b.at);
+  const marks = shotMarks(spec, scoped.scope, scoped.page).sort((a, b) => a.at - b.at);
   const notes = lintComposition(scoped.scope, { width: spec.document?.width ?? 1080, height: spec.document?.height ?? 1080 }, marks, end);
   return okResult(op, {
     design_path: dPath, scene_ms: end, marks, notes,
