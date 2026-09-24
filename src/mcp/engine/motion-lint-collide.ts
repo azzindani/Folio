@@ -91,20 +91,44 @@ export function frameUnits(frame: Layer[], canvas: { width: number; height: numb
 }
 
 /**
+ * Where a pair is measured. `rest` is the world, the camera's own pose taken out
+ * — right only for two things the camera carries. Found in the benchmark (r8):
+ * a rider held still over a camera ride was measured on the screen against a
+ * hedge measured in the world, 4400 px off the frame, and "came to rest over"
+ * it; a cloud set at a depth (its own, smaller move) the same. Any other pair is
+ * measured on the screen, where only what is inside the frame can meet.
+ */
+export interface Spaces { screen: Map<string, Unit>; carried: (id: string) => boolean; frame: Box }
+
+const clip = (b: Box | undefined, f: Box): Box | null => {
+  if (!b) return null;
+  const x = Math.max(b.x, f.x), y = Math.max(b.y, f.y);
+  const w = Math.min(b.x + b.width, f.x + f.width) - x, h = Math.min(b.y + b.height, f.y + f.height) - y;
+  return w > 0 && h > 0 ? { x, y, width: w, height: h } : null;
+};
+
+/**
  * Pairs of objects partly over each other at rest that were apart as authored,
  * one of which this shot placed (`placed` — entered or moved, itself or a parent).
  * Text on text is the overlap check's (the caller drops pairs it reports as buried).
  */
-export function collisions(rest: Unit[], authored: Unit[], placed: (id: string) => boolean): Collision[] {
+export function collisions(rest: Unit[], authored: Unit[], placed: (id: string) => boolean, spaces?: Spaces): Collision[] {
   const was = new Map(authored.map(u => [u.id, u.box]));
   const out: Collision[] = [];
   const seen = rest.filter(u => u.opacity > 0.3);
+  const boxes = (a: Unit, b: Unit): [Box, Box] | null => {
+    if (!spaces || (spaces.carried(a.id) && spaces.carried(b.id))) return [a.box, b.box];
+    const sa = clip(spaces.screen.get(a.id)?.box, spaces.frame), sb = clip(spaces.screen.get(b.id)?.box, spaces.frame);
+    return sa && sb ? [sa, sb] : null;
+  };
   for (let i = 0; i < seen.length; i++) {
     for (let j = i + 1; j < seen.length; j++) {
       const a = seen[i], b = seen[j];
       if (!a || !b || (a.text && b.text)) continue;
       if (!a.leaves.some(placed) && !b.leaves.some(placed) && !placed(a.id) && !placed(b.id)) continue;
-      const share = shareOf(a.box, b.box);
+      const pair = boxes(a, b);
+      if (!pair) continue;
+      const share = shareOf(pair[0], pair[1]);
       if (share < MIN_SHARE || share > TUCKED) continue;
       const wa = was.get(a.id), wb = was.get(b.id);
       if (!wa || !wb || shareOf(wa, wb) > APART) continue;
