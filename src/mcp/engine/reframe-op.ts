@@ -5,11 +5,13 @@
  *
  * resize scales the whole piece uniformly into the new canvas, so a 16:9 piece
  * in a 9:16 frame is a thin band across the middle. reframe re-seats the
- * piece's own blocks (reframe-layout.ts) and carries their motion with them
- * (reframe-map.ts). A page with a camera world is carried whole: its camera
- * already decides what the frame shows. The new design then goes through the
- * gate (heal, measure, top 3 with calls), so the reply says what the new frame
- * got wrong.
+ * piece's own blocks (reframe-layout.ts), re-wraps a line too wide for the
+ * new frame (reframe-wrap.ts) and carries their motion with them
+ * (reframe-map.ts). A page whose camera travels a world is re-shot instead
+ * (reframe-camera.ts): the world stays as laid out, each shot frames what it
+ * showed, and what stays still over the camera keeps to its edges. The new
+ * design then goes through the gate (heal, measure, top 3 with calls), so the
+ * reply says what the new frame got wrong.
  */
 
 import * as fs from 'fs';
@@ -17,12 +19,15 @@ import * as path from 'path';
 import type { DesignSpec, Layer, Page } from '../../schema/types';
 import type { ToolResult, ProgressItem } from '../types';
 import { resolveDesignPath, readYAML, writeYAML, generateId, errResult, okResult, pOk, pInfo, buildContext } from './utils';
-import { type Span } from './reframe-layout';
+import { type Span, boxOf as boxOfGroup } from './reframe-layout';
 import { planWithRewrap } from './reframe-wrap';
 import { mapSubtree, type Affine } from './reframe-map';
 import { fillAxes, syncSpecPos } from '../engine-customize-tools';
 import { gateDesign } from './diagnose-gate';
 import { fitTextBoxes } from './reframe-text';
+import { reshootCamera } from './reframe-camera';
+import { drawnBox } from '../../export/frame-geometry';
+import { syncAnimationsToSpec } from './animation-sync';
 
 type ReframeArgs = { design_path: string; project_path?: string; aspect?: string; width?: number; height?: number; new_name?: string };
 type World = { x: number; y: number; width: number; height: number };
@@ -51,14 +56,52 @@ function pinEdges(l: Layer, span: Span, W: number, H: number): void {
   if (!span.w && span.left) { o.width += o.x; o.x = 0; }
 }
 
+/** Grounds, and page groups that held the old canvas, hold the new one; the camera is left to its keys. */
+function spanGrounds(layers: Layer[], oldW: number, oldH: number, W: number, H: number): void {
+  for (const l of layers as Array<Layer & { layers?: Layer[]; x?: number; y?: number; width?: number; height?: number }>) {
+    if (l.id === '__camera' || l.id === '__camera_pin') continue;
+    const whole = (l.x ?? 0) <= 1 && (l.y ?? 0) <= 1 && (l.width ?? 0) >= oldW - 1 && (l.height ?? 0) >= oldH - 1 && (l.width ?? 0) <= oldW + 1 && (l.height ?? 0) <= oldH + 1;
+    if (whole) Object.assign(l, { x: 0, y: 0, width: W, height: H });
+    if (whole && Array.isArray(l.layers)) spanGrounds(l.layers, oldW, oldH, W, H);
+  }
+}
+
+/**
+ * What stays still over a camera — a caption, a logo, a corner mark — keeps its
+ * distance to the edge it sat nearest (left or right, top or bottom), or stays
+ * centred; the count moved. The camera and the grounds are not touched.
+ */
+function pinOutside(layers: Layer[], oldW: number, oldH: number, W: number, H: number): number {
+  let n = 0;
+  for (const l of layers as Array<Layer & { layers?: Layer[] }>) {
+    if (l.id === '__camera') continue;
+    const b = drawnBox(l) ?? boxOfGroup(l);
+    if (!b) continue;
+    if (b.width >= oldW - 1 && b.height >= oldH - 1) { if (Array.isArray(l.layers)) n += pinOutside(l.layers, oldW, oldH, W, H); continue; }
+    const cx = b.x + b.width / 2, cy = b.y + b.height / 2;
+    const dx = Math.abs(cx - oldW / 2) < 0.05 * oldW ? (W - oldW) / 2 : cx < oldW / 2 ? 0 : W - oldW;
+    const dy = Math.abs(cy - oldH / 2) < 0.05 * oldH ? (H - oldH) / 2 : cy < oldH / 2 ? 0 : H - oldH;
+    if (dx || dy) { mapSubtree(l, { k: 1, ox: 0, oy: 0, dx, dy }); n++; }
+  }
+  return n;
+}
+
 /** One surface's layers re-seated for W×H; what it did, for the reply. */
 function reframeSurface(layers: Layer[], holder: { world?: World }, oldW: number, oldH: number, W: number, H: number): string {
   if (holder.world) {
+    // A camera already decides what the frame shows: re-shoot its keys for the new frame, the world as laid out.
+    // Only over a world: a camera on a canvas-sized page moved it as one, with its frame marks (b09).
+    const shots = reshootCamera(layers, oldW, oldH, W, H);
+    if (shots !== null) {
+      spanGrounds(layers, oldW, oldH, W, H);
+      const pinned = pinOutside(layers, oldW, oldH, W, H);
+      return `${shots} camera shot(s) re-framed for the new frame; the world stays as laid out${pinned ? `, ${pinned} fixed layer(s) kept to their edges` : ''}`;
+    }
     const k = Math.min(W / oldW, H / oldH);
     const m: Affine = { k, ox: oldW / 2, oy: oldH / 2, dx: W / 2 - oldW / 2, dy: H / 2 - oldH / 2 };
     for (const l of layers) mapSubtree(l, m);
     holder.world = mapWorld(holder.world, m);
-    return `carried whole at ×${k.toFixed(2)} (a camera world decides what the frame shows)`;
+    return `carried whole at ×${k.toFixed(2)} (a world with no camera yet)`;
   }
   const { plan, rewrapped } = planWithRewrap(layers, oldW, oldH, W, H);
   for (const [l, m] of plan.maps) { mapSubtree(l, m); syncSpecPos(l); }
@@ -94,6 +137,8 @@ export function reframeDesign(args: ReframeArgs): ToolResult {
   const today = new Date().toISOString().split('T')[0];
   spec.meta = { ...spec.meta, id: generateId(), name: `${spec.meta.name} ${size.label.replace('x', ':')}`, created: today, modified: today };
   spec.document = { ...spec.document, width: W, height: H };
+  // Tracks were rewritten on the layers: the design's animation map mirrors them.
+  syncAnimationsToSpec(spec);
   writeYAML(out, spec);
   progress.push(pInfo(`${oldW}×${oldH} → ${W}×${H}`, `written as ${path.basename(out)}; the source is unchanged`));
 

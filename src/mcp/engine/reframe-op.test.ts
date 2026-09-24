@@ -8,6 +8,8 @@ import type { DesignSpec, Layer } from '../../schema/types';
 import { ALL_HANDLERS } from '../handlers';
 import { mapSubtree } from './reframe-map';
 import { reframeSize } from './reframe-op';
+import { layersAt } from '../../export/gif-frames';
+import { canvasBoxes } from '../../export/frame-cull';
 
 const root = fs.mkdtempSync(path.join(os.tmpdir(), 'folio-reframe-'));
 fs.mkdirSync(path.join(root, 'designs'), { recursive: true });
@@ -81,7 +83,28 @@ describe('manage_design {op:"reframe"}', () => {
     expect(sea.y + sea.height).toBe(1920);
   });
 
-  it('carries a camera page whole and moves its world with it', async () => {
+  it('re-shoots a camera page for the new frame: each shot fills the story with what it showed', async () => {
+    const card = (id: string, x: number): object => ({ id, type: 'rect', z: 1, x, y: 340, width: 700, height: 400, fill: '#E4572E' });
+    const tour = write('tour', { world: { x: 0, y: 0, width: 3840, height: 1080 }, layers: [
+      { id: 'sky', type: 'rect', z: 0, x: 0, y: 0, width: 1920, height: 1080, fill: '#101820' }, card('a', 610), card('b', 2530),
+      { id: 'logo', type: 'rect', z: 3, x: 1700, y: 960, width: 160, height: 60, fill: '#fff' }] });
+    const cam = await ALL_HANDLERS['animation']?.({ op: 'camera', design_path: tour, exclude: ['logo'], shots: [{ t: 0, target: 'a', padding: 60 }, { t: 2000, target: 'b', padding: 60 }] }) as unknown as Record<string, unknown>;
+    expect(cam['success']).toBe(true);
+    const r = await reframe({ design_path: tour, aspect: '9:16' });
+    expect(JSON.stringify(r['progress'])).toMatch(/2 camera shot\(s\) re-framed/);
+    const story = load(String(r['design_path']));
+    expect((story.layers ?? []).find(l => l.id === 'sky')).toMatchObject({ width: 1080, height: 1920 });
+    // The logo held still over the camera, 60 px in from the bottom-right corner: it still is.
+    expect((story.layers ?? []).find(l => l.id === 'logo')).toMatchObject({ x: 1700 - 840, y: 960 + 840 });
+    for (const [t, id] of [[0, 'a'], [2000, 'b']] as const) {
+      const box = canvasBoxes(layersAt(story.layers ?? [], t)).find(b => b.layer.id === id)?.box;
+      expect(Math.abs((box?.x ?? 0) + (box?.width ?? 0) / 2 - 540)).toBeLessThan(2);
+      expect(Math.abs((box?.y ?? 0) + (box?.height ?? 0) / 2 - 960)).toBeLessThan(2);
+      expect(box?.width).toBeGreaterThan(900);
+    }
+  });
+
+  it('carries a world page with no camera yet whole, and moves its world with it', async () => {
     const cam = write('cam', { world: { x: 0, y: 0, width: 3840, height: 1080 }, layers: [
       { id: 'a', type: 'rect', z: 1, x: 200, y: 300, width: 400, height: 400, fill: '#111' },
       { id: 'b', type: 'rect', z: 1, x: 2400, y: 300, width: 400, height: 400, fill: '#111' },
