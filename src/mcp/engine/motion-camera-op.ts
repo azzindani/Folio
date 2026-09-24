@@ -24,6 +24,7 @@ import { isFullCanvasBgRect } from '../engine-layer-predicates';
 import { framePose, type Box } from './motion-camera';
 import { readMarkers, resolveTime, type TimeContext } from './motion-time';
 import { syncDepth, DEPTH } from './motion-depth';
+import { gapNotes } from './motion-depth-cover';
 
 type CameraArgs = { design_path: string; shots?: unknown; exclude?: unknown; padding?: number; world?: unknown; page_id?: string; project_path?: string };
 /** hold: ms the camera stays on the framing before it moves on — or true, stay and then cut to the next. */
@@ -177,6 +178,7 @@ export function cameraMotion(args: CameraArgs): ToolResult {
   const placed = setAnimation(layers, new Map([[CAMERA, { keyframes: track, playback: { duration, origin: 'offset', easing: 'ease-in-out' } }]]));
   // Layers set at a depth follow the new shots at their share of the move.
   syncDepth(placed);
+  const gaps = gapNotes(placed, W, H);
   if (pageGroup) commitScope(spec, scoped.page, [{ ...pageGroup, layers: placed } as Layer]);
   else commitScope(spec, scoped.page, placed);
   if (world) host.world = world; else delete host.world;
@@ -187,7 +189,7 @@ export function cameraMotion(args: CameraArgs): ToolResult {
     design_path: dPath, camera: CAMERA, reused: !!existing, ...(world ? { world } : {}),
     shots: poses.map((f, i) => ({ t: f.t, scale: f.scale, x: f.x, y: f.y, ...(f.rotation ? { rotation: f.rotation } : {}),
       ...(shots[i]?.hold !== undefined ? { hold: shots[i]?.hold } : {}) })),
-    progress: [pOk(`${existing ? 'Re-framed' : 'Placed'} a camera over the page`, `${shots.length} shot(s); the ground stays still behind it`)],
+    progress: [pOk(`${existing ? 'Re-framed' : 'Placed'} a camera over the page`, `${shots.length} shot(s); the ground stays still behind it`), ...gaps],
     next_action: { tool: 'animation', params: { op: 'frame', design_path: dPath, ...(args.page_id ? { page_id: args.page_id } : {}), t: shots[Math.min(1, shots.length - 1)]?.t ?? 0 }, remaining: 0,
       hint: 'Check a shot with op:frame. Add exclude:[ids] to hold a layer still while the camera moves.' },
   }, bak);
