@@ -21,6 +21,8 @@ export interface Fragment {
 }
 
 const isLoop = (f: { playback?: Playback } | undefined): boolean => f?.playback?.loop === true;
+/** Where a track ends on the scene clock, its hold past the last frame included. */
+const heldEnd = (pb: Playback): number => Math.max(0, pb.delay ?? 0) + (pb.duration ?? 0);
 
 /** Absolute-time keyframes: t + delay, each carrying its segment easing. */
 function absoluteFrames(f: Fragment): Keyframe[] {
@@ -110,9 +112,13 @@ export function mergeFragment(existing: AnimationSpec | undefined, add: Fragment
     );
   }
 
-  const all = [...a, ...b].sort((x, y) => x.t - y.t);
+  // Two frames at one instant on one pose are one frame: a re-run entrance ends on the
+  // rest pose the kept exit starts from (r8, live).
+  const all = [...a, ...b].sort((x, y) => x.t - y.t)
+    .filter((k, i, ks) => { const p = ks[i - 1]; return !p || p.t !== k.t || poseGap(p, k) !== null || poseGap(k, p) !== null; });
   const start = all[0].t;
-  const end = all[all.length - 1].t;
+  // A track held past its last frame (op:scene length) keeps that hold.
+  const end = Math.max(all[all.length - 1].t, heldEnd(exPb), heldEnd(add.playback));
   const keyframes = all.map(k => ({ ...k, t: k.t - start }));
 
   // Origin must agree: mixing 'first' (absolute rest = first frame) with
@@ -183,7 +189,7 @@ export function withoutKind(existing: AnimationSpec | undefined, kind: 'entrance
     keep = frames.slice(0, q + 1);
   }
   if (keep.length < 2 || keep.every(atRest)) return undefined;
-  const start = keep[0]?.t ?? 0, end = keep[keep.length - 1]?.t ?? start;
+  const start = keep[0]?.t ?? 0, end = Math.max(keep[keep.length - 1]?.t ?? start, kind === 'entrance' ? heldEnd(pb) : 0);
   const playback: Playback = { ...pb, duration: Math.max(1, end - start), delay: start };
   if (start <= 0) delete playback.delay;
   return { ...existing, keyframes: keep.map(k => ({ ...k, t: k.t - start })), playback };
