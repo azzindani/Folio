@@ -18,7 +18,7 @@ import { pivotOf } from '../../export/frame-pose';
 import { parentBases, chainOf } from './motion-rig-stack';
 import { canvasBoxes, type CanvasBox } from '../../export/frame-cull';
 import { buriedTexts, ancestry } from './motion-lint-buried';
-import { frameUnits, collisions, type Unit } from './motion-lint-collide';
+import { frameUnits, collisions, type Unit, type Spaces } from './motion-lint-collide';
 import { crowdNotes, restlessNotes, readingLines, type ReadLine, type Shown } from './motion-lint-pace';
 
 export type LintKind = 'overlap' | 'collision' | 'off_canvas' | 'buried' | 'idle' | 'busy' | 'reading' | 'link' | 'crowd' | 'restless';
@@ -217,6 +217,8 @@ interface ShotView {
   buried: Array<{ text: string; under: string }>;
   /** The objects where the shot rests, in world space. */
   units: Unit[];
+  /** The same objects on the screen, and which of them the camera carries. */
+  spaces: Spaces;
 }
 
 /**
@@ -298,6 +300,7 @@ function shotViews(layers: Layer[], canvas: { width: number; height: number }, m
       buried: buriedTexts(flat, id => entered(id) || freshIds.has(id)),
       units: frameUnits(flat, canvas),
       world,
+      spaces: { screen: new Map(frameUnits(frame, canvas).map(u => [u.id, u])), carried: id => (up.get(id) ?? []).includes(CAMERA_ID), frame: frameBox },
     });
     shownBefore = shown;
   });
@@ -331,7 +334,7 @@ function restNotes(layers: Layer[], canvas: { width: number; height: number }, m
   const authored = frameUnits(layers.map(l => (l.id === CAMERA_ID ? ({ ...l, transform: undefined } as Layer) : l)), canvas);
   for (const v of views) {
     const { mark, t, texts } = v;
-    for (const c of collisions(v.units, authored, v.entered)) {
+    for (const c of collisions(v.units, authored, v.entered, v.spaces)) {
       const key = [c.under, c.over].sort().join('+');
       if (seenPairs.has(key) || v.buried.some(b => b.text === c.under && b.under === c.over)) continue;
       seenPairs.add(key);

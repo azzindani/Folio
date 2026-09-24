@@ -44,19 +44,30 @@ describe('diagnose_design on a camera ride with no markers', () => {
   const words = (id: string, x: number, value: string, delay = 200): object => ({ id, type: 'text', z: 3, x, y: 400, width: 600, height: 80,
     content: { type: 'plain', value }, style: { font_size: 56, color: '#111111' },
     animation: { keyframes: [{ t: 0, opacity: 0, y: 24 }, { t: 600, opacity: 1, y: 0 }], playback: { duration: 600, delay, origin: 'offset' } } });
-  const ride = (extra: object[]): object => ({ meta: { id: 'r', name: 'R', type: 'poster' }, document: { width: 1920, height: 1080 },
+  const ride = (extra: object[], held: object[] = []): object => ({ meta: { id: 'r', name: 'R', type: 'poster' }, document: { width: 1920, height: 1080 },
     world: { x: 0, y: 0, width: 3840, height: 1080 },
     layers: [{ id: 'bg', type: 'rect', z: 0, x: 0, y: 0, width: 1920, height: 1080, fill: '#EDE5D0' },
       { id: '__camera', type: 'group', z: 1, x: 0, y: 0, width: 3840, height: 1080,
         animation: { keyframes: [{ t: 0, x: 0, y: 0, scale: 1 }, { t: 1500, x: 0, y: 0, scale: 1 }, { t: 3000, x: -1920, y: 0, scale: 1 }, { t: 4500, x: -1920, y: 0, scale: 1 }], playback: { duration: 4500, origin: 'offset' } },
         layers: [{ id: '__camera_pin', type: 'rect', z: -1, x: 0, y: 0, width: 3840, height: 1080, fill: '#000000', opacity: 0 },
-          words('start', 160, 'Bowness'), words('finish', 2080, 'Wallsend', 2400), ...extra] }] });
+          words('start', 160, 'Bowness'), words('finish', 2080, 'Wallsend', 2400), ...extra] }, ...held] });
 
   it('judges each framing the camera stops on, not only where it ends up', () => {
     expect(codes(ride([]))).toEqual([]);
     const cut = codes(ride([words('edge', 1640, 'Carlisle is far')])).filter(f => f.code === 'motion_off_canvas');
     expect(cut.map(f => f.layer_id)).toEqual(['edge']);
     expect(JSON.stringify(cut)).toMatch(/camera shot 1/);
+  });
+
+  it('measures a rider held over the ride against what the screen shows, not the world', () => {
+    // r8: the rider stopped over a hedge 1920 px off the frame and "came to rest over" it.
+    const rider = { id: 'rider', type: 'rect', z: 5, x: 600, y: 810, width: 76, height: 76, fill: '#2B3527',
+      animation: { keyframes: [{ t: 0, x: 0 }, { t: 1200, x: 380 }], playback: { duration: 1200, delay: 3100, origin: 'offset' } } };
+    const hedge = { id: 'hedge', type: 'rect', z: 2, x: 850, y: 850, width: 610, height: 30, fill: '#6F8759' };
+    const rock = { id: 'rock', type: 'rect', z: 2, x: 2940, y: 820, width: 120, height: 60, fill: '#6B675E' };
+    const hits = (inside: object[]): string[] => codes(ride(inside, [rider])).filter(f => f.code === 'motion_collision').map(f => (f as { message?: string }).message ?? '');
+    expect(hits([hedge])).toEqual([]);
+    expect(hits([hedge, rock])).toEqual([expect.stringMatching(/"rider" comes to rest over \d+% of "rock"/)]);
   });
 });
 
