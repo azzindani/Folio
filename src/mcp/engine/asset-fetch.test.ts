@@ -139,6 +139,15 @@ describe('resolveRef', () => {
     expect(missing.resolved.url).toContain('latin-400-normal.ttf');
   });
 
+  it('downloads the italic face when asked, and says when a family has none (r8: italic exported upright)', async () => {
+    jsonMock.mockResolvedValue({ id: 'playfair-display', family: 'Playfair Display', weights: [400, 700], styles: ['normal', 'italic'], license: 'OFL-1.1', defSubset: 'latin' });
+    const { resolved } = await resolveRef('font:playfair-display', { projectDir, italic: true });
+    expect(resolved.url).toContain('/latin-400-italic.ttf');
+    expect(resolved.suggestedName).toMatch(/italic/);
+    jsonMock.mockResolvedValue({ id: 'anton', family: 'Anton', weights: [400], styles: ['normal'], license: 'OFL-1.1', defSubset: 'latin' });
+    await expect(resolveRef('font:anton', { projectDir, italic: true })).rejects.toThrow(/Anton has no italic/);
+  });
+
   it('takes the DEFAULT subset, never latin-ext — subset files are disjoint', async () => {
     // latin-ext contains only the extended block. Fetching it renders every
     // ordinary ASCII word in a fallback face, which is how this was found.

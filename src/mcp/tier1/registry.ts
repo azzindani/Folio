@@ -95,6 +95,7 @@ export const TIER1_TOOLS: ToolDefinition[] = [
         icon_px:       { type: 'number', description: 'op:asset_fetch — icon render size in px (default 512). Icons come back as SVG, so this only sets the intrinsic box.' },
         icon_color:    { type: 'string', description: 'op:asset_fetch — hex colour baked into the icon, e.g. "#F0A63C". Fetched icons are monochrome and default to BLACK — on a dark canvas an untinted icon is invisible, so set this to your accent (or the text colour) whenever the canvas is not white.' },
         weight:        { type: 'number', description: 'op:asset_fetch — font weight to download (400, 700, …). Defaults to 400, or the nearest the family actually ships.' },
+        italic:        { type: 'boolean', description: 'op:asset_fetch — download the family\'s ITALIC face (font refs). Text set italic exports upright until the italic face is here.' },
         folder:        { type: 'string', description: 'op:asset_add/asset_list/asset_move/asset_fetch/asset_promote — in a PROJECT, ONE folder segment inside the kind dir, e.g. "power-automate" → assets/images/power-automate/step-1.png. In the SHARED library folders NEST up to 4 deep and are the whole filing system — "microsoft/logos" → lib/microsoft/logos/pa.svg. Keeps a shoot or a tutorial\'s screenshots together. On asset_list, filters to that folder (pass "" for the root); the reply also lists every folder in the project. On asset_move, "" moves the asset back to the root.' },
       },
       required: ['op'],

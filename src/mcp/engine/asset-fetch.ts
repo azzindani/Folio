@@ -175,11 +175,13 @@ async function resolveIconify(id: string, px: number, color?: string): Promise<R
   return r;
 }
 
-interface FSDetail { id?: string; family?: string; license?: string; weights?: number[]; subsets?: string[]; defSubset?: string; category?: string }
+interface FSDetail { id?: string; family?: string; license?: string; weights?: number[]; styles?: string[]; subsets?: string[]; defSubset?: string; category?: string }
 
-async function resolveFont(id: string, weight?: number): Promise<ResolvedAsset> {
+async function resolveFont(id: string, weight?: number, italic = false): Promise<ResolvedAsset> {
   const d = await httpJSON<FSDetail>(`https://api.fontsource.org/v1/fonts/${encodeURIComponent(id)}`);
   if (!d.family) throw new NetError(`No open font with id "${id}"`, 'Run asset_search {what:"font"} for exact ids.');
+  // The italic is its own file. Without it the export draws italic text upright (benchmark r8).
+  if (italic && !(d.styles ?? []).includes('italic')) throw new NetError(`${d.family} has no italic`, 'Pick a family that ships one (asset_search {what:"font"}), or set the text upright.');
   const weights = d.weights ?? [400];
   const want = weight && weights.includes(weight) ? weight
     : weights.includes(400) ? 400 : (weights[0] ?? 400);
@@ -190,11 +192,11 @@ async function resolveFont(id: string, weight?: number): Promise<ResolvedAsset> 
   // cheaper failure by far.
   const subset = d.defSubset ?? 'latin';
   return {
-    url: `https://cdn.jsdelivr.net/fontsource/fonts/${encodeURIComponent(id)}@latest/${subset}-${want}-normal.ttf`,
+    url: `https://cdn.jsdelivr.net/fontsource/fonts/${encodeURIComponent(id)}@latest/${subset}-${want}-${italic ? 'italic' : 'normal'}.ttf`,
     kind: 'fonts', ext: 'ttf',
-    suggestedName: slugify(`${d.family}-${want}`, 'font'),
+    suggestedName: slugify(`${d.family}-${want}${italic ? '-italic' : ''}`, 'font'),
     license: d.license ?? 'open source',
-    title: `${d.family} ${want}`,
+    title: `${d.family} ${want}${italic ? ' italic' : ''}`,
     page: `https://fontsource.org/fonts/${id}`,
     attribution: `${d.family} (${d.license ?? 'open source'})`,
   };
@@ -219,7 +221,7 @@ export function projectAllowHosts(projectDir: string): string[] | null {
  * `url:` is the only form that bypasses a provider, so it is the only one held
  * to the allowlist; the rest were vouched for by an API we chose to trust.
  */
-export async function resolveRef(ref: string, opts: { projectDir: string; icon_px?: number; icon_color?: string; weight?: number })
+export async function resolveRef(ref: string, opts: { projectDir: string; icon_px?: number; icon_color?: string; weight?: number; italic?: boolean })
   : Promise<{ resolved: ResolvedAsset; allow?: string[] }> {
   const raw = String(ref ?? '').trim();
   const cut = raw.indexOf(':');
@@ -235,7 +237,7 @@ export async function resolveRef(ref: string, opts: { projectDir: string; icon_p
     case 'pack':
       throw new NetError('Folio\'s bundled pack lives in the shared library', `Use src:"lib/folio/${rest}" directly, or fetch it without scope:"project".`);
     case 'iconify':   return { resolved: await resolveIconify(rest, opts.icon_px ?? 512, opts.icon_color) };
-    case 'font':      return { resolved: await resolveFont(rest, opts.weight) };
+    case 'font':      return { resolved: await resolveFont(rest, opts.weight, opts.italic === true) };
     case 'https': {
       const allow = projectAllowHosts(opts.projectDir) ?? defaultFetchHosts();
       const url = new URL(raw);
@@ -264,11 +266,12 @@ export async function resolveRef(ref: string, opts: { projectDir: string; icon_p
  * perfectly and reads as a colour bug days later. Every param that changes the
  * downloaded file belongs in the key.
  */
-function fetchSourceKey(ref: string, args: { icon_px?: number; icon_color?: string; weight?: number }): string {
+function fetchSourceKey(ref: string, args: { icon_px?: number; icon_color?: string; weight?: number; italic?: boolean }): string {
   const variant = [
     args.icon_color ? `color=${String(args.icon_color).toLowerCase()}` : '',
     args.icon_px ? `px=${args.icon_px}` : '',
     args.weight ? `w=${args.weight}` : '',
+    args.italic === true ? 'italic' : '',
   ].filter(Boolean).join('&');
   return variant ? `${ref}|${variant}` : ref;
 }
@@ -326,7 +329,7 @@ function nextStep(entry: AssetEntry, stub: Record<string, unknown>, hint: string
  */
 export async function assetFetch(args: {
   project_path?: string; ref?: string; url?: string; name?: string; scope?: string;
-  folder?: string; alt?: string; kind?: string; icon_px?: number; icon_color?: string; weight?: number;
+  folder?: string; alt?: string; kind?: string; icon_px?: number; icon_color?: string; weight?: number; italic?: boolean;
 }): Promise<ToolResult> {
   const op = 'asset_fetch';
   const proj = requireProject(op, args.project_path);
@@ -367,10 +370,11 @@ export async function assetFetch(args: {
     });
   }
   try {
-    const opts: { projectDir: string; icon_px?: number; icon_color?: string; weight?: number } = { projectDir: proj.dir };
+    const opts: { projectDir: string; icon_px?: number; icon_color?: string; weight?: number; italic?: boolean } = { projectDir: proj.dir };
     if (args.icon_px !== undefined) opts.icon_px = args.icon_px;
     if (args.icon_color !== undefined) opts.icon_color = args.icon_color;
     if (args.weight !== undefined) opts.weight = args.weight;
+    if (args.italic === true) opts.italic = true;
     const { resolved, allow } = await resolveRef(ref, opts);
     progress.push(pInfo('Source resolved', `${resolved.title ?? resolved.suggestedName} — ${resolved.license ?? 'licence unknown'}`));
 
@@ -391,7 +395,7 @@ export async function assetFetch(args: {
     const fontNames = resolved.kind === 'fonts' ? readFontNames(got.buffer) : {};
     const realFamily = fontNames.family;
     const stem = realFamily
-      ? slugify(`${realFamily}-${fontNames.weightClass ?? args.weight ?? 400}`, resolved.suggestedName)
+      ? slugify(`${realFamily}-${fontNames.weightClass ?? args.weight ?? 400}${args.italic === true ? '-italic' : ''}`, resolved.suggestedName)
       : resolved.suggestedName;
     const name = args.name ?? `${stem}.${ext}`;
     const provenance: AssetProvenance = {
