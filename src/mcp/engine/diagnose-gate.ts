@@ -128,9 +128,12 @@ export function gateDesign(args: { design_path: string; project_path?: string; d
   const counts = { errors: count('error'), warnings: count('warning'), suggestions: count('suggestion'), notes: count('note') };
   const ready = counts.errors === 0 && counts.warnings === 0;
   const top = items.slice(0, TOP);
-  const verdict = !ready
+  const state = !ready
     ? `Not ready — ${counts.errors} error(s) and ${counts.warnings} warning(s) left. The first fix is next_action.`
     : items.length ? `Ready to export — nothing holds it back; ${items.length} thing(s) to judge, the top ${top.length} below.` : 'Ready to export — nothing left to fix or judge.';
+  // The heal writes the design. Said last, a moved layer was missed (benchmark r6, b24):
+  // the reply is read from its first line, so what the gate changed comes first.
+  const verdict = healed.length && !args.dry_run ? `Healed first, the design is changed: ${healed.join('; ')}. ${state}` : state;
   progress.push(pOk('Gate', verdict));
 
   return okResult(op, {
