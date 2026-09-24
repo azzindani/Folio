@@ -3,9 +3,11 @@
  * screen after everything it held has gone (benchmark r5, b17: the clock left
  * at 10.2 s, its halo stayed through the brand card; seen only in the frame).
  *
- * Read at each shot rest. A decoration is a drawn shape, not a ground, at least
- * 3% of the canvas. What it holds: things at least 2% of its size (not the
- * sprinkles around it) with most of their box inside it. When a decoration
+ * Read at each shot rest. A decoration is a drawn shape at least 3% of the
+ * canvas — not a ground, and not a band across the whole frame (a sea, a
+ * sky: scenery). What it holds: things painted over it, at least 2% of its size
+ * (not the sprinkles around it), with most of their box inside it. A moon
+ * rising out from behind the sea was never the sea's to hold (r7, b26). When a decoration
  * that held something at an earlier rest holds nothing at a later one and is
  * still there, the finding names what left and when, with the out point that
  * ends it with them.
@@ -16,6 +18,7 @@ import type { Finding } from './diagnose';
 import { canvasBoxes, type CanvasBox } from '../../export/frame-cull';
 import { layersAt } from '../../export/gif-frames';
 import { moments } from './diagnose-safe';
+import { paintOrder } from './motion-lint-collide';
 
 type Box = CanvasBox['box'];
 const SHAPES = new Set(['rect', 'ellipse', 'circle', 'path', 'polygon']);
@@ -33,14 +36,15 @@ const meet = (a: Box, b: Box): number => {
 
 /** Each visible decoration at one moment, and the ids it holds. */
 function holdings(frame: Layer[], W: number, H: number): Map<string, string[]> {
-  const boxes = canvasBoxes(frame), whole = W * H;
-  const things = boxes.filter(b => b.opacity > 0.3 && area(b.box) > 0);
+  const boxes = canvasBoxes(paintOrder(frame)), whole = W * H;
+  const things = boxes.map((b, i) => ({ ...b, i })).filter(b => b.opacity > 0.3 && area(b.box) > 0);
   const out = new Map<string, string[]>();
-  for (const d of boxes) {
+  boxes.forEach((d, i) => {
     const a = area(d.box);
-    if (!SHAPES.has(d.layer.type) || d.opacity <= 0.02 || a < 0.03 * whole || a >= 0.8 * whole) continue;
-    out.set(d.layer.id, things.filter(t => t.layer.id !== d.layer.id && area(t.box) >= SPECK * a && area(t.box) < a && meet(t.box, d.box) >= HELD * area(t.box)).map(t => t.layer.id));
-  }
+    const band = d.box.width >= 0.99 * W || d.box.height >= 0.99 * H;
+    if (!SHAPES.has(d.layer.type) || d.opacity <= 0.02 || a < 0.03 * whole || a >= 0.8 * whole || band) return;
+    out.set(d.layer.id, things.filter(t => t.i > i && area(t.box) >= SPECK * a && area(t.box) < a && meet(t.box, d.box) >= HELD * area(t.box)).map(t => t.layer.id));
+  });
   return out;
 }
 
