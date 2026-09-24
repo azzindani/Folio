@@ -254,6 +254,7 @@ function geometryFindings(layers: Layer[], W: number, H: number, world?: Stage):
     return Math.abs((a + la / 2) - (b + lb / 2)) < 0.5 || Math.abs((a + la) - (b + lb)) < 0.5;
   };
   const seenPairs = new Set<string>();
+  const inkPairs: Array<[typeof edges[number], typeof edges[number]]> = [];
   for (let i = 0; i < edges.length; i++) {
     for (let j = i + 1; j < edges.length; j++) {
       if (edges[i].edge !== edges[j].edge || edges[i].id === edges[j].id) continue;
@@ -263,18 +264,8 @@ function geometryFindings(layers: Layer[], W: number, H: number, world?: Stage):
       if (d >= 1 && d <= 6 && !seenPairs.has(key) && !alignedElsewhere(edges[i].b, edges[j].b, edges[i].edge)) {
         seenPairs.add(key);
         if (pi !== undefined && pj !== undefined) {
-          // Boxes a few px apart with the letters on one line is optical alignment, set on purpose.
-          if (Math.abs(pi - pj) < 1) continue;
-          // By their letters: move the larger type — display type is what drifts off a column.
-          const size = (e: { id: string }): number => Number(((byId.get(e.id) as unknown as { style?: { font_size?: number } } | undefined)?.style?.font_size) ?? 0);
-          const [mover, anchor] = size(edges[j]) > size(edges[i]) ? [edges[j], edges[i]] : [edges[i], edges[j]];
-          const dx = Math.round((anchor.ink ?? 0) - (mover.ink ?? 0));
-          out.push({
-            code: 'misalignment', severity: 'suggestion', layer_id: mover.id,
-            message: `"${edges[i].id}" and "${edges[j].id}" almost line up on the left: their letters are ${Math.abs(pi - pj).toFixed(1)}px apart (ink, not boxes).`,
-            fix: `Move "${mover.id}" ${dx} px so its letters sit on "${anchor.id}"'s — its box edge is not where its ink starts.`,
-            ...(dx ? { call: { tool: 'edit_layer', params: { op: 'move', layer_id: mover.id, dx } } } : {}),
-          });
+          // Letters within 2 px are on one line to the eye: optical alignment, set on purpose.
+          if (Math.abs(pi - pj) >= 2) inkPairs.push([edges[i], edges[j]]);
           continue;
         }
         out.push({
@@ -286,6 +277,44 @@ function geometryFindings(layers: Layer[], W: number, H: number, world?: Stage):
     }
   }
 
+  out.push(...inkMisses(inkPairs, byId));
+  return out;
+}
+
+/**
+ * Near misses judged by the letters, one finding per text to move. Every pair
+ * that nearly shares a left edge was once its own finding: six years over six
+ * captions on one timeline made 24 (r7, b28), when one caption — "Fairtrade",
+ * its F set in by its bearing — was the one off the column. The text that
+ * misses the most others is the one to move, onto the edge they share (the
+ * median of their letters); on a tie, the larger type, which is what drifts
+ * off a column (r6, b22).
+ */
+function inkMisses(pairs: Array<[{ id: string; ink?: number }, { id: string; ink?: number }]>, byId: Map<string, Layer>): Finding[] {
+  const count = new Map<string, number>();
+  for (const [a, b] of pairs) for (const e of [a, b]) count.set(e.id, (count.get(e.id) ?? 0) + 1);
+  const size = (id: string): number => Number(((byId.get(id) as unknown as { style?: { font_size?: number } } | undefined)?.style?.font_size) ?? 0);
+  const moves = new Map<string, { ink: number; anchors: Array<{ id: string; ink: number }> }>();
+  for (const [a, b] of pairs) {
+    const ca = count.get(a.id) ?? 0, cb = count.get(b.id) ?? 0;
+    const [mover, anchor] = ca !== cb ? (ca > cb ? [a, b] : [b, a]) : size(b.id) > size(a.id) ? [b, a] : [a, b];
+    const m = moves.get(mover.id) ?? { ink: mover.ink ?? 0, anchors: [] };
+    m.anchors.push({ id: anchor.id, ink: anchor.ink ?? 0 });
+    moves.set(mover.id, m);
+  }
+  const out: Finding[] = [];
+  for (const [id, m] of moves) {
+    const inks = m.anchors.map(a => a.ink).sort((p, q) => p - q);
+    const edge = inks[Math.floor(inks.length / 2)] ?? m.ink;
+    const dx = Math.round(edge - m.ink);
+    const names = m.anchors.slice(0, 3).map(a => `"${a.id}"`).join(', ') + (m.anchors.length > 3 ? ` and ${m.anchors.length - 3} more` : '');
+    out.push({
+      code: 'misalignment', severity: 'suggestion', layer_id: id,
+      message: `"${id}" almost lines up on the left with ${names}: its letters are ${Math.abs(edge - m.ink).toFixed(1)}px off their edge (ink, not boxes).`,
+      fix: `Move "${id}" ${dx} px so its letters sit on the edge the others share — its box edge is not where its ink starts.`,
+      ...(dx ? { call: { tool: 'edit_layer', params: { op: 'move', layer_id: id, dx } } } : {}),
+    });
+  }
   return out;
 }
 
