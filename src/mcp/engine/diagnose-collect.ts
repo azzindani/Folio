@@ -29,6 +29,8 @@ import { beatFindings } from './diagnose-beats';
 import { glyphFindings } from './diagnose-glyphs';
 import { overprintFindings } from './diagnose-overprint';
 import { orphanFindings } from './diagnose-orphan';
+import { moments } from './diagnose-safe';
+import { accentNote } from './ai-slop-lint';
 import { validateDesignSpec } from '../../schema/validator';
 
 export type PageFinding = Finding & { page?: string };
@@ -71,6 +73,20 @@ export function schemaFindings(spec: DesignSpec): Finding[] {
  * `pageId` scopes to one page of a paged design — the renderer audit is skipped
  * there, because it draws the whole document and would report other pages.
  */
+const ACCENT = /^one accent hue appears on /;
+
+/**
+ * A moving page's accent count as seen: at its shot rests, not over every layer it
+ * ever shows (r7, b27: six mint surfaces over four beats, three at most on screen).
+ */
+function asSeen(spec: DesignSpec, still: Finding[], layers: Layer[], page?: Page): Finding[] {
+  const shots = moments(spec, layers, page);
+  if (shots.length === 0 || shots[0]?.t === null) return still;
+  const note = accentNote(layers, shots.map(m => m.frame));
+  const kept = still.filter(f => !(f.code === 'ai_slop' && ACCENT.test(f.message)));
+  return note ? [...kept, { code: 'ai_slop', severity: 'suggestion', message: note }] : kept;
+}
+
 export function collectFindings(
   spec: DesignSpec,
   designPath: string,
@@ -94,7 +110,7 @@ export function collectFindings(
     const glyphs = glyphFindings(layers ?? [], designPath, projectPath);
     const overprint = overprintFindings(layers ?? [], W, H);
     const orphans = orphanFindings(spec, layers ?? [], page);
-    return [...still, ...moving, ...safe, ...glyphs, ...overprint, ...orphans].map(f => (page ? { ...f, page: page.id } : f));
+    return [...asSeen(spec, still, layers ?? [], page), ...moving, ...safe, ...glyphs, ...overprint, ...orphans].map(f => (page ? { ...f, page: page.id } : f));
   };
 
   const findings: PageFinding[] = [];
