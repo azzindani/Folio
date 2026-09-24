@@ -79,6 +79,18 @@ describe('planReframe', () => {
     expect(right).toBeLessThanOrEqual(900.5);
   });
 
+  it('keeps b27\'s title-beside-phone a row in a square, and stacks it in a story with the phone on its side', () => {
+    const left = (): Layer[] => [rect('kicker', 164, 336, 330, 23), rect('title', 160, 424, 714, 240), rect('ver', 170, 664, 170, 84), rect('outnow', 164, 761, 204, 46)];
+    const square = planReframe([...left(), rect('phone', 1180, 140, 420, 820)], 1920, 1080, 1080, 1080);
+    expect(square.stacked).toBe(0);
+    const [kicker, title, ver, outnow] = left(), phone = rect('phone', 1180, 140, 420, 820);
+    const { plan, box } = apply([kicker, title, ver, outnow, phone].filter((l): l is Layer => !!l), 1920, 1080, 1080, 1920);
+    expect(plan.stacked).toBe(1);
+    const t = box(title as Layer), ph = box(phone);
+    expect(ph.y).toBeGreaterThan(t.y + t.height);
+    expect(Math.abs(ph.x + ph.width - (t.x + t.width))).toBeLessThan(2);   // right edges together: the phone kept its side
+  });
+
   it('opens a scene group that holds the frame, and sizes it to the new one', () => {
     const scene = { id: 'scene', type: 'group', z: 1, x: 0, y: 0, width: 1920, height: 1080, locked: true,
       layers: [rect('bg', 0, 0, 1920, 1080), words('t', 120, 400, 700, 'Hello', 90), rect('pic', 1100, 200, 700, 700)] } as unknown as Layer;
