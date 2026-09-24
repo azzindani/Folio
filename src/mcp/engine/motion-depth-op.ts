@@ -11,10 +11,11 @@
 import * as fs from 'fs';
 import type { DesignSpec, Layer } from '../../schema/types';
 import type { ToolResult, ProgressItem } from '../types';
-import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, pOk } from './utils';
+import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, pOk, pWarn } from './utils';
+import { paintsCanvas } from './diagnose';
 import { resolveScope, commitScope } from './motion';
 import { syncAnimationsToSpec } from './animation-sync';
-import { cameraHome, syncDepth, depthId, parallax, DEPTH } from './motion-depth';
+import { cameraHome, syncDepth, depthId, parallax, CAMERA, DEPTH } from './motion-depth';
 
 type DepthArgs = { design_path: string; project_path?: string; page_id?: string; depths?: unknown };
 type Node = Layer & { layers?: Layer[]; z?: number; camera_depth?: number; x?: number; y?: number; width?: number; height?: number };
@@ -79,6 +80,19 @@ export function depthMotion(args: DepthArgs): ToolResult {
     progress.push(pOk(`${id} at depth ${d}`, `${Math.round(parallax(d) * 100)}% of the camera's travel and zoom — ${d > 0 ? 'behind' : 'in front of'} the focal plane`));
   }
   if (missing.length) return errResult(op, `Not under the camera: ${missing.join(', ')}.`, 'Depth moves layers the camera carries; manage_design {op:"inspect"} lists the ids.');
+  // A backdrop the camera carries is drawn over everything set behind it.
+  const leafCover = (ls: Layer[]): Layer | undefined => {
+    for (const l of ls as Node[]) {
+      if (l.id === `${CAMERA}_pin`) continue;
+      const hit = Array.isArray(l.layers) ? leafCover(l.layers) : paintsCanvas(l, box.width, box.height) ? l : undefined;
+      if (hit) return hit;
+    }
+    return undefined;
+  };
+  const cover = leafCover(cam.layers ?? []);
+  if (cover && depths.some(([, d]) => d > 0)) {
+    progress.push(pWarn(`"${cover.id}" covers the whole world inside the camera`, `layers set behind the focal plane are drawn under it and will not show — set "${cover.id}" at a depth farther than theirs (the sky is the farthest thing).`));
+  }
   for (let i = home.length - 1; i >= 0; i--) {
     const w = home[i] as Node | undefined;
     if (w?.id.startsWith(DEPTH) && !(w.layers ?? []).some(l => l.id !== `${w.id}_pin`)) home.splice(i, 1);

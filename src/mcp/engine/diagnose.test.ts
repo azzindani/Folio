@@ -186,6 +186,11 @@ describe('analyzeLayers — stacked full-canvas presets (re-added not replaced)'
     expect(hit!.severity).toBe('warning');
     expect(hit!.message).toContain('feature_grid_1-3');
   });
+  it('does not call a camera and its depth wrappers stacked presets (B7)', () => {
+    const rig = (id: string): Layer => ({ id, type: 'group', z: 1, x: 0, y: 0, width: W, height: H,
+      layers: [{ id: `${id}_pin`, type: 'rect', z: -1, x: 0, y: 0, width: W, height: H, fill: '#000000', opacity: 0 }, text(`${id}_t`, 80, 80, 400, 50, 28)] } as unknown as Layer);
+    expect(analyzeLayers([rig('__camera'), rig('__depth_2'), rig('__depth_m0_5')], W, H).some(x => x.code === 'stacked_presets')).toBe(false);
+  });
   it('does NOT warn for a single full-canvas preset group', () => {
     expect(analyzeLayers([fg('feature_grid_1')], W, H).some(x => x.code === 'stacked_presets')).toBe(false);
   });

@@ -63,6 +63,18 @@ describe('animation {op:"depth"}', () => {
     expect(at(p, 2000, 'hills') - at(p, 0, 'hills')).toBeCloseTo(c, 0);
   });
 
+  it('says when a backdrop the camera carries would hide what is set behind it', async () => {
+    const p = path.join(root, 'designs', 'haze.design.yaml');
+    fs.writeFileSync(p, yaml.dump({ _protocol: 'design/v1', meta: { id: 'haze', name: 'haze', type: 'poster' }, document: { width: 1920, height: 1080 },
+      world: { x: 0, y: 0, width: 3840, height: 1080 },
+      layers: [rect('ground', 0, 0, 1920, 1080, 0), { id: 'scene', type: 'group', z: 1, x: 0, y: 0, width: 3840, height: 1080, layers: [
+        { id: 'haze', type: 'rect', z: 0, x: 0, y: 0, width: 3840, height: 1080, fill: '#F3D9B1' }, rect('hills', 400, 700, 3000, 200), rect('a', 610, 340, 700, 400, 2), rect('b', 2530, 340, 700, 400, 2)] }] }));
+    await pan(p, 'a', 'b');
+    const r = await call('animation', { op: 'depth', design_path: p, depths: { hills: 1 } });
+    const said = (r['progress'] as Array<{ message: string }>).map(x => x.message);
+    expect(said).toContain('"haze" covers the whole world inside the camera');
+  });
+
   it('asks for a camera first, and for layers the camera carries', async () => {
     const p = write('nocam');
     expect((await call('animation', { op: 'depth', design_path: p, depths: { hills: 1 } }))['error']).toMatch(/No camera/);
