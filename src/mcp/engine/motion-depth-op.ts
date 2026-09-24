@@ -16,6 +16,7 @@ import { paintsCanvas } from './diagnose';
 import { resolveScope, commitScope } from './motion';
 import { syncAnimationsToSpec } from './animation-sync';
 import { cameraHome, syncDepth, depthId, parallax, CAMERA, DEPTH } from './motion-depth';
+import { gapNotes } from './motion-depth-cover';
 
 type DepthArgs = { design_path: string; project_path?: string; page_id?: string; depths?: unknown };
 type Node = Layer & { layers?: Layer[]; z?: number; camera_depth?: number; x?: number; y?: number; width?: number; height?: number };
@@ -98,6 +99,7 @@ export function depthMotion(args: DepthArgs): ToolResult {
     if (w?.id.startsWith(DEPTH) && !(w.layers ?? []).some(l => l.id !== `${w.id}_pin`)) home.splice(i, 1);
   }
   syncDepth(scoped.scope);
+  progress.push(...gapNotes(scoped.scope, spec.document?.width ?? 1080, spec.document?.height ?? 1080));
   const bak = snapshot(dPath);
   commitScope(spec, scoped.page, scoped.scope);
   syncAnimationsToSpec(spec);

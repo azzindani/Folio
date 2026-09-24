@@ -75,6 +75,25 @@ describe('animation {op:"depth"}', () => {
     expect(said).toContain('"haze" covers the whole world inside the camera');
   });
 
+  it('says how far a band at a depth must reach to fill the frame to the end, and is quiet once it does (r8 grass)', async () => {
+    const p = path.join(root, 'designs', 'band.design.yaml');
+    fs.writeFileSync(p, yaml.dump({ _protocol: 'design/v1', meta: { id: 'band', name: 'band', type: 'poster' }, document: { width: 1920, height: 1080 },
+      world: { x: 0, y: 0, width: 3840, height: 1080 },
+      layers: [rect('ground', 0, 0, 1920, 1080, 0), rect('a', 0, 0, 1920, 1080, 2), rect('b', 1920, 0, 1920, 1080, 2), rect('band', 0, 900, 3840, 180, 3)] }));
+    const shots = [{ t: 0, target: 'a' }, { t: 2000, target: 'b' }];
+    await call('animation', { op: 'camera', design_path: p, shots });
+    const r = await call('animation', { op: 'depth', design_path: p, depths: { band: -0.5 } });
+    const warn = (r['progress'] as Array<{ message: string; detail?: string }>).find(x => x.message.startsWith('"band" leaves the frame bare on the right'));
+    // Twice the camera's 1920 px: at the end the frame shows x 3840–5760 of the band's plane.
+    expect(warn?.detail).toMatch(/its right edge \(x 3840\) must reach x 5760 — 1920 px further/);
+    const spec = yaml.load(fs.readFileSync(p, 'utf8')) as DesignSpec;
+    const band = (spec.layers ?? []).flatMap(l => (l as Layer & { layers?: Layer[] }).layers ?? []).find(l => l.id === 'band') as unknown as { width: number };
+    band.width = 5760;
+    fs.writeFileSync(p, yaml.dump(spec));
+    const again = await call('animation', { op: 'camera', design_path: p, shots });
+    expect(JSON.stringify(again['progress'])).not.toMatch(/leaves the frame bare/);
+  });
+
   it('asks for a camera first, and for layers the camera carries', async () => {
     const p = write('nocam');
     expect((await call('animation', { op: 'depth', design_path: p, depths: { hills: 1 } }))['error']).toMatch(/No camera/);
