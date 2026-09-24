@@ -23,6 +23,7 @@ import { drawnBox } from '../../export/frame-geometry';
 import { isFullCanvasBgRect } from '../engine-layer-predicates';
 import { framePose, type Box } from './motion-camera';
 import { readMarkers, resolveTime, type TimeContext } from './motion-time';
+import { syncDepth, DEPTH } from './motion-depth';
 
 type CameraArgs = { design_path: string; shots?: unknown; exclude?: unknown; padding?: number; world?: unknown; page_id?: string; project_path?: string };
 type Shot = { t: number; target: string[] | 'all' | 'world' | Box; padding?: number; easing?: string; hold?: boolean; rotation?: number };
@@ -126,7 +127,8 @@ export function cameraMotion(args: CameraArgs): ToolResult {
     ? stack.flatMap(l => l === existing ? (existing.layers ?? []).filter(k => k.id !== `${CAMERA}_pin`) : [l])
     : stack;
   const layers: Layer[] = existing && !excludeIds ? stack : (() => {
-    const outside = loose.filter(l => keep.has(l.id) || isFullCanvasBgRect(l, W, H));
+    // Depth wrappers ride beside the camera, never in it (motion-depth.ts).
+    const outside = loose.filter(l => keep.has(l.id) || isFullCanvasBgRect(l, W, H) || l.id.startsWith(DEPTH));
     const inside = loose.filter(l => !outside.includes(l));
     const pin = { id: `${CAMERA}_pin`, type: 'rect', z: -1, ...frame, fill: '#000000', opacity: 0 };
     const z = Math.max(1, ...inside.map(l => (l as Layer & { z?: number }).z ?? 1));
@@ -155,6 +157,8 @@ export function cameraMotion(args: CameraArgs): ToolResult {
 
   const bak = snapshot(dPath);
   const placed = setAnimation(layers, new Map([[CAMERA, { keyframes: track, playback: { duration, origin: 'offset', easing: 'ease-in-out' } }]]));
+  // Layers set at a depth follow the new shots at their share of the move.
+  syncDepth(placed);
   if (pageGroup) commitScope(spec, scoped.page, [{ ...pageGroup, layers: placed } as Layer]);
   else commitScope(spec, scoped.page, placed);
   if (world) host.world = world; else delete host.world;

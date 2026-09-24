@@ -76,6 +76,9 @@ CONTINUOUS COMPOSITION — one scene, many sub-sequences (a 30 s motion piece)
   • One channel from another: op:drive layer_id channel driver:{layer_id?, channel}
     factor add? lag? — a shadow's scale from its ball's y, a needle from a bar;
     roll:true turns a wheel by its own x. Exact keys; re-run after the driver changes.
+  • Depth under a camera: op:depth depths:{hills:1, clouds:3, grass:-0.4} — far layers
+    travel and zoom less than the camera, near ones more (parallax); 0 is the focal plane.
+    Camera first; re-framing it keeps the depths in step.
   • Travel instead of cutting: op:camera world:{x,y,width,height} lays the page out
     larger than the canvas; shots target a layer, "world" or a region and the camera
     pans between sections. Shot t takes marker names. rotation:deg on a shot tilts

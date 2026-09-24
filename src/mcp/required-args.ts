@@ -143,6 +143,7 @@ export const PER_OP: Record<string, Record<string, string[]>> = {
     retime: ['design_path', 'at', 'shift_ms'],
     loop: ['design_path', 'layer_id'],
     drive: ['design_path', 'layer_id', 'channel'],
+    depth: ['design_path', 'depths'],
     precomp: ['design_path', 'layer_id'],
     link: ['design_path'],
     parent: ['design_path'],

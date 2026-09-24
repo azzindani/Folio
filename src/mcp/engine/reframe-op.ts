@@ -26,6 +26,7 @@ import { fillAxes, syncSpecPos } from '../engine-customize-tools';
 import { gateDesign } from './diagnose-gate';
 import { fitTextBoxes } from './reframe-text';
 import { reshootCamera } from './reframe-camera';
+import { syncDepth } from './motion-depth';
 import { feedSafeBox } from './diagnose-safe';
 import { drawnBox } from '../../export/frame-geometry';
 import { syncAnimationsToSpec } from './animation-sync';
@@ -105,6 +106,7 @@ function reframeSurface(layers: Layer[], holder: { world?: World }, oldW: number
     const shot = reshootCamera(layers, holder.world, oldW, oldH, W, H);
     if (shot) {
       holder.world = shot.world;
+      syncDepth(layers);
       spanGrounds(layers, oldW, oldH, W, H);
       const pinned = pinOutside(layers, oldW, oldH, W, H);
       return `${shot.shots} camera shot(s) re-framed for the new frame; the world stays as laid out${pinned ? `, ${pinned} fixed layer(s) kept to their edges` : ''}`;
