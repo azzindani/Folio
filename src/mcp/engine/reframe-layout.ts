@@ -120,10 +120,12 @@ export function planReframe(layers: Layer[], oldW: number, oldH: number, W: numb
     const gap = rowGap(tree, 0.04 * short);
     const fit = (): number => { const s = sizeOf(tree, stacked, gap); return Math.min(cap, s.w ? inner.width / s.w : cap, s.h ? inner.height / s.h : cap); };
     k = fit();
+    // A row of marks — pagination dashes, dots — is one gesture: stacked, a progress bar read as a menu icon.
+    const stackable = xNodes(tree).filter(n => n.kind !== 'leaf' && n.kids.some(c => c.box.height >= 0.03 * short));
     // Greedily stack the x node that most enlarges the content, while one does.
     for (;;) {
       let best: Tree | null = null, bestK = k;
-      for (const n of xNodes(tree)) { if (stacked.has(n)) continue; stacked.add(n); const kk = fit(); stacked.delete(n); if (kk > bestK + 1e-6) { best = n; bestK = kk; } }
+      for (const n of stackable) { if (stacked.has(n)) continue; stacked.add(n); const kk = fit(); stacked.delete(n); if (kk > bestK + 1e-6) { best = n; bestK = kk; } }
       if (!best) break;
       stacked.add(best); k = bestK;
     }
