@@ -121,3 +121,19 @@ v2.0 of our budgeting app Penny is out — new: shared budgets, receipt scanning
 ## b28
 kind: infographic · 1080×1920 · timeline · still
 Our coffee co-op turns 28 this year and we want something for the portrait TV screen in the roastery lobby. Kind of a timeline of the big moments: 1998 six farmers in Huehuetenango start pooling their beans, 2004 first export container to Hamburg, 2011 Fairtrade certified, 2017 we open our own roastery, 2021 the women's cooperative branch (140 members now), 2026 — 28 years, 900 families. Warm, earthy, a bit handmade feeling, nothing corporate. It's up on the wall all day so it shouldn't move.
+
+## b29
+kind: video 16:9 · 20s · journey over a wide scene (camera travel)
+me and two mates cycled the whole Hadrian's Wall path last summer, Bowness-on-Solway to Wallsend, 174 miles in 5 days. want a 20 sec landscape clip for the club's youtube, like the camera flying along the route east with the hills going past, stopping at Carlisle, Once Brewed, Hexham, then Wallsend at the end with "174 miles · 5 days". greens and stone greys, bit of a hand-drawn map feel
+
+## b30
+kind: thumbnail · 1280×720 · still · high contrast
+YouTube thumbnail please. Video is "I ate like a 1920s office worker for a week". Needs to read on a phone at thumbnail size. Big text, maybe a split before/after vibe? Old-timey but not boring.
+
+## b31
+kind: poster · A3 portrait · dense schedule grid
+Timetable poster for Lantern Fields, a one-day folk festival, Sat 12 July. Three stages: Main (Oak Stage), the Barn, and the Kids' Tent. Oak Stage: 12:00 The Hollow Pines, 13:30 Ada Frey, 15:00 Kettle & Crow, 16:45 Marlow Street Band, 18:30 Sian Tully, 20:30 The Fenwicks (headline). Barn: 12:30 open session, 14:00 Rook Ensemble, 15:30 Dimitra Lang, 17:00 ceilidh with the Tay Rovers, 19:30 Wren. Kids' Tent: 11:00 lantern making, 13:00 puppet show, 14:30 face painting, 16:00 storytelling. Gates 10:30, last entry 19:00. It'll be printed and stuck up around the site so people need to find their stage and time fast.
+
+## b32
+kind: gif loop · 1:1 · invitation
+save the date gif for our wedding!! Nadia & Tomás, 19.09.2027, Sintra. something gentle that loops, like petals or light moving, very soft. we'll send it on whatsapp so square is best

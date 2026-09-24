@@ -26,7 +26,8 @@ import { readMarkers, resolveTime, type TimeContext } from './motion-time';
 import { syncDepth, DEPTH } from './motion-depth';
 
 type CameraArgs = { design_path: string; shots?: unknown; exclude?: unknown; padding?: number; world?: unknown; page_id?: string; project_path?: string };
-type Shot = { t: number; target: string[] | 'all' | 'world' | Box; padding?: number; easing?: string; hold?: boolean; rotation?: number };
+/** hold: ms the camera stays on the framing before it moves on — or true, stay and then cut to the next. */
+type Shot = { t: number; target: string[] | 'all' | 'world' | Box; padding?: number; easing?: string; hold?: boolean | number; rotation?: number };
 
 const CAMERA = '__camera';
 
@@ -45,11 +46,23 @@ function parseShots(v: unknown, ctx: TimeContext): Shot[] | string {
     const raw = o['target'];
     const target = raw === undefined || raw === 'all' ? 'all' : raw === 'world' ? 'world' : isBox(raw) ? raw : toIdList(raw);
     if (!target) return `shots[${i}].target must be "all", "world", a region {x, y, width, height}, a layer id or a list of ids.`;
+    // Found in the benchmark (r8): hold:1200 — how long to stay — was read as "not true" and dropped, so the camera never rested.
+    const hold = o['hold'];
+    if (hold !== undefined && typeof hold !== 'boolean' && !(typeof hold === 'number' && Number.isFinite(hold) && hold >= 0)) {
+      return `shots[${i}].hold must be the ms to stay on this framing before moving on (or true: stay, then cut to the next shot).`;
+    }
     out.push({ t, target, padding: typeof o['padding'] === 'number' ? o['padding'] : undefined,
-      easing: typeof o['easing'] === 'string' ? o['easing'] : undefined, hold: o['hold'] === true,
+      easing: typeof o['easing'] === 'string' ? o['easing'] : undefined, hold: hold === true || (typeof hold === 'number' && hold > 0) ? hold : undefined,
       rotation: typeof o['rotation'] === 'number' && Number.isFinite(o['rotation']) ? o['rotation'] : undefined });
   }
-  return out.sort((a, b) => a.t - b.t);
+  out.sort((a, b) => a.t - b.t);
+  for (const [i, s] of out.entries()) {
+    const next = out[i + 1];
+    if (typeof s.hold === 'number' && next && s.t + s.hold >= next.t) {
+      return `The shot at ${s.t} ms holds ${s.hold} ms, into the next shot at ${next.t} ms — the camera needs time to travel: hold under ${next.t - s.t} ms, or move the next shot later.`;
+    }
+  }
+  return out;
 }
 
 /** Where a scope's camera world lives: its page, else a deck's first page, else the poster root. */
@@ -145,11 +158,16 @@ export function cameraMotion(args: CameraArgs): ToolResult {
   // A rotation, once a shot sets one, is carried by every later shot: otherwise
   // the track would spin back to 0 between them.
   let turn = 0;
-  const frames: Keyframe[] = shots.map((s, i) => {
+  const poses: Keyframe[] = shots.map((s, i) => {
     turn = s.rotation ?? turn;
     const pose = framePose(boxes[i] as Box, canvas, s.padding ?? args.padding ?? 0, pivot, turn);
-    return { t: s.t, scale: pose.scale, x: pose.x, y: pose.y, ...(turn ? { rotation: turn } : {}),
-      ...(s.easing ? { easing: s.easing } : {}), ...(s.hold ? { hold: true } : {}) };
+    return { t: s.t, scale: pose.scale, x: pose.x, y: pose.y, ...(turn ? { rotation: turn } : {}) };
+  });
+  // A held shot is two keys on one pose; the curve to the next shot leaves from the second.
+  const frames: Keyframe[] = poses.flatMap((k, i) => {
+    const s = shots[i];
+    const leave = { ...(s?.easing ? { easing: s.easing } : {}), ...(s?.hold === true ? { hold: true } : {}) };
+    return typeof s?.hold === 'number' ? [k, { ...k, t: k.t + s.hold, ...leave }] : [{ ...k, ...leave }];
   });
   // A single shot still needs two frames to play: hold it.
   const track = frames.length === 1 ? [frames[0] as Keyframe, { ...(frames[0] as Keyframe), t: (frames[0]?.t ?? 0) + 1 }] : frames;
@@ -167,7 +185,8 @@ export function cameraMotion(args: CameraArgs): ToolResult {
 
   return okResult(op, {
     design_path: dPath, camera: CAMERA, reused: !!existing, ...(world ? { world } : {}),
-    shots: frames.map(f => ({ t: f.t, scale: f.scale, x: f.x, y: f.y, ...(f.rotation ? { rotation: f.rotation } : {}) })),
+    shots: poses.map((f, i) => ({ t: f.t, scale: f.scale, x: f.x, y: f.y, ...(f.rotation ? { rotation: f.rotation } : {}),
+      ...(shots[i]?.hold !== undefined ? { hold: shots[i]?.hold } : {}) })),
     progress: [pOk(`${existing ? 'Re-framed' : 'Placed'} a camera over the page`, `${shots.length} shot(s); the ground stays still behind it`)],
     next_action: { tool: 'animation', params: { op: 'frame', design_path: dPath, ...(args.page_id ? { page_id: args.page_id } : {}), t: shots[Math.min(1, shots.length - 1)]?.t ?? 0 }, remaining: 0,
       hint: 'Check a shot with op:frame. Add exclude:[ids] to hold a layer still while the camera moves.' },

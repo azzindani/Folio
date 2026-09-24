@@ -101,6 +101,7 @@ WIGGLE (a parent that never sits still)
 CAMERA (push in, pull back, pan)
   animation(op:camera, shots:[{t:0, target:"all"}, {t:1200, target:"stat", padding:80}, {t:3000, target:"all"}])
   Puts the page content under a __camera group and frames each shot's target to fill the canvas.
+  A shot's hold:ms keeps the camera on that framing before it travels to the next — a stop.
   The page ground stays still; exclude:[ids] holds other layers still too. Call again to re-frame.
 
 MORPH (one shape becomes another)

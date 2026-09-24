@@ -83,10 +83,20 @@ export function reshootCamera(layers: Layer[], world: Box, oldW: number, oldH: n
   const from: Box = { x: cam.x ?? 0, y: cam.y ?? 0, width: cam.width, height: cam.height };
   const P = { x: from.x + from.width / 2, y: from.y + from.height / 2 };
   const delay = cam.animation?.playback?.delay ?? 0;
-  const shots = keys.map(k => {
-    const s = typeof k['scale'] === 'number' ? k['scale'] : 1, tx = typeof k['x'] === 'number' ? k['x'] : 0, ty = typeof k['y'] === 'number' ? k['y'] : 0;
+  const num = (k: Keyframe, c: string, d: number): number => (typeof k[c] === 'number' ? k[c] as number : d);
+  const seen = keys.map(k => {
+    const s = num(k, 'scale', 1), tx = num(k, 'x', 0), ty = num(k, 'y', 0);
     const region: Box = { x: P.x + (0 - P.x - tx) / s, y: P.y + (0 - P.y - ty) / s, width: oldW / s, height: oldH / s };
-    const shown = subject(layers, delay + k.t, region);
+    return subject(layers, delay + k.t, region);
+  });
+  // A held shot is two keys on one pose: re-shot as one framing, so the camera does not drift while it holds.
+  const run: number[] = [];
+  keys.forEach((k, i) => {
+    const p = keys[i - 1];
+    run.push(p && ['scale', 'x', 'y'].every(c => num(k, c, c === 'scale' ? 1 : 0) === num(p, c, c === 'scale' ? 1 : 0)) ? run[i - 1] ?? i : i);
+  });
+  const shots = keys.map((k, i) => {
+    const shown = union(seen.filter((_, j) => run[j] === run[i])) ?? (seen[i] as Box);
     return { k, shown, ...reframe(shown, W, H) };
   });
   const grown = union([world, { x: 0, y: 0, width: W, height: H }, ...shots.map(x => x.region)]) ?? world;

@@ -74,6 +74,21 @@ describe('animation op:camera', () => {
     expect(String(frame['transform'])).toMatch(/scale\(3\.857/);
   });
 
+  it('stays on a held shot for its hold, then travels (r8: hold:1200 was dropped and the camera never rested)', () => {
+    const r = cameraMotion({ design_path: dPath, shots: [{ t: 0, target: 'all', hold: 600 }, { t: 1600, target: 'stat', padding: 40 }] });
+    expect(r.success, JSON.stringify(r)).toBe(true);
+    expect((r['shots'] as Array<Record<string, unknown>>)[0]?.['hold']).toBe(600);
+    const pose = (t: number): string => String((layersAt(top() as unknown as Layer[], t)[1] as unknown as Record<string, unknown>)['transform'] ?? '');
+    expect(pose(500)).toBe(pose(0));
+    expect(pose(1100)).not.toBe(pose(600));
+    expect(pose(1600)).toMatch(/scale\(3\.857/);
+  });
+
+  it('refuses a hold that runs into the next shot, and a hold that is not a time', () => {
+    expect(cameraMotion({ design_path: dPath, shots: [{ t: 0, target: 'all', hold: 1000 }, { t: 1000, target: 'stat' }] })['error']).toMatch(/holds 1000 ms, into the next shot/);
+    expect(cameraMotion({ design_path: dPath, shots: [{ t: 0, target: 'all', hold: 'long' }, { t: 1000, target: 'stat' }] })['error']).toMatch(/hold must be the ms/);
+  });
+
   it('refuses a shot at a layer that is not there, and leaves the file alone', () => {
     const before = fs.readFileSync(dPath, 'utf8');
     expect(cameraMotion({ design_path: dPath, shots: [{ t: 0, target: 'ghost' }] }).success).toBe(false);

@@ -111,6 +111,21 @@ describe('manage_design {op:"reframe"}', () => {
     }
   });
 
+  it('re-shoots a held shot as one framing, even when something lands while it holds', async () => {
+    const tour = write('held', { world: { x: 0, y: 0, width: 3840, height: 1080 }, layers: [
+      { id: 'sky', type: 'rect', z: 0, x: 0, y: 0, width: 1920, height: 1080, fill: '#101820' },
+      { id: 'a', type: 'rect', z: 1, x: 610, y: 340, width: 700, height: 400, fill: '#E4572E' },
+      { id: 'tag', type: 'rect', z: 2, x: 1250, y: 400, width: 300, height: 200, fill: '#FAF5EC',
+        animation: { keyframes: [{ t: 0, opacity: 0 }, { t: 400, opacity: 1 }], playback: { delay: 800, duration: 400 } } },
+      { id: 'b', type: 'rect', z: 1, x: 2530, y: 340, width: 700, height: 400, fill: '#E4572E' }] });
+    await ALL_HANDLERS['animation']?.({ op: 'camera', design_path: tour, shots: [{ t: 0, target: 'a', padding: 60, hold: 1500 }, { t: 3000, target: 'b', padding: 60 }] });
+    const r = await reframe({ design_path: tour, aspect: '9:16' });
+    const cam = (load(String(r['design_path'])).layers ?? []).find(l => l.id === '__camera') as unknown as { animation: { keyframes: Array<Record<string, number>> } };
+    const [k0, k1] = cam.animation.keyframes;
+    expect(k1?.['t']).toBe(1500);
+    for (const c of ['x', 'y', 'scale']) expect(k1?.[c]).toBe(k0?.[c]);
+  });
+
   it('carries a world page with no camera yet whole, and moves its world with it', async () => {
     const cam = write('cam', { world: { x: 0, y: 0, width: 3840, height: 1080 }, layers: [
       { id: 'a', type: 'rect', z: 1, x: 200, y: 300, width: 400, height: 400, fill: '#111' },
