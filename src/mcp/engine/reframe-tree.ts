@@ -7,7 +7,8 @@
  *
  * Laid out, a subtree nothing inside has changed keeps its arrangement whole
  * (one map for all of it). An x node may be STACKED: its columns go one under
- * another, left edges together, `gap` apart — the design's own row rhythm. The
+ * another, `gap` apart — the design's own row rhythm — each on the side it had
+ * in the row (left stays left, right goes right). The
  * rest keeps the offsets and gaps it was authored with.
  */
 
@@ -102,7 +103,14 @@ export function placeTree(t: Tree, x: number, y: number, k: number, stacked: Set
   let cx = x, cy = y;
   t.kids.forEach((kid, i) => {
     const s = sizeOf(kid, stacked, gap);
-    if (stacked.has(t)) { if (i) cy += k * gap; placeTree(kid, x, cy, k, stacked, gap, maps); cy += k * s.h; }
+    if (stacked.has(t)) {
+      // Each keeps the side it had in the row: b27's phone, right of its title, sits right under it — not flush left.
+      const col = sizeOf(t, stacked, gap).w, side = t.box.width - kid.box.width;
+      const frac = side > 0 ? Math.max(0, Math.min(1, (kid.box.x - t.box.x) / side)) : 0;
+      if (i) cy += k * gap;
+      placeTree(kid, x + k * (col - s.w) * frac, cy, k, stacked, gap, maps);
+      cy += k * s.h;
+    }
     else if (t.kind === 'y') { cy += k * gapBefore(t, i); placeTree(kid, x + k * (kid.box.x - t.box.x), cy, k, stacked, gap, maps); cy += k * s.h; }
     else { cx += k * gapBefore(t, i); placeTree(kid, cx, y + k * (kid.box.y - t.box.y), k, stacked, gap, maps); cx += k * s.w; }
   });

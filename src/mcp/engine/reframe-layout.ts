@@ -129,10 +129,11 @@ export function planReframe(layers: Layer[], oldW: number, oldH: number, W: numb
     k = fit();
     // A row of marks — pagination dashes, dots — is one gesture: stacked, a progress bar read as a menu icon.
     const stackable = xNodes(tree).filter(n => n.kind !== 'leaf' && n.kids.some(c => c.box.height >= 0.03 * short));
-    // Greedily stack the x node that most enlarges the content, while one does.
+    // Greedily stack the x node that most enlarges the content, while one does by more than 10%:
+    // for less, the piece's own arrangement is worth more (b27's 1:1 cut stacked for ×0.62 over ×0.58).
     for (;;) {
-      let best: Tree | null = null, bestK = k;
-      for (const n of stackable) { if (stacked.has(n)) continue; stacked.add(n); const kk = fit(); stacked.delete(n); if (kk > bestK + 1e-6) { best = n; bestK = kk; } }
+      let best: Tree | null = null, bestK = k * 1.1;
+      for (const n of stackable) { if (stacked.has(n)) continue; stacked.add(n); const kk = fit(); stacked.delete(n); if (kk > bestK) { best = n; bestK = kk; } }
       if (!best) break;
       stacked.add(best); k = bestK;
     }
