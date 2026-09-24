@@ -63,7 +63,12 @@ const nameOf = (u: Unit): string => (u.leaves.length === 1 ? u.leaves[0] ?? u.id
  */
 export function frameUnits(frame: Layer[], canvas: { width: number; height: number }): Unit[] {
   const whole = canvas.width * canvas.height;
-  const boxes = canvasBoxes(paintOrder(frame));
+  // An image is what it draws, not its box: an icon's transparent margin meets nothing (image-ink.ts, r8).
+  const inked = (b: CanvasBox): Box => {
+    const f = (b.layer as { ink_box?: { x: number; y: number; w: number; h: number } }).ink_box;
+    return f ? { x: b.box.x + f.x * b.box.width, y: b.box.y + f.y * b.box.height, width: f.w * b.box.width, height: f.h * b.box.height } : b.box;
+  };
+  const boxes = canvasBoxes(paintOrder(frame)).map(b => ({ ...b, box: inked(b) }));
   const up = ancestry(frame);
   const byId = new Map<string, Node>();
   const index = (ls: Layer[]): void => { for (const l of ls as Node[]) { byId.set(l.id, l); if (Array.isArray(l.layers)) index(l.layers); } };

@@ -34,6 +34,7 @@ import { accentNote } from './ai-slop-lint';
 import { validateDesignSpec } from '../../schema/validator';
 import { resolveAutoLayouts } from '../../renderer/auto-layout-place';
 import { italicFindings } from './diagnose-italic';
+import { withImageInk } from './image-ink';
 
 export type PageFinding = Finding & { page?: string };
 
@@ -99,7 +100,7 @@ export function collectFindings(
   // A moving surface is also judged where each shot rests (diagnose-motion.ts).
   const run = (raw: Layer[] | undefined, page?: Page): PageFinding[] => {
     // Measured where the renderer draws: an auto-layout container's children carry no x/y of their own.
-    const layers = resolveAutoLayouts(raw ?? []);
+    const layers = withImageInk(resolveAutoLayouts(raw ?? []), designPath, projectPath);
     const moving = motionFindings(spec, layers, page);
     // A pair judged where the shots rest is not judged again as authored.
     // The static message names its pair first: "a" and "b" (both text) overlap …
