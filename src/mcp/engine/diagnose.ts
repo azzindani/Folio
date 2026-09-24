@@ -109,6 +109,17 @@ function moveInside(b: Box, st: Stage, layer: Layer | undefined, W: number, H: n
   return { call: { tool: 'edit_layer', params: { op: 'move', layer_id: b.id, dx: Math.round(mv[0]), dy: Math.round(mv[1]) } } };
 }
 
+/** Whether a layer draws something opaque over (nearly) the whole canvas — a preset's ground does, a camera's pin does not. */
+export function paintsCanvas(l: Layer | undefined, W: number, H: number): boolean {
+  if (!l) return false;
+  const o = l as unknown as { layers?: Layer[]; opacity?: number; visible?: boolean; fill?: unknown };
+  if (o.visible === false || (typeof o.opacity === 'number' && o.opacity < 0.5)) return false;
+  if (Array.isArray(o.layers)) return o.layers.some(k => paintsCanvas(k, W, H));
+  const b = box(l);
+  const fill = typeof o.fill === 'string' ? o.fill : (o.fill as { color?: unknown } | undefined)?.color;
+  return !!b && b.w * b.h >= 0.85 * W * H && ['rect', 'image', 'gradient', 'background'].includes(l.type) && fill !== 'none' && fill !== 'transparent';
+}
+
 /** Every layer by id, groups' children included. */
 function layersById(layers: Layer[], out = new Map<string, Layer>()): Map<string, Layer> {
   for (const l of layers) { out.set(l.id, l); const kids = (l as { layers?: Layer[] }).layers; if (Array.isArray(kids)) layersById(kids, out); }
@@ -359,7 +370,9 @@ export function analyzeLayers(authored: Layer[], W: number, H: number, world?: S
   // replacing it (dedupe renames them foo_1, foo_1-2, foo_1-3…). They overlap
   // perfectly so no collision fires and only the TOP one renders — the rest are
   // dead weight the model can't SEE. Flag it with the ids to remove.
-  const fullGroups = boxes(layers).filter(b => b.type === 'group' && FULL_BG(b, W, H));
+  // The engine's own rigs — a camera, the depth wrappers beside it — are full-canvas boxes
+  // around an invisible pin, not presets (B7, live: four of them were called duplicates).
+  const fullGroups = boxes(layers).filter(b => b.type === 'group' && FULL_BG(b, W, H) && !b.id.startsWith('__'));
   if (fullGroups.length > 1) {
     const ids = fullGroups.map(b => b.id);
     out.push({
