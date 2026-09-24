@@ -94,6 +94,20 @@ export function createDesign(args: { project_path: string; name: string; type?: 
     w = nw; h = nh;
   }
 
+  // Found in the benchmark (r8): a design made in a project nobody had created
+  // landed in a bare folder with no project.yaml — success:true, and then
+  // manage_design list / assets answered "Project not found". Make the project
+  // the design needs, as create_project would; a folder that is not one is named.
+  if (!fs.existsSync(path.join(projectDir, 'project.yaml'))) {
+    if (!fs.existsSync(projectDir)) {
+      const made = createProject({ name: path.basename(projectDir), path: projectDir, theme: args.theme_ref, canvas: `${w}x${h}` });
+      if (!made.success) return errResult(op, `Project ${projectDir} does not exist and could not be created: ${String(made['error'] ?? '')}`, 'Run create_project first.', progress);
+      progress.push(pInfo(`Project "${path.basename(projectDir)}" did not exist — created it`, `as create_project would: folders, theme, project.yaml, canvas ${w}×${h}`));
+    } else {
+      progress.push(pWarn(`${projectDir} is not a Folio project`, 'it has no project.yaml, so manage_design list and the asset ops will not find this design — run create_project on it'));
+    }
+  }
+
   const spec: DesignSpec = {
     _protocol: 'design/v1',
     // A freshly-created design is EMPTY — it is a draft until add_layers + seal,

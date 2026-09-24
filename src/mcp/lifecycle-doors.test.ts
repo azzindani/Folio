@@ -55,3 +55,21 @@ describe('handovers point at the work in progress', () => {
     expect(r.handover.suggested_next[0]?.tool).toBe('append_page');
   });
 });
+
+describe('create_design in a project nobody created (r8)', () => {
+  it('makes the project the design needs, so list and assets can find it', () => {
+    const fresh = path.join(root, 'never-made');
+    const r = createDesign({ project_path: fresh, name: 'timetable', width: 1600, height: 2263 });
+    expect(r.success).toBe(true);
+    expect(JSON.stringify(r['progress'])).toMatch(/did not exist — created it/);
+    expect(fs.existsSync(path.join(fresh, 'project.yaml'))).toBe(true);
+    expect(JSON.stringify(listDesigns({ project_path: fresh } as never))).toMatch(/timetable/);
+  });
+
+  it('says so when the folder is there but is not a project', () => {
+    const bare = path.join(root, 'bare-folder');
+    fs.mkdirSync(bare, { recursive: true });
+    const r = createDesign({ project_path: bare, name: 'loose' });
+    expect(JSON.stringify(r['progress'])).toMatch(/is not a Folio project/);
+  });
+});
