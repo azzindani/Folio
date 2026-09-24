@@ -51,12 +51,28 @@ describe('analyzeLayers — geometry', () => {
   });
 
   it('flags near-miss misalignment (edges off by a few px) — two texts by their letters', () => {
-    const h = text('h', 100, 100, 400, 60, 48), b = text('b', 103, 200, 400, 40, 24);
+    const h = text('h', 100, 100, 400, 60, 48), b = text('b', 105, 200, 400, 40, 24);
     const m = analyzeLayers([bg, h, b], W, H).find(x => x.code === 'misalignment');
     expect(m?.severity).toBe('suggestion');
     const off = (inkLeft(b) ?? NaN) - (inkLeft(h) ?? NaN);
-    expect(m?.message).toContain(`their letters are ${Math.abs(off).toFixed(1)}px apart (ink, not boxes)`);
+    expect(m?.message).toContain(`its letters are ${Math.abs(off).toFixed(1)}px off their edge (ink, not boxes)`);
     expect(m?.call).toEqual({ tool: 'edit_layer', params: { op: 'move', layer_id: 'h', dx: Math.round(off) } });
+    // Letters within 2 px of each other are on one line to the eye.
+    const near = text('near', 101, 300, 400, 40, 48);
+    expect(analyzeLayers([bg, h, near], W, H).filter(x => x.code === 'misalignment')).toEqual([]);
+  });
+
+  // benchmark r7 b28: six years over six captions on one column; one caption's F sits in by its bearing.
+  it('names the one text off a shared column once, not every pair that nearly lines up', () => {
+    const serif = { font_family: 'Fraunces', font_weight: 700, font_size: 64 }, sans = { font_family: 'Archivo', font_weight: 500, font_size: 34 };
+    const caps = ['Six farmers pool their beans.', 'Our first container sails.', 'Fairtrade certified.', 'We open a roastery.'];
+    const col: Layer[] = caps.flatMap((c, i) => [
+      { ...text(`yr${i}`, 260, 590 + i * 208, 400, 76, 64), content: { type: 'plain', value: String(1998 + i * 6) }, style: serif },
+      { ...text(`desc${i}`, 262, 674 + i * 208, 620, 100, 34), content: { type: 'plain', value: c }, style: sans },
+    ] as unknown as Layer[]);
+    const misses = analyzeLayers([bg, ...col], W, 1920).filter(x => x.code === 'misalignment');
+    expect(misses.map(f => f.layer_id)).toEqual(['desc2']);
+    expect(misses[0]?.call?.params).toMatchObject({ op: 'move', layer_id: 'desc2', dx: -2 });
   });
 
   // benchmark r6 b22: a 300 px "30%" set 6 px left of a column of smaller lines to line its letters up.
