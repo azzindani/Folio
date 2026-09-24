@@ -33,6 +33,7 @@ import { moments } from './diagnose-safe';
 import { accentNote } from './ai-slop-lint';
 import { validateDesignSpec } from '../../schema/validator';
 import { resolveAutoLayouts } from '../../renderer/auto-layout-place';
+import { italicFindings } from './diagnose-italic';
 
 export type PageFinding = Finding & { page?: string };
 
@@ -113,7 +114,8 @@ export function collectFindings(
     const glyphs = glyphFindings(layers, designPath, projectPath);
     const overprint = overprintFindings(layers, W, H);
     const orphans = orphanFindings(spec, layers, page);
-    return [...asSeen(spec, still, layers, page), ...moving, ...safe, ...glyphs, ...overprint, ...orphans].map(f => (page ? { ...f, page: page.id } : f));
+    const italics = italicFindings(layers, designPath, projectPath);
+    return [...asSeen(spec, still, layers, page), ...moving, ...safe, ...glyphs, ...italics, ...overprint, ...orphans].map(f => (page ? { ...f, page: page.id } : f));
   };
 
   const findings: PageFinding[] = [];
