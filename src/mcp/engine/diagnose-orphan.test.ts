@@ -27,6 +27,19 @@ describe('orphanFindings', () => {
     expect(find([bg, halo({ out }), clock, brand])).toEqual([]);
   });
 
+  it('leaves a moon that rises out from behind the sea — never the sea\'s to hold (r7, b26)', () => {
+    const rise = { keyframes: [{ t: 0, y: 0 }, { t: 2800, y: -300, easing: 'ease-out-sine' }], playback: { duration: 2800, delay: 300, origin: 'offset' } };
+    const moon = { id: 'moon', type: 'ellipse', z: 1, x: 410, y: 1135, width: 260, height: 260, fill: '#D9E4D8', animation: rise };
+    const sea = { id: 'sea', type: 'rect', z: 2, x: 0, y: 1060, width: 1080, height: 860, fill: '#143833' };
+    const lowSea = { ...sea, id: 'pool', x: 100, width: 880 };   // not a band: still behind, still not holding it
+    const title = { ...brand, id: 'title', y: 300, in: 3400, animation: fade(3400, 0, 1) };   // lands above the horizon, in no one's frame
+    const marks = { night: 0, moonrise: 300, title: 3400 };
+    const s = { ...spec([bg, moon, sea, title]), markers: marks } as unknown as DesignSpec;
+    expect(orphanFindings(s, s.layers as Layer[])).toEqual([]);
+    const p = { ...spec([bg, moon, lowSea, title]), markers: marks } as unknown as DesignSpec;
+    expect(orphanFindings(p, p.layers as Layer[])).toEqual([]);
+  });
+
   it('leaves a card whose words change, and sprinkles that frame nothing from the start', () => {
     const card = { id: 'card', type: 'rect', z: 1, x: 140, y: 600, width: 800, height: 300, fill: '#1B2A3C' };
     const say = (id: string, inAt: number, outAt?: number): object => ({ id, type: 'text', z: 2, x: 180, y: 680, width: 700, height: 120, in: inAt, ...(outAt ? { out: outAt } : {}),
