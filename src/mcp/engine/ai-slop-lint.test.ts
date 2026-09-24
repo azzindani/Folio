@@ -93,6 +93,8 @@ describe('lintAiSlop', () => {
     const stage = (id: string, n: number): Layer => L({ id, type: 'auto_layout', x: 0, y: 0, width: 420, height: 1400,
       layers: Array.from({ length: n }, (_, i) => card(`${id}${i}`, 150 + i * 40, `1${i}:00`)) });
     expect(accentNote([stage('oak', 5), stage('barn', 4)])).toBeNull();
+    // The same cards in six columns of different lengths (b31: 6, 5 and 4 acts) are still one series, not six.
+    expect(accentNote(['a', 'b', 'c', 'd', 'e', 'f'].map((id, i) => stage(id, 3 + i)))).toBeNull();
     // Six cards that are not alike — each holds something different — are six uses.
     const odd = L({ id: 'odd', type: 'group', x: 0, y: 0, width: 420, height: 1400,
       layers: ['#1F2A36', '#2B3A4A', '#3A4A5A', '#4A5A6A', '#5A6A7A', '#6A7A8A'].map((b, i) => card(`o${i}`, 150, `1${i}:00`, '#E0782F', b)) });

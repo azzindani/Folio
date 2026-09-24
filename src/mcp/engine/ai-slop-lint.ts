@@ -244,7 +244,8 @@ function surfaceKeys(layers: Layer[]): Map<Layer, string> {
       keys.set(l, parent !== '' ? parent : object.get(l) ?? ((count.get(sig(l)) ?? 0) >= 3 ? `series:${sig(l)}` : l.id));
       const kids = (l as { layers?: Layer[] }).layers;
       const h = holds(l);
-      if (Array.isArray(kids)) walk(kids, h && (alike.get(h) ?? 0) >= 3 ? `series:${parent}:${h}` : l.id);
+      // One series wherever the cards sit: a stage's column and the next stage's hold the same cards.
+      if (Array.isArray(kids)) walk(kids, h && (alike.get(h) ?? 0) >= 3 ? `series:${h}` : l.id);
     }
   };
   walk(layers, '');
