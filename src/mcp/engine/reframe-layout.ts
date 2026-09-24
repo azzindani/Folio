@@ -25,7 +25,8 @@ import { feedSafeBox } from './diagnose-safe';
 
 type Node = Layer & { layers?: Layer[]; animation?: unknown; clock?: unknown; link?: unknown; effects?: { blur?: unknown }; opacity?: number };
 export type { Box };
-export type Span = { w: boolean; h: boolean };
+/** Axes a ground or band spanned, and the edges it touched — a sea running to the bottom edge still does after. */
+export type Span = { w: boolean; h: boolean; top: boolean; bottom: boolean; left: boolean; right: boolean };
 
 export interface ReframePlan {
   /** The content's scale. */
@@ -98,7 +99,8 @@ export function planReframe(layers: Layer[], oldW: number, oldH: number, W: numb
   for (const l of all) {
     const b = boxOf(l);
     if (!b || area(b) <= 0) continue;
-    const span = { w: b.x <= oldW * 0.01 && b.x + b.width >= oldW * 0.99, h: b.y <= oldH * 0.01 && b.y + b.height >= oldH * 0.99 };
+    const left = b.x <= oldW * 0.01, right = b.x + b.width >= oldW * 0.99, top = b.y <= oldH * 0.01, bottom = b.y + b.height >= oldH * 0.99;
+    const span = { w: left && right, h: top && bottom, top, bottom, left, right };
     if (span.w || span.h) spans.set(l, span);
     (span.w || span.h || atmosphere(l as Node) ? behind : content).push({ l, b });
   }
@@ -112,13 +114,18 @@ export function planReframe(layers: Layer[], oldW: number, oldH: number, W: numb
   const safe = feedSafeBox(W, H);
   const ix = Math.max(m, safe?.x ?? 0), iy = Math.max(m, safe?.y ?? 0);
   const inner: Box = { x: ix, y: iy, width: Math.min(W - m, safe ? safe.x + safe.width : W) - ix, height: Math.min(H - m, safe ? safe.y + safe.height : H) - iy };
+  // A composition set on the centre line stays on the canvas's centre line — inside the part of the
+  // safe box symmetric about it (the feed's button column made b26's centred poster sit 70 px left).
+  const across = clamp01((all0.x - oldMargin) / (oldW - 2 * oldMargin - all0.width));
+  const centred = Math.abs(across - 0.5) < 0.08;
+  const room = centred ? 2 * Math.min(W / 2 - inner.x, inner.x + inner.width - W / 2) : inner.width;
   const maps = new Map<Layer, Affine>();
   const stacked = new Set<Tree>();
   let k = cap;
   if (blocks.length) {
     const tree = xyCut(blocks);
     const gap = rowGap(tree, 0.04 * short);
-    const fit = (): number => { const s = sizeOf(tree, stacked, gap); return Math.min(cap, s.w ? inner.width / s.w : cap, s.h ? inner.height / s.h : cap); };
+    const fit = (): number => { const s = sizeOf(tree, stacked, gap); return Math.min(cap, s.w ? room / s.w : cap, s.h ? inner.height / s.h : cap); };
     k = fit();
     // A row of marks — pagination dashes, dots — is one gesture: stacked, a progress bar read as a menu icon.
     const stackable = xNodes(tree).filter(n => n.kind !== 'leaf' && n.kids.some(c => c.box.height >= 0.03 * short));
@@ -132,7 +139,7 @@ export function planReframe(layers: Layer[], oldW: number, oldH: number, W: numb
     // The whole keeps its place across the old margins, and the old split of space above and below.
     const s = sizeOf(tree, stacked, gap);
     const above = all0.y, below = oldH - all0.y - all0.height;
-    const x = inner.x + (inner.width - k * s.w) * clamp01((all0.x - oldMargin) / (oldW - 2 * oldMargin - all0.width));
+    const x = centred ? (W - k * s.w) / 2 : inner.x + (inner.width - k * s.w) * across;
     const y = inner.y + (inner.height - k * s.h) * clamp01(above / (above + below));
     placeTree(tree, x, y, k, stacked, gap, maps);
   }

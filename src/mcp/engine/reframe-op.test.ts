@@ -68,6 +68,19 @@ describe('manage_design {op:"reframe"}', () => {
     expect((await reframe({ design_path: promo, aspect: '9:16' }))['error']).toMatch(/already exists/);
   });
 
+  it('keeps a band that ran to the bottom edge running to the new bottom edge (b26\'s sea)', async () => {
+    const poster = write('sea', { document: { width: 1080, height: 1350 }, layers: [
+      { id: 'sky', type: 'rect', z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: '#0E2A27' },
+      { id: 'sea', type: 'rect', z: 1, x: 0, y: 860, width: 1080, height: 490, fill: '#143833' },
+      { id: 'moon', type: 'ellipse', z: 0, x: 390, y: 640, width: 300, height: 300, fill: '#D9E4D8' },
+      { id: 'title', type: 'text', z: 2, x: 90, y: 180, width: 900, height: 280, content: { type: 'plain', value: 'The Salt Orchard' }, style: { font_family: 'Fraunces', font_size: 132, text_align: 'center' } },
+    ] });
+    const r = await reframe({ design_path: poster, aspect: '9:16' });
+    const sea = (load(String(r['design_path'])).layers ?? []).find(l => l.id === 'sea') as unknown as { y: number; height: number; width: number };
+    expect(sea.width).toBe(1080);
+    expect(sea.y + sea.height).toBe(1920);
+  });
+
   it('carries a camera page whole and moves its world with it', async () => {
     const cam = write('cam', { world: { x: 0, y: 0, width: 3840, height: 1080 }, layers: [
       { id: 'a', type: 'rect', z: 1, x: 200, y: 300, width: 400, height: 400, fill: '#111' },
