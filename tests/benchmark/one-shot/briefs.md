@@ -113,3 +113,11 @@ We're hiring a junior designer — remote, EU timezones, €38–44k. 12 second 
 ## b26
 kind: multiformat · event · poster + video
 Book launch for my novel "The Salt Orchard" — 6 May, 7pm, Foyles Charing Cross. I need a portrait poster for instagram AND a short 10 second vertical video teaser with the same look. Literary, a little mysterious, sea greens.
+
+## b27
+kind: video 16:9 · 15s · app update + 9:16 / 1:1 cuts
+v2.0 of our budgeting app Penny is out — new: shared budgets, receipt scanning, dark mode. need a 15s video for youtube (16:9) and then the same thing cut down for reels + a square one for linkedin. brand color is a mint green #3DDC97, logo is just the word penny in lowercase
+
+## b28
+kind: infographic · 1080×1920 · timeline · still
+Our coffee co-op turns 28 this year and we want something for the portrait TV screen in the roastery lobby. Kind of a timeline of the big moments: 1998 six farmers in Huehuetenango start pooling their beans, 2004 first export container to Hamburg, 2011 Fairtrade certified, 2017 we open our own roastery, 2021 the women's cooperative branch (140 members now), 2026 — 28 years, 900 families. Warm, earthy, a bit handmade feeling, nothing corporate. It's up on the wall all day so it shouldn't move.
