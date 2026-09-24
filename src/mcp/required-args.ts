@@ -98,6 +98,7 @@ export const PER_OP: Record<string, Record<string, string[]>> = {
     resume: ['design_path'],
     get_spec: ['design_path'],
     resize: ['design_path'],
+    reframe: ['design_path'],
     tokens: ['design_path'],
     lineage: ['design_path'],
     restore: ['design_path'],

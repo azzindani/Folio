@@ -16,6 +16,7 @@ export { iconSearch } from './engine/icon-search';
 export { getDesignSpec, patchDesignSpec, designTokens, designLineage, restoreDesign } from './engine-spec-tools';
 export { styleHistory } from './engine-style-tools';
 export { customizeReport, customizePresentation, resizeDesign, reflowToCanvas } from './engine-customize-tools';
+export { reframeDesign } from './engine/reframe-op';
 export { assetProcess } from './engine/asset-process-op';
 export { assetFetch } from './engine/asset-fetch';
 export { listPacks } from './engine/packs';

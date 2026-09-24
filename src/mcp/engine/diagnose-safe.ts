@@ -53,6 +53,13 @@ export function feedZoneBoxes(W: number, H: number): Box[] {
   return Math.abs(W / H - VERTICAL) <= 0.02 * VERTICAL ? feedZones(W, H).map(z => z.box) : [];
 }
 
+/** Where words stay clear of every app's interface on a vertical feed — null unless the canvas is 9:16. */
+export function feedSafeBox(W: number, H: number): Box | null {
+  if (!feedZoneBoxes(W, H).length) return null;
+  const m = TITLE_SAFE * Math.min(W, H), sy = H / 1920;
+  return { x: m, y: 290 * sy, width: (900 / 1080) * W - m, height: 1150 * sy };
+}
+
 const area = (b: Box): number => Math.max(0, b.width) * Math.max(0, b.height);
 const meet = (a: Box, b: Box): number => {
   const w = Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x);

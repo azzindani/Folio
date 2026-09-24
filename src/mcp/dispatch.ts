@@ -66,6 +66,7 @@ export function dispatchManageDesign(a: Args): ToolResult | Promise<ToolResult> 
     case 'icon_search':  return engine.iconSearch(a as Parameters<typeof engine.iconSearch>[0]);
     case 'get_spec':     return engine.getDesignSpec(a as Parameters<typeof engine.getDesignSpec>[0]);
     case 'resize':       return engine.resizeDesign(a as Parameters<typeof engine.resizeDesign>[0]);
+    case 'reframe':      return engine.reframeDesign(a as Parameters<typeof engine.reframeDesign>[0]);
     case 'tokens':       return engine.designTokens(a as Parameters<typeof engine.designTokens>[0]);
     case 'lineage':      return engine.designLineage(a as Parameters<typeof engine.designLineage>[0]);
     case 'restore':      return engine.restoreDesign(a as Parameters<typeof engine.restoreDesign>[0]);
