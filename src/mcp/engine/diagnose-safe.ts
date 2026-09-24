@@ -16,7 +16,8 @@
  *
  * Measured where things are drawn — group poses applied — and, on a moving
  * page, at each shot's rest. The engine reports; where the words go is the
- * designer's call.
+ * designer's call. On a still 9:16 the feed zones are a suggestion: the canvas
+ * alone does not say it is a Story rather than a screen or a print.
  */
 
 import type { DesignSpec, Layer, Page } from '../../schema/types';
@@ -136,7 +137,10 @@ export function safeAreaFindings(spec: DesignSpec, layers: Layer[], page?: Page)
     : '';
   const out: Finding[] = [];
   const said = new Set<string>();
-  for (const { label, frame } of moments(spec, layers, page)) {
+  for (const { label, t, frame } of moments(spec, layers, page)) {
+    // A 9:16 video is a Reel, a Story, a Short. A 9:16 still may be a Story — or a lobby screen, a
+    // print (r7, b28: a portrait TV timeline was 'Not ready' over app buttons it will never have).
+    const still = t === null;
     for (const b of wordsOn(frame, W, H)) {
       const id = b.layer.id;
       for (const z of zones) {
@@ -145,8 +149,8 @@ export function safeAreaFindings(spec: DesignSpec, layers: Layer[], page?: Page)
         said.add(`${id}:${z.name}`);
         // Into the feed-safe box, not just out of this zone: up out of the caption band could land in the button column.
         const away = safeMove(b.box, b.box, { x: 0, y: 0, width: W, height: H }, W, H);
-        out.push({ code: 'safe_area', severity: 'warning', layer_id: id, ...(away ? move(id, away[0], away[1]) : {}),
-          message: `"${id}"${label} sits ${Math.round(share * 100)}% inside the ${z.name} of a vertical feed (${z.where}) — under ${z.covers}.`,
+        out.push({ code: 'safe_area', severity: still ? 'suggestion' : 'warning', layer_id: id, ...(away ? move(id, away[0], away[1]) : {}),
+          message: `"${id}"${label} sits ${Math.round(share * 100)}% inside the ${z.name} of a vertical feed (${z.where}) — under ${z.covers}${still ? ', if this still runs in a feed' : ''}.`,
           fix: `Keep words a viewer must read inside ${clear} — clear on every app — or let this one be covered on purpose.` });
       }
       const edges = crowded(b.box, W, H, margin);
