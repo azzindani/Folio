@@ -40,7 +40,9 @@ describe('rankGate', () => {
 
 describe('diagnose_design {gate:true}', () => {
   it('holds a vertical piece back for words under the feed\'s caption band, and its call clears it', async () => {
-    const design = write('feed', doc(1080, 1920, [text('title', 120, 700, 'Read this'), text('cta', 120, 1620, 'Join us')]));
+    // Moving, so a Reel or a Story: the feed's interface will be drawn over it.
+    const rise = { animation: { keyframes: [{ t: 0, opacity: 0 }, { t: 500, opacity: 1 }, { t: 4000, opacity: 1 }], playback: { duration: 4000, origin: 'offset' } } };
+    const design = write('feed', doc(1080, 1920, [text('title', 120, 700, 'Read this', rise), text('cta', 120, 1620, 'Join us', rise)]));
     const first = await gate(design);
     expect(first.ready).toBe(false);
     expect(first.top[0]?.code).toBe('safe_area');
@@ -50,7 +52,17 @@ describe('diagnose_design {gate:true}', () => {
     const second = await gate(design);
     expect(second.top.some(i => i.code === 'safe_area')).toBe(false);
     expect(second.ready).toBe(true);
-    expect(second.next_action).toMatchObject({ tool: 'export_design', params: { design_path: design, format: 'png' } });
+    expect(second.next_action).toMatchObject({ tool: 'animation', params: { op: 'export', design_path: design } });
+  }, 60_000);
+
+  it('lets a still vertical piece through — a screen or a print has no feed — and still offers the move (r7, b28)', async () => {
+    const design = write('screen', doc(1080, 1920, [text('title', 120, 700, 'Read this'), text('cta', 120, 1620, 'Join us')]));
+    const g = await gate(design);
+    expect(g.ready).toBe(true);
+    const note = g.top.find(i => i.code === 'safe_area');
+    expect(note?.severity).toBe('suggestion');
+    expect(note?.why).toMatch(/if this still runs in a feed/);
+    expect(note?.call).toMatchObject({ tool: 'edit_layer', params: { op: 'move', layer_id: 'cta' } });
   }, 60_000);
 
   it('gives a line the time to be read with the retime it names, and points a moving piece at animation export', async () => {
