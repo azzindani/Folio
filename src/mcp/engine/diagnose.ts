@@ -12,6 +12,7 @@ import { windowOf, intersectWindows } from '../../animation/lifespan';
 import { findTextOverflows } from './text-measure';
 import { joinSplitPieces } from './split-join';
 import { inkLeft, drawnBox } from '../../export/frame-geometry';
+import { safeMove } from './diagnose-safe';
 
 export interface Finding {
   code: string;
@@ -96,12 +97,22 @@ function overlapArea(a: Box, b: Box): number {
 const FULL_BG = (b: Box, W: number, H: number): boolean => b.w * b.h >= W * H * 0.85 && b.x <= 2 && b.y <= 2;
 const SIZED = new Set(['rect', 'image', 'icon', 'ellipse', 'circle', 'group', 'chart', 'kpi_card', 'path', 'text', 'qrcode', 'polygon']);
 
-/** The shortest move that brings a box wholly inside the stage; none when it is larger than the stage. */
-function moveInside(b: Box, st: Stage): { call: FixCall } | Record<string, never> {
-  if (b.w > st.width || b.h > st.height) return {};
-  const dx = Math.max(st.x - b.x, Math.min(0, st.x + st.width - (b.x + b.w)));
-  const dy = Math.max(st.y - b.y, Math.min(0, st.y + st.height - (b.y + b.h)));
-  return { call: { tool: 'edit_layer', params: { op: 'move', layer_id: b.id, dx: Math.round(dx), dy: Math.round(dy) } } };
+/**
+ * The shortest move that brings a box wholly inside the stage — and a text's
+ * letters inside the safe margins with it, so one call settles every edge check
+ * (diagnose-safe.ts). None when the box is larger than the stage.
+ */
+function moveInside(b: Box, st: Stage, layer: Layer | undefined, W: number, H: number, world: boolean): { call: FixCall } | Record<string, never> {
+  const ink = layer?.type === 'text' && !world ? drawnBox(layer) : null;
+  const mv = safeMove({ x: b.x, y: b.y, width: b.w, height: b.h }, ink, st, W, H);
+  if (!mv) return {};
+  return { call: { tool: 'edit_layer', params: { op: 'move', layer_id: b.id, dx: Math.round(mv[0]), dy: Math.round(mv[1]) } } };
+}
+
+/** Every layer by id, groups' children included. */
+function layersById(layers: Layer[], out = new Map<string, Layer>()): Map<string, Layer> {
+  for (const l of layers) { out.set(l.id, l); const kids = (l as { layers?: Layer[] }).layers; if (Array.isArray(kids)) layersById(kids, out); }
+  return out;
 }
 
 // ── geometry checks ─────────────────────────────────────────
@@ -110,6 +121,7 @@ function geometryFindings(layers: Layer[], W: number, H: number, world?: Stage):
   const bs = boxes(layers).filter(b => SIZED.has(b.type));
   // A camera world is laid out past the canvas on purpose: measure against it.
   const st = world ?? { x: 0, y: 0, width: W, height: H };
+  const ids = layersById(layers);
 
   // Off-canvas.
   for (const b of bs) {
@@ -119,7 +131,7 @@ function geometryFindings(layers: Layer[], W: number, H: number, world?: Stage):
         message: `"${b.id}" extends outside the ${W}×${H} canvas (x:${Math.round(b.x)} y:${Math.round(b.y)} w:${Math.round(b.w)} h:${Math.round(b.h)}) — it will be clipped.`,
         fix: `Move/resize it inside [0,0,${W},${H}].`,
         // Not the heal's to move (it snaps back only what is wholly off): the gate's next call is this.
-        ...moveInside(b, st),
+        ...moveInside(b, st, ids.get(b.id), W, H, !!world),
       });
     }
   }
@@ -134,7 +146,7 @@ function geometryFindings(layers: Layer[], W: number, H: number, world?: Stage):
       code: 'off_canvas', severity: 'error', layer_id: b.id,
       message: `"${b.id}" renders ${Math.round(over)}px outside the ${W}×${H} canvas (x:${Math.round(b.x)} y:${Math.round(b.y)} w:${Math.round(b.w)} h:${Math.round(b.h)}) — ~${lost}% of it is clipped and the reader never sees it.`,
       fix: `It sits inside a group, and a group applies no transform — its children carry absolute coordinates. Move it inside [0,0,${W},${H}], or cut content so the preset fits the canvas.`,
-      ...moveInside(b, st),
+      ...moveInside(b, st, ids.get(b.id), W, H, !!world),
     });
   }
 

@@ -57,3 +57,36 @@ describe('title-safe margin', () => {
     expect(f.some(x => /crowds the edge/.test(x.message))).toBe(false);
   });
 });
+
+describe('one move settles every edge check', () => {
+  it('moves a text off a 9:16 edge inside the canvas, the margin and clear of the feed in one call (A6, live)', () => {
+    const tall = doc(1080, 1920);
+    const note = { ...words('note', 900, 1300, 'Through Sunday'), width: 400, height: 56, style: { font_family: 'Archivo', font_size: 40, color: '#111111' } } as unknown as Layer;
+    const layers = [ground(1080, 1920), note];
+    const off = collectFindings({ ...tall, layers } as DesignSpec, '/dev/null').find(f => f.code === 'off_canvas' && f.layer_id === 'note');
+    const p = off?.call?.params as { dx: number; dy: number } | undefined;
+    expect(p).toBeTruthy();
+    const moved = { ...note, x: 900 + (p?.dx ?? 0), y: 1300 + (p?.dy ?? 0) } as unknown as Layer;
+    const left = collectFindings({ ...tall, layers: [ground(1080, 1920), moved] } as DesignSpec, '/dev/null')
+      .filter(f => f.layer_id === 'note' && ['off_canvas', 'title_safe', 'safe_area'].includes(f.code));
+    expect(left).toEqual([]);
+  });
+
+  it('moves words out of the caption band without landing them under the buttons', () => {
+    const tall = doc(1080, 1920);
+    const tap = words('tap', 680, 1480, 'Tap to read');
+    const f = found(tall, [tap], 'safe_area');
+    expect(f).toEqual(['tap']);
+    const p = safeAreaFindings(tall, [ground(1080, 1920), tap]).find(x => x.code === 'safe_area')?.call?.params as { dx: number; dy: number };
+    const moved = { ...tap, x: 680 + p.dx, y: 1480 + p.dy } as unknown as Layer;
+    expect(safeAreaFindings(tall, [ground(1080, 1920), moved]).filter(x => x.code === 'safe_area' || x.code === 'title_safe')).toEqual([]);
+  });
+
+  it('keeps a plain 16:9 move to the title-safe margin, not a feed\'s', () => {
+    const wide = doc(1920, 1080);
+    const note = { ...words('note', 1700, 500, 'Through Sunday'), width: 400, height: 56, style: { font_family: 'Archivo', font_size: 40 } } as unknown as Layer;
+    const off = collectFindings({ ...wide, layers: [ground(1920, 1080), note] } as DesignSpec, '/dev/null').find(f => f.code === 'off_canvas');
+    expect(off?.call?.params).toMatchObject({ dy: 0 });
+    expect(Number((off?.call?.params as { dx: number }).dx)).toBeGreaterThanOrEqual(-220);
+  });
+});

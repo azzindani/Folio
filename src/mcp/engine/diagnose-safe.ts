@@ -60,6 +60,32 @@ export function feedSafeBox(W: number, H: number): Box | null {
   return { x: m, y: 290 * sy, width: (900 / 1080) * W - m, height: 1150 * sy };
 }
 
+/**
+ * One move for a layer off the stage: its box back inside, and — given its
+ * letters — those inside the title-safe margin too, on a 9:16 canvas inside
+ * the feed-safe box. off_canvas used to land a text flush on the edge, and the
+ * next diagnose asked a second move for the margin or the feed's buttons (A6,
+ * live). Per axis, the moves each rule allows are intersected and the smallest
+ * taken; a rule the letters are too big for drops out. Null when the box itself
+ * is larger than the stage.
+ */
+export function safeMove(declared: Box, ink: Box | null, stage: Box, W: number, H: number): [number, number] | null {
+  const m = TITLE_SAFE * Math.min(W, H);
+  const safe = feedSafeBox(W, H) ?? { x: m, y: m, width: W - 2 * m, height: H - 2 * m };
+  const axis = (at: number, size: number, lo: number, len: number, inkAt?: number, inkSize?: number, sLo?: number, sLen?: number): number | null => {
+    if (size > len) return null;
+    let min = lo - at, max = lo + len - (at + size);
+    if (inkAt !== undefined && inkSize !== undefined && sLo !== undefined && sLen !== undefined && inkSize <= sLen) {
+      const a = Math.max(min, sLo - inkAt), b = Math.min(max, sLo + sLen - (inkAt + inkSize));
+      if (a <= b) { min = a; max = b; }
+    }
+    return Math.max(min, Math.min(max, 0));
+  };
+  const dx = axis(declared.x, declared.width, stage.x, stage.width, ink?.x, ink?.width, safe.x, safe.width);
+  const dy = axis(declared.y, declared.height, stage.y, stage.height, ink?.y, ink?.height, safe.y, safe.height);
+  return dx === null || dy === null ? null : [dx, dy];
+}
+
 const area = (b: Box): number => Math.max(0, b.width) * Math.max(0, b.height);
 const meet = (a: Box, b: Box): number => {
   const w = Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x);
@@ -89,15 +115,6 @@ function intoMargin(b: Box, W: number, H: number, m: number): [number, number] {
   return [axis(b.x, b.width, W), axis(b.y, b.height, H)];
 }
 
-/** The shortest move that takes ink `b` wholly out of zone `z` and keeps it inside the margin, or none. */
-function outOf(b: Box, z: Box, W: number, H: number, m: number): [number, number] | null {
-  const ways: Array<[number, number]> = [
-    [0, z.y - (b.y + b.height)], [0, z.y + z.height - b.y], [z.x - (b.x + b.width), 0], [z.x + z.width - b.x, 0],
-  ];
-  const fits = ([dx, dy]: [number, number]): boolean =>
-    b.x + dx >= m && b.x + b.width + dx <= W - m && b.y + dy >= m && b.y + b.height + dy <= H - m;
-  return ways.filter(fits).sort((p, q) => Math.abs(p[0] + p[1]) - Math.abs(q[0] + q[1]))[0] ?? null;
-}
 
 /** The moments a page is seen at: as authored when still, else each shot's rest. */
 function moments(spec: DesignSpec, layers: Layer[], page?: Page): Array<{ label: string; frame: Layer[] }> {
@@ -126,7 +143,8 @@ export function safeAreaFindings(spec: DesignSpec, layers: Layer[], page?: Page)
         const share = meet(b.box, z.box) / area(b.box);
         if (share < 0.2 || said.has(`${id}:${z.name}`)) continue;
         said.add(`${id}:${z.name}`);
-        const away = outOf(b.box, z.box, W, H, margin);
+        // Into the feed-safe box, not just out of this zone: up out of the caption band could land in the button column.
+        const away = safeMove(b.box, b.box, { x: 0, y: 0, width: W, height: H }, W, H);
         out.push({ code: 'safe_area', severity: 'warning', layer_id: id, ...(away ? move(id, away[0], away[1]) : {}),
           message: `"${id}"${label} sits ${Math.round(share * 100)}% inside the ${z.name} of a vertical feed (${z.where}) — under ${z.covers}.`,
           fix: `Keep words a viewer must read inside ${clear} — clear on every app — or let this one be covered on purpose.` });
@@ -134,7 +152,7 @@ export function safeAreaFindings(spec: DesignSpec, layers: Layer[], page?: Page)
       const edges = crowded(b.box, W, H, margin);
       if (!edges.length || said.has(`${id}:edge`)) continue;
       said.add(`${id}:edge`);
-      const [dx, dy] = intoMargin(b.box, W, H, margin);
+      const [dx, dy] = zones.length ? safeMove(b.box, b.box, { x: 0, y: 0, width: W, height: H }, W, H) ?? [0, 0] : intoMargin(b.box, W, H, margin);
       out.push({ code: 'title_safe', severity: 'suggestion', layer_id: id, ...move(id, dx, dy),
         message: `"${id}"${label}: its letters are ${edges.join(' and ')} — inside the ${margin} px title-safe margin (4% of the short side).`,
         fix: `Hold words at least ${margin} px from every edge, or run them off the edge on purpose.` });
