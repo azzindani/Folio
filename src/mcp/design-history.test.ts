@@ -9,6 +9,7 @@ import { createProject, createDesign } from './engine-project-tools';
 import { addLayers } from './engine-layer-tools';
 import { duplicateDesign } from './engine-project-tools';
 import { withOpScope } from './design-lineage';
+import { reframeDesign } from './engine/reframe-op';
 import { readYAML } from './engine/utils';
 import { designSignature } from './design-signature';
 import type { DesignSpec } from '../schema/types';
@@ -116,6 +117,15 @@ describe('style history — the echo', () => {
       duplicateDesign({ design_path: first, new_name: 'first-copy' })) as unknown as Record<string, unknown>;
     const copyPath = copy['path'] as string;
     expect(echoFinding(readYAML<DesignSpec>(copyPath), copyPath, dir)).toBeNull();
+  });
+
+  it('stays quiet about a reframe — the same piece in another frame', () => {
+    const dir = project('p-reframe');
+    const first = make(dir, 'first', sections());
+    const r = withOpScope('manage_design:reframe', { design_path: first }, () =>
+      reframeDesign({ design_path: first, aspect: '9:16' })) as unknown as Record<string, unknown>;
+    const story = r['design_path'] as string;
+    expect(echoFinding(readYAML<DesignSpec>(story), story, dir)).toBeNull();
   });
 
   it('reports which traits two designs share, so the free one is obvious', () => {
