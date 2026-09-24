@@ -28,6 +28,7 @@ import { safeAreaFindings } from './diagnose-safe';
 import { beatFindings } from './diagnose-beats';
 import { glyphFindings } from './diagnose-glyphs';
 import { overprintFindings } from './diagnose-overprint';
+import { orphanFindings } from './diagnose-orphan';
 import { validateDesignSpec } from '../../schema/validator';
 
 export type PageFinding = Finding & { page?: string };
@@ -92,7 +93,8 @@ export function collectFindings(
       .filter(f => !(edged && /crowds the edge/.test(f.message)));
     const glyphs = glyphFindings(layers ?? [], designPath, projectPath);
     const overprint = overprintFindings(layers ?? [], W, H);
-    return [...still, ...moving, ...safe, ...glyphs, ...overprint].map(f => (page ? { ...f, page: page.id } : f));
+    const orphans = orphanFindings(spec, layers ?? [], page);
+    return [...still, ...moving, ...safe, ...glyphs, ...overprint, ...orphans].map(f => (page ? { ...f, page: page.id } : f));
   };
 
   const findings: PageFinding[] = [];
