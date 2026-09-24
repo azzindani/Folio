@@ -146,6 +146,49 @@ export function mergeFragment(existing: AnimationSpec | undefined, add: Fragment
   };
 }
 
+/** A channel's value at rest — where an entrance ends and an exit begins. */
+const REST: Record<string, number> = {
+  opacity: 1, x: 0, y: 0, scale: 1, scale_x: 1, scale_y: 1, rotation: 0, skew_x: 0, skew_y: 0,
+  blur: 0, draw: 1, reveal: 1, tracking: 0, count: 1,
+};
+const PX = new Set(['x', 'y', 'blur', 'tracking', 'rotation', 'skew_x', 'skew_y']);
+const atRest = (k: Keyframe): boolean => Object.entries(REST).every(([c, v]) => {
+  const x = (k as unknown as Record<string, unknown>)[c];
+  return typeof x !== 'number' || Math.abs(x - v) <= (PX.has(c) ? 0.5 : 0.01);
+});
+
+/**
+ * The track without its entrance (its frames up to the first rest pose) or its
+ * exit (from the last rest pose on); undefined when nothing that moves is left.
+ * Found in the benchmark (r8): re-timing a ride's labels by running op:sequence
+ * again was refused — the same step as "motions overlap", a moved one as a
+ * drift between two entrances — so a re-time meant op:clear on twenty layers
+ * first. A later call's entrance now takes the place of the one before it.
+ */
+export function withoutKind(existing: AnimationSpec | undefined, kind: 'entrance' | 'exit'): AnimationSpec | undefined {
+  if (!existing?.keyframes?.length || isLoop(existing)) return existing;
+  const pb: Playback = existing.playback ?? { duration: Math.max(...existing.keyframes.map(k => k.t), 1) };
+  const frames = absoluteFrames({ keyframes: existing.keyframes, playback: pb });
+  const rest = frames.map(atRest);
+  let keep: Keyframe[];
+  if (kind === 'entrance') {
+    if (rest[0]) return existing;
+    const r = rest.indexOf(true);
+    if (r < 0) return undefined;
+    keep = frames.slice(r);
+  } else {
+    if (rest[rest.length - 1]) return existing;
+    const q = rest.lastIndexOf(true);
+    if (q < 0) return undefined;
+    keep = frames.slice(0, q + 1);
+  }
+  if (keep.length < 2 || keep.every(atRest)) return undefined;
+  const start = keep[0]?.t ?? 0, end = keep[keep.length - 1]?.t ?? start;
+  const playback: Playback = { ...pb, duration: Math.max(1, end - start), delay: start };
+  if (start <= 0) delete playback.delay;
+  return { ...existing, keyframes: keep.map(k => ({ ...k, t: k.t - start })), playback };
+}
+
 /** Total length of a one-shot track, delay included. */
 export function trackEnd(anim: AnimationSpec | undefined): number {
   if (!anim?.keyframes?.length) return 0;

@@ -133,6 +133,8 @@ RULES OF THUMB
     decoration last. Nothing important should still be moving after ~1.5s.
   • One loop per composition, on the thing that matters (a CTA, a mark). Two
     loops fight. A pulse >1.08 reads as a bug, not emphasis.
+  • op:sequence again RE-TIMES: a step replaces the entrance (or exit) a layer had from an
+    earlier call — no op:clear first. Within one call, an entrance and an exit chain as usual.
   • Steps without \`at\` chain: each starts when the previous ends. Use \`at\` to
     overlap (a title and its rule can enter together) or to schedule an exit.
   • A LOCKED group animates as ONE unit — right for a carousel page, wrong for

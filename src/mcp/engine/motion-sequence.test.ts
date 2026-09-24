@@ -361,3 +361,46 @@ describe('a step written with layer_id (singular)', () => {
     expect((r['steps'] as Array<{ layers: string[] }>)[0]?.layers.length).toBeGreaterThan(1);
   });
 });
+
+describe('op:sequence called again (r8: re-timing needed op:clear on every layer first)', () => {
+  const seenAt = async (p: string, t: number): Promise<number> => {
+    const { layersAt } = await import('../../export/gif-frames');
+    const { canvasBoxes } = await import('../../export/frame-cull');
+    return canvasBoxes(layersAt(read(p).layers ?? [], t)).find(b => b.layer.id === 'a')?.opacity ?? NaN;
+  };
+
+  it('runs the same steps again to the same track', () => {
+    const p = flat();
+    const steps = [{ preset: 'rise', layer_ids: ['a'], at: 200, duration: 600 }];
+    expect(sequenceMotion({ design_path: p, steps }).success).toBe(true);
+    const once = JSON.stringify(animOf(read(p), 'a'));
+    const again = sequenceMotion({ design_path: p, steps });
+    expect(again.success, JSON.stringify(again)).toBe(true);
+    expect(JSON.stringify(animOf(read(p), 'a'))).toBe(once);
+  });
+
+  it('moves an entrance to its new time instead of keeping both, and says so', async () => {
+    const p = flat();
+    sequenceMotion({ design_path: p, steps: [{ preset: 'fade_in', layer_ids: ['a'], at: 200, duration: 400 }] });
+    const r = sequenceMotion({ design_path: p, steps: [{ preset: 'fade_in', layer_ids: ['a'], at: 1500, duration: 400 }] });
+    expect(r.success, JSON.stringify(r)).toBe(true);
+    expect(JSON.stringify(r['progress'])).toMatch(/a's entrance/);
+    expect(await seenAt(p, 1000)).toBeLessThan(0.05);
+    expect(await seenAt(p, 2100)).toBeGreaterThan(0.95);
+  });
+
+  it('moves only the exit when only the exit is sequenced again — the entrance stays', async () => {
+    const p = flat();
+    sequenceMotion({ design_path: p, steps: [{ preset: 'fade_in', layer_ids: ['a'], at: 0, duration: 400 }, { preset: 'fade_out', layer_ids: ['a'], at: 2000, duration: 400 }] });
+    expect(sequenceMotion({ design_path: p, steps: [{ preset: 'fade_out', layer_ids: ['a'], at: 3000, duration: 400 }] }).success).toBe(true);
+    expect(await seenAt(p, 100)).toBeLessThan(0.5);
+    expect(await seenAt(p, 2700)).toBeGreaterThan(0.95);
+    expect(await seenAt(p, 3600)).toBeLessThan(0.05);
+  });
+
+  it('still refuses two entrances for one layer in one call', () => {
+    const p = flat();
+    const r = sequenceMotion({ design_path: p, steps: [{ preset: 'fade_in', layer_ids: ['a'], at: 0, duration: 400 }, { preset: 'rise', layer_ids: ['a'], at: 2000, duration: 400 }] });
+    expect(r.success).toBe(false);
+  });
+});

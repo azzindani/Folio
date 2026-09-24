@@ -20,7 +20,7 @@ import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, 
 import { expandPreset, isMotionPreset, PRESET_NAMES, PRESET_NOTES, PRESET_KIND, presetsByKind, type MotionPreset } from './motion-presets';
 import { syncAnimationsToSpec } from './animation-sync';
 import { motionTargets, setAnimation, toIdList, resolveScope, commitScope } from './motion';
-import { mergeFragment, MergeError, trackEnd } from './motion-merge';
+import { mergeFragment, MergeError, trackEnd, withoutKind } from './motion-merge';
 import { isKnownEasing, easingHint, describeEasings } from '../../animation/easing';
 import { REVEAL_FROMS, type RevealFrom } from '../../animation/reveal';
 import { staggerRanks, isStaggerOrder, STAGGER_ORDERS, type StaggerOrder } from './motion-order';
@@ -99,6 +99,10 @@ export function sequenceMotion(args: SequenceArgs): ToolResult {
   const progress: ProgressItem[] = [];
   const timeline: Array<{ step: number; preset: string; layers: string[]; from: number; to: number }> = [];
   let cursor = 0;
+  // A step replaces the same kind of motion a layer carried from an EARLIER call (withoutKind);
+  // within this call, an entrance and an exit on one layer still sequence one after the other.
+  const written = new Set<string>();
+  const replaced: string[] = [];
 
   for (const [i, step] of steps.entries()) {
     const preset = step.preset as MotionPreset;
@@ -118,7 +122,14 @@ export function sequenceMotion(args: SequenceArgs): ToolResult {
       const frag = expandPreset(preset, {
         duration: step.duration, easing: step.easing, distance: step.distance, delay: at + stagger * (ranks[j] ?? j),
       });
-      const existing = (layer as Layer & { animation?: AnimationSpec }).animation;
+      const kind = PRESET_KIND[preset];
+      let existing = (layer as Layer & { animation?: AnimationSpec }).animation;
+      if (kind !== 'loop' && !written.has(`${layer.id}:${kind}`)) {
+        const kept = withoutKind(existing, kind);
+        if (kept !== existing) replaced.push(`${layer.id}'s ${kind}`);
+        existing = kept;
+      }
+      written.add(`${layer.id}:${kind}`);
       try {
         const merged = PRESET_KIND[preset] === 'loop' && !existing?.keyframes?.length
           ? { keyframes: frag.keyframes, playback: frag.playback }
@@ -136,6 +147,9 @@ export function sequenceMotion(args: SequenceArgs): ToolResult {
     if (PRESET_KIND[preset] !== 'loop') cursor = stepEnd;
   }
 
+  if (replaced.length) {
+    progress.push(pInfo(`Replaced ${replaced.length} earlier motion(s)`, `${replaced.slice(0, 8).join(', ')}${replaced.length > 8 ? ', …' : ''} — a step takes the place of the same kind of motion a layer had before`));
+  }
   commitScope(spec, scoped.page, scope);
   syncAnimationsToSpec(spec);
   writeYAML(dPath, spec);
