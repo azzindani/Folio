@@ -86,6 +86,19 @@ describe('lintAiSlop', () => {
     expect(lintAiSlop([ground, ...cookie('c1', 60, '#D9A066', '#B07A3E'), ...cookie('c2', 560, '#C98B4E', '#9A6430')]).join(' ')).not.toMatch(/accent hue appears/i);
   });
 
+  // benchmark r8 b31: a timetable's cards run as long as their acts; each holds a time in the accent.
+  it('counts alike cards as one series whatever their size, and still counts cards that differ', () => {
+    const card = (id: string, h: number, time: string, timeColor = '#E0782F', body = '#1F2A36'): Layer => L({ id, type: 'auto_layout', width: 420, height: h,
+      layers: [txt(`${id}_t`, time, { color: timeColor }), txt(`${id}_n`, 'An act', { color: body })] });
+    const stage = (id: string, n: number): Layer => L({ id, type: 'auto_layout', x: 0, y: 0, width: 420, height: 1400,
+      layers: Array.from({ length: n }, (_, i) => card(`${id}${i}`, 150 + i * 40, `1${i}:00`)) });
+    expect(accentNote([stage('oak', 5), stage('barn', 4)])).toBeNull();
+    // Six cards that are not alike — each holds something different — are six uses.
+    const odd = L({ id: 'odd', type: 'group', x: 0, y: 0, width: 420, height: 1400,
+      layers: ['#1F2A36', '#2B3A4A', '#3A4A5A', '#4A5A6A', '#5A6A7A', '#6A7A8A'].map((b, i) => card(`o${i}`, 150, `1${i}:00`, '#E0782F', b)) });
+    expect(accentNote([odd])).toMatch(/on 6 layers/);
+  });
+
   // benchmark r7 b27: six mint surfaces across four beats, never more than three on screen at once.
   it('judges a moving piece by what is on screen together', () => {
     const mint = (id: string, w: number, opacity = 1): Layer => L({ id, type: 'rect', x: w * 10, width: w, height: 40, fill: '#3DDC97', opacity });

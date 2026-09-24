@@ -226,14 +226,25 @@ function surfaceKeys(layers: Layer[]): Map<Layer, string> {
     const o = l as unknown as { width?: number; height?: number };
     return `${l.type}:${Math.round(o.width ?? 0)}x${Math.round(o.height ?? 0)}:${solidHex(l) ?? textColor(l) ?? ''}`;
   };
+  // Containers alike in what they hold (kind, and each child's kind and colour) are one series too, whatever
+  // their size: a timetable's cards run as long as their acts, and 15 alike time labels were 15 uses (r8, b31).
+  const holds = (l: Layer): string | null => {
+    const kids = (l as { layers?: Layer[] }).layers;
+    return Array.isArray(kids) ? `${l.type}|${kids.map(k => `${k.type}:${solidHex(k) ?? textColor(k) ?? ''}`).join(',')}` : null;
+  };
   const walk = (ls: Layer[], parent: string): void => {
-    const count = new Map<string, number>();
-    for (const l of ls) count.set(sig(l), (count.get(sig(l)) ?? 0) + 1);
+    const count = new Map<string, number>(), alike = new Map<string, number>();
+    for (const l of ls) {
+      count.set(sig(l), (count.get(sig(l)) ?? 0) + 1);
+      const h = holds(l);
+      if (h) alike.set(h, (alike.get(h) ?? 0) + 1);
+    }
     const object = parent === '' ? objects(ls) : new Map<Layer, string>();
     for (const l of ls) {
       keys.set(l, parent !== '' ? parent : object.get(l) ?? ((count.get(sig(l)) ?? 0) >= 3 ? `series:${sig(l)}` : l.id));
       const kids = (l as { layers?: Layer[] }).layers;
-      if (Array.isArray(kids)) walk(kids, l.id);
+      const h = holds(l);
+      if (Array.isArray(kids)) walk(kids, h && (alike.get(h) ?? 0) >= 3 ? `series:${parent}:${h}` : l.id);
     }
   };
   walk(layers, '');
