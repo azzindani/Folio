@@ -96,6 +96,14 @@ function overlapArea(a: Box, b: Box): number {
 const FULL_BG = (b: Box, W: number, H: number): boolean => b.w * b.h >= W * H * 0.85 && b.x <= 2 && b.y <= 2;
 const SIZED = new Set(['rect', 'image', 'icon', 'ellipse', 'circle', 'group', 'chart', 'kpi_card', 'path', 'text', 'qrcode', 'polygon']);
 
+/** The shortest move that brings a box wholly inside the stage; none when it is larger than the stage. */
+function moveInside(b: Box, st: Stage): { call: FixCall } | Record<string, never> {
+  if (b.w > st.width || b.h > st.height) return {};
+  const dx = Math.max(st.x - b.x, Math.min(0, st.x + st.width - (b.x + b.w)));
+  const dy = Math.max(st.y - b.y, Math.min(0, st.y + st.height - (b.y + b.h)));
+  return { call: { tool: 'edit_layer', params: { op: 'move', layer_id: b.id, dx: Math.round(dx), dy: Math.round(dy) } } };
+}
+
 // ── geometry checks ─────────────────────────────────────────
 function geometryFindings(layers: Layer[], W: number, H: number, world?: Stage): Finding[] {
   const out: Finding[] = [];
@@ -110,6 +118,8 @@ function geometryFindings(layers: Layer[], W: number, H: number, world?: Stage):
         code: 'off_canvas', severity: 'error', layer_id: b.id,
         message: `"${b.id}" extends outside the ${W}×${H} canvas (x:${Math.round(b.x)} y:${Math.round(b.y)} w:${Math.round(b.w)} h:${Math.round(b.h)}) — it will be clipped.`,
         fix: `Move/resize it inside [0,0,${W},${H}].`,
+        // Not the heal's to move (it snaps back only what is wholly off): the gate's next call is this.
+        ...moveInside(b, st),
       });
     }
   }
@@ -124,6 +134,7 @@ function geometryFindings(layers: Layer[], W: number, H: number, world?: Stage):
       code: 'off_canvas', severity: 'error', layer_id: b.id,
       message: `"${b.id}" renders ${Math.round(over)}px outside the ${W}×${H} canvas (x:${Math.round(b.x)} y:${Math.round(b.y)} w:${Math.round(b.w)} h:${Math.round(b.h)}) — ~${lost}% of it is clipped and the reader never sees it.`,
       fix: `It sits inside a group, and a group applies no transform — its children carry absolute coordinates. Move it inside [0,0,${W},${H}], or cut content so the preset fits the canvas.`,
+      ...moveInside(b, st),
     });
   }
 
