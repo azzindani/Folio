@@ -32,6 +32,7 @@ import { orphanFindings } from './diagnose-orphan';
 import { moments } from './diagnose-safe';
 import { accentNote } from './ai-slop-lint';
 import { validateDesignSpec } from '../../schema/validator';
+import { resolveAutoLayouts } from '../../renderer/auto-layout-place';
 
 export type PageFinding = Finding & { page?: string };
 
@@ -95,22 +96,24 @@ export function collectFindings(
 ): PageFinding[] {
   const W = spec.document?.width ?? 1080, H = spec.document?.height ?? 1080;
   // A moving surface is also judged where each shot rests (diagnose-motion.ts).
-  const run = (layers: Layer[] | undefined, page?: Page): PageFinding[] => {
-    const moving = motionFindings(spec, layers ?? [], page);
+  const run = (raw: Layer[] | undefined, page?: Page): PageFinding[] => {
+    // Measured where the renderer draws: an auto-layout container's children carry no x/y of their own.
+    const layers = resolveAutoLayouts(raw ?? []);
+    const moving = motionFindings(spec, layers, page);
     // A pair judged where the shots rest is not judged again as authored.
     // The static message names its pair first: "a" and "b" (both text) overlap …
     const pair = (f: Finding): string => (f.layers ?? [...f.message.matchAll(/"([^"]+)"/g)].slice(0, 2).map(m => m[1] ?? '')).slice().sort().join('+');
     const atRest = new Set(moving.filter(f => f.code === 'motion_overlap' || f.code === 'motion_collision').map(pair));
-    const safe = safeAreaFindings(spec, layers ?? [], page);
+    const safe = safeAreaFindings(spec, layers, page);
     // The critic's left-edge note is the old, narrower form of title_safe (declared boxes, one edge).
     const edged = safe.some(f => f.code === 'title_safe');
-    const still = analyzeLayers(layers ?? [], W, H, page ? page.world : spec.world)
+    const still = analyzeLayers(layers, W, H, page ? page.world : spec.world)
       .filter(f => f.code !== 'collision' || !atRest.has(pair(f)))
       .filter(f => !(edged && /crowds the edge/.test(f.message)));
-    const glyphs = glyphFindings(layers ?? [], designPath, projectPath);
-    const overprint = overprintFindings(layers ?? [], W, H);
-    const orphans = orphanFindings(spec, layers ?? [], page);
-    return [...asSeen(spec, still, layers ?? [], page), ...moving, ...safe, ...glyphs, ...overprint, ...orphans].map(f => (page ? { ...f, page: page.id } : f));
+    const glyphs = glyphFindings(layers, designPath, projectPath);
+    const overprint = overprintFindings(layers, W, H);
+    const orphans = orphanFindings(spec, layers, page);
+    return [...asSeen(spec, still, layers, page), ...moving, ...safe, ...glyphs, ...overprint, ...orphans].map(f => (page ? { ...f, page: page.id } : f));
   };
 
   const findings: PageFinding[] = [];
