@@ -25,19 +25,25 @@ export const union = (a: Box, b: Box): Box => {
 };
 const unionAll = (bs: Block[]): Box => bs.map(b => b.box).reduce(union);
 
-/** Blocks grouped by the empty runs along one axis, and the widest run. */
+/**
+ * Blocks grouped by the empty runs along one axis, and the widest run. Only
+ * runs near the widest one split this level: four progress dashes 16 px apart
+ * stay one row beside the icon 432 px away (b23), where splitting at every run
+ * made them siblings of the icon — and stacked, a column read as a menu icon.
+ */
 function runs(blocks: Block[], axis: 'x' | 'y'): { groups: Block[][]; widest: number } {
   const lo = (b: Block): number => (axis === 'x' ? b.box.x : b.box.y);
   const hi = (b: Block): number => (axis === 'x' ? b.box.x + b.box.width : b.box.y + b.box.height);
   const sorted = [...blocks].sort((p, q) => lo(p) - lo(q));
+  const gaps: number[] = [];
+  let end = -Infinity;
+  for (const b of sorted) { gaps.push(lo(b) - end); end = Math.max(end, hi(b)); }
+  const widest = Math.max(0, ...gaps.slice(1));
   const groups: Block[][] = [];
-  let end = -Infinity, widest = 0;
-  for (const b of sorted) {
+  sorted.forEach((b, i) => {
     const last = groups[groups.length - 1];
-    if (last && lo(b) < end) last.push(b);
-    else { if (last) widest = Math.max(widest, lo(b) - end); groups.push([b]); }
-    end = Math.max(end, hi(b));
-  }
+    if (last && !(widest > 0 && (gaps[i] ?? 0) >= 0.8 * widest)) last.push(b); else groups.push([b]);
+  });
   return { groups, widest };
 }
 

@@ -59,6 +59,15 @@ describe('planReframe', () => {
     expect((c?.y ?? 0) - ((b?.y ?? 0) + (b?.height ?? 0))).toBeLessThan(200);     // not the 380 px between the old columns
   });
 
+  it('keeps a row of marks a row: four progress dashes do not become a column', () => {
+    // b23's step 2, box for box: a numeral beside a column of words over a row of dashes and, far right, an icon disc.
+    const col = [rect('num', 140, 282, 350, 459), rect('kicker', 620, 306, 202, 23), rect('title', 620, 367, 536, 84), rect('detail', 620, 488, 945, 87)];
+    const dashes = [0, 1, 2, 3].map(i => rect(`d${i}`, 620 + i * 96, 900, 80, 8)), disc = rect('disc', 1420, 602, 340, 340);
+    const { box } = apply([...col, ...dashes, disc], 1920, 1080, 1080, 1920);
+    const ys = dashes.map(d => box(d).y);
+    expect(Math.max(...ys) - Math.min(...ys)).toBeLessThan(1);
+  });
+
   it('opens a scene group that holds the frame, and sizes it to the new one', () => {
     const scene = { id: 'scene', type: 'group', z: 1, x: 0, y: 0, width: 1920, height: 1080, locked: true,
       layers: [rect('bg', 0, 0, 1920, 1080), words('t', 120, 400, 700, 'Hello', 90), rect('pic', 1100, 200, 700, 700)] } as unknown as Layer;
