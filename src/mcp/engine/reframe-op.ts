@@ -17,7 +17,7 @@ import * as path from 'path';
 import type { DesignSpec, Layer, Page } from '../../schema/types';
 import type { ToolResult, ProgressItem } from '../types';
 import { resolveDesignPath, readYAML, writeYAML, generateId, errResult, okResult, pOk, pInfo, buildContext } from './utils';
-import { planReframe } from './reframe-layout';
+import { planReframe, type Span } from './reframe-layout';
 import { mapSubtree, type Affine } from './reframe-map';
 import { fillAxes, syncSpecPos } from '../engine-customize-tools';
 import { gateDesign } from './diagnose-gate';
@@ -40,6 +40,16 @@ const mapWorld = (w: World, m: Affine): World => ({
   x: Math.round(m.ox + m.dx + (w.x - m.ox) * m.k), y: Math.round(m.oy + m.dy + (w.y - m.oy) * m.k), width: Math.round(w.width * m.k), height: Math.round(w.height * m.k),
 });
 
+/** A band that ran to an edge runs to the new frame's edge: b26's sea stopped 420 px above the bottom. */
+function pinEdges(l: Layer, span: Span, W: number, H: number): void {
+  const o = l as unknown as { x?: number; y?: number; width?: number; height?: number };
+  if (typeof o.x !== 'number' || typeof o.y !== 'number' || typeof o.width !== 'number' || typeof o.height !== 'number') return;
+  if (!span.h && span.bottom) o.height = Math.max(o.height, H - o.y);
+  if (!span.h && span.top) { o.height += o.y; o.y = 0; }
+  if (!span.w && span.right) o.width = Math.max(o.width, W - o.x);
+  if (!span.w && span.left) { o.width += o.x; o.x = 0; }
+}
+
 /** One surface's layers re-seated for W×H; what it did, for the reply. */
 function reframeSurface(layers: Layer[], holder: { world?: World }, oldW: number, oldH: number, W: number, H: number): string {
   if (holder.world) {
@@ -51,7 +61,7 @@ function reframeSurface(layers: Layer[], holder: { world?: World }, oldW: number
   }
   const plan = planReframe(layers, oldW, oldH, W, H);
   for (const [l, m] of plan.maps) { mapSubtree(l, m); syncSpecPos(l); }
-  for (const [l, span] of plan.spans) fillAxes(l, span, W, H);
+  for (const [l, span] of plan.spans) { fillAxes(l, span, W, H); pinEdges(l, span, W, H); }
   for (const g of plan.holders) Object.assign(g, { x: 0, y: 0, width: W, height: H });
   const trimmed = fitTextBoxes(layers, W, H);
   return `${plan.blocks} block(s) at ×${plan.k.toFixed(2)}${plan.stacked ? `, ${plan.stacked} side-by-side group(s) stacked into a column` : ''}${trimmed ? `, ${trimmed} text box(es) trimmed to their letters` : ''}`;

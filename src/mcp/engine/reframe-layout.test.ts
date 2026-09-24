@@ -30,7 +30,7 @@ describe('planReframe', () => {
       expect(b.x).toBeGreaterThanOrEqual(43); expect(b.x + b.width).toBeLessThanOrEqual(900.5);
       expect(b.y).toBeGreaterThanOrEqual(290); expect(b.y + b.height).toBeLessThanOrEqual(1440.5);
     }
-    expect(plan.spans.get(ground)).toEqual({ w: true, h: true });
+    expect(plan.spans.get(ground)).toMatchObject({ w: true, h: true });
   });
 
   it('keeps a row whole when stacking would not make it larger, and a glow goes where its block goes', () => {
@@ -66,6 +66,17 @@ describe('planReframe', () => {
     const { box } = apply([...col, ...dashes, disc], 1920, 1080, 1080, 1920);
     const ys = dashes.map(d => box(d).y);
     expect(Math.max(...ys) - Math.min(...ys)).toBeLessThan(1);
+  });
+
+  it('keeps a centred poster on the canvas\'s centre line in a 9:16 frame (b26)', () => {
+    const title = words('title', 90, 180, 900, 'The Salt Orchard', 132), date = words('date', 140, 1080, 800, '6 May', 64);
+    for (const t of [title, date]) (t as unknown as { style: Record<string, unknown> }).style['text_align'] = 'center';
+    const moon = rect('moon', 390, 640, 300, 300), row = [170, 330, 750, 910].map((cx, i) => rect(`tree${i}`, cx - 45, 730, 90, 110));
+    const { box } = apply([title, moon, ...row, date], 1080, 1350, 1080, 1920);
+    const m = box(moon);
+    expect(Math.abs(m.x + m.width / 2 - 540)).toBeLessThan(2);
+    const right = Math.max(...[title, date, ...row].map(l => box(l).x + box(l).width));
+    expect(right).toBeLessThanOrEqual(900.5);
   });
 
   it('opens a scene group that holds the frame, and sizes it to the new one', () => {
