@@ -116,14 +116,14 @@ function intoMargin(b: Box, W: number, H: number, m: number): [number, number] {
 }
 
 
-/** The moments a page is seen at: as authored when still, else each shot's rest. */
-function moments(spec: DesignSpec, layers: Layer[], page?: Page): Array<{ label: string; frame: Layer[] }> {
+/** The moments a page is seen at: as authored when still, else each shot's rest (t in ms; null when still). */
+export function moments(spec: DesignSpec, layers: Layer[], page?: Page): Array<{ label: string; t: number | null; frame: Layer[] }> {
   const moving = animationDuration(layers);
-  if (moving <= 0) return [{ label: '', frame: layers }];
+  if (moving <= 0) return [{ label: '', t: null, frame: layers }];
   const held = page?.auto_advance;
   const end = typeof held === 'number' && held > 0 ? held : moving;
   const marks = Object.entries(readMarkers(spec, page)).map(([id, at]) => ({ id, at: Number(at) })).filter(m => Number.isFinite(m.at));
-  return shotRests(layers, marks, end).slice(0, 12).map(r => ({ label: ` in "${r.shot}" at ${r.t} ms`, frame: layersAt(layers, r.t) }));
+  return shotRests(layers, marks, end).slice(0, 12).map(r => ({ label: ` in "${r.shot}" at ${r.t} ms`, t: r.t, frame: layersAt(layers, r.t) }));
 }
 
 /** Title-safe and vertical-feed findings for one surface. */
