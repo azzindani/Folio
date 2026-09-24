@@ -11,8 +11,9 @@
  */
 
 import type { DesignSpec, Layer, Page } from '../../schema/types';
-import type { AnimationSpec, TimeMarkers } from '../../animation/types';
+import type { AnimationSpec, Keyframe, TimeMarkers } from '../../animation/types';
 import { trackEnd } from './motion-merge';
+import { cameraHome } from './motion-depth';
 
 export interface TimeContext { markers: TimeMarkers; layers: Layer[] }
 
@@ -31,6 +32,25 @@ export function markerHost(spec: DesignSpec, page?: Page): { markers?: TimeMarke
 export function readMarkers(spec: DesignSpec, page?: Page): TimeMarkers {
   const m = markerHost(spec, page).markers;
   return m && typeof m === 'object' ? { ...m } : {};
+}
+
+/**
+ * The shots a page is judged in: its markers — or, with none, the framings a
+ * camera arrives at. Found in the benchmark (r8): a camera ride with no markers
+ * was one shot judged at its very end, where the camera had left every town
+ * behind, so seven labels "rested 100% outside the frame". A held framing (two
+ * keys on one pose) is one shot; the first opens the piece.
+ */
+export function shotMarks(spec: DesignSpec, layers: Layer[], page?: Page): Array<{ id: string; at: number }> {
+  const marks = Object.entries(readMarkers(spec, page)).map(([id, at]) => ({ id, at: Number(at) })).filter(m => Number.isFinite(m.at));
+  if (marks.length) return marks;
+  const anim = cameraHome(layers)?.camera.animation;
+  const keys = anim?.keyframes ?? [];
+  if (keys.length < 2) return [];
+  const pose = (k: Keyframe): string => ['scale', 'x', 'y', 'rotation'].map(c => String(k[c] ?? '')).join(',');
+  const delay = anim?.playback?.delay ?? 0;
+  return keys.filter((k, i) => i === 0 || pose(k) !== pose(keys[i - 1] as Keyframe))
+    .map((k, i) => ({ id: `camera shot ${i + 1}`, at: i === 0 ? 0 : delay + k.t }));
 }
 
 export function writeMarkers(spec: DesignSpec, page: Page | undefined, markers: TimeMarkers): void {

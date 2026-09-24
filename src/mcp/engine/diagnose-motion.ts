@@ -17,7 +17,7 @@ import type { DesignSpec, Layer, Page } from '../../schema/types';
 import type { Finding } from './diagnose';
 import { animationDuration } from '../../export/gif-frames';
 import { lintComposition, type LintKind } from './motion-lint';
-import { readMarkers } from './motion-time';
+import { shotMarks } from './motion-time';
 
 /** Each lint note as a finding: where things rest, then how the piece is paced. */
 const AS_FINDING: Record<LintKind, { severity: Finding['severity']; fix: string }> = {
@@ -40,7 +40,7 @@ export function motionFindings(spec: DesignSpec, layers: Layer[], page?: Page): 
   const held = page?.auto_advance;
   const end = typeof held === 'number' && held > 0 ? held : moving;
   const canvas = { width: spec.document?.width ?? 1080, height: spec.document?.height ?? 1080 };
-  const marks = Object.entries(readMarkers(spec, page)).map(([id, at]) => ({ id, at: Number(at) })).filter(m => Number.isFinite(m.at));
+  const marks = shotMarks(spec, layers, page);
   const pageId = page?.id && (spec.pages?.length ?? 0) > 1 ? { page_id: page.id } : {};
   return lintComposition(layers, canvas, marks, end).map((n): Finding => {
     const how = AS_FINDING[n.kind];
