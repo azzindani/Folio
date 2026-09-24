@@ -103,7 +103,8 @@ function wordsOn(frame: Layer[], W: number, H: number): CanvasBox[] {
 /** Edges the ink comes within `m` px of (or runs past), with the distance. */
 function crowded(b: Box, W: number, H: number, m: number): string[] {
   const gaps: Array<[string, number]> = [['left', b.x], ['right', W - b.x - b.width], ['top', b.y], ['bottom', H - b.y - b.height]];
-  return gaps.filter(([, g]) => g < m).map(([side, g]) => (g < 0 ? `runs ${Math.round(-g)} px past the ${side} edge` : `${Math.round(g)} px from the ${side} edge`));
+  // Judged as it is said: ink 63.6 px from the edge was "64 px … inside the 64 px margin", with a move that rounds to 0 (r8).
+  return gaps.filter(([, g]) => Math.round(g) < m).map(([side, g]) => (g < 0 ? `runs ${Math.round(-g)} px past the ${side} edge` : `${Math.round(g)} px from the ${side} edge`));
 }
 
 const move = (id: string, dx: number, dy: number): { call: FixCall } | Record<string, never> =>

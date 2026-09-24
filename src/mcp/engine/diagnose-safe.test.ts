@@ -50,6 +50,14 @@ describe('title-safe margin', () => {
     expect(found(square, [words('wide', 100, 400, 'Short', { width: 980 })], 'title_safe')).toEqual([]);
   });
 
+  it('judges the gap as it is said: under a pixel inside is not "64 px … inside the 64 px margin" (r8 footer)', () => {
+    const a3 = doc(1600, 2263);
+    const footer = (y: number): Layer => words('footer', 80, y, 'All times are start times  ·  the programme may change on the day',
+      { width: 1440, height: 36, style: { font_family: 'Archivo', font_size: 26, font_weight: 500, color: '#7A6B55' } });
+    expect(found(a3, [footer(2168)], 'title_safe')).toEqual([]);
+    expect(found(a3, [footer(2178)], 'title_safe')).toEqual(['footer']);
+  });
+
   it('replaces the critic\'s left-edge note in diagnose', () => {
     const spec = { ...square, layers: [ground(1080, 1080), words('left', 10, 400)] } as unknown as DesignSpec;
     const f = collectFindings(spec, '/nowhere/d.design.yaml');
