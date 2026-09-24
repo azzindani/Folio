@@ -17,7 +17,8 @@ import * as path from 'path';
 import type { DesignSpec, Layer, Page } from '../../schema/types';
 import type { ToolResult, ProgressItem } from '../types';
 import { resolveDesignPath, readYAML, writeYAML, generateId, errResult, okResult, pOk, pInfo, buildContext } from './utils';
-import { planReframe, type Span } from './reframe-layout';
+import { type Span } from './reframe-layout';
+import { planWithRewrap } from './reframe-wrap';
 import { mapSubtree, type Affine } from './reframe-map';
 import { fillAxes, syncSpecPos } from '../engine-customize-tools';
 import { gateDesign } from './diagnose-gate';
@@ -59,12 +60,12 @@ function reframeSurface(layers: Layer[], holder: { world?: World }, oldW: number
     holder.world = mapWorld(holder.world, m);
     return `carried whole at ×${k.toFixed(2)} (a camera world decides what the frame shows)`;
   }
-  const plan = planReframe(layers, oldW, oldH, W, H);
+  const { plan, rewrapped } = planWithRewrap(layers, oldW, oldH, W, H);
   for (const [l, m] of plan.maps) { mapSubtree(l, m); syncSpecPos(l); }
   for (const [l, span] of plan.spans) { fillAxes(l, span, W, H); pinEdges(l, span, W, H); }
   for (const g of plan.holders) Object.assign(g, { x: 0, y: 0, width: W, height: H });
   const trimmed = fitTextBoxes(layers, W, H);
-  return `${plan.blocks} block(s) at ×${plan.k.toFixed(2)}${plan.stacked ? `, ${plan.stacked} side-by-side group(s) stacked into a column` : ''}${trimmed ? `, ${trimmed} text box(es) trimmed to their letters` : ''}`;
+  return `${plan.blocks} block(s) at ×${plan.k.toFixed(2)}${plan.stacked ? `, ${plan.stacked} side-by-side group(s) stacked into a column` : ''}${rewrapped.length ? `, ${rewrapped.map(id => `"${id}"`).join(', ')} re-wrapped to the frame` : ''}${trimmed ? `, ${trimmed} text box(es) trimmed to their letters` : ''}`;
 }
 
 export function reframeDesign(args: ReframeArgs): ToolResult {
