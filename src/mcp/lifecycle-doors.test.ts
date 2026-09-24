@@ -73,3 +73,23 @@ describe('create_design in a project nobody created (r8)', () => {
     expect(JSON.stringify(r['progress'])).toMatch(/is not a Folio project/);
   });
 });
+
+describe('create_project on the folder an old create_design left (r8)', () => {
+  it('adopts a folder holding only designs, and lists what was in it', () => {
+    const orphan = path.join(root, 'orphan');
+    fs.mkdirSync(path.join(orphan, 'designs'), { recursive: true });
+    fs.writeFileSync(path.join(orphan, 'designs', 'timetable.design.yaml'), 'meta: {id: t, name: timetable, type: poster}\ndocument: {width: 1600, height: 2263}\nlayers: []\n');
+    const r = createProject({ name: 'orphan', path: orphan });
+    expect(r.success).toBe(true);
+    expect(JSON.stringify(r['progress'])).toMatch(/Adopted the folder that was here/);
+    expect(JSON.stringify(listDesigns({ project_path: orphan } as never))).toMatch(/timetable/);
+    expect(fs.readFileSync(path.join(orphan, 'designs', 'timetable.design.yaml'), 'utf8')).toMatch(/1600/);
+  });
+
+  it('still refuses a folder that holds something else', () => {
+    const other = path.join(root, 'someone-elses');
+    fs.mkdirSync(other, { recursive: true });
+    fs.writeFileSync(path.join(other, 'notes.txt'), 'mine');
+    expect(createProject({ name: 'x', path: other }).success).toBe(false);
+  });
+});

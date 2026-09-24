@@ -186,6 +186,20 @@ export function createDesign(args: { project_path: string; name: string; type?: 
 
 // ── Tier 1 — Project Management ──────────────────────────────
 
+/** Folders create_project makes — a folder holding nothing else can be adopted as a project. */
+const FOLIO_DIRS = new Set(['themes', 'components', 'templates', 'designs', 'assets', 'exports']);
+
+/** The designs already in an adopted folder, as project.yaml lists them. */
+function adoptDesigns(projectDir: string): Array<{ id: string; path: string; type: string; status: string }> {
+  let files: string[] = [];
+  try { files = fs.readdirSync(path.join(projectDir, 'designs')).filter(f => f.endsWith('.design.yaml')); } catch { return []; }
+  return files.sort().map(f => {
+    let type = 'poster';
+    try { type = readYAML<DesignSpec>(path.join(projectDir, 'designs', f)).meta?.type ?? 'poster'; } catch { /* unreadable: listed as a poster */ }
+    return { id: f.replace(/\.design\.yaml$/, ''), path: `designs/${f}`, type, status: 'draft' };
+  });
+}
+
 export function createProject(args: { name: string; path?: string; theme?: string; canvas?: string }): ToolResult {
   const op = 'create_project';
   const progress: ProgressItem[] = [];
@@ -205,6 +219,7 @@ export function createProject(args: { name: string; path?: string; theme?: strin
   } catch (e) {
     return errResult(op, (e as Error).message, `Just pass a bare project name (e.g. "${args.name}") — the engine places it in the projects dir. Don't build absolute /home/... paths.`);
   }
+  let adopted = false;
   if (fs.existsSync(projectDir)) {
     // Idempotent: if the dir already holds a valid project.yaml, treat as
     // success so the LLM can re-run the same prompt without manual cleanup.
@@ -231,7 +246,13 @@ export function createProject(args: { name: string; path?: string; theme?: strin
         progress, context, handover,
       });
     }
-    return errResult(op, `Directory already exists but is not a Folio project: ${projectDir}`, 'Choose a different path or delete the existing directory.', progress);
+    // A folder holding only Folio's own folders and no project.yaml is what create_design
+    // left when it wrote into a project nobody had made (r8): adopt it, designs and all.
+    const own = fs.readdirSync(projectDir).filter(n => !n.startsWith('.'));
+    if (!own.length || !own.every(n => FOLIO_DIRS.has(n))) {
+      return errResult(op, `Directory already exists but is not a Folio project: ${projectDir}`, 'Choose a different path or delete the existing directory.', progress);
+    }
+    adopted = true;
   }
 
   const [width, height] = (args.canvas ?? '1080x1080').split('x').map(Number);
@@ -245,7 +266,8 @@ export function createProject(args: { name: string; path?: string; theme?: strin
   // is the canonical AI-template look. Write the chosen builtin verbatim.
   const themeId = args.theme && ALL_THEMES[args.theme] ? args.theme : 'editorial-cream';
   const theme = ALL_THEMES[themeId];
-  writeYAML(path.join(projectDir, `themes/${themeId}.theme.yaml`), theme);
+  const themeFile = path.join(projectDir, `themes/${themeId}.theme.yaml`);
+  if (!fs.existsSync(themeFile)) writeYAML(themeFile, theme);
   progress.push(pInfo('Wrote default theme', `${themeId}.theme.yaml`));
 
   const id = generateId();
@@ -257,11 +279,13 @@ export function createProject(args: { name: string; path?: string; theme?: strin
     themes: [{ id: themeId, path: `themes/${themeId}.theme.yaml`, active: true }],
     components: { registry: 'components/index.yaml' },
     templates: { registry: 'templates/index.yaml' },
-    designs: [], assets: { fonts: [], images: [] }, exports: [],
+    designs: adopted ? adoptDesigns(projectDir) : [], assets: { fonts: [], images: [] }, exports: [],
   };
   writeYAML(path.join(projectDir, 'project.yaml'), project);
-  writeYAML(path.join(projectDir, 'components/index.yaml'), { components: [] });
-  writeYAML(path.join(projectDir, 'templates/index.yaml'), { templates: [] });
+  for (const [file, empty] of [['components/index.yaml', { components: [] }], ['templates/index.yaml', { templates: [] }]] as const) {
+    if (!fs.existsSync(path.join(projectDir, file))) writeYAML(path.join(projectDir, file), empty);
+  }
+  if (adopted) progress.push(pOk('Adopted the folder that was here', `${project.designs.length} design(s) registered — nothing in it was overwritten`));
   progress.push(pOk('Wrote project.yaml', `canvas ${width}×${height}`));
 
   const context = buildContext(op, `Created project "${args.name}" at ${projectDir}`, [
