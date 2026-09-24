@@ -8,8 +8,9 @@
  * Laid out, a subtree nothing inside has changed keeps its arrangement whole
  * (one map for all of it). An x node may be STACKED: its columns go one under
  * another, `gap` apart — the design's own row rhythm — each on the side it had
- * in the row (left stays left, right goes right). The
- * rest keeps the offsets and gaps it was authored with.
+ * in the row (left stays left, right goes right). The rows of a changed column
+ * keep their sides the same way; the rest keeps the offsets and gaps it was
+ * authored with.
  */
 
 import type { Layer } from '../../schema/types';
@@ -85,7 +86,9 @@ export function sizeOf(t: Tree, stacked: Set<Tree>, gap: number): Size {
   let w = 0, h = 0;
   t.kids.forEach((k, i) => {
     const s = kids[i] ?? { w: 0, h: 0 };
-    if (t.kind === 'y') { w = Math.max(w, k.box.x - t.box.x + s.w); h += s.h + gapBefore(t, i); }
+    // A row of a changed column keeps its side, not its px offset: b13's page number, 1539 px in, held the
+    // whole slide 1640 px wide after its stats had stacked.
+    if (t.kind === 'y') { w = Math.max(w, s.w); h += s.h + gapBefore(t, i); }
     else { h = Math.max(h, k.box.y - t.box.y + s.h); w += s.w + gapBefore(t, i); }
   });
   return { w, h };
@@ -111,7 +114,13 @@ export function placeTree(t: Tree, x: number, y: number, k: number, stacked: Set
       placeTree(kid, x + k * (col - s.w) * frac, cy, k, stacked, gap, maps);
       cy += k * s.h;
     }
-    else if (t.kind === 'y') { cy += k * gapBefore(t, i); placeTree(kid, x + k * (kid.box.x - t.box.x), cy, k, stacked, gap, maps); cy += k * s.h; }
+    else if (t.kind === 'y') {
+      const col = sizeOf(t, stacked, gap).w, side = t.box.width - kid.box.width;
+      const frac = side > 0 ? Math.max(0, Math.min(1, (kid.box.x - t.box.x) / side)) : 0;
+      cy += k * gapBefore(t, i);
+      placeTree(kid, x + k * (col - s.w) * frac, cy, k, stacked, gap, maps);
+      cy += k * s.h;
+    }
     else { cx += k * gapBefore(t, i); placeTree(kid, cx, y + k * (kid.box.y - t.box.y), k, stacked, gap, maps); cx += k * s.w; }
   });
 }

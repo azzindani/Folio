@@ -39,6 +39,8 @@ export interface ReframePlan {
   holders: Layer[];
   /** Blocks, and the side-by-side groups stacked into a column. */
   blocks: number; stacked: number;
+  /** The width the content was fitted to, in the new frame's px. */
+  room: number;
 }
 
 const area = (b: Box): number => Math.max(0, b.width) * Math.max(0, b.height);
@@ -91,12 +93,12 @@ function blocksOf(content: Array<{ l: Layer; b: Box }>): Block[] {
   return [...by.values()];
 }
 
-export function planReframe(layers: Layer[], oldW: number, oldH: number, W: number, H: number): ReframePlan {
+/** The piece's items split into content (what is laid out) and what sits behind it (grounds, bands, glows). */
+function classify(layers: Layer[], oldW: number, oldH: number): { holders: Layer[]; spans: Map<Layer, Span>; content: Array<{ l: Layer; b: Box }>; behind: Array<{ l: Layer; b: Box }> } {
   const holders: Layer[] = [];
   const spans = new Map<Layer, Span>();
-  const all = items(layers, oldW * oldH, holders);
   const content: Array<{ l: Layer; b: Box }> = [], behind: Array<{ l: Layer; b: Box }> = [];
-  for (const l of all) {
+  for (const l of items(layers, oldW * oldH, holders)) {
     const b = boxOf(l);
     if (!b || area(b) <= 0) continue;
     const left = b.x <= oldW * 0.01, right = b.x + b.width >= oldW * 0.99, top = b.y <= oldH * 0.01, bottom = b.y + b.height >= oldH * 0.99;
@@ -104,6 +106,22 @@ export function planReframe(layers: Layer[], oldW: number, oldH: number, W: numb
     if (span.w || span.h) spans.set(l, span);
     (span.w || span.h || atmosphere(l as Node) ? behind : content).push({ l, b });
   }
+  return { holders, spans, content, behind };
+}
+
+/** What the piece lays out — not its grounds, bands or glows — with the boxes it draws. */
+export function contentOf(layers: Layer[], oldW: number, oldH: number): Array<{ l: Layer; b: Box }> {
+  return classify(layers, oldW, oldH).content;
+}
+
+/** Texts that are blocks on their own — touching no other content — so their lines may re-wrap without breaking a card or a label. */
+export function standaloneTexts(layers: Layer[], oldW: number, oldH: number): Layer[] {
+  const { content } = classify(layers, oldW, oldH);
+  return content.filter(({ l, b }) => l.type === 'text' && content.every(o => o.l === l || meet(o.b, b, 2) === 0)).map(c => c.l);
+}
+
+export function planReframe(layers: Layer[], oldW: number, oldH: number, W: number, H: number): ReframePlan {
+  const { holders, spans, content, behind } = classify(layers, oldW, oldH);
   const blocks = blocksOf(content);
   const short = Math.min(oldW, oldH);
   const all0 = blocks.map(b => b.box).reduce<Box | null>((a, b) => (a ? union(a, b) : b), null) ?? { x: 0, y: 0, width: oldW, height: oldH };
@@ -116,8 +134,11 @@ export function planReframe(layers: Layer[], oldW: number, oldH: number, W: numb
   const inner: Box = { x: ix, y: iy, width: Math.min(W - m, safe ? safe.x + safe.width : W) - ix, height: Math.min(H - m, safe ? safe.y + safe.height : H) - iy };
   // A composition set on the centre line stays on the canvas's centre line — inside the part of the
   // safe box symmetric about it (the feed's button column made b26's centred poster sit 70 px left).
+  // Centred is the blocks' own business, not only their extent's: a left-set slide whose page
+  // number sits in the far corner has a centred extent (b13) and is not centred.
   const across = clamp01((all0.x - oldMargin) / (oldW - 2 * oldMargin - all0.width));
-  const centred = Math.abs(across - 0.5) < 0.08;
+  const onAxis = blocks.filter(b => Math.abs(b.box.x + b.box.width / 2 - oldW / 2) < 0.06 * oldW).reduce((n, b) => n + area(b.box), 0);
+  const centred = Math.abs(across - 0.5) < 0.08 && onAxis * 2 >= blocks.reduce((n, b) => n + area(b.box), 0);
   const room = centred ? 2 * Math.min(W / 2 - inner.x, inner.x + inner.width - W / 2) : inner.width;
   const maps = new Map<Layer, Affine>();
   const stacked = new Set<Tree>();
@@ -154,5 +175,5 @@ export function planReframe(layers: Layer[], oldW: number, oldH: number, W: numb
     const hostMap = host && host.over > 0 ? maps.get(host.blk.items[0] ?? l) : undefined;
     maps.set(l, hostMap ?? centre);
   }
-  return { k, maps, spans, holders, blocks: blocks.length, stacked: stacked.size };
+  return { k, maps, spans, holders, blocks: blocks.length, stacked: stacked.size, room };
 }
