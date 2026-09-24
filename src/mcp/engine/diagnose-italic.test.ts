@@ -8,7 +8,13 @@ import { collectFindings } from './diagnose-collect';
 import { fontsDir } from './fonts';
 
 const root = fs.mkdtempSync(path.join(os.tmpdir(), 'folio-italic-'));
-afterAll(() => fs.rmSync(root, { recursive: true, force: true }));
+// An empty shared library: the machine's own may already hold the italic this test fetches.
+const before = process.env['FOLIO_LIBRARY_DIR'];
+process.env['FOLIO_LIBRARY_DIR'] = path.join(root, 'library');
+afterAll(() => {
+  if (before === undefined) delete process.env['FOLIO_LIBRARY_DIR']; else process.env['FOLIO_LIBRARY_DIR'] = before;
+  fs.rmSync(root, { recursive: true, force: true });
+});
 const design = path.join(root, 'designs', 'std.design.yaml');
 fs.mkdirSync(path.dirname(design), { recursive: true });
 const spec = { meta: { id: 's', name: 'S', type: 'poster' }, document: { width: 1080, height: 1080 },
