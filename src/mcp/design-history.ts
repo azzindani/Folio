@@ -45,7 +45,8 @@ export interface PriorDesign {
 }
 
 /** Ops whose whole purpose is to produce something that looks the same. */
-const CLONE_OPS = [/duplicate/i, /batch/i, /:clone/i];
+// A reframe is the same piece in another frame (r7, b26: the teaser was 'the poster with different words').
+const CLONE_OPS = [/duplicate/i, /batch/i, /:clone/i, /:reframe/i];
 
 /** The op that created this design, when that op was a deliberate copy. */
 export function cloneOriginOf(designPath: string): string | undefined {
