@@ -19,6 +19,12 @@ describe('analyzeLayers — geometry', () => {
     expect(off).toBeTruthy();
     expect(off!.severity).toBe('error');
     expect(off!.layer_id).toBe('stray');
+    // The heal leaves a partly-off layer where it is, so the finding carries the move back in.
+    expect(off?.call).toEqual({ tool: 'edit_layer', params: { op: 'move', layer_id: 'stray', dx: 50, dy: 0 } });
+    const wide = analyzeLayers([{ id: 'band', type: 'rect', z: 1, x: -20, y: 900, width: 1200, height: 200, fill: '#000' } as unknown as Layer], W, H);
+    // Wider than the canvas: no move fits it inside, so none is offered.
+    expect(wide.find(x => x.code === 'off_canvas')).toBeTruthy();
+    expect(wide.find(x => x.code === 'off_canvas')?.call).toBeUndefined();
   });
 
   it('flags colliding same-kind content (text pile-up)', () => {
