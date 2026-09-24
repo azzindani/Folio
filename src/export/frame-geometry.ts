@@ -60,8 +60,8 @@ const HIGH_MARKS = /^["'“”‘’«»‹›„‟]+$/;
 /** Glyphs that fall below the baseline in most faces. */
 const DESCENDS = /[gjpqyQJ,;()[\]{}|/@$§µ]/;
 
-/** The box of what a text layer draws: widest wrapped line × its lines. */
-function textBox(o: Record<string, unknown>): Box | null {
+/** A plain text's wrapped lines, each with the width it inks; null when not plain text. */
+function inkedLines(o: Record<string, unknown>): { layout: ReturnType<typeof plainTextLayout>; widths: number[]; value: string } | null {
   const content = o['content'] as { type?: unknown; value?: unknown } | undefined;
   if (!content || (content.type !== undefined && content.type !== 'plain') || typeof content.value !== 'string') return null;
   const style = (o['style'] ?? {}) as Record<string, unknown>;
@@ -72,9 +72,35 @@ function textBox(o: Record<string, unknown>): Box | null {
   // before the wipe began (benchmark r6, b21).
   const extra = drawnLetterSpacing(style as never, o as { tracking_offset?: number }) - (typeof style['letter_spacing'] === 'number' ? style['letter_spacing'] : 0);
   const spaced = extra ? { ...style, letter_spacing: drawnLetterSpacing(style as never, o as { tracking_offset?: number }) } : style;
-  const widest = Math.max(0, ...layout.lines.map((l, i) =>
-    lineInk(l, (layout.lineWidths[i] ?? 0) + extra * Math.max(0, [...l].length - 1), spaced, layout.fontSize)));
-  const left = layout.anchor === 'middle' ? layout.textX - widest / 2 : layout.anchor === 'end' ? layout.textX - widest : layout.textX;
+  const widths = layout.lines.map((l, i) => lineInk(l, (layout.lineWidths[i] ?? 0) + extra * Math.max(0, [...l].length - 1), spaced, layout.fontSize));
+  return { layout, widths, value: content.value };
+}
+
+const startOf = (anchor: string, x: number, w: number): number => anchor === 'middle' ? x - w / 2 : anchor === 'end' ? x - w : x;
+
+/**
+ * Each line's own ink box, in the layer's coordinates. The whole text's box
+ * spans its widest line, so a short last line leaves an empty corner in it —
+ * "Club" under "Kids Code" — that a shape can sit in without touching a letter
+ * (benchmark sweep, b18). Null when the text is not plain.
+ */
+export function lineBoxes(layer: Layer): Box[] | null {
+  const lines = inkedLines(layer as unknown as Record<string, unknown>);
+  if (!lines) return null;
+  const { layout, widths } = lines;
+  return layout.lines.map((l, i) => ({
+    x: startOf(layout.anchor, layout.textX, widths[i] ?? 0), y: layout.textY + i * layout.lineH - layout.fontSize * 0.8,
+    width: widths[i] ?? 0, height: layout.fontSize * (DESCENDS.test(l) ? 1 : 0.82),
+  }));
+}
+
+/** The box of what a text layer draws: widest wrapped line × its lines. */
+function textBox(o: Record<string, unknown>): Box | null {
+  const lines = inkedLines(o);
+  if (!lines) return null;
+  const { layout, value } = lines;
+  const widest = Math.max(0, ...lines.widths);
+  const left = startOf(layout.anchor, layout.textX, widest);
   // First baseline sits at textY; glyphs rise ~0.8em above it. Below the last
   // baseline they fall ~0.2em only when that line HAS a descender — caps and
   // digits stop at the baseline. Counting the band anyway made a 400px "24"
@@ -84,7 +110,7 @@ function textBox(o: Record<string, unknown>): Box | null {
   // from about cap height down to ~0.45 em above the baseline (Fraunces: 0.76 →
   // 0.51). Measured as a full letter, a 260 px mark floored the quote under it and
   // the rescue pushed the quote 113 px off its layout (benchmark r6, b24).
-  if (layout.lines.length === 1 && HIGH_MARKS.test(content.value.trim())) {
+  if (layout.lines.length === 1 && HIGH_MARKS.test(value.trim())) {
     return { x: left, y: layout.textY - layout.fontSize * 0.78, width: widest, height: layout.fontSize * 0.33 };
   }
   const top = layout.textY - layout.fontSize * 0.8;
