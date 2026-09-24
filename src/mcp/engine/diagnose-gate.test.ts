@@ -76,6 +76,7 @@ describe('diagnose_design {gate:true}', () => {
     expect(fs.readFileSync(design, 'utf8')).toBe(yaml.dump(spec));
     const healed = await gate(design);
     expect(healed.healed?.length).toBeGreaterThan(0);
+    expect(healed.verdict).toMatch(/^Healed first, the design is changed: /);
     expect(healed.top.some(i => i.code === 'off_canvas')).toBe(false);
   }, 60_000);
 });
