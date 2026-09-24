@@ -6,7 +6,8 @@ import { applyFill } from './fill-renderer';
 import { applyEffects } from './effects-renderer';
 
 import { encodeQR } from './qr/encode';
-import { applyCommonAttributes, applyStroke, normalizeStroke, normalizePadding, escHtml, foPreview, numOr, resolveRadii, roundedRectPath } from './layer-renderers-shared';
+import { applyCommonAttributes, applyStroke, normalizeStroke, escHtml, foPreview, numOr, resolveRadii, roundedRectPath } from './layer-renderers-shared';
+import { placeAutoLayoutChildren } from './auto-layout-place';
 
 export function renderGroup(
   layer: GroupLayer,
@@ -85,16 +86,10 @@ export function renderAutoLayout(
   svg: SVGSVGElement,
   renderChild: (l: Layer, s: SVGSVGElement) => SVGElement,
 ): SVGElement {
-  const isRow = layer.direction === 'row';
-  const gap = layer.gap ?? 0;
-  const pad = normalizePadding(layer.padding);
   const x = layer.x ?? 0;
   const y = layer.y ?? 0;
   const w = typeof layer.width === 'number' ? layer.width : 0;
   const h = typeof layer.height === 'number' ? layer.height : 0;
-
-  const align   = layer.align_items    ?? 'start';
-  const justify = layer.justify_content ?? 'start';
 
   const g = createSVGElement('g');
   g.setAttribute('data-layer-id', layer.id);
@@ -123,115 +118,8 @@ export function renderAutoLayout(
     g.appendChild(bg);
   }
 
-  const sorted = [...(layer.layers ?? [])].sort((a, b) => (a.z ?? 0) - (b.z ?? 0));
-
-  const mainSizes = sorted.map(child =>
-    isRow ? (typeof child.width  === 'number' ? child.width  : 0)
-          : (typeof child.height === 'number' ? child.height : 0),
-  );
-  const crossSizes = sorted.map(child =>
-    isRow ? (typeof child.height === 'number' ? child.height : 0)
-          : (typeof child.width  === 'number' ? child.width  : 0),
-  );
-
-  const mainPadStart  = isRow ? pad.left  : pad.top;
-  const mainPadEnd    = isRow ? pad.right : pad.bottom;
-  const crossPadStart = isRow ? pad.top   : pad.left;
-  const containerMain  = isRow ? w : h;
-  const containerCross = isRow ? h : w;
-  const availableMain  = containerMain  - mainPadStart - mainPadEnd;
-  const availableCross = containerCross - crossPadStart - (isRow ? pad.bottom : pad.right);
-
-  // Flexbox-style sizing for children that omit dimensions. Models expect a
-  // container to distribute space, but Folio sizes children from their own
-  // width/height — so a row of 3 sizeless columns would collapse onto each
-  // other. Children with no main-axis size share the leftover main space
-  // equally (flex-grow:1); children with no cross-axis size fill the cross.
-  // Skipped when wrapping (wrap needs intrinsic sizes). Sized children are
-  // left untouched.
-  if (!layer.wrap && availableMain > 0) {
-    const flexIdx = sorted.map((_, i) => i).filter(i => !(mainSizes[i] > 0));
-    if (flexIdx.length) {
-      const fixed = mainSizes.reduce((s, v) => s + (v > 0 ? v : 0), 0);
-      const gaps = Math.max(0, sorted.length - 1) * gap;
-      const share = Math.max(0, (availableMain - fixed - gaps) / flexIdx.length);
-      for (const i of flexIdx) mainSizes[i] = share;
-    }
-    for (let i = 0; i < crossSizes.length; i++) if (!(crossSizes[i] > 0)) crossSizes[i] = availableCross;
-  }
-  const totalMain = mainSizes.reduce((s, v) => s + v, 0) + Math.max(0, sorted.length - 1) * gap;
-
-  const calcCursor = (total: number, count: number, sizes: number[]): { start: number; dynGap: number } => {
-    switch (justify) {
-      case 'center':      return { start: mainPadStart + (availableMain - total) / 2,              dynGap: gap };
-      case 'end':         return { start: mainPadStart + availableMain - total,                    dynGap: gap };
-      case 'space-between': return { start: mainPadStart, dynGap: count > 1 ? (availableMain - sizes.reduce((s,v)=>s+v,0)) / (count-1) : 0 };
-      case 'space-around':  { const sp = availableMain - sizes.reduce((s,v)=>s+v,0); return { start: mainPadStart + (sp/count)/2, dynGap: sp/count }; }
-      default:            return { start: mainPadStart,                                            dynGap: gap };
-    }
-  };
-
-  const placeChild = (child: Layer, mc: number, cc: number, cIdx: number, trackCross: number): void => {
-    let crossPos: number;
-    switch (align) {
-      case 'center': crossPos = cc + (trackCross - crossSizes[cIdx]) / 2; break;
-      case 'end':    crossPos = cc + trackCross - crossSizes[cIdx]; break;
-      default:       crossPos = cc;
-    }
-    // Apply the layout-computed sizes (== the child's own size when it set
-    // one; the flex/fill value otherwise) so flexed/filled children actually
-    // render at their distributed size and nested containers know their box.
-    const mainSize  = mainSizes[cIdx];
-    const crossSize = align === 'stretch' ? trackCross : crossSizes[cIdx];
-    const placed: Layer = {
-      ...child,
-      x: isRow ? x + mc : x + crossPos,
-      y: isRow ? y + crossPos : y + mc,
-      width:  isRow ? mainSize : crossSize,
-      height: isRow ? crossSize : mainSize,
-    };
-    g.appendChild(renderChild(placed, svg));
-  };
-
-  if (layer.wrap && availableMain > 0) {
-    // Group children into wrap tracks
-    const tracks: { idxs: number[] }[] = [];
-    let track: number[] = [];
-    let trackUsed = 0;
-    for (let i = 0; i < sorted.length; i++) {
-      const sz = mainSizes[i];
-      const needed = track.length === 0 ? sz : trackUsed + gap + sz;
-      if (track.length > 0 && needed > availableMain + 0.5) {
-        tracks.push({ idxs: [...track] });
-        track = [i]; trackUsed = sz;
-      } else {
-        track.push(i); trackUsed = needed;
-      }
-    }
-    if (track.length > 0) tracks.push({ idxs: track });
-
-    let crossCursor = crossPadStart;
-    for (const { idxs } of tracks) {
-      const tSizes = idxs.map(i => mainSizes[i]);
-      const tTotal = tSizes.reduce((s,v)=>s+v,0) + Math.max(0, idxs.length-1) * gap;
-      const trackCross = Math.max(...idxs.map(i => crossSizes[i]));
-      const { start, dynGap } = calcCursor(tTotal, idxs.length, tSizes);
-      let mc = start;
-      for (let j = 0; j < idxs.length; j++) {
-        placeChild(sorted[idxs[j]], mc, crossCursor, idxs[j], trackCross);
-        mc += tSizes[j] + dynGap;
-      }
-      crossCursor += trackCross + gap;
-    }
-  } else {
-    // No wrap — linear pass
-    const { start, dynGap } = calcCursor(totalMain, sorted.length, mainSizes);
-    let cursor = start;
-    for (let i = 0; i < sorted.length; i++) {
-      placeChild(sorted[i], cursor, crossPadStart, i, availableCross);
-      cursor += mainSizes[i] + dynGap;
-    }
-  }
+  // One placement for the renderer and every measure (auto-layout-place.ts).
+  for (const placed of placeAutoLayoutChildren(layer)) g.appendChild(renderChild(placed, svg));
 
   applyCommonAttributes(g, layer);
   if (layer.effects) applyEffects(g, layer.effects, svg);
