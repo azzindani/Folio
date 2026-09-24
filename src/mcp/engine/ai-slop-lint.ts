@@ -46,17 +46,6 @@ function flatten(layers: Layer[], out: Layer[] = []): Layer[] {
   return out;
 }
 
-/** Flatten, remembering each layer's immediate container. Accent counting needs
- *  it: N bars of one series share a parent and are ONE accent decision, not N. */
-function flattenWithParent(layers: Layer[], parent: string, out: { l: Layer; parent: string }[] = []): { l: Layer; parent: string }[] {
-  for (const l of layers) {
-    out.push({ l, parent });
-    const kids = (l as { layers?: Layer[] }).layers;
-    if (Array.isArray(kids)) flattenWithParent(kids, l.id, out);
-  }
-  return out;
-}
-
 /** Is this design citing a dataset? A figure on a sourced page is evidence, not
  *  invention — the rule must not call a real number made up because it looks
  *  round. (Review: "invented metric" fired on data-backed board-deck figures.) */
@@ -198,27 +187,94 @@ export function lintAiSlop(layers: Layer[], canvasShort?: number): string[] {
     notes.push(`text "${capsNoTrack.id}" is ALL-CAPS at text size with little/no letter_spacing — caps this small wants ≥0.06em tracking (set letter_spacing) or it reads cramped + generic (type rule).`);
   }
 
-  // 7. Accent overuse — one vivid hue spread across many SURFACES. Counted per
-  // container, not per layer: a bar chart's twelve bars in one accent are a
-  // single, correct decision (a series wants one colour), and counting them as
-  // twelve uses fired this rule on every chart ever drawn. One container
-  // contributes at most one use per hue.
+  // 7. Accent overuse — one vivid hue spread across many surfaces (accentNote).
+  const accent = accentNote(layers);
+  if (accent && notes.length < 8) notes.push(accent);
+
+  return notes.slice(0, 6);
+}
+
+/** Top-level shapes drawn over one another are one object — a cookie and the marks on it (r2, b07) — keyed by
+ *  the object; a ground spanning the whole piece joins nothing. Layers with no box are left out. */
+function objects(ls: Layer[]): Map<Layer, string> {
+  type B = { l: Layer; x: number; y: number; w: number; h: number };
+  const boxed: B[] = ls.flatMap(l => {
+    const o = l as unknown as { x?: number; y?: number; width?: number; height?: number };
+    return typeof o.width === 'number' && typeof o.height === 'number' ? [{ l, x: o.x ?? 0, y: o.y ?? 0, w: o.width, h: o.height }] : [];
+  });
+  if (boxed.length < 2) return new Map();
+  const x0 = Math.min(...boxed.map(b => b.x)), y0 = Math.min(...boxed.map(b => b.y));
+  const extent = (Math.max(...boxed.map(b => b.x + b.w)) - x0) * (Math.max(...boxed.map(b => b.y + b.h)) - y0);
+  const parts = boxed.filter(b => b.w * b.h < 0.9 * extent);
+  const root = parts.map((_, i) => i);
+  const find = (i: number): number => (root[i] === i ? i : (root[i] = find(root[i] ?? i)));
+  parts.forEach((a, i) => parts.forEach((b, j) => {
+    if (j > i && Math.min(a.x + a.w, b.x + b.w) > Math.max(a.x, b.x) && Math.min(a.y + a.h, b.y + b.h) > Math.max(a.y, b.y)) root[find(i)] = find(j);
+  }));
+  const size = new Map<number, number>();
+  parts.forEach((_, i) => size.set(find(i), (size.get(find(i)) ?? 0) + 1));
+  const out = new Map<Layer, string>();
+  parts.forEach((b, i) => { if ((size.get(find(i)) ?? 0) > 1) out.set(b.l, `object:${parts[find(i)]?.l.id ?? b.l.id}`); });
+  return out;
+}
+
+/** A surface's key for accent counting: its container — or, for a run of ≥3 siblings drawn alike (same
+ *  kind, size, colour), the run: five identical timeline dots are one decision, not five (r7, b28). */
+function surfaceKeys(layers: Layer[]): Map<Layer, string> {
+  const keys = new Map<Layer, string>();
+  const sig = (l: Layer): string => {
+    const o = l as unknown as { width?: number; height?: number };
+    return `${l.type}:${Math.round(o.width ?? 0)}x${Math.round(o.height ?? 0)}:${solidHex(l) ?? textColor(l) ?? ''}`;
+  };
+  const walk = (ls: Layer[], parent: string): void => {
+    const count = new Map<string, number>();
+    for (const l of ls) count.set(sig(l), (count.get(sig(l)) ?? 0) + 1);
+    const object = parent === '' ? objects(ls) : new Map<Layer, string>();
+    for (const l of ls) {
+      keys.set(l, parent !== '' ? parent : object.get(l) ?? ((count.get(sig(l)) ?? 0) >= 3 ? `series:${sig(l)}` : l.id));
+      const kids = (l as { layers?: Layer[] }).layers;
+      if (Array.isArray(kids)) walk(kids, l.id);
+    }
+  };
+  walk(layers, '');
+  return keys;
+}
+
+/** The most surfaces one vivid hue is on. Counted per container, not per layer: a bar
+ *  chart's twelve bars in one accent are a single, correct decision (a series wants one
+ *  colour), and counting them as twelve fired this rule on every chart ever drawn. */
+function accentSpread(layers: Layer[]): number {
   const surfaces = new Map<number, Set<string>>();
-  for (const { l, parent } of flattenWithParent(layers, '')) {
+  for (const [l, key] of surfaceKeys(layers)) {
     for (const hex of [solidHex(l), textColor(l)]) {
       const b = hex ? vividBucket(hex) : null;
       if (b === null) continue;
       const seen = surfaces.get(b) ?? new Set<string>();
-      // A top-level layer IS its own surface; nested siblings collapse onto the
-      // container they belong to.
-      seen.add(parent === '' ? l.id : parent);
+      seen.add(key);
       surfaces.set(b, seen);
     }
   }
-  const worst = [...surfaces.values()].map(s => s.size).sort((a, b) => b - a)[0] ?? 0;
-  if (worst > 5 && notes.length < 8) {
-    notes.push(`one accent hue appears on ${worst} layers — cap visible accent uses at ~2 per surface (one eyebrow/chip + one CTA); let neutrals carry 70–90% (color rule).`);
-  }
-
-  return notes.slice(0, 6);
+  return [...surfaces.values()].map(s => s.size).sort((a, b) => b - a)[0] ?? 0;
 }
+
+/** What a frame shows: hidden layers and faded-out subtrees dropped. */
+function seen(layers: Layer[]): Layer[] {
+  return layers.flatMap(l => {
+    const o = l as unknown as { visible?: boolean; opacity?: number; layers?: Layer[] };
+    if (o.visible === false || (typeof o.opacity === 'number' && o.opacity <= 0.05)) return [];
+    return Array.isArray(o.layers) ? [{ ...l, layers: seen(o.layers) } as Layer] : [l];
+  });
+}
+
+/**
+ * The accent-overuse note, or null. A moving piece is judged by what is on screen
+ * together — the most surfaces at any of `frames` (its shot rests) — not by every
+ * layer it ever shows: b27's six mint surfaces were never more than three at once (r7).
+ */
+export function accentNote(layers: Layer[], frames?: Layer[][]): string | null {
+  const worst = frames?.length ? Math.max(...frames.map(f => accentSpread(seen(f)))) : accentSpread(layers);
+  return worst > 5
+    ? `one accent hue appears on ${worst} layers${frames?.length ? ' at once' : ''} — cap visible accent uses at ~2 per surface (one eyebrow/chip + one CTA); let neutrals carry 70–90% (color rule).`
+    : null;
+}
+
