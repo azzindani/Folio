@@ -398,6 +398,21 @@ describe('op:sequence called again (r8: re-timing needed op:clear on every layer
     expect(await seenAt(p, 3600)).toBeLessThan(0.05);
   });
 
+  it('gives the same track back when a layer also has an exit and a scene hold (r8 live: a doubled key, the hold lost)', () => {
+    const p = flat();
+    sequenceMotion({ design_path: p, steps: [{ preset: 'rise', layer_ids: ['a'], at: 200, duration: 700 }, { preset: 'fade_out', layer_ids: ['a'], at: 3000, duration: 500 }] });
+    // op:scene holds every track to the scene's length: the last frame stays put to 20 s.
+    const held = read(p);
+    const a = (held.layers ?? []).find(l => l.id === 'a') as Layer & { animation: AnimationSpec };
+    a.animation.playback = { ...a.animation.playback, duration: 19800 };
+    fs.writeFileSync(p, yaml.dump(held));
+    const before = JSON.stringify(animOf(read(p), 'a'));
+    expect(sequenceMotion({ design_path: p, steps: [{ preset: 'rise', layer_ids: ['a'], at: 200, duration: 700 }] }).success).toBe(true);
+    const after = animOf(read(p), 'a');
+    expect(JSON.stringify(after)).toBe(before);
+    expect(trackEnd(after)).toBe(20000);
+  });
+
   it('still refuses two entrances for one layer in one call', () => {
     const p = flat();
     const r = sequenceMotion({ design_path: p, steps: [{ preset: 'fade_in', layer_ids: ['a'], at: 0, duration: 400 }, { preset: 'rise', layer_ids: ['a'], at: 2000, duration: 400 }] });
