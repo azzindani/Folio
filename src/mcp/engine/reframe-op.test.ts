@@ -86,21 +86,28 @@ describe('manage_design {op:"reframe"}', () => {
   it('re-shoots a camera page for the new frame: each shot fills the story with what it showed', async () => {
     const card = (id: string, x: number): object => ({ id, type: 'rect', z: 1, x, y: 340, width: 700, height: 400, fill: '#E4572E' });
     const tour = write('tour', { world: { x: 0, y: 0, width: 3840, height: 1080 }, layers: [
-      { id: 'sky', type: 'rect', z: 0, x: 0, y: 0, width: 1920, height: 1080, fill: '#101820' }, card('a', 610), card('b', 2530),
+      { id: 'sky', type: 'rect', z: 0, x: 0, y: 0, width: 1920, height: 1080, fill: '#101820' },
+      // The scene the camera travels, in one group — its night sky spans the whole world.
+      { id: 'scene', type: 'group', z: 1, x: 0, y: 0, width: 3840, height: 1080, layers: [
+        { id: 'night', type: 'rect', z: 0, x: 0, y: 0, width: 3840, height: 1080, fill: '#0B1320' }, card('a', 610), card('b', 2530)] },
       { id: 'logo', type: 'rect', z: 3, x: 1700, y: 960, width: 160, height: 60, fill: '#fff' }] });
     const cam = await ALL_HANDLERS['animation']?.({ op: 'camera', design_path: tour, exclude: ['logo'], shots: [{ t: 0, target: 'a', padding: 60 }, { t: 2000, target: 'b', padding: 60 }] }) as unknown as Record<string, unknown>;
     expect(cam['success']).toBe(true);
     const r = await reframe({ design_path: tour, aspect: '9:16' });
     expect(JSON.stringify(r['progress'])).toMatch(/2 camera shot\(s\) re-framed/);
     const story = load(String(r['design_path']));
-    expect((story.layers ?? []).find(l => l.id === 'sky')).toMatchObject({ width: 1080, height: 1920 });
-    // The logo held still over the camera, 60 px in from the bottom-right corner: it still is.
-    expect((story.layers ?? []).find(l => l.id === 'logo')).toMatchObject({ x: 1700 - 840, y: 960 + 840 });
+    expect((story.layers ?? []).find(l => l.id === 'sky')).toMatchObject({ x: 0, y: 0, width: 1080, height: 1920 });
+    // The logo held still over the camera, 60 px in from the bottom-right corner: it keeps that corner,
+    // inside the feed-safe box (x ≤ 900, y ≤ 1440) so the caption band does not cover it.
+    expect((story.layers ?? []).find(l => l.id === 'logo')).toMatchObject({ x: 740, y: 1380 });
     for (const [t, id] of [[0, 'a'], [2000, 'b']] as const) {
       const box = canvasBoxes(layersAt(story.layers ?? [], t)).find(b => b.layer.id === id)?.box;
       expect(Math.abs((box?.x ?? 0) + (box?.width ?? 0) / 2 - 540)).toBeLessThan(2);
       expect(Math.abs((box?.y ?? 0) + (box?.height ?? 0) / 2 - 960)).toBeLessThan(2);
       expect(box?.width).toBeGreaterThan(900);
+      // What spanned the world still covers every frame the camera shows: no strip of nothing above or below.
+      const night = canvasBoxes(layersAt(story.layers ?? [], t)).find(b => b.layer.id === 'night')?.box;
+      expect(night && night.x <= 0 && night.y <= 0 && night.x + night.width >= 1080 && night.y + night.height >= 1920).toBe(true);
     }
   });
 

@@ -26,6 +26,7 @@ import { fillAxes, syncSpecPos } from '../engine-customize-tools';
 import { gateDesign } from './diagnose-gate';
 import { fitTextBoxes } from './reframe-text';
 import { reshootCamera } from './reframe-camera';
+import { feedSafeBox } from './diagnose-safe';
 import { drawnBox } from '../../export/frame-geometry';
 import { syncAnimationsToSpec } from './animation-sync';
 
@@ -77,10 +78,20 @@ function pinOutside(layers: Layer[], oldW: number, oldH: number, W: number, H: n
     if (l.id === '__camera') continue;
     const b = drawnBox(l) ?? boxOfGroup(l);
     if (!b) continue;
-    if (b.width >= oldW - 1 && b.height >= oldH - 1) { if (Array.isArray(l.layers)) n += pinOutside(l.layers, oldW, oldH, W, H); continue; }
-    const cx = b.x + b.width / 2, cy = b.y + b.height / 2;
-    const dx = Math.abs(cx - oldW / 2) < 0.05 * oldW ? (W - oldW) / 2 : cx < oldW / 2 ? 0 : W - oldW;
-    const dy = Math.abs(cy - oldH / 2) < 0.05 * oldH ? (H - oldH) / 2 : cy < oldH / 2 ? 0 : H - oldH;
+    // A ground — the old canvas's or, already stretched, the new one's — is not a fixed mark.
+    const ground = (b.width >= oldW - 1 && b.height >= oldH - 1) || (b.width >= W - 1 && b.height >= H - 1);
+    if (ground) { if (Array.isArray(l.layers)) n += pinOutside(l.layers, oldW, oldH, W, H); continue; }
+    // Its distance to its nearest edge, kept — inside the feed-safe box on a 9:16 frame, so a
+    // logo from a 16:9 corner does not land under the caption band.
+    const f = feedSafeBox(W, H) ?? { x: 0, y: 0, width: W, height: H };
+    const place = (at: number, size: number, oldLen: number, len: number, lo: number, hi: number): number => {
+      const c = at + size / 2;
+      if (Math.abs(c - oldLen / 2) < 0.05 * oldLen) return (len - oldLen) / 2;
+      if (c < oldLen / 2) return Math.max(lo, at) - at;
+      return Math.min(hi, len - (oldLen - at - size)) - size - at;
+    };
+    const dx = place(b.x, b.width, oldW, W, f.x, f.x + f.width);
+    const dy = place(b.y, b.height, oldH, H, f.y, f.y + f.height);
     if (dx || dy) { mapSubtree(l, { k: 1, ox: 0, oy: 0, dx, dy }); n++; }
   }
   return n;
@@ -91,11 +102,12 @@ function reframeSurface(layers: Layer[], holder: { world?: World }, oldW: number
   if (holder.world) {
     // A camera already decides what the frame shows: re-shoot its keys for the new frame, the world as laid out.
     // Only over a world: a camera on a canvas-sized page moved it as one, with its frame marks (b09).
-    const shots = reshootCamera(layers, oldW, oldH, W, H);
-    if (shots !== null) {
+    const shot = reshootCamera(layers, holder.world, oldW, oldH, W, H);
+    if (shot) {
+      holder.world = shot.world;
       spanGrounds(layers, oldW, oldH, W, H);
       const pinned = pinOutside(layers, oldW, oldH, W, H);
-      return `${shots} camera shot(s) re-framed for the new frame; the world stays as laid out${pinned ? `, ${pinned} fixed layer(s) kept to their edges` : ''}`;
+      return `${shot.shots} camera shot(s) re-framed for the new frame; the world stays as laid out${pinned ? `, ${pinned} fixed layer(s) kept to their edges` : ''}`;
     }
     const k = Math.min(W / oldW, H / oldH);
     const m: Affine = { k, ox: oldW / 2, oy: oldH / 2, dx: W / 2 - oldW / 2, dy: H / 2 - oldH / 2 };

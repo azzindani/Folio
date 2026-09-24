@@ -8,8 +8,7 @@
  * camera's pivot (its box's centre), T and s the key's offset and scale. What
  * that shot showed — the posed content inside the region at the key's time —
  * is framed again for the new canvas (framePose, the same pose op:camera
- * writes), so each shot fills the new frame with its own subject. A key that
- * turns the camera is left as it was.
+ * writes), so each shot fills the new frame with its own subject.
  */
 
 import type { Layer } from '../../schema/types';
@@ -45,27 +44,59 @@ const union = (bs: Box[]): Box | null => bs.reduce<Box | null>((u, b) => {
 function subject(layers: Layer[], t: number, region: Box): Box {
   const cam = findCamera(layersAt(layers, t));
   const kids = (cam?.layers ?? []).filter(l => l.id !== `${CAMERA}_pin`);
-  const seen = canvasBoxes(kids).filter(b => b.opacity > 0.05).map(b => clip(b.box, region)).filter((b): b is Box => b !== null);
+  // A backdrop — the night a scene is set in, which the whole shot sits inside — is not what the shot is of.
+  const inside = (b: Box): boolean => b.x <= region.x + 1 && b.y <= region.y + 1 && b.x + b.width >= region.x + region.width - 1 && b.y + b.height >= region.y + region.height - 1;
+  const seen = canvasBoxes(kids).filter(b => b.opacity > 0.05 && !inside(b.box)).map(b => clip(b.box, region)).filter((b): b is Box => b !== null);
   return union(seen) ?? region;
 }
 
-/** Re-frame every camera key of a page for a W×H canvas; how many keys, or null when the page has no camera. */
-export function reshootCamera(layers: Layer[], oldW: number, oldH: number, W: number, H: number): number | null {
+/** A shot's framing for the new canvas: the pose's scale, and the region of the world it shows. */
+function reframe(shown: Box, W: number, H: number): { s: number; region: Box; pad: number } {
+  const pad = 0.05 * Math.max(shown.width, shown.height);
+  const s = Math.min(W / (shown.width + 2 * pad), H / (shown.height + 2 * pad));
+  const cx = shown.x + shown.width / 2, cy = shown.y + shown.height / 2;
+  return { s, pad, region: { x: cx - W / (2 * s), y: cy - H / (2 * s), width: W / s, height: H / s } };
+}
+
+/** Stretch what spanned the old world, inside the camera, to the new one — the sky a camera travels. */
+function spanWorld(layers: Layer[], from: Box, to: Box): void {
+  for (const l of layers as Node[]) {
+    if (typeof l.x === 'number' && typeof l.width === 'number' && l.x <= from.x + 1 && l.x + l.width >= from.x + from.width - 1) { l.x = to.x; l.width = to.width; }
+    if (typeof l.y === 'number' && typeof l.height === 'number' && l.y <= from.y + 1 && l.y + l.height >= from.y + from.height - 1) { l.y = to.y; l.height = to.height; }
+    if (Array.isArray(l.layers)) spanWorld(l.layers, from, to);
+  }
+}
+
+/**
+ * Re-frame every camera key of a page for a W×H canvas. The world grows to hold
+ * what the new shots show (a portrait shot of a landscape world sees above and
+ * below it) and the canvas, the camera's box and pin with it, and every pose is
+ * written about the new world's centre — the one pivot both players use. What
+ * spanned the old world stretches to the new. Null when there is no camera to
+ * re-shoot, or a key turns it (its pose is left to the author).
+ */
+export function reshootCamera(layers: Layer[], world: Box, oldW: number, oldH: number, W: number, H: number): { shots: number; world: Box } | null {
   const cam = findCamera(layers);
   const keys = cam?.animation?.keyframes;
   if (!cam || !keys?.length || typeof cam.width !== 'number' || typeof cam.height !== 'number') return null;
-  const P = { x: (cam.x ?? 0) + cam.width / 2, y: (cam.y ?? 0) + cam.height / 2 };
+  if (keys.some(k => typeof k['rotation'] === 'number' && k['rotation'] !== 0)) return null;
+  const from: Box = { x: cam.x ?? 0, y: cam.y ?? 0, width: cam.width, height: cam.height };
+  const P = { x: from.x + from.width / 2, y: from.y + from.height / 2 };
   const delay = cam.animation?.playback?.delay ?? 0;
-  let n = 0;
-  const next: Keyframe[] = keys.map(k => {
+  const shots = keys.map(k => {
     const s = typeof k['scale'] === 'number' ? k['scale'] : 1, tx = typeof k['x'] === 'number' ? k['x'] : 0, ty = typeof k['y'] === 'number' ? k['y'] : 0;
-    if (typeof k['rotation'] === 'number' && k['rotation'] !== 0) return k;
     const region: Box = { x: P.x + (0 - P.x - tx) / s, y: P.y + (0 - P.y - ty) / s, width: oldW / s, height: oldH / s };
     const shown = subject(layers, delay + k.t, region);
-    const pose = framePose(shown, { width: W, height: H }, 0.05 * Math.max(shown.width, shown.height), P);
-    n++;
-    return { ...k, scale: pose.scale, x: pose.x, y: pose.y };
+    return { k, shown, ...reframe(shown, W, H) };
   });
-  if (cam.animation) cam.animation = { ...cam.animation, keyframes: next };
-  return n;
+  const grown = union([world, { x: 0, y: 0, width: W, height: H }, ...shots.map(x => x.region)]) ?? world;
+  const next: Box = { x: Math.floor(grown.x), y: Math.floor(grown.y), width: Math.ceil(grown.width), height: Math.ceil(grown.height) };
+  const P2 = { x: next.x + next.width / 2, y: next.y + next.height / 2 };
+  spanWorld(cam.layers ?? [], from, next);
+  Object.assign(cam, next);
+  const pin = (cam.layers ?? []).find(l => l.id === `${CAMERA}_pin`);
+  if (pin) Object.assign(pin, next);
+  const keyed: Keyframe[] = shots.map(({ k, shown, pad }) => { const pose = framePose(shown, { width: W, height: H }, pad, P2); return { ...k, scale: pose.scale, x: pose.x, y: pose.y }; });
+  if (cam.animation) cam.animation = { ...cam.animation, keyframes: keyed };
+  return { shots: keyed.length, world: next };
 }
