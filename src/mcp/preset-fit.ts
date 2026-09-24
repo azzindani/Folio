@@ -198,7 +198,8 @@ export function scaleSubtree(layer: Layer, k: number, ox: number, oy: number, dx
 
   scaleLengths(o['style'], k);
   scaleLengths(o['effects'], k);
-  for (const key of ['radius', 'corner_radius', 'icon_size', 'gap', 'padding', 'arrow_size'] as const) {
+  // An icon's `size` is its drawn px (renderIcon): left alone, a resized icon kept its old size in a smaller box.
+  for (const key of ['radius', 'corner_radius', 'icon_size', 'gap', 'padding', 'arrow_size', 'size'] as const) {
     const v = num(key);
     if (v !== undefined) o[key] = Math.round(v * k * 100) / 100;
   }

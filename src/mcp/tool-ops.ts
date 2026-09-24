@@ -14,7 +14,7 @@ export const TOOL_OPS: Record<string, readonly string[]> = {
   edit_layer: ['add', 'update', 'remove', 'align', 'move', 'scale', 'patch_spec', 'shape', 'split_text'],
   manage_design: ['list', 'inspect', 'rename', 'duplicate', 'move', 'delete', 'resume', 'browse', 'gallery',
     'asset_add', 'asset_process', 'asset_list', 'asset_delete', 'asset_move', 'asset_read', 'asset_write',
-    'asset_search', 'asset_fetch', 'asset_promote', 'icon_search', 'get_spec', 'resize', 'tokens',
+    'asset_search', 'asset_fetch', 'asset_promote', 'icon_search', 'get_spec', 'resize', 'reframe', 'tokens',
     'lineage', 'restore', 'style_history'],
   themes: ['list', 'apply', 'packs'],
   tasks: ['list', 'create', 'resume', 'execute', 'save_recipe', 'run_recipe', 'recipes'],

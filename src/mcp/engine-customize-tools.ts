@@ -25,7 +25,8 @@ import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, 
 import { resolveThemeColors } from './engine-layer-predicates';
 import { expandShorthandLayers } from './shorthand-parser';
 import { FLOW_PAGE_PRESETS } from './shorthand-recover';
-import { resetPresetFitReports, drainPresetFitReports, scaleSubtree } from './preset-fit';
+import { resetPresetFitReports, drainPresetFitReports } from './preset-fit';
+import { mapSubtree } from './engine/reframe-map';
 import { SPEC_FIELD, SPEC_ENV_FIELD, mergeSpecChanges, diffSpecKeys, toShorthand } from './design-spec';
 
 /** How a reflow rebuilt the document. */
@@ -110,7 +111,8 @@ export function reflowToCanvas(design: DesignSpec, W: number, H: number): Reflow
       // The vertical offset goes through scaleSubtree too, so paths and polygon
       // points move with everything else — shifting y fields alone left a
       // story's mountains and contour lines where the square had them (benchmark r4).
-      scaleSubtree(l, k, 0, 0, dx, dy);
+      // Motion keys are pixel distances and scale with it (reframe-map.ts).
+      mapSubtree(l, { k, ox: 0, oy: 0, dx, dy });
       for (const [layer, span] of spans) fillAxes(layer, span, W, H);
       // A SCALED preset keeps its spec, and the spec still described the box it
       // was authored at. patch_spec rebuilds from the spec, so editing a preset
@@ -134,7 +136,7 @@ export function reflowToCanvas(design: DesignSpec, W: number, H: number): Reflow
  * a resize does not change. Nested specs are synced too, so a preset inside a
  * `columns` container is corrected along with its parent.
  */
-function syncSpecPos(layer: Layer): void {
+export function syncSpecPos(layer: Layer): void {
   const o = layer as unknown as Record<string, unknown>;
   const spec = o[SPEC_FIELD] as Record<string, unknown> | undefined;
   if (spec) {
@@ -167,7 +169,7 @@ function edgeSpans(l: Layer, w: number, h: number, out = new Map<Layer, { w: boo
   return out;
 }
 
-function fillAxes(l: Layer, span: { w: boolean; h: boolean }, W: number, H: number): void {
+export function fillAxes(l: Layer, span: { w: boolean; h: boolean }, W: number, H: number): void {
   const o = l as unknown as Record<string, unknown>;
   if (span.w) { o['x'] = 0; o['width'] = W; }
   if (span.h) { o['y'] = 0; o['height'] = H; }
