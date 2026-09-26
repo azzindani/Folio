@@ -79,6 +79,7 @@ describe('gallery overrides', () => {
     expect(r.success).toBe(true);
     expect(r.dy).toBe(-40);
     expect(item(read(p), 'people_3_role')).toMatchObject({ x: 104, y: 710 + 80 - 40 });
+    expect(((read(p).layers ?? [])[1] as Layer & { gallery: { overrides: object } }).gallery.overrides).toEqual({ people_3_role: { y: 40 } });
     expect(item(read(p), 'people_4_role')).toMatchObject({ y: 710 + 80 });
     expect(moveLayers({ design_path: p, layer_id: 'people_2', dx: 10 }).error).toMatch(/moves with its cell/);
   });
