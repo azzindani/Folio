@@ -29,6 +29,15 @@ describe('galleries', () => {
     expect(galleryCells({ items: 3, template: [], gap: [0, 30], cell: { height: 100 } }, { x: 0, y: 0, width: 300, height: 900 }, 3).map(c => c.y)).toEqual([0, 130, 260]);
   });
 
+  it("fills {{i}} from a row's own i before the count (Opus 5.5 promo: icon names came out as 1, 2, 3)", () => {
+    const icons = L({ id: 'at', type: 'group', z: 1, x: 0, y: 0, width: 300, height: 100, layers: [],
+      gallery: { items: [{ i: 'cloud' }, { i: 'terminal' }], columns: 2, gap: 0, template: [L({ id: 'ico', type: 'icon', z: 0, x: 0, y: 0, width: 40, height: 40, name: '{{i}}' })] } });
+    const [g] = resolveGalleries([icons], { names: {}, W: 1080, H: 1350 });
+    expect(kids(g).map(c => (kids(c)[0] as unknown as { name: string }).name)).toEqual(['cloud', 'terminal']);
+    const [counted] = resolveGalleries([gallery({ template: [L({ id: 'n', type: 'text', z: 0, x: 0, y: 0, width: 50, height: 30, content: { type: 'plain', value: '{{i}}' } })] })], { names: {}, W: 1080, H: 1350 });
+    expect((kids(kids(counted)[2])[0] as unknown as { content: { value: string } }).content.value).toBe('3');
+  });
+
   it('lays each row out as an ordinary group, filled from its row, its formulas reading Item and Index', () => {
     const [g] = resolveGalleries([gallery()], { names: {}, W: 1080, H: 1350 });
     expect(g).not.toHaveProperty('gallery');

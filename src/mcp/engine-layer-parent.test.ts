@@ -75,6 +75,13 @@ describe('add_layers {parent_id} — extending a scene that is already built', (
     expect(JSON.stringify(load())).not.toContain('__auto_z');
   });
 
+  it('stacks VERBOSE layers sent without a z on top too (Opus 5.5 promo: they landed at 0, under the road)', () => {
+    addLayers({ design_path: dPath, layers: scene(true) });
+    addLayers({ design_path: dPath, parent_id: 'scene', layers: [{ id: 'late', type: 'rect', x: 10, y: 10, width: 50, height: 50, fill: '#D9774B' }] as unknown as Layer[] });
+    const kids = findGroup(load().layers ?? [], 'scene')?.layers ?? [];
+    expect(kids.find(l => l.id === 'late')?.z).toBeGreaterThan(Number(kids.find(l => l.id === 'card')?.z));
+  });
+
   it('says so when the parent is not there', () => {
     addLayers({ design_path: dPath, layers: scene(false) });
     const r = addLayers({ design_path: dPath, parent_id: 'nope', layers: tiny });

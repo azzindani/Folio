@@ -31,7 +31,7 @@ sees ordinary layers, cells <id>_1…, their layers <id>_<n>_<template id>.
             columns:3, gap:24 | [col,row], cell:{width,height}}}
 Cells share the group's box (default: one row on a wide box, one column on a
 tall one); cell sets their size instead. Template strings take {{key}} from the
-row ({{i}} = 1, 2…); template formulas also read Item (the row), Index (from 0),
+row ({{i}} = 1, 2… unless the row has its own i); template formulas also read Item (the row), Index (from 0),
 Row, Col, N, CellW, CellH: {width:"=CellW", "animation.playback.delay":"=Index*120"}.
 Add it with add_layers (verbose layers); change a row, the template or columns
 with patch_design on layers[id=people].gallery.

@@ -599,8 +599,8 @@ export function expandRepeats(layers: ShorthandLayer[]): ShorthandLayer[] {
       : Array.from({ length: Math.max(0, Math.min(REPEAT_CAP, Math.floor(Number(repeat) || 0))) }, () => null);
     rows.forEach((row, i) => {
       // Both numeric and data repeats expose {{i}}/{{n}} (1-based index);
-      // data repeats add the row's own keys.
-      const base = substituteTokens(rest as ShorthandLayer, { ...(row ?? {}), i: i + 1, n: i + 1 });
+      // data repeats add the row's own keys, which win over the count.
+      const base = substituteTokens(rest as ShorthandLayer, { i: i + 1, n: i + 1, ...(row ?? {}) });
       if (typeof rest.id === 'string') base.id = `${rest.id}_${i + 1}`;
       out.push(base);
     });

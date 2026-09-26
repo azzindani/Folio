@@ -7,7 +7,7 @@
  * becomes an ordinary group `<id>_<n>` whose layers are `<id>_<n>_<layer id>`,
  * so every consumer after this step sees plain layers. A template layer sits
  * relative to its cell. Its strings take `{{key}}` from the row ({{i}} counts
- * from 1), and its formulas read the design's names plus Item (the row), Index
+ * from 1 unless the row has an `i` of its own), and its formulas read the design's names plus Item (the row), Index
  * (from 0), Row, Col, N, CellW and CellH.
  */
 
@@ -105,7 +105,8 @@ export function cellScope(scope: SourceScope, row: Row, i: number, cell: Cell, n
 export function frameCell(template: Layer[], cellId: string, row: Row, i: number, cell: Cell, scope: SourceScope, overrides: Overrides | undefined, problems?: SourceProblem[]): Layer[] {
   // Formulas work in the template's frame, like the template itself ("=Item.col * 444" is inside the
   // gallery): evaluated before the cell's offset, never after it (b31 rebuild, S8 live).
-  const framed = resolveSourceFormulas(withOverrides(template, cellId, overrides).map(t => rename(fill(t, { ...row, i: i + 1 }) as Layer, cellId)), scope, problems);
+  // A row's own key wins over the count: Places {p, i:"cloud"} drew "1", "2"… as its icons (Opus 5.5 promo).
+  const framed = resolveSourceFormulas(withOverrides(template, cellId, overrides).map(t => rename(fill(t, { i: i + 1, ...row }) as Layer, cellId)), scope, problems);
   return framed.map(t => place(t, cell, false));
 }
 

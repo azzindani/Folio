@@ -35,7 +35,10 @@ export function repeatAsGallery(sh: ShorthandLayer, cap: number): ShorthandLayer
   const w = num(box[2]), h = num(box[3]), gap = Math.max(0, num(gap0));
   const columns = Math.max(1, Math.min(Math.max(1, n), Math.floor(num(cols0)) || n));
   const rows = Math.max(1, Math.ceil(n / columns));
-  const template = renumber({ ...rest, id: 'item', x: 0, y: 0, width: w, height: h }) as ShorthandLayer;
+  // A row's own `n` is its value, not the count, so {{n}} is kept for the row to fill.
+  const ownN = Array.isArray(items) && items.some(r => r !== null && typeof r === 'object' && 'n' in (r as object));
+  const cell = { ...rest, id: 'item', x: 0, y: 0, width: w, height: h };
+  const template = (ownN ? cell : renumber(cell)) as ShorthandLayer;
   return {
     id, z, type: 'group',
     // No x/y (a child a flow container places) stays without them.
