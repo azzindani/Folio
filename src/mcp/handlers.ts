@@ -17,6 +17,7 @@ import { missingArgs } from './required-args';
 import { decodeJsonStringArgs } from './json-string-args';
 import { unknownArgs, withIgnoredArgs } from './unknown-args';
 import { measureSoundtrack } from './engine/diagnose-beats';
+import { withScriptCapture } from './engine/script-capture';
 
 // Most ops are pure local filesystem work and answer synchronously. The asset
 // finder talks to the internet, so a handler may also return a promise; every
@@ -71,7 +72,8 @@ const TIER2_RAW: Record<string, Handler> = {
 // Tier 3 — inspect/output + the advanced subsystems (templates, reports,
 // presentations, animation), each folded into one multiplexed tool.
 const TIER3_RAW: Record<string, Handler> = {
-  render_preview:  (a) => engine.renderPreview(a as Parameters<typeof engine.renderPreview>[0]),
+  // Script components in a still: captured in headless Chromium first (script-capture.ts).
+  render_preview:  (a) => withScriptCapture(() => engine.renderPreview(a as Parameters<typeof engine.renderPreview>[0])),
   // heal:true turns the gate into a LOOP — diagnose, fix what is mechanically
   // fixable, re-diagnose, repeat until clean or until a pass changes nothing.
   // The soundtrack is measured first (ffmpeg, async, cached) so the cuts can be judged against its beat.
@@ -83,7 +85,9 @@ const TIER3_RAW: Record<string, Handler> = {
       ? engine.healDesign(a as Parameters<typeof engine.healDesign>[0])
       : engine.diagnoseDesign(a as Parameters<typeof engine.diagnoseDesign>[0]);
   },
-  export_design:   (a) => engine.exportDesign(a as Parameters<typeof engine.exportDesign>[0]),
+  export_design:   (a) => /^(png|jpe?g|pdf)$/i.test(String(a['format'] ?? ''))
+    ? withScriptCapture(() => engine.exportDesign(a as Parameters<typeof engine.exportDesign>[0]))
+    : engine.exportDesign(a as Parameters<typeof engine.exportDesign>[0]),
   open_in_editor:  (a) => engine.openInEditor(a as Parameters<typeof engine.openInEditor>[0]),
   templates:       (a) => d.dispatchTemplates(a),
   report:          (a) => d.dispatchReport(a),

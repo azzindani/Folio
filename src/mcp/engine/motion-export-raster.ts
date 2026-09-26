@@ -27,6 +27,7 @@ import { GifStream, fileSink, type GifStreamStats } from '../../export/gif-strea
 import { VideoPipe, type VideoType } from '../../export/video-encode';
 import { tryFfmpeg } from '../../export/animation-export';
 import { muxSound, type MuxClip } from '../../export/audio-mux';
+import { scriptsAhead } from './script-capture';
 
 export interface RasterMotionArgs {
   /** The design's sound, found and planned — mixed under an mp4/webm once the frames are encoded. */
@@ -126,6 +127,8 @@ export async function exportRasterMotion(
 
   const times = frameTimes(runMs, fps);
   const frameMs = runMs / times.length;
+  // Script components: captured in headless Chromium a chunk ahead of the frames (script-capture.ts).
+  const scripts = await scriptsAhead(spec, (t, fm) => source.at(t, fm), times, frameMs, notes);
   const font = resvgFontOption(path.dirname(path.dirname(dPath)));
   // Renderer processes for the whole clip (raster-pool.ts): frames rasterise in parallel, and if
   // resvg aborts this export fails while the server stays up.
@@ -177,7 +180,8 @@ export async function exportRasterMotion(
       args.onFrame?.(++done);
     };
     try {
-      for (const t of times) {
+      for (const [i, t] of times.entries()) {
+        await scripts?.ahead(i);
         launch(t);
         if (inflight.length >= window) await writeOldest();
         await yieldToServer();
@@ -186,6 +190,7 @@ export async function exportRasterMotion(
       if (out.pipe) bytes = (await out.pipe.finish()).bytes;
     } catch (e) {
       pool.close();
+      await scripts?.close();
       await out.pipe?.abort();
       return errResult(OP, `${type} export failed: ${(e as Error).message}`,
         'A render error names the layer — run diagnose_design. An ffmpeg error names the encoder.');
@@ -214,7 +219,8 @@ export async function exportRasterMotion(
       args.onFrame?.(++done);
     };
     try {
-      for (const t of times) {
+      for (const [i, t] of times.entries()) {
+        await scripts?.ahead(i);
         launch(t);
         if (inflight.length >= window) await addOldest();
         await yieldToServer();
@@ -224,12 +230,14 @@ export async function exportRasterMotion(
       bytes = gifStats?.bytes ?? 0;
     } catch (e) {
       pool.close();
+      await scripts?.close();
       sink.abort();
       return errResult(OP, `Frame rendering failed: ${(e as Error).message}`, 'Run diagnose_design to find the bad layer.');
     }
   }
 
   pool.close();
+  await scripts?.close();
   return okResult(OP, {
     design_path: dPath,
     output_path: outputPath,

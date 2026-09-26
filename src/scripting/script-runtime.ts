@@ -37,7 +37,7 @@ Math.random=rnd;Date.now=function(){return 1700000000000+now;};performance.now=f
 window.requestAnimationFrame=function(fn){raf.push(fn);return raf.length;};window.cancelAnimationFrame=function(){};
 window.setTimeout=window.setInterval=function(){return 0;};
 window.folio=folio;
-window.__folioRender=function(t){now=t;s=SEED;var q=raf;raf=[];for(var i=0;i<q.length;i++)q[i](t);for(var j=0;j<frames.length;j++)frames[j](t);document.documentElement.setAttribute('data-folio-t',String(t));};
+window.__folioRender=function(t){if(folio.duration>0)t=folio.loop?t%folio.duration:Math.min(t,folio.duration);now=t;s=SEED;var q=raf;raf=[];for(var i=0;i<q.length;i++)q[i](t);for(var j=0;j<frames.length;j++)frames[j](t);document.documentElement.setAttribute('data-folio-t',String(t));};
 window.__folioRealRaf=realRaf;
 })();`;
 }

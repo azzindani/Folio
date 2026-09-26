@@ -22,4 +22,6 @@ export interface ScriptLayer extends BaseLayer {
   duration?: number;
   /** Replay its clock every `duration` ms. */
   loop?: boolean;
+  /** Set by the frame sampler, never authored: the page time a raster render draws it at (scripting/script-frames.ts). */
+  script_t?: number;
 }
