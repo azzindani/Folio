@@ -12,8 +12,13 @@
 
 import yaml from 'js-yaml';
 
-/** A line's longest flow form, indent included. */
-const WIDTH = 160;
+/**
+ * A line's longest flow form, indent included. 240, not 160: across the 33
+ * benchmark designs 240 writes 29% fewer lines (and 3% fewer bytes) — a
+ * design file is read by a model first, and a newline + indent per key is the
+ * structure it pays for.
+ */
+const WIDTH = 240;
 /** The tree's structure: always a block list, one entry per line or more. */
 const BLOCK_KEYS = new Set(['layers', 'pages', 'template']);
 
