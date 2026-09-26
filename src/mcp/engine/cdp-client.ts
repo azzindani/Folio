@@ -33,8 +33,12 @@ export class Cdp {
     });
   }
 
+  /** Whether this runtime has the WebSocket a connection needs (Bun and Node 22+ do; Node 20 does not). */
+  static available(): boolean { return typeof WebSocket === 'function'; }
+
   /** Connect to a browser's DevTools WebSocket. */
   static connect(url: string, stepMs: number): Promise<Cdp> {
+    if (!Cdp.available()) return Promise.reject(new Error('script capture needs a runtime with WebSocket (Bun, or Node 22+)'));
     return new Promise((resolve, reject) => {
       const ws = new WebSocket(url);
       const timer = setTimeout(() => { try { ws.close(); } catch { /* never opened */ } reject(new Error('the DevTools connection did not open')); }, stepMs);

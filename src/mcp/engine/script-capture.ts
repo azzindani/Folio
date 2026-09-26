@@ -37,6 +37,7 @@ export function chromiumPath(): string | null {
 
 const STEP_MS = 20000;
 const NO_BROWSER = 'Script components are captured in headless Chromium, which this host does not have — they are missing from this render.';
+const NO_SOCKET = 'Script components are captured over a WebSocket this runtime lacks (it needs Bun, or Node 22+) — they are missing from this render.';
 
 /** A browser kept open across the frames of one render: one page per component, loaded once. */
 export interface CaptureSession {
@@ -94,6 +95,7 @@ async function openPage(cdp: Cdp, layer: ScriptLayer): Promise<string> {
 
 /** Open a capture session, or say why there is none. */
 export async function openCapture(): Promise<CaptureSession | string> {
+  if (!Cdp.available()) return NO_SOCKET;
   const exe = chromiumPath();
   if (!exe) return NO_BROWSER;
   let run = await startBrowser(exe);
