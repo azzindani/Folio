@@ -5,7 +5,8 @@
  * staggered entrance at 800ms looked like it fired at 0, a loop and a
  * one-shot were indistinguishable, and nothing said how long the scene was.
  * This one is a Gantt: each track is a bar from its delay to its end, with
- * `◆` at keyframes, `∞` for loops, and a ruler in ms across the top.
+ * `◆` at keyframes, `∞` for loops, `░` for a script component playing, and a
+ * ruler in ms across the top. An endless loop runs to the end of the piece.
  */
 
 import type { Layer } from '../../schema/types';
@@ -15,7 +16,7 @@ import { windowOf } from '../../animation/lifespan';
 export interface SceneTrack {
   layer_id: string;
   label: string;
-  kind: 'loop' | 'one-shot';
+  kind: 'loop' | 'one-shot' | 'script';
   start_ms: number;
   end_ms: number;
   duration_ms: number;
@@ -23,6 +24,8 @@ export interface SceneTrack {
   channels: string[];
   easing?: string;
   anchor?: string;
+  /** A loop with no set number of passes: it plays to the end of the piece. */
+  endless?: boolean;
 }
 
 const META = new Set(['t', 'easing', 'hold', 'ambient']);
@@ -53,7 +56,15 @@ export function sceneTracks(layers: Layer[]): SceneTrack[] {
         channels: [...channels],
         ...(pb?.easing ? { easing: String(pb.easing) } : {}),
         ...(pb?.anchor ? { anchor: pb.anchor } : {}),
+        ...(loop && !(pb?.iterations && pb.iterations > 0) ? { endless: true } : {}),
       });
+    }
+    // A script component draws on the scene clock: its own duration, or the whole piece.
+    if (l.type === 'script') {
+      const s = l as Layer & { duration?: unknown; loop?: unknown };
+      const d = typeof s.duration === 'number' && s.duration > 0 ? s.duration : 0;
+      out.push({ layer_id: l.id, label: (l as { label?: string }).label ?? l.id, kind: 'script', start_ms: 0, end_ms: d, duration_ms: d,
+        keyframes: 0, channels: ['drawn'], ...(s.loop === true || d === 0 ? { endless: true } : {}) });
     }
     const kids = (l as Layer & { layers?: Layer[] }).layers;
     if (Array.isArray(kids)) for (const k of kids) visit(k);
@@ -82,9 +93,10 @@ export function sceneLength(tracks: SceneTrack[]): number {
   return tracks.reduce((m, t) => Math.max(m, t.end_ms), 0);
 }
 
-export function renderSceneASCII(layers: Layer[], tracks: SceneTrack[], width = 56, markers: TimeMarkers = {}): string {
+export function renderSceneASCII(layers: Layer[], tracks: SceneTrack[], width = 56, markers: TimeMarkers = {}, length = 0): string {
   if (tracks.length === 0) return '(no animated layers)';
-  const total = Math.max(1, sceneLength(tracks), ...Object.values(markers));
+  // The piece's own length (op:scene length_ms) — found live: scene_ms said 8400 and the drawing 6000.
+  const total = Math.max(1, sceneLength(tracks), length, ...Object.values(markers));
   const col = (ms: number): number => Math.min(width - 1, Math.max(0, Math.round((ms / total) * (width - 1))));
 
   // Ruler: tick every ~quarter, labelled in ms.
@@ -124,8 +136,8 @@ export function renderSceneASCII(layers: Layer[], tracks: SceneTrack[], width = 
 
   for (const t of tracks) {
     const bar = Array<string>(width).fill('·');
-    const a = col(t.start_ms), b = col(Math.min(t.end_ms, total));
-    for (let i = a; i <= b; i++) bar[i] = t.kind === 'loop' ? '∞' : '═';
+    const a = col(t.start_ms), b = col(t.endless ? total : Math.min(t.end_ms, total));
+    for (let i = a; i <= b; i++) bar[i] = t.kind === 'script' ? '░' : t.kind === 'loop' ? '∞' : '═';
     for (const ms of frameTimes(t.layer_id)) bar[col(ms)] = '◆';
     const label = (t.label + ' ').padEnd(13).slice(0, 13);
     lines.push(`${label}|${bar.join('')}| ${t.channels.join(',')}`);
