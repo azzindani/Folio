@@ -271,9 +271,28 @@ export interface MathLayer extends BaseLayer {
   expression: string;
 }
 
+/**
+ * A gallery stored as its rule (phase 3): one template cell and the rows it
+ * repeats over; the resolver (renderer/resolve-gallery.ts) lays the cells out
+ * on the group's box as <id>_<n> groups, their layers as <id>_<n>_<layer id>.
+ */
+export interface GallerySpec {
+  /** Rows (each fills one cell), a count, or a formula reading names ("=Speakers"). */
+  items: Record<string, unknown>[] | number | string;
+  /** One cell, its layers positioned relative to the cell's top-left. */
+  template: Layer[];
+  /** Cells per row (default: one row when the box is wider than tall, else one column). */
+  columns?: number;
+  /** Space between cells: one value, or [between columns, between rows]. */
+  gap?: number | [number, number];
+  /** A cell's size (default: the box shared out between the cells). */
+  cell?: { width?: number; height?: number };
+}
+
 export interface GroupLayer extends BaseLayer {
   type: 'group';
   layers: Layer[];
+  gallery?: GallerySpec;
 }
 
 export interface QRCodeLayer extends BaseLayer {

@@ -13,6 +13,7 @@
 
 import type { Layer, DesignSpec, Page } from '../schema/types';
 import { resolveAutoLayouts } from './auto-layout-place';
+import { resolveGalleries } from './resolve-gallery';
 import { resolveSourceFormulas, resolveNames, hasSourceFormulas, type SourceProblem } from '../scripting/formula-source';
 
 export interface ResolveOptions {
@@ -36,7 +37,7 @@ export function sourceOptions(spec: DesignSpec, page?: Page, problems?: SourcePr
 /** Whether anything under `layers` is a rule this step expands. */
 function hasRules(layers: Layer[], opts: ResolveOptions): boolean {
   return layers.some(l => {
-    if ((opts.place && l.type === 'auto_layout') || hasSourceFormulas(l)) return true;
+    if ((opts.place && l.type === 'auto_layout') || hasSourceFormulas(l) || (l.type === 'group' && (l as { gallery?: unknown }).gallery)) return true;
     const kids = (l as Layer & { layers?: Layer[] }).layers;
     return Array.isArray(kids) && hasRules(kids, opts);
   });
@@ -45,8 +46,10 @@ function hasRules(layers: Layer[], opts: ResolveOptions): boolean {
 /** A layer list as consumers see it — the same array when there is nothing to resolve. */
 export function resolveLayers(layers: Layer[], opts: ResolveOptions = {}): Layer[] {
   if (!hasRules(layers, opts)) return layers;
-  const formulas = resolveSourceFormulas(layers, { names: opts.names ?? {}, W: opts.W ?? 1080, H: opts.H ?? 1080 }, opts.problems);
-  return opts.place ? resolveAutoLayouts(formulas) : formulas;
+  const scope = { names: opts.names ?? {}, W: opts.W ?? 1080, H: opts.H ?? 1080 };
+  // A gallery's own formulas (its box, its columns) first; its cells then read their row.
+  const galleries = resolveGalleries(resolveSourceFormulas(layers, scope, opts.problems), scope, opts.problems);
+  return opts.place ? resolveAutoLayouts(galleries) : galleries;
 }
 
 /** A design as consumers see it: its layers and every page's resolved — the same object when nothing changes. */

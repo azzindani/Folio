@@ -160,6 +160,8 @@ export function hasRenderableContent(spec: DesignSpec): boolean {
       if ((t === 'text' || t === 'rich_text') && hasText(o)) return true;
       if (typeof t === 'string' && CONTENT_LEAF.has(t)) return true;
       if (Array.isArray(o['layers']) && visit(o['layers'] as Layer[])) return true;
+      const cell = (o['gallery'] as { template?: unknown } | undefined)?.template;
+      if (Array.isArray(cell) && visit(cell as Layer[])) return true;
       if (Array.isArray(o['tabs'])) for (const tab of o['tabs'] as Record<string, unknown>[]) if (visit(tab?.['layers'] as Layer[] | undefined)) return true;
       if (Array.isArray(o['items'])) for (const it of o['items'] as Record<string, unknown>[]) if (it && Array.isArray(it['layers']) && visit(it['layers'] as Layer[])) return true;
     }

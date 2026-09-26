@@ -22,6 +22,20 @@ utils: clamp(v,lo,hi) · lerp(a,b,t) · round(v,dp) · percent(v,total) · px(v)
 rgba(r,g,b,a) · if(cond,a,b) · coerce(v,type).
 Formulas reading state / data / pages are REPORT runtime bindings — unchanged.
 
+## gallery — one cell, many rows
+A group stores the template ONCE and the rows it repeats over; every consumer
+sees ordinary layers, cells <id>_1…, their layers <id>_<n>_<template id>.
+  {id:"people", type:"group", x:80, y:400, width:920, height:600, layers:[],
+   gallery:{items:[{name:"Ada", role:"Compilers"}, …] | 6 | "=People",
+            template:[ layers placed RELATIVE to the cell's top-left ],
+            columns:3, gap:24 | [col,row], cell:{width,height}}}
+Cells share the group's box (default: one row on a wide box, one column on a
+tall one); cell sets their size instead. Template strings take {{key}} from the
+row ({{i}} = 1, 2…); template formulas also read Item (the row), Index (from 0),
+Row, Col, N, CellW, CellH: {width:"=CellW", "animation.playback.delay":"=Index*120"}.
+Add it with add_layers (verbose layers); change a row, the template or columns
+with patch_design on layers[id=people].gallery.
+
 ## Writing them
   patch_design {path:"names", value:{…}}
   patch_design {path:"layers[id=card].formulas", value:{width:"=Col"}}
