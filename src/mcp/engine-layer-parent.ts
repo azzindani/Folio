@@ -9,6 +9,9 @@
  */
 
 import type { Layer } from '../schema/types';
+import type { ProgressItem } from './types';
+import { pInfo } from './engine/utils';
+import { CAMERA } from './engine/motion-depth';
 
 type Group = Layer & { layers?: Layer[]; locked?: boolean };
 
@@ -44,17 +47,25 @@ export function findGroup(layers: Layer[] | undefined, id: string): Group | null
   return null;
 }
 
+/** Where addIntoGroup put the layers — the group's id — or why it could not. */
+export type Added = { into: string } | { error: string };
+
 /**
  * Put `incoming` inside the group named `parentId`, at the end of its children.
- * Returns null when done, or the sentence to hand back when it cannot be.
  *
  * A LOCKED parent is not a refusal here: the lock keeps the engine's rescue
  * passes out, and the caller naming the group is saying it means this.
+ *
+ * Found live (Opus 5.5 promo): once op:camera has wrapped a world, the world
+ * group holds the camera and little else, so layers added into the world sat
+ * BESIDE the camera — held still, off-screen, invisible, with no word said.
+ * A group that holds the camera passes new layers to it; exclude holds one still.
  */
-export function addIntoGroup(container: Layer[], parentId: string, incoming: Layer[], where: string): string | null {
-  const host = findGroup(container, parentId);
-  if (!host) return `No group "${parentId}" ${where}.`;
-  if (host.type !== 'group') return `"${parentId}" is a ${host.type}, not a group — only a group holds layers.`;
+export function addIntoGroup(container: Layer[], parentId: string, incoming: Layer[], where: string): Added {
+  const named = findGroup(container, parentId);
+  if (!named) return { error: `No group "${parentId}" ${where}.` };
+  if (named.type !== 'group') return { error: `"${parentId}" is a ${named.type}, not a group — only a group holds layers.` };
+  const host = (named.layers ?? []).find(l => l.id === CAMERA && l.type === 'group') as Group | undefined ?? named;
   // At the end means on top: a layer given no z was filled in with its index and drew under every
   // sibling stacked higher (benchmark r5: a chevron added to a scene drew beneath its grid lines).
   // A z the caller wrote is kept — tucking something under on purpose still works.
@@ -65,7 +76,14 @@ export function addIntoGroup(container: Layer[], parentId: string, incoming: Lay
     return auto ? ({ ...l, z: ++top } as Layer) : l;
   });
   host.layers = [...(host.layers ?? []), ...placed];
-  return null;
+  return { into: host.id };
+}
+
+/** The progress line for a finished add — it names the camera when the layers went to it. */
+export function addedNote(parentId: string, into: string, count: number): ProgressItem {
+  return into === parentId
+    ? pInfo(`Added inside "${parentId}"`, `${count} layer(s) — the group's own z-order applies`)
+    : pInfo(`Added inside "${parentId}" → its camera`, `${count} layer(s) ride the camera with the world; op:camera exclude:[ids] holds one still`);
 }
 
 /**
