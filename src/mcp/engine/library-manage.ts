@@ -100,6 +100,39 @@ export function deleteDesign(args: { design_path: string; project_path?: string 
   return okResult(op, { trashed_path: dest, original_path: dPath, progress, context });
 }
 
+/** Every project-relative asset path a design names (`assets/…`, never climbing out). */
+function assetRefs(v: unknown, out = new Set<string>()): Set<string> {
+  if (typeof v === 'string') {
+    const clean = v.trim();
+    if (clean.startsWith('assets/') && !clean.split('/').includes('..')) out.add(clean);
+  } else if (Array.isArray(v)) v.forEach(x => assetRefs(x, out));
+  else if (v && typeof v === 'object') Object.values(v).forEach(x => assetRefs(x, out));
+  return out;
+}
+
+/**
+ * Copy the project assets a moved design uses into its new project. Its
+ * `assets/…` paths resolve against the project, so moving the file alone left
+ * every image a placeholder frame. Copied, not moved — the source project's
+ * other designs may use the same file — and a file the target already has is
+ * never overwritten.
+ */
+function carryAssets(designPath: string, fromProj: string, toProj: string): string[] {
+  let spec: unknown;
+  try { spec = readYAML<unknown>(designPath); } catch { return []; }
+  const copied: string[] = [];
+  for (const rel of assetRefs(spec)) {
+    const src = path.join(fromProj, rel), dst = path.join(toProj, rel);
+    if (!fs.existsSync(src) || fs.existsSync(dst)) continue;
+    try {
+      fs.mkdirSync(path.dirname(dst), { recursive: true });
+      fs.copyFileSync(src, dst, fs.constants.COPYFILE_EXCL);
+      copied.push(rel);
+    } catch { /* an asset that cannot be copied stays a placeholder the gate names */ }
+  }
+  return copied;
+}
+
 /** Move a design's file into another project's designs/ dir. */
 export function moveDesign(args: { design_path: string; target_project: string; project_path?: string }): ToolResult {
   const op = 'move_design';
@@ -122,7 +155,10 @@ export function moveDesign(args: { design_path: string; target_project: string; 
   // source manifest claiming the design has gone. The row is matched by its
   // recorded path, so it is still findable after the file itself is elsewhere,
   // and carrying it across keeps the design's type and status.
-  const row = dropManifestRow(path.dirname(path.dirname(dPath)), dPath);
+  const fromProj = path.dirname(path.dirname(dPath));
+  const assetsCopied = carryAssets(dest, fromProj, targetDir);
+  if (assetsCopied.length) progress.push(pInfo('Assets carried', `${assetsCopied.length} copied: ${assetsCopied.join(', ')}`));
+  const row = dropManifestRow(fromProj, dPath);
   // Both manifests, or op:list (which reads them) disagrees with op:browse
   // (which scans the disk) — the target listing the design nowhere, the source
   // still listing a path that resolves to nothing.
@@ -130,5 +166,5 @@ export function moveDesign(args: { design_path: string; target_project: string; 
     progress.push(pInfo('Manifest updated', `registered ${relRow(targetDir, dest)} in ${path.basename(targetDir)}`));
   }
   const context = buildContext(op, `Moved "${path.basename(dPath)}" → ${path.basename(targetDir)}`, [{ type: 'design', path: dest, role: 'moved' }]);
-  return okResult(op, { design_path: dest, original_path: dPath, target_project: targetDir, open_url: link.open_url, progress, context });
+  return okResult(op, { design_path: dest, original_path: dPath, target_project: targetDir, assets_copied: assetsCopied, open_url: link.open_url, progress, context });
 }

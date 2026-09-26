@@ -60,6 +60,36 @@ describe('library management', () => {
     expect(fs.existsSync(r.design_path)).toBe(true);
   });
 
+  it('takes the project assets a design uses along, leaving the source copy for its neighbours', () => {
+    const a = makeProject(tmp, 'alpha');
+    const b = makeProject(tmp, 'beta');
+    const fp = makeDesign(a, 'a.design.yaml', 'Rider');
+    fs.appendFileSync(fp, `  - {id: bike, type: image, src: assets/icons/bike.svg}\n  - {id: gone, type: image, src: assets/icons/missing.svg}\n`);
+    fs.mkdirSync(path.join(a, 'assets', 'icons'), { recursive: true });
+    fs.writeFileSync(path.join(a, 'assets', 'icons', 'bike.svg'), '<svg/>');
+    fs.mkdirSync(path.join(b, 'assets', 'icons'), { recursive: true });
+    const r = moveDesign({ design_path: fp, target_project: b }) as unknown as { success: boolean; assets_copied: string[] };
+    expect(r.success).toBe(true);
+    expect(fs.readFileSync(path.join(b, 'assets', 'icons', 'bike.svg'), 'utf8')).toBe('<svg/>');
+    expect(fs.existsSync(path.join(a, 'assets', 'icons', 'bike.svg'))).toBe(true);
+    expect(r.assets_copied).toEqual(['assets/icons/bike.svg']);
+  });
+
+  it('never overwrites an asset the target project already has', () => {
+    const a = makeProject(tmp, 'alpha');
+    const b = makeProject(tmp, 'beta');
+    const fp = makeDesign(a, 'a.design.yaml', 'Rider');
+    fs.appendFileSync(fp, `  - {id: bike, type: image, src: assets/icons/bike.svg}\n  - {id: esc, type: image, src: assets/../../escape.svg}\n`);
+    for (const [p, body] of [[a, 'source'], [b, 'target']]) {
+      fs.mkdirSync(path.join(p, 'assets', 'icons'), { recursive: true });
+      fs.writeFileSync(path.join(p, 'assets', 'icons', 'bike.svg'), body);
+    }
+    fs.writeFileSync(path.join(tmp, 'escape.svg'), 'outside');
+    const r = moveDesign({ design_path: fp, target_project: b }) as unknown as { assets_copied: string[] };
+    expect(fs.readFileSync(path.join(b, 'assets', 'icons', 'bike.svg'), 'utf8')).toBe('target');
+    expect(r.assets_copied).toEqual([]);
+  });
+
   it('errors when the target project does not exist', () => {
     const a = makeProject(tmp, 'alpha');
     const fp = makeDesign(a, 'a.design.yaml', 'X');
