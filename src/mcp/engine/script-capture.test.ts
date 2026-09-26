@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect, afterEach } from 'vitest';
 import type { DesignSpec, Layer, ScriptLayer } from '../../schema/types';
 import { captureScripts, chromiumPath, withScriptCapture } from './script-capture';

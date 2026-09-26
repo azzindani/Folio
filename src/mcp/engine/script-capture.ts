@@ -13,8 +13,10 @@
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
+import { spawn } from 'child_process';
 import type { DesignSpec, Layer, ScriptLayer } from '../../schema/types';
 import { buildScriptDoc } from '../../scripting/script-runtime';
+import { Cdp } from './cdp-client';
 import { componentTime, scriptFrame, scriptKey, setScriptFrame, dropScriptFrames, stampedScripts, hasScripts, collectScripts } from '../../scripting/script-frames';
 import type { ToolResult } from '../types';
 
@@ -33,6 +35,7 @@ export function chromiumPath(): string | null {
   return null;
 }
 
+const STEP_MS = 20000;
 const NO_BROWSER = 'Script components are captured in headless Chromium, which this host does not have — they are missing from this render.';
 
 /** A browser kept open across the frames of one render: one page per component, loaded once. */
@@ -42,39 +45,94 @@ export interface CaptureSession {
   close(): Promise<void>;
 }
 
+/** Chromium started by us, driven over DevTools (cdp-client.ts); `stop` kills it and its profile. */
+async function startBrowser(exe: string): Promise<{ cdp: Cdp; stop: () => void }> {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'folio-chromium-'));
+  const child = spawn(exe, ['--headless', '--remote-debugging-port=0', '--remote-allow-origins=*', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage',
+    '--force-color-profile=srgb', '--hide-scrollbars', '--no-first-run', `--user-data-dir=${dir}`, 'about:blank'], { stdio: ['ignore', 'ignore', 'pipe'] });
+  // The profile goes once the browser has exited: removed before, a dying Chromium writes it back.
+  const clean = (): void => { fs.rmSync(dir, { recursive: true, force: true }); };
+  child.once('exit', clean);
+  const stop = (): void => { if (child.exitCode !== null || child.signalCode !== null) clean(); else child.kill('SIGKILL'); };
+  try {
+    const url = await new Promise<string>((resolve, reject) => {
+      let seen = '';
+      const timer = setTimeout(() => reject(new Error('headless Chromium did not start')), STEP_MS);
+      child.stderr?.on('data', (b: Buffer) => {
+        seen += b.toString();
+        const m = /DevTools listening on (ws:\/\/\S+)/.exec(seen);
+        if (m?.[1]) { clearTimeout(timer); resolve(m[1]); }
+      });
+      child.on('exit', code => { clearTimeout(timer); reject(new Error(`headless Chromium exited (${String(code)})`)); });
+    });
+    return { cdp: await Cdp.connect(url, STEP_MS), stop };
+  } catch (e) {
+    stop();
+    throw e;
+  }
+}
+
+/** A page holding one component's document, sized to its box, transparent behind it: its CDP session id. */
+async function openPage(cdp: Cdp, layer: ScriptLayer): Promise<string> {
+  const width = Math.max(1, Math.round(typeof layer.width === 'number' ? layer.width : 400));
+  const height = Math.max(1, Math.round(typeof layer.height === 'number' ? layer.height : 300));
+  const { targetId } = await cdp.send<{ targetId: string }>('Target.createTarget', { url: 'about:blank' }, undefined, `opening "${layer.id}"`);
+  const { sessionId } = await cdp.send<{ sessionId: string }>('Target.attachToTarget', { targetId, flatten: true });
+  const call = <T>(m: string, p: Record<string, unknown> = {}): Promise<T> => cdp.send<T>(m, p, sessionId, `${m} on "${layer.id}"`);
+  await call('Page.enable');
+  await call('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false });
+  await call('Emulation.setDefaultBackgroundColorOverride', { color: { r: 0, g: 0, b: 0, a: 0 } });
+  const { frameTree } = await call<{ frameTree: { frame: { id: string } } }>('Page.getFrameTree');
+  await call('Page.setDocumentContent', { frameId: frameTree.frame.id, html: buildScriptDoc(layer, true) });
+  for (let i = 0; i < 50; i++) {
+    const r = await call<{ result: { value?: unknown } }>('Runtime.evaluate', { expression: 'typeof window.__folioRender', returnByValue: true });
+    if (r.result.value === 'function') return sessionId;
+    await new Promise(res => setTimeout(res, 20));
+  }
+  throw new Error(`script capture: "${layer.id}" never became ready`);
+}
+
 /** Open a capture session, or say why there is none. */
 export async function openCapture(): Promise<CaptureSession | string> {
   const exe = chromiumPath();
   if (!exe) return NO_BROWSER;
-  let pw: typeof import('playwright-core');
-  try { pw = await import('playwright-core'); } catch { return NO_BROWSER; }
-  const browser = await pw.chromium.launch({ executablePath: exe, args: ['--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage', '--force-color-profile=srgb', '--hide-scrollbars'] });
-  const pages = new Map<string, Promise<import('playwright-core').Page>>();
-  const pageFor = (layer: ScriptLayer): Promise<import('playwright-core').Page> => {
+  let run = await startBrowser(exe);
+  let pages = new Map<string, Promise<string>>();
+  const pageFor = (layer: ScriptLayer): Promise<string> => {
     const key = scriptKey(layer);
     let p = pages.get(key);
-    if (!p) {
-      const width = Math.max(1, Math.round(typeof layer.width === 'number' ? layer.width : 400));
-      const height = Math.max(1, Math.round(typeof layer.height === 'number' ? layer.height : 300));
-      p = browser.newPage({ viewport: { width, height }, deviceScaleFactor: 1 })
-        .then(async page => { await page.setContent(buildScriptDoc(layer, true), { waitUntil: 'load' }); return page; });
-      pages.set(key, p);
-    }
+    if (!p) { p = openPage(run.cdp, layer); pages.set(key, p); }
     return p;
+  };
+  const shoot = async (w: { layer: ScriptLayer; t: number }): Promise<string> => {
+    const sessionId = await pageFor(w.layer);
+    const at = `"${w.layer.id}" at ${Math.round(w.t)} ms`;
+    await run.cdp.send('Runtime.evaluate', { expression: `window.__folioRender(${componentTime(w.layer, w.t)})` }, sessionId, `drawing ${at}`);
+    const { data } = await run.cdp.send<{ data: string }>('Page.captureScreenshot', { format: 'png', fromSurface: true }, sessionId, `capturing ${at}`);
+    return data;
   };
   return {
     async capture(wanted) {
       const filled: string[] = [];
       for (const w of wanted) {
         if (scriptFrame(w.layer, w.t)) continue;
-        const page = await pageFor(w.layer);
-        await page.evaluate(`window.__folioRender(${componentTime(w.layer, w.t)})`);
-        const png = await page.screenshot({ type: 'png', omitBackground: true });
-        filled.push(setScriptFrame(w.layer, w.t, `data:image/png;base64,${png.toString('base64')}`));
+        let png: string;
+        try { png = await shoot(w); } catch {
+          // Once, with a fresh browser: the same code and t give the same picture.
+          run.cdp.close(); run.stop();
+          run = await startBrowser(exe);
+          pages = new Map();
+          png = await shoot(w);
+        }
+        filled.push(setScriptFrame(w.layer, w.t, `data:image/png;base64,${png}`));
       }
       return filled;
     },
-    close: () => browser.close(),
+    async close() {
+      await run.cdp.send('Browser.close', {}, undefined, 'closing the browser').catch(() => undefined);
+      run.cdp.close();
+      run.stop();
+    },
   };
 }
 
