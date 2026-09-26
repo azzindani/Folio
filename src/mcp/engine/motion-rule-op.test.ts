@@ -5,7 +5,7 @@ import * as path from 'path';
 import * as yaml from 'js-yaml';
 import { sequenceMotion } from './motion-sequence';
 import { inspectTimeline } from '../engine';
-import { resolveLayers } from '../../renderer/resolve-source';
+import { resolveLayers, resolveSpec } from '../../renderer/resolve-source';
 import type { DesignSpec, Layer } from '../../schema/types';
 import type { AnimationSpec } from '../../animation/types';
 
@@ -58,6 +58,17 @@ describe('op:sequence as_rule', () => {
     const tl = inspectTimeline({ design_path: p }) as unknown as { track_count: number; scene_ms: number };
     expect(tl.track_count).toBe(2);
     expect(tl.scene_ms).toBeGreaterThanOrEqual(2000);
+  });
+
+  it('keeps a marker start as the marker, so moving the marker moves the rule', () => {
+    const p = design('marked.design.yaml', 'markers: { cta: 1000 }');
+    const r = sequenceMotion({ design_path: p, steps: [{ preset: 'rise', layer_ids: ['a', 'b'], at: 'cta+200', stagger_ms: 100 }, { preset: 'fade_out', layer_ids: ['a'], at: 'cta+2000' }], as_rule: true });
+    expect(r.success).toBe(true);
+    const spec = read(p);
+    expect(animOf(spec.layers, 'a')).toEqual({ rule: [{ preset: 'rise', at: 'cta+200' }, { preset: 'fade_out', at: 'cta+2000' }] });
+    expect(animOf(spec.layers, 'b')).toEqual({ rule: { preset: 'rise', at: 'cta+300' } });
+    const moved = resolveSpec({ ...spec, markers: { cta: 3000 } } as DesignSpec);
+    expect(animOf(moved.layers, 'b')?.playback?.delay).toBe(3300);
   });
 
   it('refuses to put a rule over a written track', () => {

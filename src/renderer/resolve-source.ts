@@ -18,7 +18,8 @@ import type { Layer, DesignSpec, Page } from '../schema/types';
 import { resolveAutoLayouts } from './auto-layout-place';
 import { resolveGalleries } from './resolve-gallery';
 import { resolveMotionRules } from './resolve-motion';
-import { resolveSourceFormulas, resolveNames, hasSourceFormulas, type SourceProblem } from '../scripting/formula-source';
+import { resolveSourceFormulas, resolveNames, hasSourceFormulas, type SourceProblem, type SourceScope } from '../scripting/formula-source';
+import { readMarkers } from '../mcp/engine/motion-time';
 
 export interface ResolveOptions {
   /** Give auto-layout children the x/y/width/height their container places them at. */
@@ -27,16 +28,23 @@ export interface ResolveOptions {
   names?: Record<string, unknown>;
   W?: number;
   H?: number;
+  /** The surface's time markers — a motion rule may start at one ("cta+300"). */
+  markers?: Record<string, number>;
   /** Where formulas that could not be applied are reported. */
   problems?: SourceProblem[];
 }
 
-/** What a surface's source formulas read: the design's names with the page's over them, and the canvas. */
+/** What a surface's source formulas read: the design's names with the page's over them, the canvas and the markers. */
 export function sourceOptions(spec: DesignSpec, page?: Page, problems?: SourceProblem[]): ResolveOptions {
   const W = spec.document?.width ?? 1080, H = spec.document?.height ?? 1080;
   const raw = { ...(spec.names ?? {}), ...(page?.names ?? {}) };
-  return { names: resolveNames(raw, W, H, problems), W, H, ...(problems ? { problems } : {}) };
+  const markers = readMarkers(spec, page);
+  return { names: resolveNames(raw, W, H, problems), W, H, ...(Object.keys(markers).length ? { markers } : {}), ...(problems ? { problems } : {}) };
 }
+
+/** The scope formulas and rules are evaluated in, from a surface's options. */
+export const scopeOf = (o: ResolveOptions): SourceScope =>
+  ({ names: o.names ?? {}, W: o.W ?? 1080, H: o.H ?? 1080, ...(o.markers ? { markers: o.markers } : {}) });
 
 /** Whether the layer itself stores a rule: source formulas, a gallery or a motion rule. */
 export function carriesRule(l: Layer): boolean {
@@ -56,7 +64,7 @@ function hasRules(layers: Layer[], opts: ResolveOptions): boolean {
 /** A layer list as consumers see it — the same array when there is nothing to resolve. */
 export function resolveLayers(layers: Layer[], opts: ResolveOptions = {}): Layer[] {
   if (!hasRules(layers, opts)) return layers;
-  const scope = { names: opts.names ?? {}, W: opts.W ?? 1080, H: opts.H ?? 1080 };
+  const scope = scopeOf(opts);
   // A gallery's own formulas (its box, its columns) first; its cells then read their row.
   const galleries = resolveGalleries(resolveSourceFormulas(layers, scope, opts.problems), scope, opts.problems);
   const moving = resolveMotionRules(galleries, scope, opts.problems);

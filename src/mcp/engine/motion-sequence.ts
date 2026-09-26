@@ -24,10 +24,10 @@ import { mergeFragment, MergeError, trackEnd, withoutKind } from './motion-merge
 import { isKnownEasing, easingHint, describeEasings } from '../../animation/easing';
 import { REVEAL_FROMS, type RevealFrom } from '../../animation/reveal';
 import { staggerRanks, isStaggerOrder, STAGGER_ORDERS, type StaggerOrder } from './motion-order';
-import { readMarkers, resolveTime } from './motion-time';
+import { readMarkers, resolveTime, markerRef } from './motion-time';
 import { animationDuration } from '../../export/gif-frames';
 import { addRule } from './motion-rule-op';
-import { sourceOptions } from '../../renderer/resolve-source';
+import { sourceOptions, scopeOf } from '../../renderer/resolve-source';
 
 // ── op:sequence ──────────────────────────────────────────────
 
@@ -108,7 +108,7 @@ export function sequenceMotion(args: SequenceArgs): ToolResult {
   const written = new Set<string>();
   const replaced: string[] = [];
   const names = sourceOptions(spec, scoped.page);
-  const ruleScope = { names: names.names ?? {}, W: names.W ?? 1080, H: names.H ?? 1080 };
+  const ruleScope = scopeOf(names);
 
   for (const [i, step] of steps.entries()) {
     const preset = step.preset as MotionPreset;
@@ -130,7 +130,9 @@ export function sequenceMotion(args: SequenceArgs): ToolResult {
       });
       const kind = PRESET_KIND[preset];
       if (args.as_rule) {
-        const r = addRule(layer, { preset, at: at + stagger * (ranks[j] ?? j), duration: step.duration, easing: step.easing, distance: step.distance },
+        // A step timed by a marker keeps it: the rule then follows the marker when it moves.
+        const ms = at + stagger * (ranks[j] ?? j);
+        const r = addRule(layer, { preset, at: markerRef(step.at, ms, markers) ?? ms, duration: step.duration, easing: step.easing, distance: step.distance },
           kind !== 'loop' && !written.has(`${layer.id}:${kind}`), ruleScope);
         if (typeof r === 'string') return errResult(op, `steps[${i}]: ${r}.`, 'Clear the layer first (animation op:clear), or sequence it without as_rule. Rules on one layer must not overlap: move the later one with `at`.', progress);
         written.add(`${layer.id}:${kind}`);

@@ -15,7 +15,8 @@
 import type { Layer } from '../schema/types';
 import { FORMULA_UTILS, isFormula } from './formula';
 
-export interface SourceScope { names: Record<string, unknown>; W: number; H: number }
+/** What a formula or rule reads; `markers` (name → ms) are where a rule may start ("cta+300"). */
+export interface SourceScope { names: Record<string, unknown>; W: number; H: number; markers?: Record<string, number> }
 export interface SourceProblem { layer_id: string; prop: string; formula: string; error: string }
 
 const RUNTIME = /\b(state|data|pages)\b/;

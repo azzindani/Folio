@@ -9,7 +9,7 @@
 import type { DesignSpec, GallerySpec, Layer, Page } from '../schema/types';
 import { galleryCells, rowsOf, type Cell } from './resolve-gallery';
 import { locateItem, deepMerge } from './gallery-overrides';
-import { sourceOptions } from './resolve-source';
+import { sourceOptions, scopeOf } from './resolve-source';
 import { resolveSourceFormulas } from '../scripting/formula-source';
 
 type Gallery = Layer & { gallery: GallerySpec; layers?: Layer[] };
@@ -41,7 +41,7 @@ export function findGenerated(spec: DesignSpec, id: string, pageId?: string): Ge
     : [{ layers: spec.layers ?? [] }, ...(spec.pages ?? []).map(p => ({ page: p, layers: p.layers ?? [] }))];
   for (const s of surfaces) {
     const o = sourceOptions(spec, s.page);
-    const scope = { names: o.names ?? {}, W: o.W ?? 1080, H: o.H ?? 1080 };
+    const scope = scopeOf(o);
     const walk = (ls: Layer[]): GeneratedHit | null => {
       for (const l of ls) {
         const g = (l as Gallery).gallery;

@@ -45,8 +45,10 @@ frame, replayed on every render; null = item removed). An editor drag does the s
 Compiled into the same keyframes op:sequence writes; exports, op:frame,
 op:timeline and the editor play the track. A list = entrance then exit (must not
 overlap); a loop stands alone. at/duration/distance may be "=…" (names; Index in
-a gallery template → "=Index*120" staggers the cells). Write them with
-animation {op:"sequence", as_rule:true, steps:[…]} or patch_design on
+a gallery template → "=Index*120" staggers the cells). at may be a marker —
+at:"cta" or "cta+300" — and then follows it: animation {op:"markers"} moves
+every rule on that beat. Write them with
+animation {op:"sequence", as_rule:true, steps:[…]} (a step's marker at is kept) or patch_design on
 layers[id=…].animation.rule. A rule that cannot compile → diagnose rule_error.
 
 ## Writing them
