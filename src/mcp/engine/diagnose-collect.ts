@@ -36,6 +36,7 @@ import { resolveLayers, sourceOptions } from '../../renderer/resolve-source';
 import type { SourceProblem } from '../../scripting/formula-source';
 import { italicFindings } from './diagnose-italic';
 import { withImageInk } from './image-ink';
+import { scriptFindings } from './diagnose-script';
 
 export type PageFinding = Finding & { page?: string };
 
@@ -134,7 +135,8 @@ export function collectFindings(
     const overprint = overprintFindings(layers, W, H);
     const orphans = orphanFindings(spec, layers, page);
     const italics = italicFindings(layers, designPath, projectPath);
-    return [...formulaFindings(problems), ...asSeen(spec, still, layers, page), ...moving, ...safe, ...glyphs, ...italics, ...overprint, ...orphans].map(f => (page ? { ...f, page: page.id } : f));
+    const scripts = scriptFindings(layers);
+    return [...formulaFindings(problems), ...asSeen(spec, still, layers, page), ...moving, ...safe, ...glyphs, ...italics, ...scripts, ...overprint, ...orphans].map(f => (page ? { ...f, page: page.id } : f));
   };
 
   const findings: PageFinding[] = [];

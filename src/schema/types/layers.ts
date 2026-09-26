@@ -2,6 +2,9 @@
 // interface. Split out of types.ts; re-exported by it.
 import type { AnimationSpec, LayerClock, LayerLink } from '../../animation/types';
 import type { Effects, Fill, Interaction, PinConstraints, PositionShorthand, Radius, Stroke, TextContent, TextStyle } from './primitives';
+import type { ScriptLayer } from './script-layer';
+
+export type { ScriptLayer } from './script-layer';
 
 // ── Layer Types ─────────────────────────────────────────────
 export type LayerType =
@@ -40,7 +43,8 @@ export type LayerType =
   | 'toggle'
   | 'tooltip'
   | 'callout'
-  | 'progress';
+  | 'progress'
+  | 'script';
 
 // ── Base Layer ──────────────────────────────────────────────
 export interface BaseLayer {
@@ -654,5 +658,6 @@ export type Layer =
   | ToggleLayer
   | TooltipLayer
   | CalloutLayer
-  | ProgressLayer;
+  | ProgressLayer
+  | ScriptLayer;
 

@@ -62,6 +62,7 @@ export class EditorApp extends EditorAppBase {
   }
   async init(): Promise<void> {
     this.buildLayout();
+    this.wireScripts();
     this.initAutoSave();
 
     // Tab bar (Sprint 2 — file tabs)

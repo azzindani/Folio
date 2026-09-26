@@ -156,7 +156,7 @@ export function patchDesign(args: { design_path: string; selectors: { path: stri
 
 export function hasRenderableContent(spec: DesignSpec): boolean {
   const CONTENT_LEAF = new Set(['icon', 'image', 'chart', 'interactive_chart', 'interactive_table',
-    'kpi_card', 'mermaid', 'math', 'qrcode', 'map', 'embed_code', 'callout', 'button', 'code', 'particle']);
+    'kpi_card', 'mermaid', 'math', 'qrcode', 'map', 'embed_code', 'callout', 'button', 'code', 'particle', 'script']);
   const hasText = (o: Record<string, unknown>): boolean => {
     const c = o['content'];
     const v = typeof c === 'string' ? c
@@ -350,7 +350,7 @@ export const VALID_LAYER_TYPES = new Set([
   'auto_layout', 'interactive_chart', 'interactive_table',
   'rich_text', 'kpi_card', 'map', 'embed_code', 'popup', 'particle',
   'button', 'tabs', 'accordion', 'filter_bar', 'toggle',
-  'tooltip', 'callout', 'progress',
+  'tooltip', 'callout', 'progress', 'script',
 ]);
 
 // Layer types that render INVISIBLY when width or height is 0 / missing.

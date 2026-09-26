@@ -43,6 +43,7 @@ import type { SceneStage } from '../ui/scene-stage/scene-stage';
 import { ColorSchemePanelManager } from '../ui/panels/color-scheme-panel';
 import type { AssetPanelManager } from '../ui/panels/asset-panel';
 import { shellMarkup } from './app-shell';
+import { driveScripts } from './canvas-script';
 
 /** Find a layer by id at any depth — groups nest, and the selection is by id. */
 function findLayerDeep<T extends { id: string; layers?: T[] }>(layers: T[], id: string): T | null {
@@ -122,6 +123,11 @@ export abstract class EditorAppBase {
    * a video layer; it keeps one <video> per layer across renders and drives it
    * from the player's clock.
    */
+  /** Script components follow the transport (canvas-script.ts). */
+  protected wireScripts(): void {
+    const container = document.querySelector<HTMLElement>('.canvas-svg-container');
+    if (container) driveScripts(this.motionPlayer, container);
+  }
   protected wireCanvasVideo(): void {
     const check = (): void => {
       if (this.canvasVideo || this.canvasVideoLoading || !hasVideoLayer(this.state.get().design)) return;
