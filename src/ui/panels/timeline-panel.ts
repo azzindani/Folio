@@ -324,7 +324,8 @@ export class TimelinePanelManager {
 
   private addKeyframe(layerId: string, t: number, layers: Layer[]): void {
     const layer = layers.find(l => l.id === layerId);
-    if (!layer) return;
+    // A key beside a motion rule would never play — the rule is its track (right-click → Detach rule first).
+    if (!layer || layer.animation?.rule !== undefined) return;
     const existing = (layer.animation?.keyframes ?? []) as Keyframe[];
     if (existing.some(kf => kf.t === t)) return;
 
