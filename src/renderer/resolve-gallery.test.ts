@@ -64,6 +64,14 @@ describe('galleries', () => {
     expect(at(1500)).toEqual([1, 1, 0]);
   });
 
+  it('evaluates template formulas in the template\'s frame, then moves them onto the cell (a timetable\'s acts)', () => {
+    const acts = L({ id: 'acts', type: 'group', z: 1, x: 200, y: 600, width: 900, height: 900, layers: [], gallery: {
+      items: [{ col: 0, h: 0 }, { col: 2, h: 1.5 }], columns: 1, cell: { width: 280, height: 0 },
+      template: [L({ id: 'card', type: 'rect', z: 0, x: 0, y: 0, width: 280, height: 100, formulas: { x: '=Item.col * 300', y: '=Item.h * 134' } })] } });
+    const cards = kids(resolveGalleries([acts], { names: {}, W: 1600, H: 2000 })[0]).map(c => kids(c)[0]);
+    expect(cards.map(c => [c?.x, c?.y])).toEqual([[200, 600], [800, 600 + 201]]);
+  });
+
   it('names a list it cannot read', () => {
     const errs = collectFindings(design([gallery({ items: '=Peeple' })]), '/dev/null').filter(f => f.code === 'formula_error');
     expect(errs.map(f => f.message)).toEqual([expect.stringContaining('"people" gallery.items = =Peeple fails')]);

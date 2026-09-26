@@ -63,10 +63,17 @@ function fill(v: unknown, row: Row): unknown {
   return v;
 }
 
-/** A template layer moved to its cell, its id (and every descendant's) under the cell's. */
-function place(l: Layer, cell: Cell, cellId: string, placedByParent: boolean): Layer {
+/** A template layer's id, and every descendant's, under the cell's. */
+function rename(l: Layer, cellId: string): Layer {
+  const o: Row = { ...(l as unknown as Row), id: `${cellId}_${l.id}` };
+  const kids = o['layers'];
+  if (Array.isArray(kids)) o['layers'] = (kids as Layer[]).map(k => rename(k, cellId));
+  return o as unknown as Layer;
+}
+
+/** A template layer (in the cell's frame) moved onto its cell. */
+function place(l: Layer, cell: Cell, placedByParent: boolean): Layer {
   const o = { ...(l as unknown as Row) };
-  o['id'] = `${cellId}_${l.id}`;
   if (!placedByParent) {
     o['x'] = num(o['x']) + cell.x;
     o['y'] = num(o['y']) + cell.y;
@@ -77,7 +84,7 @@ function place(l: Layer, cell: Cell, cellId: string, placedByParent: boolean): L
   }
   const kids = o['layers'];
   // An auto-layout places its own children; a group's children are absolute like any layer.
-  if (Array.isArray(kids)) o['layers'] = (kids as Layer[]).map(k => place(k, cell, cellId, l.type === 'auto_layout'));
+  if (Array.isArray(kids)) o['layers'] = (kids as Layer[]).map(k => place(k, cell, l.type === 'auto_layout'));
   return o as unknown as Layer;
 }
 
@@ -97,10 +104,12 @@ export function resolveGalleries(layers: Layer[], scope: SourceScope, problems?:
       const own = g.overrides?.[cellId];
       if (own === null) return [];
       const names = { ...scope.names, Item: row, Index: i, Row: cell.row, Col: cell.col, N: rows.length, CellW: cell.width, CellH: cell.height };
-      const filled = withOverrides(g.template, cellId, g.overrides).map(t => place(fill(t, { ...row, i: i + 1 }) as Layer, cell, cellId, false));
       const cellScope = { ...scope, names };
+      // Formulas work in the template's frame, like the template itself ("=Item.col * 444" is inside the
+      // gallery): evaluated before the cell's offset, never after it (b31 rebuild, S8 live).
+      const framed = resolveSourceFormulas(withOverrides(g.template, cellId, g.overrides).map(t => rename(fill(t, { ...row, i: i + 1 }) as Layer, cellId)), cellScope, problems);
       // A cell's rules read its row: "=Index * 120" staggers the cells.
-      const inner = resolveGalleries(resolveMotionRules(resolveSourceFormulas(filled, cellScope, problems), cellScope, problems), cellScope, problems);
+      const inner = resolveGalleries(resolveMotionRules(framed.map(t => place(t, cell, false)), cellScope, problems), cellScope, problems);
       const group = { id: cellId, type: 'group', z: i, x: cell.x, y: cell.y, width: cell.width, height: cell.height, layers: inner } as unknown as Layer;
       // The cell's box is the layout's: an item moves by its layers' overrides.
       const { x: _x, y: _y, width: _w, height: _h, layers: _l, ...props } = own ?? {};
