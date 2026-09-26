@@ -55,6 +55,19 @@ layers[id=…].animation.rule. A rule that cannot compile → diagnose rule_erro
   (a page: pages[id=p2].names / pages[id=p2].layers[id=card].formulas)
 Change the name once → every layer reading it follows.
 
+## script — a component on Folio's clock (doodles, stick figures, generative art)
+  {id:"doodle", type:"script", x, y, width, height, duration:8000, loop:true, seed:7,
+   html:"<canvas id=c></canvas>", css:"…",
+   js:"const c=document.getElementById('c'), g=c.getContext('2d');
+       c.width=folio.width; c.height=folio.height;
+       folio.frame(t => { g.clearRect(0,0,c.width,c.height); /* draw the moment t */ });"}
+Draw the MOMENT t (ms), carrying no state between frames — the editor, the HTML
+export and every video frame then agree. folio.random() restarts each frame
+(stable jitter); folio.hash(n) is per-item noise (boil a hand-drawn line with
+folio.hash(Math.floor(t/120)*97+i)); folio.width/height/duration. duration makes
+the scene at least that long. No network (inline everything), no new Date(), no
+setTimeout — diagnose script_unsafe names them.
+
 ## Detach — when you want to hand-edit the result
 edit_layer {op:"detach", layer_id} bakes that layer's formulas into values, its
 gallery into literal cells <id>_<n>, its animation.rule into keyframes — drawn

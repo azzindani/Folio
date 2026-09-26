@@ -18,6 +18,7 @@ import {
   renderToggle, renderTooltip, renderCallout, renderProgress,
 } from './layer-renderers';
 import { renderVideo } from './layer-renderers-video';
+import { renderScript } from './layer-renderers-script';
 
 export interface RenderOptions {
   theme?: ThemeSpec;
@@ -242,6 +243,7 @@ function renderLayerUncached(layer: Layer, svg: SVGSVGElement): SVGElement {
     case 'embed_code':          el = renderEmbedCode(layer, svg); break;
     case 'popup':               el = renderPopup(layer, svg, renderLayer); break;
     case 'particle':            el = renderParticle(layer, svg); break;
+    case 'script':              el = renderScript(layer); break;
     case 'button':              el = renderButton(layer, svg); break;
     case 'tabs':                el = renderTabs(layer, svg); break;
     case 'accordion':           el = renderAccordion(layer, svg); break;

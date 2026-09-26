@@ -10,6 +10,7 @@ import { sceneDuration } from '../ui/panels/timeline-model';
 import { composeTheme } from '../styles/compose';
 import { measureGaps, drawArrowLine, drawLabel } from './canvas-draw';
 import { CanvasInteractions } from './canvas-interactions';
+import { keepScripts } from './canvas-script';
 
 export class CanvasManager extends CanvasInteractions {
   private motionTrailsOn = false;
@@ -288,7 +289,10 @@ export class CanvasManager extends CanvasInteractions {
 
     // Atomic swap — no blank white frame between renders
     if (this.currentSVG && this.currentSVG.parentElement === this.svgContainer) {
-      this.currentSVG.replaceWith(svg);
+      // New one in first: a live script component is carried across while both are in the document.
+      this.svgContainer.insertBefore(svg, this.currentSVG);
+      keepScripts(this.currentSVG, svg);
+      this.currentSVG.remove();
     } else {
       this.svgContainer.innerHTML = '';
       this.svgContainer.appendChild(svg);

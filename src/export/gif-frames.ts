@@ -64,6 +64,9 @@ export function animationDuration(source: Layer[], names: ResolveOptions = {}): 
     // Footage moves by itself: a page whose only motion is a clip runs as long as the clip (one pass of a loop).
     const clip = clipEnd(l);
     if (clip !== null) total = Math.max(total, clip);
+    // A script component plays its own `duration` on the scene clock (scripting/script-runtime.ts).
+    const script = l.type === 'script' ? (l as unknown as { duration?: unknown }).duration : undefined;
+    if (typeof script === 'number' && script > 0) total = Math.max(total, script);
     if (Array.isArray(l.layers)) for (const c of l.layers) visit(c as AnimatedLayer);
   };
   // Precomp clocks and links change when tracks run: measure the resolved tree.
