@@ -6,7 +6,8 @@ import type { Layer, Page } from '../schema/types';
 import { estTextHeight } from './shorthand-parser';
 import type { ShorthandLayer } from './shorthand-parser';
 
-import { layerBBox, layerText, isMotifLayer, isLocked } from './engine-finalize-geom';
+import { layerBBox, layerText, isMotifLayer } from './engine-finalize-geom';
+import { keepsItsPlace } from './engine-finalize-time';
 import { isFullBleedContentPreset, isFullCanvasBackdrop } from './engine-finalize-presets';
 import { drawnBox } from '../export/frame-geometry';
 
@@ -14,7 +15,7 @@ export function spreadStackedText(layers: Layer[], docW: number, docH: number): 
   const fontOf = (l: Layer): number => { const st = (l as unknown as Record<string, unknown>)['style'] as Record<string, unknown> | undefined; return st && typeof st['font_size'] === 'number' ? st['font_size'] as number : 16; };
   const toks = (s: string): Set<string> => new Set(s.toLowerCase().split(/[^a-z0-9$%]+/).filter(t => t.length >= 2));
   const similar = (a: Layer, b: Layer): boolean => { const ta = toks(layerText(a)), tb = [...toks(layerText(b))]; if (!ta.size || !tb.length) return false; return tb.filter(t => ta.has(t)).length / Math.max(ta.size, tb.length) >= 0.5; };
-  const texts = layers.filter(l => l.type === 'text' && layerText(l).trim() && !isLocked(l));
+  const texts = layers.filter(l => l.type === 'text' && layerText(l).trim() && !keepsItsPlace(l));
   const n = texts.length;
   if (n < 2) return 0;
   const parent = texts.map((_, i) => i);
@@ -134,7 +135,7 @@ export function promoteCoveredTitle(layers: Layer[], docW: number, docH: number)
   const toReseat: Layer[] = []; // covered texts whose preset header is empty → re-seat up top
   for (let i = 0; i < layers.length; i++) {
     const t = layers[i];
-    if (t.type !== 'text' || !textVal(t).trim() || isLocked(t)) continue;
+    if (t.type !== 'text' || !textVal(t).trim() || keepsItsPlace(t)) continue;
     const tb = layerBBox(t), tz = zOf(t);
     const coverer = layers.find((p, j) => j !== i && isFullBleedContentPreset(p, docW, docH) && zOf(p) > tz
       && layerBBox(p).x <= tb.x + 1 && layerBBox(p).y <= tb.y + 1 && layerBBox(p).r >= tb.r - 1 && layerBBox(p).b >= tb.b - 1);
@@ -179,7 +180,7 @@ export function recenterHalfAnchoredText(layers: Layer[], docW: number, docH: nu
   const half = docW / 2, tol = docW * 0.03;
   let moved = 0;
   for (const t of layers) {
-    if (t.type !== 'text' || !layerText(t).trim() || isLocked(t)) continue;
+    if (t.type !== 'text' || !layerText(t).trim() || keepsItsPlace(t)) continue;
     const b = layerBBox(t), w = b.r - b.x;
     if (Math.abs(b.x - half) > tol) continue;     // left edge isn't on the mid-line
     if (b.r < docW * 0.8 || w > docW * 0.55) continue; // not the middle→right-edge signature
@@ -272,7 +273,7 @@ export function structureHandPlacedText(layers: Layer[], W: number, H: number): 
     if (!o['style'] || typeof o['style'] !== 'object') o['style'] = {};
     return o['style'] as Record<string, unknown>;
   };
-  const texts = layers.filter(l => l?.type === 'text' && !isLocked(l));
+  const texts = layers.filter(l => l?.type === 'text' && !keepsItsPlace(l));
   const hasContainer = layers.some(l => l?.type === 'group' || l?.type === 'auto_layout');
   const unsized = texts.filter(l => styleOf(l)['font_size'] == null);
   // Only restructure a clearly hand-placed, mostly-unsized text poster.
@@ -393,7 +394,7 @@ export function decollideHandPlaced(layers: Layer[], W: number, H: number): numb
     if (ta <= 0) return null;
     let best: Layer | null = null; let bestArea = Infinity;
     for (const s of layers) {
-      if (s === t || !isShape(s) || isFullBleed(s) || isLocked(s)) continue;  // not the full-canvas bg
+      if (s === t || !isShape(s) || isFullBleed(s) || keepsItsPlace(s)) continue;  // not the full-canvas bg
       const sb = boxOf(s); const sa = sb.w * sb.h;
       if (sa < ta) continue;                          // a backing shape is larger than its content
       const ox = Math.max(0, Math.min(b.x + b.w, sb.x + sb.w) - Math.max(b.x, sb.x));
@@ -432,8 +433,7 @@ export function decollideHandPlaced(layers: Layer[], W: number, H: number): numb
   };
   // A layer with an in or out point takes turns in time: two headlines on one
   // spot, one leaving as the other lands, is the composition, not an overprint.
-  const inTime = (l: Layer): boolean => o(l)['in'] !== undefined || o(l)['out'] !== undefined;
-  const movable = layers.filter(l => l && !isFullBleed(l) && !isMotifLayer(l) && !isWire(l) && !bleedsOffCanvas(l) && !isBackdropPanel(l) && !containerShapes.has(l) && !isLocked(l) && !inTime(l) && typeof o(l)['x'] === 'number' && typeof o(l)['y'] === 'number');
+  const movable = layers.filter(l => l && !isFullBleed(l) && !isMotifLayer(l) && !isWire(l) && !bleedsOffCanvas(l) && !isBackdropPanel(l) && !containerShapes.has(l) && !keepsItsPlace(l) && typeof o(l)['x'] === 'number' && typeof o(l)['y'] === 'number');
   if (movable.length < 2) return 0;
   const ordered = [...movable].sort((a, b) => (Number(o(a)['y']) - Number(o(b)['y'])) || (Number(o(a)['x']) - Number(o(b)['x'])));
   // What this pass rescues is TEXT the model could not see wrap. A shape's size is
@@ -544,7 +544,7 @@ export function fitOverflowingHeroText(layers: Layer[], _W: number, H: number): 
     const h = estTextHeight(text, fs, w, lh, fontCharFactor(font));
     return { h, lines: Math.max(1, Math.round(h / (fs * lh))), fs };
   };
-  const texts = layers.filter(l => !isLocked(l) && measure(l));
+  const texts = layers.filter(l => !keepsItsPlace(l) && measure(l));
   if (texts.length < 2) return 0;                               // nothing to make room for
   const margin = Math.round(H * 0.14), gap = Math.round(H * 0.02);
   let fixed = 0;
@@ -571,7 +571,7 @@ export function fitOverflowingHeroText(layers: Layer[], _W: number, H: number): 
 export function setMeasuredTextHeights(layers: Layer[], _W: number): number {
   let set = 0;
   for (const l of layers) {
-    if (!l || l.type !== 'text' || isLocked(l)) continue;
+    if (!l || l.type !== 'text' || keepsItsPlace(l)) continue;
     const o = l as unknown as Record<string, unknown>;
     const text = layerText(l).trim();
     if (!text) continue;
