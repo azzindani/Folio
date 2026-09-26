@@ -3,6 +3,7 @@ import { resolveLayerTokens, type TokenResolutionContext } from '../engine/token
 import { resolveComponent } from '../engine/component-resolver';
 import { expandPositionShorthand } from '../schema/validator';
 import { resolveAllFormulas, type FormulaContext } from '../scripting/formula';
+import { resolveLayers } from './resolve-source';
 import { createSVGRoot, createSVGElement } from './svg-utils';
 import { clipRectFor, applyClipRect } from './clip-rect';
 import { pathSMIL } from '../animation/path-ease';
@@ -490,7 +491,8 @@ function renderPlaceholder(layer: Layer, _svg: SVGSVGElement): SVGElement {
 }
 
 function prepareLayers(layers: Layer[], ctx?: TokenResolutionContext, formulaCtx?: FormulaContext): Layer[] {
-  let prepared = layers.map(l => expandPositionShorthand(l) as Layer);
+  // Rules become literal layers here and only here (resolve-source.ts); a literal design passes through untouched.
+  let prepared = resolveLayers(layers).map(l => expandPositionShorthand(l) as Layer);
 
   // Resolve formula bindings before token substitution
   if (formulaCtx) {
