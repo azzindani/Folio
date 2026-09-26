@@ -6,6 +6,8 @@ import { Cdp } from './cdp-client';
 import { clearScriptFrames, collectScripts, componentTime, scriptFrame, setScriptFrame, stampScripts, stampedScripts, dropScriptFrames } from '../../scripting/script-frames';
 import { renderToSVGString } from './svg-export';
 import { specAt } from '../../export/gif-frames';
+import { planScenes } from '../../export/scene-plan';
+import { turningFrame, composeSceneFrame } from '../../export/scene-compose';
 
 const DOT = `const c = document.getElementById('c'), g = c.getContext('2d'); c.width = folio.width; c.height = folio.height;
 folio.frame(t => { g.clearRect(0, 0, c.width, c.height); g.fillStyle = '#E4572E';
@@ -58,4 +60,21 @@ describe('script frames', () => {
     const r = await withScriptCapture(() => ({ success: true, progress: [], token_estimate: 0, svg: renderToSVGString(design(script() as unknown as Layer)) }) as never);
     expect((r as unknown as { svg: string }).svg).toMatch(/<image[^>]*href="data:image\/png/);
   }, 60000);
+});
+
+describe('script components on a turning face (close-out C5)', () => {
+  it('are among the frames an export captures at that moment — both scenes, each at its own time', () => {
+    const page = (id: string): object => ({ id, auto_advance: 2000, layers: [{ ...script({ id: `${id}_art` }), x: 0, y: 0, width: 400, height: 300 }] });
+    const spec = { meta: { id: 'c', name: 'C', type: 'carousel' }, document: { width: 400, height: 300 },
+      pages: [page('p1'), { ...page('p2'), transition: { type: 'cube-left', duration: 1000 } }] } as unknown as DesignSpec;
+    const plan = planScenes(spec);
+    const t = (plan.scenes[1]?.start_ms ?? 0) + 500;
+    const turn = turningFrame(spec, plan, t);
+    expect(turn?.faces.length).toBe(2);
+    const key = (w: { layer: ScriptLayer; t: number }): string => `${w.layer.id}@${componentTime(w.layer, w.t)}`;
+    const faces = (turn?.faces ?? []).flatMap(f => stampedScripts(f.spec.pages?.[0]?.layers ?? [])).map(key);
+    const captured = new Set(stampedScripts(composeSceneFrame(spec, plan, t).pages?.[0]?.layers ?? []).map(key));
+    expect(faces.length).toBe(2);
+    for (const f of faces) expect(captured.has(f)).toBe(true);
+  });
 });
