@@ -34,6 +34,11 @@ describe('lintAiSlop', () => {
     expect(notes.join(' ')).toMatch(/emoji/i);
   });
 
+  it('reads a lone arrow or technical sign as type, and its emoji form as an emoji', () => {
+    for (const v of ['→', '↓ ↑', '⌘']) expect(lintAiSlop([txt('a', v)]).join(' '), v).not.toMatch(/emoji/i);
+    for (const v of ['➡️', '↗\u{FE0F}']) expect(lintAiSlop([txt('a', v)]).join(' '), v).toMatch(/emoji/i);
+  });
+
   it('does NOT flag emoji embedded in real copy', () => {
     const notes = lintAiSlop([txt('h', 'Ship faster 🚀 every week')]);
     expect(notes.join(' ')).not.toMatch(/emoji/i);

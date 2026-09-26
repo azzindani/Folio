@@ -20,6 +20,8 @@ const AI_INDIGO_RGB = AI_INDIGO.map(hexToRgb).filter((r): r is RGB => r !== null
 
 const EMOJI = /[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}\u{200D}\u{2190}-\u{21FF}\u{2300}-\u{23FF}]/u;
 const EMOJI_G = new RegExp(EMOJI, 'gu');
+/** Arrows and technical signs with no emoji selector are type ("→", "⌘"), not emoji (Opus 5.5 promo: a receipt's → was flagged). */
+const TYPOGRAPHIC = /^[\u{2190}-\u{21FF}\u{2300}-\u{23FF}\s]+$/u;
 
 const INVENTED_METRIC = [
   /\b\d+(\.\d+)?\s?[×x]\b/i,                          // 10×, 3x
@@ -139,7 +141,7 @@ export function lintAiSlop(layers: Layer[], canvasShort?: number): string[] {
   const emojiIcon = all.find(l => {
     if (l.type !== 'text') return false;
     const v = textValue(l).trim();
-    return EMOJI.test(v) && v.replace(EMOJI_G, '').trim() === '';
+    return EMOJI.test(v) && v.replace(EMOJI_G, '').trim() === '' && !TYPOGRAPHIC.test(v);
   });
   if (emojiIcon) {
     notes.push(`text "${emojiIcon.id}" is an emoji used as an icon — use the \`icon\` layer type (monoline, currentColor) instead of an emoji glyph (anti_slop rule 3).`);
