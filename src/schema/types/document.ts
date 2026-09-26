@@ -240,6 +240,8 @@ export interface Page {
   markers?: TimeMarkers;
   /** Layout area larger than the canvas that the camera travels over (animation op:camera world). */
   world?: WorldBox;
+  /** This page's own names, over the design's. */
+  names?: Record<string, unknown>;
 }
 
 // ── Design Document ─────────────────────────────────────────
@@ -327,6 +329,8 @@ export interface DesignSpec {
   };
   layers?: Layer[];
   pages?: Page[];
+  /** Named values and formulas ("=…") layer formulas read — phase-3 source rules (scripting/formula-source.ts). */
+  names?: Record<string, unknown>;
   report?: ReportSpec;
   // Presentation / motion settings
   presentation?: PresentationSettings;

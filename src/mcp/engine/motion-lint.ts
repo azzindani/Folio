@@ -20,7 +20,7 @@ import { canvasBoxes, type CanvasBox } from '../../export/frame-cull';
 import { buriedTexts, ancestry } from './motion-lint-buried';
 import { frameUnits, collisions, type Unit, type Spaces } from './motion-lint-collide';
 import { crowdNotes, restlessNotes, readingLines, type ReadLine, type Shown } from './motion-lint-pace';
-import { resolveLayers } from '../../renderer/resolve-source';
+import { resolveLayers, type ResolveOptions } from '../../renderer/resolve-source';
 
 export type LintKind = 'overlap' | 'collision' | 'off_canvas' | 'buried' | 'idle' | 'busy' | 'reading' | 'link' | 'crowd' | 'restless';
 export interface LintNote { kind: LintKind; note: string; at_ms?: number; shot?: string; layers?: string[]; /** reading: how much longer the words need, ms. */ short_ms?: number }
@@ -450,9 +450,10 @@ function linkNotes(layers: Layer[]): LintNote[] {
  * Every time-aware note for a page. `marks` are the shots (or markers) the
  * piece is told in; without any, the whole piece is one shot.
  */
-export function lintComposition(source: Layer[], canvas: { width: number; height: number }, marks: LintMark[], endMs: number): LintNote[] {
-  // Measured as drawn: an auto-layout's children placed, whoever calls (op:lint read them at 0,0).
-  const layers = resolveLayers(source, { place: true });
+export function lintComposition(source: Layer[], canvas: { width: number; height: number }, marks: LintMark[], endMs: number, names: ResolveOptions = {}): LintNote[] {
+  // Measured as drawn: an auto-layout's children placed, whoever calls (op:lint read them at 0,0); `names` are the
+  // design's (resolve-source sourceOptions) for its source formulas.
+  const layers = resolveLayers(source, { ...names, place: true });
   const followers = new Set<string>();
   const find = (ls: Layer[]): void => { for (const l of ls as Node[]) { if (l.link) followers.add(l.id); if (Array.isArray(l.layers)) find(l.layers); } };
   find(layers);

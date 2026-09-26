@@ -19,7 +19,7 @@ export interface FormulaContext {
   utils?: typeof FORMULA_UTILS;
 }
 
-const FORMULA_UTILS = {
+export const FORMULA_UTILS = {
   clamp: (v: number, min: number, max: number) => Math.max(min, Math.min(max, v)),
   lerp: (a: number, b: number, t: number) => a + (b - a) * t,
   round: (v: number, dp = 0) => Number(v.toFixed(dp)),

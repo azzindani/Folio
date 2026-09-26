@@ -12,9 +12,9 @@ export const TIER1_TOOLS: ToolDefinition[] = [
       properties: {
         section: {
           type: 'string',
-          enum: ['quick_ref', 'shorthand', 'layers', 'workflow', 'reference', 'assets', 'style', 'motion',
+          enum: ['quick_ref', 'shorthand', 'layers', 'workflow', 'reference', 'assets', 'style', 'motion', 'source',
             'craft', 'anti_slop', 'color', 'type', 'ux_laws', 'a11y', 'marks'],
-          description: 'Guide section to load (default: quick_ref). motion = animating a design over MCP (sequence/track/frame/export, channels, easing vocabulary). assets = photos/logos/fonts in designs (asset_add/asset_list workflow, plus the full `process` pixel-recipe vocabulary). style = how style_history reads a project back (signatures, traits, evidence, novelty, seed_check). craft/anti_slop/color/type/ux_laws/a11y = universal design-craft rulebooks. marks = identity/logo construction (optical centring, overshoot, small-size survival, lockups, clearspace) — the engine measures a mark you draw, it never generates one.',
+          description: 'Guide section to load (default: quick_ref). motion = animating a design over MCP (sequence/track/frame/export, channels, easing vocabulary). assets = photos/logos/fonts in designs (asset_add/asset_list workflow, plus the full `process` pixel-recipe vocabulary). style = how style_history reads a project back (signatures, traits, evidence, novelty, seed_check). source = procedural source: design `names` and layer `formulas` that compute properties from them. craft/anti_slop/color/type/ux_laws/a11y = universal design-craft rulebooks. marks = identity/logo construction (optical centring, overshoot, small-size survival, lockups, clearspace) — the engine measures a mark you draw, it never generates one.',
           default: 'quick_ref',
         },
       },

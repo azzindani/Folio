@@ -1,6 +1,7 @@
 import { type StateManager, type EditorState } from '../../editor/state';
 import type { Page } from '../../schema/types';
 import { renderPage } from '../../renderer/renderer';
+import { sourceOptions } from '../../renderer/resolve-source';
 import { composeTheme } from '../../styles/compose';
 
 export class PageStrip {
@@ -112,14 +113,14 @@ export class PageStrip {
     `;
 
     try {
-      const { theme, palette, typePack, effectsPack } = this.state.get();
+      const { theme, palette, typePack, effectsPack, design } = this.state.get();
       // Compose the theme with the picked overlays exactly like the main canvas
       // (composeTheme returns the base theme by reference when nothing is picked),
       // so a thumbnail always matches the viewport for the same page.
       const composed = theme
         ? composeTheme(theme, { palette: palette ?? undefined, typePack: typePack ?? undefined, effectsPack: effectsPack ?? undefined })
         : undefined;
-      const svg = renderPage(page.layers ?? [], docW, docH, { theme: composed });
+      const svg = renderPage(page.layers ?? [], docW, docH, { theme: composed, ...(design ? { source: sourceOptions(design, page) } : {}) });
       svg.setAttribute('width', String(THUMB_W));
       svg.setAttribute('height', String(THUMB_H));
       svg.style.display = 'block';

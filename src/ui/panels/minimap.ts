@@ -1,5 +1,6 @@
 import { type StateManager } from '../../editor/state';
 import { renderDesign, renderPage } from '../../renderer/renderer';
+import { sourceOptions } from '../../renderer/resolve-source';
 import { composeTheme } from '../../styles/compose';
 
 /**
@@ -97,7 +98,7 @@ export class MinimapManager {
     if (design.pages && design.pages.length > 0) {
       const pi = Math.min(currentPageIndex, design.pages.length - 1);
       const page = design.pages[pi];
-      svg = renderPage(page?.layers ?? [], width, height, { theme: composed });
+      svg = renderPage(page?.layers ?? [], width, height, { theme: composed, source: sourceOptions(design, page) });
     } else {
       svg = renderDesign(design, { theme: composed });
     }

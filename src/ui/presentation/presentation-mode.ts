@@ -1,5 +1,6 @@
 import { type StateManager } from '../../editor/state';
 import { renderDesign, renderPage } from '../../renderer/renderer';
+import { sourceOptions } from '../../renderer/resolve-source';
 import type { DesignSpec } from '../../schema/types';
 
 /**
@@ -132,7 +133,7 @@ export class PresentationMode {
     let svg: SVGSVGElement;
     if (design.pages && design.pages.length > 0) {
       const page = design.pages[Math.min(this.currentPage, design.pages.length - 1)];
-      svg = renderPage(page?.layers ?? [], width, height, { theme });
+      svg = renderPage(page?.layers ?? [], width, height, { theme, source: sourceOptions(design, page) });
     } else {
       svg = renderDesign(design, { theme });
     }
