@@ -1,7 +1,8 @@
 // @vitest-environment node
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import type { DesignSpec, Layer, ScriptLayer } from '../../schema/types';
-import { captureScripts, chromiumPath, withScriptCapture } from './script-capture';
+import { captureScripts, chromiumPath, openCapture, withScriptCapture } from './script-capture';
+import { Cdp } from './cdp-client';
 import { clearScriptFrames, collectScripts, componentTime, scriptFrame, setScriptFrame, stampScripts, stampedScripts, dropScriptFrames } from '../../scripting/script-frames';
 import { renderToSVGString } from './svg-export';
 import { specAt } from '../../export/gif-frames';
@@ -37,7 +38,14 @@ describe('script frames', () => {
     expect(scriptFrame(script(), 0)).toBeUndefined();
   });
 
-  it.skipIf(!chromiumPath())('capture the same pixels for the same moment, every time', async () => {
+  it('say why nothing is captured on a runtime without WebSocket, and start no browser', async () => {
+    vi.stubGlobal('WebSocket', undefined);
+    try {
+      expect(await openCapture()).toMatch(/WebSocket this runtime lacks/);
+    } finally { vi.unstubAllGlobals(); }
+  });
+
+  it.skipIf(!chromiumPath() || !Cdp.available())('capture the same pixels for the same moment, every time', async () => {
     const at = async (t: number): Promise<string> => {
       clearScriptFrames();
       expect(await captureScripts([{ layer: script(), t }])).toEqual([]);
