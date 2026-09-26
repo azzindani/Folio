@@ -2,6 +2,7 @@ import type { DesignSpec, ThemeSpec, Layer, PaletteSpec, TypePackSpec, EffectsPa
 import type { AnimationSpec } from '../animation/types';
 import { addBlankPage, duplicatePage, deletePage, movePage as movePageOp } from './state-pages';
 import { debug } from '../utils/debug';
+import { findGenerated, findIn, withItemOverride } from '../renderer/gallery-edit';
 
 export type ToolId =
   | 'select' | 'text' | 'rect' | 'circle' | 'line'
@@ -231,6 +232,13 @@ export class StateManager {
 
   updateLayer(layerId: string, updates: Partial<Layer>, recordUndo = true): void {
     if (!this.state.design) return;
+    // A gallery's generated item is not in the tree: the edit is kept as that item's override (renderer/gallery-edit.ts).
+    if (!findIn(this.getCurrentLayers(), layerId)) {
+      const hit = findGenerated(this.state.design, layerId, this.state.design.pages?.[this.state.currentPageIndex]?.id);
+      const next = hit ? withItemOverride(hit, updates as Record<string, unknown>) : null;
+      if (hit && next && typeof next !== 'string') this.updateLayer(hit.gallery.id, { gallery: next } as Partial<Layer>, recordUndo);
+      return;
+    }
     if (recordUndo) this.pushUndo();
 
     const updateInArray = (layers: Layer[]): Layer[] =>
