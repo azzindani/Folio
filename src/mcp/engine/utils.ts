@@ -6,6 +6,7 @@ import type { ToolResult, ProgressItem, ContextField, Handover, SuggestedNext } 
 import { builtinTemplatesDir } from './builtin-templates';
 import { noteDesignWrite } from '../design-lineage';
 import { stampVideoLengths } from './video-length';
+import { compactYAML } from '../../schema/yaml-compact';
 
 // §18 — reject paths outside the allowed roots. Four roots accepted:
 //   1. user home dir
@@ -272,8 +273,10 @@ function assertAcyclic(doc: { layers?: unknown; pages?: { layers?: unknown }[] }
 export function writeYAML(filePath: string, data: unknown): void {
   const resolved = resolvePath(filePath);
   // A video layer's length goes into the design on the way to disk (video-length.ts).
-  if (/\.design\.ya?ml$/i.test(resolved)) stampVideoLengths(data, resolved);
-  const content = yaml.dump(data, { indent: 2, lineWidth: 120, noRefs: true, sortKeys: false });
+  const design = /\.design\.ya?ml$/i.test(resolved);
+  if (design) stampVideoLengths(data, resolved);
+  // A design is written compactly: small mappings on one line (schema/yaml-compact.ts).
+  const content = design ? compactYAML(data) : yaml.dump(data, { indent: 2, lineWidth: 120, noRefs: true, sortKeys: false });
   // Lineage is recorded HERE, at the one place every design write passes
   // through, so coverage is a property of the architecture rather than of each
   // tool remembering to log. (The review's complaint was a receipt that
