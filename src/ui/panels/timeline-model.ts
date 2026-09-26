@@ -62,8 +62,12 @@ export function playsInTime(l: Layer): boolean {
   // design hid its Play button and a mixed one its rule rows.
   return (l.animation?.keyframes ?? []).length > 0 || l.animation?.rule !== undefined || Boolean(o['motion_path']) || Boolean(o['link'])
     || typeof o['in'] === 'number' || typeof o['out'] === 'number' || l.type === 'video'
-    || (l.type === 'script' && typeof o['duration'] === 'number');
+    || (l.type === 'script' && typeof o['duration'] === 'number')
+    // A gallery plays what its template plays, in every cell (close-out C7: Play stayed hidden on one).
+    || (l.type === 'group' && templatePlays((o['gallery'] as { template?: unknown } | undefined)?.template));
 }
+const templatePlays = (t: unknown): boolean => Array.isArray(t)
+  && (t as Layer[]).some(l => playsInTime(l) || templatePlays((l as Layer & { layers?: unknown }).layers));
 const hasMotion = playsInTime;
 
 /**
