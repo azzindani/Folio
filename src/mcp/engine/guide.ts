@@ -320,6 +320,10 @@ repeat:[{...},{...}] → one copy per row; {{key}} tokens fill from the row.
   {id:"plan", type:"column", repeat:[{name:"Free",price:"$0"},{name:"Pro",price:"$9"}],
      width:280, height:360, layers:[{type:"text", width:240, height:50, text:"{{name}} {{price}}", size:30}]}
 Combine with a row/grid container to lay out the copies automatically.
+keep:"rule" stores it ONCE instead of N copies — a gallery group (ids <id>_<n>_item):
+the layer is the template (its box = one cell), repeat_columns (default: one row) and
+repeat_gap lay the cells out; edit the template or a row and every cell follows.
+  {id:"plan", type:"column", repeat:[…], keep:"rule", repeat_columns:3, repeat_gap:24, pos:[80,300,280,360], …}
 
 ## Presets — how much canvas each one needs
 A preset sizes its type from the box WIDTH and grows DOWNWARD to fit its content.

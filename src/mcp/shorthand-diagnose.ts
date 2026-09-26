@@ -24,6 +24,8 @@ export const KNOWN_SHORTHAND_KEYS = new Set<string>([
   'stroke_width', 'strokeWidth',
   // auto_layout / container
   'direction', 'gap', 'padding', 'justify', 'wrap', 'repeat', 'children', 'valign',
+  // repeat kept as a gallery rule (shorthand-repeat-rule.ts); a gallery written in shorthand
+  'keep', 'repeat_columns', 'repeat_gap', 'gallery',
   // `columns` landscape container — cols/weights/pad are read by buildColumns.
   // Flagging them was a lie that pushed the model back to hand-placing, the one
   // thing the preset exists to prevent.
