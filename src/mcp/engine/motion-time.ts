@@ -70,6 +70,20 @@ function findLayer(layers: Layer[], id: string): Layer | undefined {
 }
 
 /**
+ * `ms` written against the marker `ref` names ("cta", "cta+300") — how a motion
+ * rule keeps its start, so it follows the marker. Null when `ref` names no marker.
+ */
+export function markerRef(ref: unknown, ms: number, markers: TimeMarkers): string | null {
+  if (typeof ref !== 'string') return null;
+  const m = REF.exec(ref);
+  const name = markers[ref.trim()] !== undefined ? ref.trim() : m && m[2] && !m[3] ? m[2] : undefined;
+  const base = name === undefined ? undefined : markers[name];
+  if (name === undefined || base === undefined) return null;
+  const off = Math.round(ms - base);
+  return off === 0 ? name : `${name}${off > 0 ? '+' : '-'}${Math.abs(off)}`;
+}
+
+/**
  * A time reference in ms, or a sentence saying why it cannot be read.
  * Accepts a number, a numeric string, `marker`, `layer.in|out|start|end`,
  * each optionally `+ms` / `-ms`. Never below 0.

@@ -19,6 +19,7 @@ import { isFormula } from '../scripting/formula';
 import { evalSource, type SourceScope, type SourceProblem } from '../scripting/formula-source';
 import { expandPreset, isMotionPreset, PRESET_KIND, PRESET_NAMES } from '../mcp/engine/motion-presets';
 import { mergeFragment, MergeError } from '../mcp/engine/motion-merge';
+import { resolveTime } from '../mcp/engine/motion-time';
 
 type Animated = Layer & { animation?: AnimationSpec; layers?: Layer[] };
 
@@ -32,6 +33,16 @@ function numberOf(v: unknown, scope: SourceScope): number | string | undefined {
   return typeof r.value === 'number' && Number.isFinite(r.value) ? r.value : `it gives ${String(r.value)}`;
 }
 
+/**
+ * A rule's start in ms: a number, a "=…" formula, or a marker ("cta",
+ * "cta+300") — kept by name, so moving the marker moves every rule on it.
+ */
+export function ruleStart(v: unknown, scope: SourceScope): number | string | undefined {
+  if (typeof v !== 'string' || isFormula(v)) return numberOf(v, scope);
+  if (/\.(in|out|start|end)\b/.test(v)) return `"${v}" is a layer's time — a rule starts at ms, a marker ("cta+300") or a "=…" formula`;
+  return resolveTime(v, { markers: scope.markers ?? {}, layers: [] });
+}
+
 /** The track a layer's rules spell, or why they spell none. */
 export function compileRules(rule: MotionRule | MotionRule[], scope: SourceScope): AnimationSpec | string {
   const rules = Array.isArray(rule) ? rule : [rule];
@@ -43,7 +54,7 @@ export function compileRules(rule: MotionRule | MotionRule[], scope: SourceScope
     if (r.easing !== undefined && !isKnownEasing(r.easing)) return `${where}easing "${String(r.easing)}" is unknown`;
     const nums: Record<string, number | undefined> = {};
     for (const k of ['at', 'duration', 'distance'] as const) {
-      const v = numberOf(r[k], scope);
+      const v = k === 'at' ? ruleStart(r.at, scope) : numberOf(r[k], scope);
       if (typeof v === 'string') return `${where}${k}: ${v}`;
       nums[k] = v;
     }

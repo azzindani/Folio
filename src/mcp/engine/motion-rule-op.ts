@@ -11,10 +11,11 @@
 import type { Layer } from '../../schema/types';
 import type { AnimationSpec, EasingFunction, MotionRule } from '../../animation/types';
 import { PRESET_KIND, type MotionPreset } from './motion-presets';
-import { compileRules } from '../../renderer/resolve-motion';
+import { compileRules, ruleStart } from '../../renderer/resolve-motion';
 import type { SourceScope } from '../../scripting/formula-source';
 
-export interface RuleStep { preset: MotionPreset; at: number; duration?: number; easing?: string; distance?: number }
+/** `at` is ms, or a marker ("cta+300") the rule keeps and follows. */
+export interface RuleStep { preset: MotionPreset; at: number | string; duration?: number; easing?: string; distance?: number }
 
 const kindOf = (r: MotionRule): string | undefined => PRESET_KIND[r.preset as MotionPreset];
 const rulesOf = (a: AnimationSpec | undefined): MotionRule[] => (a?.rule === undefined ? [] : Array.isArray(a.rule) ? a.rule : [a.rule]);
@@ -39,8 +40,9 @@ export function addRule(layer: Layer, step: RuleStep, replaceKind: boolean, scop
     ...(step.distance !== undefined ? { distance: step.distance } : {}),
   };
   const rules = [...kept, rule];
-  // Stored in time order when every start is a number; a formula start keeps its place.
-  if (rules.every(r => typeof r.at === 'number')) rules.sort((a, b) => (a.at as number) - (b.at as number));
+  // Stored in time order when every start reads as a time (ms or a marker); a failing one keeps its place.
+  const starts = new Map(rules.map(r => [r, ruleStart(r.at ?? 0, scope)]));
+  if ([...starts.values()].every(v => typeof v === 'number')) rules.sort((a, b) => (starts.get(a) as number) - (starts.get(b) as number));
   const stored = rules.length === 1 ? rules[0] : rules;
   if (!stored) return 'no rule to store';
   const track = compileRules(stored, scope);

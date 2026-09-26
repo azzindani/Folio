@@ -12,7 +12,8 @@ import { collectFindings } from '../mcp/engine/diagnose-collect';
 import { syncAnimationsToSpec } from '../mcp/engine/animation-sync';
 import { withAnimationMirror } from '../animation/page-animations';
 import { buildPosePlan } from '../editor/motion-pose';
-import { sourceOptions } from './resolve-source';
+import { sourceOptions, resolveSpec } from './resolve-source';
+import type { SourceProblem } from '../scripting/formula-source';
 import { trackHTML } from '../ui/panels/timeline-track-view';
 import { timelineRows } from '../ui/panels/timeline-model';
 
@@ -22,6 +23,8 @@ const moving = (id: string, rule: MotionRule | MotionRule[]): Layer =>
   L({ id, type: 'rect', z: 1, x: 100, y: 200, width: 300, height: 120, fill: '#E4572E', animation: { rule } });
 const design = (layers: Layer[]): DesignSpec => ({ meta: { id: 'd', name: 'D', type: 'poster' }, document: { width: 1080, height: 1350 },
   names: { Beat: 600 }, layers: [L({ id: 'bg', type: 'rect', z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: '#FBF7F0' }), ...layers] } as unknown as DesignSpec);
+const animOf = (layers: Layer[] | undefined, id: string): AnimationSpec | undefined =>
+  (layers ?? []).find(l => l.id === id)?.animation as AnimationSpec | undefined;
 const opacityAt = (spec: DesignSpec, t: number, id: string): number =>
   ((specAt(spec, 0, t).layers ?? []).find(l => l.id === id) as { opacity?: number } | undefined)?.opacity ?? 1;
 
@@ -32,6 +35,18 @@ describe('motion rules', () => {
     const both = compileRules([{ preset: 'rise', at: 0 }, { preset: 'fade_out', at: '=Beat * 5' }], scope);
     expect(both).toEqual(mergeFragment({ keyframes: expandPreset('rise').keyframes, playback: expandPreset('rise').playback },
       expandPreset('fade_out', { delay: 3000 })));
+  });
+
+  it('starts at a marker, and follows the marker when it moves', () => {
+    const delayOf = (spec: DesignSpec): number | undefined => animOf(resolveSpec(spec).layers, 'm')?.playback?.delay;
+    const spec = { ...design([moving('m', [{ preset: 'rise', at: 'cta' }, { preset: 'fade_out', at: 'cta+1500' }])]), markers: { cta: 2000 } } as DesignSpec;
+    expect(delayOf(spec)).toBe(2000);
+    expect(delayOf({ ...spec, markers: { cta: 3000 } } as DesignSpec)).toBe(3000);
+    expect(animationDuration(spec.layers ?? [], sourceOptions(spec))).toBeGreaterThanOrEqual(3500);
+    const problems: SourceProblem[] = [];
+    resolveSpec({ ...spec, markers: {} } as DesignSpec, { problems });
+    expect(problems[0]?.error).toMatch(/No marker "cta"/);
+    expect(compileRules({ preset: 'rise', at: 'title.end' }, scope)).toMatch(/a layer's time/);
   });
 
   it('says why a rule cannot compile', () => {
