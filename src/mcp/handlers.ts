@@ -18,6 +18,8 @@ import { decodeJsonStringArgs } from './json-string-args';
 import { unknownArgs, withIgnoredArgs } from './unknown-args';
 import { measureSoundtrack } from './engine/diagnose-beats';
 import { withScriptCapture } from './engine/script-capture';
+import { captureDesignForReview } from './engine/review-scripts';
+import { dropScriptFrames } from '../scripting/script-frames';
 
 // Most ops are pure local filesystem work and answer synchronously. The asset
 // finder talks to the internet, so a handler may also return a promise; every
@@ -79,11 +81,16 @@ const TIER3_RAW: Record<string, Handler> = {
   // The soundtrack is measured first (ffmpeg, async, cached) so the cuts can be judged against its beat.
   diagnose_design: async (a) => {
     await measureSoundtrack(a['design_path'], a['project_path']);
-    // gate:true — the one call before export: heal, measure everything, rank (diagnose-gate.ts).
-    if (a['gate'] === true) return engine.gateDesign(a as Parameters<typeof engine.gateDesign>[0]);
-    return a['heal'] === true
-      ? engine.healDesign(a as Parameters<typeof engine.healDesign>[0])
-      : engine.diagnoseDesign(a as Parameters<typeof engine.diagnoseDesign>[0]);
+    // The review draws script components from captured frames: capture them first (review-scripts.ts).
+    const reviews = a['gate'] === true || a['review'] === true;
+    const scripts = reviews ? await captureDesignForReview(a) : { notes: [], keys: [] };
+    try {
+      // gate:true — the one call before export: heal, measure everything, rank (diagnose-gate.ts).
+      const r = a['gate'] === true ? engine.gateDesign(a as Parameters<typeof engine.gateDesign>[0])
+        : a['heal'] === true ? engine.healDesign(a as Parameters<typeof engine.healDesign>[0])
+          : engine.diagnoseDesign(a as Parameters<typeof engine.diagnoseDesign>[0]);
+      return scripts.notes.length ? { ...r, notes: [...((r as { notes?: string[] }).notes ?? []), ...scripts.notes] } as ToolResult : r;
+    } finally { dropScriptFrames(scripts.keys); }
   },
   export_design:   (a) => /^(png|jpe?g|pdf)$/i.test(String(a['format'] ?? ''))
     ? withScriptCapture(() => engine.exportDesign(a as Parameters<typeof engine.exportDesign>[0]))

@@ -9,7 +9,8 @@
 // Found live (2026-09-20, a 1920×1080 build): "so much dead space" and "the
 // last slide is not in the middle" were caught by the user, never by a check.
 
-import type { DesignSpec, Layer } from '../../schema/types';
+import type { DesignSpec, Layer, Page } from '../../schema/types';
+import { stampScripts } from '../../scripting/script-frames';
 import { renderToSVGString } from './svg-export';
 import { rasterizeSync } from '../../utils/resvg-isolate';
 import { resvgFontOption } from './fonts';
@@ -312,9 +313,12 @@ export function pageEntries(spec: DesignSpec, pageId?: string): Array<Entry & { 
   // rule-driven tracks, so the text mask, the ground and every posed shot must
   // see them too — a rebuilt b29 was measured with its title on screen in a
   // shot it had faded out of. A literal page comes back as the same array.
+  // A script component is read as drawn at the page's first moment (close-out C4): a raster
+  // render draws its captured frame (review-scripts.ts), never an empty box.
+  const read = (ls: Layer[], page?: Page): Layer[] => stampScripts(resolveLayers(ls, sourceOptions(spec, page)), 0);
   return spec.pages?.length
-    ? spec.pages.filter(p => !pageId || p.id === pageId).map(p => ({ id: p.id, layers: resolveLayers(p.layers ?? [], sourceOptions(spec, p)), world: !!(p as { world?: unknown }).world }))
-    : [{ layers: resolveLayers(spec.layers ?? [], sourceOptions(spec)), world: !!(spec as { world?: unknown }).world }];
+    ? spec.pages.filter(p => !pageId || p.id === pageId).map(p => ({ id: p.id, layers: read(p.layers ?? [], p), world: !!(p as { world?: unknown }).world }))
+    : [{ layers: read(spec.layers ?? []), world: !!(spec as { world?: unknown }).world }];
 }
 
 /** Review every page (or one) of a design as authored. */

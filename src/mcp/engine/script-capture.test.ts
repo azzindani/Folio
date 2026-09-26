@@ -48,7 +48,7 @@ describe('script frames', () => {
   it.skipIf(!chromiumPath() || !Cdp.available())('capture the same pixels for the same moment, every time', async () => {
     const at = async (t: number): Promise<string> => {
       clearScriptFrames();
-      expect(await captureScripts([{ layer: script(), t }])).toEqual([]);
+      expect((await captureScripts([{ layer: script(), t }])).notes).toEqual([]);
       return scriptFrame(script(), t) ?? '';
     };
     const a = await at(700), b = await at(700), c = await at(1300);
