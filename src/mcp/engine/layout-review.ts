@@ -19,6 +19,7 @@ import { IDENTITY, poseAffine, compose, mapBox, type Affine } from './layout-pos
 import { drawnBox } from '../../export/frame-geometry';
 import { feedZoneBoxes } from './diagnose-safe';
 import { seenTexts, textMask, textOnGround, legibilityNotes, hardToRead, type TextOnGround } from './layout-legibility';
+import { sourceOptions } from '../../renderer/resolve-source';
 import {
   inkGrid, occupancy, emptyRects, balance, thirds, contentBox, round2,
   type Rect, type Balance,
@@ -317,7 +318,7 @@ export function reviewLayout(spec: DesignSpec, projectDir: string, pageId?: stri
   // A page that moves is read at its shots' rests (motion.shots); as authored,
   // texts timed to different moments all show at once and read against
   // grounds they never sit on (a camera-world reel, benchmark r1).
-  const pages = pageEntries(spec, pageId).map(p => ({ ...p, legible: animationDuration(p.layers) <= 0 }));
+  const pages = pageEntries(spec, pageId).map(p => ({ ...p, legible: animationDuration(p.layers, sourceOptions(spec, (spec.pages ?? []).find(pg => pg.id === p.id))) <= 0 }));
   return measureEntries(spec, pages, projectDir).map((m, i) => {
     // A world is seen through the camera, so the authored frame is not a shot.
     if (pages[i]?.world) m.notes.push('This page is a camera world: measured at the authored frame (the world\'s top-left), not at any shot — its `motion.shots` measure what the viewer sees.');

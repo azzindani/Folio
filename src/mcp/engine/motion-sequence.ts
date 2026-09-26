@@ -26,6 +26,8 @@ import { REVEAL_FROMS, type RevealFrom } from '../../animation/reveal';
 import { staggerRanks, isStaggerOrder, STAGGER_ORDERS, type StaggerOrder } from './motion-order';
 import { readMarkers, resolveTime } from './motion-time';
 import { animationDuration } from '../../export/gif-frames';
+import { addRule } from './motion-rule-op';
+import { sourceOptions } from '../../renderer/resolve-source';
 
 // ── op:sequence ──────────────────────────────────────────────
 
@@ -47,6 +49,8 @@ type SequenceArgs = {
   steps: unknown;
   page_id?: string;
   project_path?: string;
+  /** Store each step as the layer's motion rule instead of its keyframes (motion-rule-op.ts). */
+  as_rule?: boolean;
 };
 
 const ANIM_CHANNELS = new Set(['x', 'y', 'width', 'height', 'rotation', 'opacity', 'scale', 'scale_x', 'scale_y', 'skew_x', 'skew_y', 'blur', 'draw', 'draw_start', 'reveal', 'tracking', 'count', 'morph', 'fill.color', 'stroke.color']);
@@ -103,6 +107,8 @@ export function sequenceMotion(args: SequenceArgs): ToolResult {
   // within this call, an entrance and an exit on one layer still sequence one after the other.
   const written = new Set<string>();
   const replaced: string[] = [];
+  const names = sourceOptions(spec, scoped.page);
+  const ruleScope = { names: names.names ?? {}, W: names.W ?? 1080, H: names.H ?? 1080 };
 
   for (const [i, step] of steps.entries()) {
     const preset = step.preset as MotionPreset;
@@ -123,6 +129,16 @@ export function sequenceMotion(args: SequenceArgs): ToolResult {
         duration: step.duration, easing: step.easing, distance: step.distance, delay: at + stagger * (ranks[j] ?? j),
       });
       const kind = PRESET_KIND[preset];
+      if (args.as_rule) {
+        const r = addRule(layer, { preset, at: at + stagger * (ranks[j] ?? j), duration: step.duration, easing: step.easing, distance: step.distance },
+          kind !== 'loop' && !written.has(`${layer.id}:${kind}`), ruleScope);
+        if (typeof r === 'string') return errResult(op, `steps[${i}]: ${r}.`, 'Clear the layer first (animation op:clear), or sequence it without as_rule. Rules on one layer must not overlap: move the later one with `at`.', progress);
+        written.add(`${layer.id}:${kind}`);
+        if (r.replaced) replaced.push(`${layer.id}'s ${kind}`);
+        updates.set(layer.id, r.animation);
+        stepEnd = Math.max(stepEnd, kind === 'loop' ? at : trackEnd(r.track));
+        continue;
+      }
       let existing = (layer as Layer & { animation?: AnimationSpec }).animation;
       if (kind !== 'loop' && !written.has(`${layer.id}:${kind}`)) {
         const kept = withoutKind(existing, kind);
@@ -157,7 +173,7 @@ export function sequenceMotion(args: SequenceArgs): ToolResult {
   // The page's length, as op:timeline reads it — not just where these steps end. Benchmark r5: after a
   // hold was opened to 15 s, adding one fade replied scene_ms 10150 while op:timeline said 15000.
   const stepsEnd = Math.max(...timeline.map(t => t.to), 0);
-  const sceneMs = Math.max(stepsEnd, animationDuration(scope));
+  const sceneMs = Math.max(stepsEnd, animationDuration(scope, names));
   progress.push(pInfo('Scene length', `${sceneMs}ms${sceneMs > stepsEnd ? ` (these steps end at ${stepsEnd}ms)` : ''} — export with animation(op:export, type:"svg"|"gif")`));
   return okResult(op, {
     design_path: dPath, steps: timeline, scene_ms: sceneMs, progress,

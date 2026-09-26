@@ -219,6 +219,21 @@ export interface StaggerSequence {
 }
 
 // ── Combined Animation Spec ─────────────────────────────────
+/**
+ * A motion stored as its rule (phase 3): a preset at a time, compiled into
+ * keyframes by the resolver (renderer/resolve-motion.ts) exactly as
+ * animation(op:sequence) writes them. A number field may be a "=…" formula.
+ */
+export interface MotionRule {
+  preset: string;
+  /** Start on the scene clock, ms. */
+  at?: number | string;
+  duration?: number | string;
+  easing?: EasingFunction;
+  /** Travel for moving presets, px. */
+  distance?: number | string;
+}
+
 export interface AnimationSpec {
   enter?: EnterAnimation;
   exit?: ExitAnimation;
@@ -226,4 +241,6 @@ export interface AnimationSpec {
   keyframes?: Keyframe[];
   playback?: KeyframeAnimation['playback'];
   sequence?: StaggerSequence;
+  /** One motion or several (an entrance, then an exit) — replaces keyframes/playback when resolved. */
+  rule?: MotionRule | MotionRule[];
 }

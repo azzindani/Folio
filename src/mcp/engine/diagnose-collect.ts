@@ -93,7 +93,11 @@ function asSeen(spec: DesignSpec, still: Finding[], layers: Layer[], page?: Page
 
 /** A source formula that could not be applied — drawn without it, where the report runtime would draw its raw text. */
 function formulaFindings(problems: SourceProblem[]): Finding[] {
-  return problems.map((p): Finding => ({
+  return problems.map((p): Finding => p.prop === 'animation.rule' ? {
+    code: 'rule_error', severity: 'error', layers: [p.layer_id],
+    message: `"${p.layer_id}" animation.rule fails: ${p.error} — the layer does not move.`,
+    fix: 'A rule is {preset, at, duration, easing, distance}; numbers may be "=…" formulas over names. Fix it with patch_design on layers[id=…].animation.rule.',
+  } : ({
     code: 'formula_error', severity: 'error',
     message: p.layer_id === '(names)'
       ? `names.${p.prop} = ${p.formula} fails: ${p.error}.`

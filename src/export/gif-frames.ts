@@ -25,7 +25,7 @@ import { poseTransform, FRAME_POSE, REST_POSE, type FramePose } from './frame-po
 import { resolveTimeline } from '../animation/timeline-resolve';
 import { windowOf, aliveAt, windowEnd } from '../animation/lifespan';
 import { shutterOf, smearOf } from './motion-blur';
-import { resolveLayers, sourceOptions } from '../renderer/resolve-source';
+import { resolveLayers, sourceOptions, type ResolveOptions } from '../renderer/resolve-source';
 
 const fmt = (n: number): string => String(Number(n.toFixed(3)));
 
@@ -38,7 +38,9 @@ type AnimatedLayer = Layer & { animation?: AnimationSpec; layers?: Layer[] };
  * Taking the maximum of delay + duration across every layer means a stagger is
  * not cut off halfway, which is the obvious way to get a GIF that ends mid-move.
  */
-export function animationDuration(layers: Layer[]): number {
+export function animationDuration(source: Layer[], names: ResolveOptions = {}): number {
+  // Measured as it plays: a motion rule is its track (resolve-source; `names` = sourceOptions for the design's).
+  const layers = resolveLayers(source, names);
   let total = 0;
   const visit = (l: AnimatedLayer): void => {
     // A layer that arrives at 12 s must be on screen before the clip ends.
@@ -77,7 +79,8 @@ export function animationDuration(layers: Layer[]): number {
  * number of iterations does end, and counts. animationDuration stays the clip
  * length a single-page loop export needs, where a loop's cycle is the point.
  */
-export function oneShotDuration(layers: Layer[]): number {
+export function oneShotDuration(source: Layer[], names: ResolveOptions = {}): number {
+  const layers = resolveLayers(source, names);
   let total = 0;
   const visit = (l: AnimatedLayer): void => {
     const w = windowOf(l);

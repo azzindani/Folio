@@ -30,6 +30,7 @@ import { composeSceneFrame, turningFrame, blankPage } from '../../export/scene-c
 import { paintTurning } from '../../export/warp';
 import { planCaptions } from '../../export/caption-plan';
 import { withCaptions } from '../../export/caption-layers';
+import { sourceOptions } from '../../renderer/resolve-source';
 
 type FrameArgs = {
   design_path: string;
@@ -154,7 +155,7 @@ export function renderFrame(args: FrameArgs): ToolResult {
 
   const pageIndex = args.page_id ? Math.max(0, (spec.pages ?? []).findIndex((p: Page) => p.id === args.page_id)) : 0;
   const layers = spec.pages?.[pageIndex]?.layers ?? spec.layers ?? [];
-  const sceneMs = animationDuration(layers);
+  const sceneMs = animationDuration(layers, sourceOptions(spec, spec.pages?.[pageIndex]));
   if (sceneMs <= 0) {
     return errResult(op, 'Nothing on this page is animated, so every frame is the same still.', 'Add motion with animation(op:sequence | motion | track) first, or use render_preview for a plain still.');
   }

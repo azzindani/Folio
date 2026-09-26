@@ -9,11 +9,15 @@
  *
  * `place` also sets each auto-layout child's box, for the consumers that
  * measure boxes (the renderer places those children itself while it draws).
+ *
+ * Order: source formulas (scripting/formula-source.ts) → galleries
+ * (resolve-gallery.ts) → motion rules (resolve-motion.ts) → auto-layout placement.
  */
 
 import type { Layer, DesignSpec, Page } from '../schema/types';
 import { resolveAutoLayouts } from './auto-layout-place';
 import { resolveGalleries } from './resolve-gallery';
+import { resolveMotionRules } from './resolve-motion';
 import { resolveSourceFormulas, resolveNames, hasSourceFormulas, type SourceProblem } from '../scripting/formula-source';
 
 export interface ResolveOptions {
@@ -37,7 +41,8 @@ export function sourceOptions(spec: DesignSpec, page?: Page, problems?: SourcePr
 /** Whether anything under `layers` is a rule this step expands. */
 function hasRules(layers: Layer[], opts: ResolveOptions): boolean {
   return layers.some(l => {
-    if ((opts.place && l.type === 'auto_layout') || hasSourceFormulas(l) || (l.type === 'group' && (l as { gallery?: unknown }).gallery)) return true;
+    if ((opts.place && l.type === 'auto_layout') || hasSourceFormulas(l) || (l.type === 'group' && (l as { gallery?: unknown }).gallery)
+      || (l as { animation?: { rule?: unknown } }).animation?.rule !== undefined) return true;
     const kids = (l as Layer & { layers?: Layer[] }).layers;
     return Array.isArray(kids) && hasRules(kids, opts);
   });
@@ -49,7 +54,8 @@ export function resolveLayers(layers: Layer[], opts: ResolveOptions = {}): Layer
   const scope = { names: opts.names ?? {}, W: opts.W ?? 1080, H: opts.H ?? 1080 };
   // A gallery's own formulas (its box, its columns) first; its cells then read their row.
   const galleries = resolveGalleries(resolveSourceFormulas(layers, scope, opts.problems), scope, opts.problems);
-  return opts.place ? resolveAutoLayouts(galleries) : galleries;
+  const moving = resolveMotionRules(galleries, scope, opts.problems);
+  return opts.place ? resolveAutoLayouts(moving) : moving;
 }
 
 /** A design as consumers see it: its layers and every page's resolved — the same object when nothing changes. */

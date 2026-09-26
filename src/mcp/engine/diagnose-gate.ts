@@ -19,7 +19,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import type { DesignSpec, Layer } from '../../schema/types';
+import type { DesignSpec } from '../../schema/types';
 import type { ToolResult, ProgressItem, NextAction } from '../types';
 import type { FixCall } from './diagnose';
 import { resolveDesignPath, readYAML, errResult, okResult, pOk, pInfo, buildContext } from './utils';
@@ -29,6 +29,7 @@ import { resolveImageAssets } from './asset-resolve';
 import { reviewLayout } from './layout-review';
 import { withMotion } from './layout-review-motion';
 import { animationDuration } from '../../export/gif-frames';
+import { sourceOptions } from '../../renderer/resolve-source';
 
 /** One thing to do before export. */
 export interface GateItem {
@@ -90,8 +91,8 @@ function reviewItems(spec: DesignSpec, dPath: string, projectPath: string | unde
 
 /** Whether anything on any page moves. */
 function moves(spec: DesignSpec): boolean {
-  const trees: Layer[][] = [spec.layers ?? [], ...(spec.pages ?? []).map(p => p.layers ?? [])];
-  return trees.some(t => animationDuration(t) > 0);
+  if (animationDuration(spec.layers ?? [], sourceOptions(spec)) > 0) return true;
+  return (spec.pages ?? []).some(p => animationDuration(p.layers ?? [], sourceOptions(spec, p)) > 0);
 }
 
 /** What to send next: the first fix while anything holds the piece back, else the export. */

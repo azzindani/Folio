@@ -27,6 +27,7 @@ import type { MuxClip } from '../../export/audio-mux';
 import { hasSound, resolveSound } from './sound-resolve';
 import { planCaptions } from '../../export/caption-plan';
 import { withCaptions } from '../../export/caption-layers';
+import { sourceOptions } from '../../renderer/resolve-source';
 
 const TYPES = ['svg', 'html', 'gif', 'mp4', 'webm'] as const;
 export type MotionExportType = typeof TYPES[number];
@@ -135,10 +136,11 @@ export async function exportAnimation(args: ExportAnimationArgs): Promise<ToolRe
     ? [`This design has ${pageCount} pages and only the first was exported. Pass scenes:true to play every page as one piece, or page_id for another page.`]
     : [];
   const page = spec.pages?.[pageIndex];
-  const runMs = args.duration ?? animationDuration(layers);
+  const names = sourceOptions(spec, spec.pages?.[pageIndex]);
+  const runMs = args.duration ?? animationDuration(layers, names);
   const sound = soundFor(spec, dPath, { total_ms: runMs, scenes: page ? [{ page_id: page.id, start_ms: 0 }] : [] }, args);
   const captions = args.captions === false ? null : planCaptions(spec, { total_ms: runMs, scenes: page ? [{ page_id: page.id, start_ms: 0, length_ms: runMs }] : [] });
-  return raster(spec, dPath, { durationMs: animationDuration(layers), at: (t, frameMs) => withCaptions(specAt(spec, pageIndex, t, frameMs), captions, spec.captions?.style, t) }, outputPath, {
+  return raster(spec, dPath, { durationMs: animationDuration(layers, names), at: (t, frameMs) => withCaptions(specAt(spec, pageIndex, t, frameMs), captions, spec.captions?.style, t) }, outputPath, {
     ...base, sound: sound.clips, notes: [...pageNotes, ...sound.notes, ...(captions?.notes ?? [])],
   });
 }

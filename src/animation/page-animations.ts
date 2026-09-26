@@ -68,15 +68,19 @@ type WithMap = DesignSpec & { animations?: Record<string, AnimationSpec> };
 export function withAnimationMirror(design: DesignSpec): DesignSpec {
   const tracks = new Map<string, AnimationSpec>();
   const present = new Set<string>();
+  // A motion rule is not mirrored: the canvas and every export resolve it into its track.
+  const ruled = new Set<string>();
   const trees = [design.layers ?? [], ...(design.pages ?? []).map(p => p.layers ?? [])];
   for (const tree of trees) walk(tree, l => {
     if (typeof l.id !== 'string') return;
     present.add(l.id);
-    if (l.animation) tracks.set(l.id, l.animation);
+    if (l.animation?.rule) ruled.add(l.id);
+    else if (l.animation) tracks.set(l.id, l.animation);
   });
   const old = (design as WithMap).animations ?? {};
   const next: Record<string, AnimationSpec> = {};
   for (const [id, anim] of Object.entries(old)) {
+    if (ruled.has(id)) continue;
     const mine = tracks.get(id);
     if (mine) next[id] = mine;
     else if (present.has(id)) next[id] = anim;
