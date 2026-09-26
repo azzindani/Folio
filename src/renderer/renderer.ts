@@ -59,7 +59,10 @@ let activeOptions: RenderOptions = {};
 // on the first edit). Skip the cache for these so they always re-mount live.
 // `background`/`backdrop` render from the live canvas size (svg viewBox), not
 // from layer props alone, so the id-keyed cache could serve a stale-size clone.
-const UNCACHEABLE_TYPES = new Set<string>(['interactive_chart', 'background', 'backdrop']);
+// `script` renders from the render's options (live or still) and the captured-frame
+// cache, not its props: cached, the first render won — a thumbnail's still froze the
+// presentation, and the canvas's live component ran on in every thumbnail (close-out C6).
+const UNCACHEABLE_TYPES = new Set<string>(['interactive_chart', 'background', 'backdrop', 'script']);
 
 export function renderLayer(layer: Layer, svg: SVGSVGElement): SVGElement {
   // Isolation barrier: one malformed layer (e.g. a callout missing its body,
