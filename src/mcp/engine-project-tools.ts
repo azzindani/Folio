@@ -19,6 +19,7 @@ import type { NextAction } from './types';
 import { isConstrained } from './engine-runtime-tools';
 import { SPEC_FIELD } from './design-spec';
 import { drawnBox } from '../export/frame-geometry';
+import { inspectLayer, surfaceFacts } from './engine/inspect-detail';
 
 /** Delete abandoned EMPTY in-progress drafts in a project's designs/ dir. A model
  *  that calls create_design, never fills it, then creates another leaves an orphan
@@ -580,13 +581,14 @@ export function resumeTask(args: { task_path: string }): ToolResult {
 // §10 — surgical read: IDs + types + positions only, NOT content values
 // Constrained mode: returns metadata-only when layer count exceeds READ_TOKEN_CAP
 
-export function inspectDesign(args: { design_path: string; page_id?: string; project_path?: string }): ToolResult {
+export function inspectDesign(args: { design_path: string; page_id?: string; layer_id?: string; project_path?: string }): ToolResult {
   const op = 'inspect_design';
   const progress: ProgressItem[] = [];
   const dPath = resolveDesignPath(args.design_path, args.project_path);
   if (!fs.existsSync(dPath)) return errResult(op, `Design not found: ${dPath}`, 'Check design_path.');
   const spec = readYAML<DesignSpec>(dPath);
   progress.push(pOk('Loaded design', path.basename(dPath)));
+  if (args.layer_id) return inspectLayer(spec, dPath, args.layer_id);
   const limit = LIMITS.layer_rows;
   const constrained = isConstrained();
 
@@ -637,7 +639,7 @@ export function inspectDesign(args: { design_path: string; page_id?: string; pro
     progress.push(pOk(`Inspected page "${page.id}"`, `${total} layer(s)`));
     const context = buildContext(op, `Inspected page "${page.id}" — ${total} layer(s)`);
     const handover = buildHandover('COMPOSE', { design_path: dPath, page_id: page.id });
-    return okResult(op, { page_id: page.id, label: page.label, layers, layer_count: total, truncated: total > limit, constrained_metadata_only: constrained && total > limit, progress, context, handover });
+    return okResult(op, { page_id: page.id, label: page.label, ...surfaceFacts(spec, page), layers, layer_count: total, truncated: total > limit, constrained_metadata_only: constrained && total > limit, progress, context, handover });
   }
 
   if (spec.pages) {
@@ -655,7 +657,7 @@ export function inspectDesign(args: { design_path: string; page_id?: string; pro
       ? { tool: 'manage_design', params: { op: 'inspect', design_path: dPath, page_id: first.id },
           hint: `Each page is ONE group, so layer_count is 1 — inspect a page (page_id) to list the layers inside it, each with its parent.` }
       : undefined;
-    return okResult(op, { type: 'carousel', page_count: spec.pages.length, pages, mode: spec._mode, theme: spec.theme?.ref, document: spec.document, truncated: spec.pages.length > pageLimit, ...(next_action ? { next_action } : {}), progress, context, handover });
+    return okResult(op, { type: 'carousel', page_count: spec.pages.length, ...surfaceFacts(spec), pages, mode: spec._mode, theme: spec.theme?.ref, document: spec.document, truncated: spec.pages.length > pageLimit, ...(next_action ? { next_action } : {}), progress, context, handover });
   }
 
   const layers = summarise(spec.layers);
@@ -663,7 +665,7 @@ export function inspectDesign(args: { design_path: string; page_id?: string; pro
   progress.push(pOk(`Inspected poster: ${total} layer(s)`));
   const context = buildContext(op, `Poster "${spec.meta.name}" — ${total} layer(s)`);
   const handover = buildHandover('COMPOSE', { design_path: dPath });
-  return okResult(op, { type: 'poster', layers, layer_count: total, mode: spec._mode, theme: spec.theme?.ref, document: spec.document, truncated: total > limit, constrained_metadata_only: constrained && total > limit, progress, context, handover });
+  return okResult(op, { type: 'poster', ...surfaceFacts(spec), layers, layer_count: total, mode: spec._mode, theme: spec.theme?.ref, document: spec.document, truncated: total > limit, constrained_metadata_only: constrained && total > limit, progress, context, handover });
 }
 
 /** Every layer id already present in the design (pages + top-level + nested). */
