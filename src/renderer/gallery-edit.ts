@@ -84,8 +84,11 @@ export function withItemOverride(hit: GeneratedHit, props: Record<string, unknow
       // A key set back to the template's value clears the item's own (null, in deepMerge).
       p[k] = Object.fromEntries(Object.entries(v).map(([kk, vv]) => [kk, JSON.stringify(vv) === JSON.stringify(t[kk]) ? null : vv]));
     }
-    if (typeof p['x'] === 'number') p['x'] = (p['x'] as number) - hit.cell.x;
-    if (typeof p['y'] === 'number') p['y'] = (p['y'] as number) - hit.cell.y;
+    const r2 = (v: number): number => Math.round(v * 100) / 100;
+    if (typeof p['x'] === 'number') p['x'] = r2((p['x'] as number) - hit.cell.x);
+    if (typeof p['y'] === 'number') p['y'] = r2((p['y'] as number) - hit.cell.y);
+    // A plain value equal to the template's is the template's: it clears the item's own.
+    for (const [k, v] of Object.entries(p)) if (!isObj(v) && JSON.stringify(v) === JSON.stringify(tpl[k])) p[k] = null;
     const was = overrides[hit.key];
     const next = prune(deepMerge(was && typeof was === 'object' ? was : {}, p));
     if (Object.keys(next).length) overrides[hit.key] = next; else delete overrides[hit.key];
