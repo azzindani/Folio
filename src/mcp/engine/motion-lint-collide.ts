@@ -80,8 +80,13 @@ export function frameUnits(frame: Layer[], canvas: { width: number; height: numb
   };
   const holders = new Map<string, boolean>();
   const units = new Map<string, Unit>();
+  // A plain shape laid edge to edge is ground too — a floor, a desk, a sky band.
+  // Found on the one-shot proof piece: a character standing on a 1080-wide desk "came to rest over" it.
+  const band = (b: CanvasBox): boolean => !['text', 'image', 'icon', 'video', 'script', 'group'].includes(b.layer.type)
+    && ((b.box.x <= canvas.width * 0.01 && b.box.x + b.box.width >= canvas.width * 0.99)
+      || (b.box.y <= canvas.height * 0.01 && b.box.y + b.box.height >= canvas.height * 0.99));
   boxes.forEach((b, paint) => {
-    if (area(b.box) <= 0 || area(b.box) >= 0.8 * whole) return;
+    if (area(b.box) <= 0 || area(b.box) >= 0.8 * whole || band(b)) return;
     const chain = up.get(b.layer.id) ?? [];
     // The outermost enclosing group that is not a scene holder names the object.
     const owner = chain.find(id => {

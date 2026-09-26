@@ -9,7 +9,7 @@ import { hasScripts } from '../../scripting/script-frames';
 import { findFlatTextStyle } from '../../schema/validator';
 import { lintComposition, reviewComposition, type Stage } from './design-lint';
 import { lintAiSlop } from './ai-slop-lint';
-import { windowOf, intersectWindows } from '../../animation/lifespan';
+import { seenWindows, overlapInTime } from '../../animation/lifespan';
 import { findTextOverflows } from './text-measure';
 import { joinSplitPieces } from './split-join';
 import { inkLeft, drawnBox } from '../../export/frame-geometry';
@@ -220,13 +220,11 @@ function geometryFindings(layers: Layer[], W: number, H: number, world?: Stage):
     const d = l ? drawnBox(l) : null;
     return d ? { ...b, x: d.x, y: d.y, w: d.width, h: d.height } : b;
   };
-  // Two layers whose in/out points never meet are never on screen together —
-  // headlines on one spot, one leaving before the other lands, is a composition.
-  const life = new Map(layers.map(l => [l.id, windowOf(l)]));
-  const together = (p: string, q: string): boolean => {
-    const w = intersectWindows(life.get(p) ?? null, life.get(q) ?? null);
-    return !w || w.in < w.out;
-  };
+  // Two layers never seen together are not a pile-up: headlines on one spot, one
+  // leaving before the other lands, is a composition — by in/out points or by the
+  // fades that bring them on and take them off (lifespan.ts seenWindow).
+  const life = seenWindows(layers);
+  const together = (p: string, q: string): boolean => overlapInTime(life.get(p), life.get(q));
   for (let i = 0; i < content.length; i++) {
     for (let j = i + 1; j < content.length; j++) {
       const a = content[i], c = content[j];
@@ -269,7 +267,7 @@ function geometryFindings(layers: Layer[], W: number, H: number, world?: Stage):
   const inkPairs: Array<[typeof edges[number], typeof edges[number]]> = [];
   for (let i = 0; i < edges.length; i++) {
     for (let j = i + 1; j < edges.length; j++) {
-      if (edges[i].edge !== edges[j].edge || edges[i].id === edges[j].id) continue;
+      if (edges[i].edge !== edges[j].edge || edges[i].id === edges[j].id || !together(edges[i].id, edges[j].id)) continue;
       const pi = edges[i].ink, pj = edges[j].ink;
       const d = Math.abs(edges[i].v - edges[j].v);
       const key = [edges[i].id, edges[j].id, edges[i].edge].sort().join('|');
