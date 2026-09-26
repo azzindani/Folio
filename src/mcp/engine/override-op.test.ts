@@ -91,3 +91,42 @@ describe('gallery overrides', () => {
     expect(cells[1]?.layers.find(l => l.id === 'people_2_name')).toMatchObject({ style: { color: '#E4572E' } });
   });
 });
+
+describe('overrides on a gallery nested in a gallery (close-out C3)', () => {
+  // Two rows, each holding a nested gallery of three chips: rows_2_chips_3_chip is generated twice over.
+  const nested = (overrides?: object): object => ({
+    _protocol: 'design/v1', meta: { id: 'n', name: 'Nested', type: 'poster', created: '', modified: '' }, document: { width: 1080, height: 1080 },
+    layers: [{ id: 'rows', type: 'group', z: 1, x: 100, y: 100, width: 800, height: 400, layers: [], gallery: { items: [{ t: 'A' }, { t: 'B' }], columns: 1, gap: 40,
+      ...(overrides ? { overrides } : {}), template: [
+        { id: 'title', type: 'text', z: 1, x: 0, y: 0, width: 300, height: 40, content: { type: 'plain', value: '{{t}}' }, style: { font_size: 30, color: '#141414' } },
+        { id: 'chips', type: 'group', z: 1, x: 0, y: 60, width: 600, height: 60, layers: [], gallery: { items: 3, gap: 20, template: [
+          { id: 'chip', type: 'rect', z: 0, x: 0, y: 0, width: 100, height: 60, fill: '#2B3A4A' }] } },
+      ] } }],
+  });
+  const put = (overrides?: object): string => { const p = path.join(tmpDir, 'n.design.yaml'); fs.writeFileSync(p, yaml.dump(nested(overrides))); return p; };
+
+  it('move, restyle and remove one nested item by the id diagnose names — stored on the outer gallery, that cell only', () => {
+    const p = put();
+    const before = item(read(p), 'rows_2_chips_3_chip') as Layer & { x: number; y: number };
+    expect(before).toMatchObject({ x: 100 + 2 * (560 / 3 + 20), y: 100 + 180 + 40 + 60 });
+    const r = moveLayers({ design_path: p, layer_id: 'rows_2_chips_3_chip', dy: 10 }) as unknown as { success: boolean };
+    expect(r.success).toBe(true);
+    expect(updateLayer({ design_path: p, layer_id: 'rows_2_chips_2_chip', props: { fill: '#E4572E' } as never }).success).toBe(true);
+    expect(removeLayer({ design_path: p, layer_id: 'rows_1_chips_1' }).success).toBe(true);
+    const s = read(p);
+    const ov = (s.layers?.[0] as unknown as { gallery: { overrides: Record<string, unknown> } }).gallery.overrides;
+    expect(Object.keys(ov).sort()).toEqual(['rows_1_chips_1', 'rows_2_chips_2_chip', 'rows_2_chips_3_chip']);
+    expect(item(s, 'rows_2_chips_3_chip')).toMatchObject({ y: before.y + 10 });
+    expect(item(s, 'rows_1_chips_3_chip')).toMatchObject({ y: 100 + 60 });
+    expect(item(s, 'rows_2_chips_2_chip')).toMatchObject({ fill: '#E4572E' });
+    expect(item(s, 'rows_1_chips_2_chip')).toMatchObject({ fill: '#2B3A4A' });
+    expect(item(s, 'rows_1_chips_1')).toBeUndefined();
+    expect(item(s, 'rows_2_chips_1')).toBeDefined();
+  });
+
+  it('refuses a nested cell\'s box by the gallery that makes it, and an item past the rows', () => {
+    const p = put();
+    expect(updateLayer({ design_path: p, layer_id: 'rows_1_chips_2', props: { x: 10 } as never }).error).toMatch(/cell of "rows_1_chips"/);
+    expect(updateLayer({ design_path: p, layer_id: 'rows_3_chips_1_chip', props: { x: 10 } as never }).error).toMatch(/Layer not found/);
+  });
+});

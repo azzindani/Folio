@@ -15,11 +15,11 @@ import type { Layer, GallerySpec } from '../schema/types';
 import { isFormula } from '../scripting/formula';
 import { evalSource, resolveSourceFormulas, type SourceScope, type SourceProblem } from '../scripting/formula-source';
 import { resolveMotionRules } from './resolve-motion';
-import { withOverrides, applyOverride } from './gallery-overrides';
+import { withOverrides, applyOverride, type Overrides } from './gallery-overrides';
 
 export const GALLERY_CAP = 200;
 
-type Row = Record<string, unknown>;
+export type Row = Record<string, unknown>;
 type Node = Layer & { layers?: Layer[]; gallery?: GallerySpec };
 export interface Cell { x: number; y: number; width: number; height: number; row: number; col: number }
 
@@ -88,28 +88,47 @@ function place(l: Layer, cell: Cell, placedByParent: boolean): Layer {
   return o as unknown as Layer;
 }
 
+/** What a cell's formulas read: the design's names plus Item (its row), Index, Row, Col, N, CellW and CellH. */
+export function cellScope(scope: SourceScope, row: Row, i: number, cell: Cell, n: number): SourceScope {
+  return { ...scope, names: { ...scope.names, Item: row, Index: i, Row: cell.row, Col: cell.col, N: n, CellW: cell.width, CellH: cell.height } };
+}
+
+/** One cell's template layers as they are drawn: overrides, {{key}}, ids and formulas in the template's frame, then onto the cell. */
+export function frameCell(template: Layer[], cellId: string, row: Row, i: number, cell: Cell, scope: SourceScope, overrides: Overrides | undefined, problems?: SourceProblem[]): Layer[] {
+  // Formulas work in the template's frame, like the template itself ("=Item.col * 444" is inside the
+  // gallery): evaluated before the cell's offset, never after it (b31 rebuild, S8 live).
+  const framed = resolveSourceFormulas(withOverrides(template, cellId, overrides).map(t => rename(fill(t, { ...row, i: i + 1 }) as Layer, cellId)), scope, problems);
+  return framed.map(t => place(t, cell, false));
+}
+
+/**
+ * The overrides a gallery replays: its own, and those of the galleries around
+ * it (close-out C3). Keys are generated ids, unique at every depth, so an edit
+ * to an item of a nested gallery is stored on the outermost one — the gallery
+ * in the file — and wins over the template's own.
+ */
+export const mergeOverrides = (own: Overrides | undefined, outer: Overrides | undefined): Overrides | undefined =>
+  own || outer ? { ...own, ...outer } : undefined;
+
 /** The tree with every gallery laid out as ordinary groups; the same array when there is none. */
-export function resolveGalleries(layers: Layer[], scope: SourceScope, problems?: SourceProblem[]): Layer[] {
+export function resolveGalleries(layers: Layer[], scope: SourceScope, problems?: SourceProblem[], outer?: Overrides): Layer[] {
   const out = layers.map((l): Layer => {
     const node = l as Node;
-    const kids = Array.isArray(node.layers) ? resolveGalleries(node.layers, scope, problems) : undefined;
+    const kids = Array.isArray(node.layers) ? resolveGalleries(node.layers, scope, problems, outer) : undefined;
     const g = l.type === 'group' ? node.gallery : undefined;
     if (!g || !Array.isArray(g.template)) return kids && kids !== node.layers ? ({ ...node, layers: kids } as Layer) : l;
     const rows = rowsOf(g, scope, l.id, problems);
     const cells = galleryCells(g, node, rows.length);
+    const overrides = mergeOverrides(g.overrides, outer);
     const items = rows.flatMap((row, i): Layer[] => {
       const cell = cells[i] ?? { x: 0, y: 0, width: 0, height: 0, row: 0, col: 0 };
       const cellId = `${l.id}_${i + 1}`;
       // One item's own edits (gallery-overrides.ts); null takes the item out.
-      const own = g.overrides?.[cellId];
+      const own = overrides?.[cellId];
       if (own === null) return [];
-      const names = { ...scope.names, Item: row, Index: i, Row: cell.row, Col: cell.col, N: rows.length, CellW: cell.width, CellH: cell.height };
-      const cellScope = { ...scope, names };
-      // Formulas work in the template's frame, like the template itself ("=Item.col * 444" is inside the
-      // gallery): evaluated before the cell's offset, never after it (b31 rebuild, S8 live).
-      const framed = resolveSourceFormulas(withOverrides(g.template, cellId, g.overrides).map(t => rename(fill(t, { ...row, i: i + 1 }) as Layer, cellId)), cellScope, problems);
+      const cs = cellScope(scope, row, i, cell, rows.length);
       // A cell's rules read its row: "=Index * 120" staggers the cells.
-      const inner = resolveGalleries(resolveMotionRules(framed.map(t => place(t, cell, false)), cellScope, problems), cellScope, problems);
+      const inner = resolveGalleries(resolveMotionRules(frameCell(g.template, cellId, row, i, cell, cs, overrides, problems), cs, problems), cs, problems, overrides);
       const group = { id: cellId, type: 'group', z: i, x: cell.x, y: cell.y, width: cell.width, height: cell.height, layers: inner } as unknown as Layer;
       // The cell's box is the layout's: an item moves by its layers' overrides.
       const { x: _x, y: _y, width: _w, height: _h, layers: _l, ...props } = own ?? {};

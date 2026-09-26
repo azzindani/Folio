@@ -38,6 +38,8 @@ with patch_design on layers[id=people].gallery.
 ONE item: edit it by its id (people_4_role) with edit_layer update/move/remove
 or patch_design layers[id=people_4_role].… — kept as gallery.overrides (template
 frame, replayed on every render; null = item removed). An editor drag does the same.
+A gallery in a gallery's template works the same: rows_2_chips_3_chip is edited by
+that id and kept on the outer gallery (the one in the file), that cell only.
 
 ## animation.rule — motion stored as what it is
   animation: {rule: {preset:"rise", at:1200, duration:600, easing:"ease-out"}}
