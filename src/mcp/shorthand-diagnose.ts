@@ -3,6 +3,7 @@ import type { Layer } from '../schema/types';
 import { resolveIconName } from '../renderer/lucide-icons';
 
 import { ShorthandLayer, Box } from './shorthand-helpers';
+import { keepsItsPlace } from './engine-finalize-time';
 
 export const KNOWN_SHORTHAND_KEYS = new Set<string>([
   // engine-internal markers (set by the engine, not the model — never flagged)
@@ -128,11 +129,14 @@ export function overlapRatio(a: Box, b: Box): number {
 // classic small-model failure: hand-placing N card headings at the same spot).
 // We check only top-level text siblings (shared canvas coords); container
 // children are positioned by the engine and must not be flagged. Returns one
-// note that steers toward the preset / container that owns layout.
+// note that steers toward the preset / container that owns layout. A layer the
+// engine leaves where it is (locked, or placed for a moment — engine-finalize-time)
+// is not reflowed, so the note does not speak to it; whether timed layers meet
+// on screen is the gate's motion review, which sees them at the same moment.
 
 export function detectTextOverlap(layers: Layer[]): string | null {
   const boxed = layers
-    .filter(l => l.type === 'text')
+    .filter(l => l.type === 'text' && !keepsItsPlace(l))
     .map(l => ({ id: l.id, box: layerBox(l) }))
     .filter((t): t is { id: string; box: Box } => t.box !== null);
   const colliding = new Set<string>();

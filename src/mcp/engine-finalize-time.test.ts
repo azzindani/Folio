@@ -6,6 +6,7 @@ import yaml from 'js-yaml';
 import { createProject, createDesign } from './engine-project-tools';
 import { addLayers } from './engine-layer-tools';
 import { placedInTime } from './engine-finalize-time';
+import { detectTextOverlap } from './shorthand-diagnose';
 import type { DesignSpec, Layer } from '../schema/types';
 
 // The one-shot proof piece (stop-forwarding): three beats in one space — the cover's line,
@@ -41,6 +42,11 @@ describe('rescue passes and layers placed for a moment', () => {
     const r = addLayers({ design_path: dPath, layers: beats(true) });
     expect(r.success).toBe(true);
     expect(ys()).toEqual({ cover: 290, problem: 180, payoff: 300 });
+  });
+
+  it('are not told they will be reflowed, nor to lock themselves', () => {
+    expect(detectTextOverlap(beats(true))).toBeNull();
+    expect(detectTextOverlap(beats(false))).toMatch(/text layers overlap/);
   });
 
   it('still pull apart the same layers when nothing says they take turns', () => {
