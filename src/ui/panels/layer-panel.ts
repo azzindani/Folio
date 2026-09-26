@@ -11,6 +11,7 @@ const LAYER_ICONS: Record<string, string> = {
   interactive_chart: '≣', interactive_table: '⊟', kpi_card: '◳', rich_text: '¶',
   button: '⬚', tabs: '⊞', accordion: '☰', filter_bar: '⛃', toggle: '⇄',
   tooltip: 'ⓘ', callout: '❝', progress: '▰', popup: '⬛',
+  script: '{}', video: '▶',
 };
 
 interface TreeNode {

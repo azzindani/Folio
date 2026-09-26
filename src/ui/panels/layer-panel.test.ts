@@ -84,6 +84,15 @@ describe('LayerPanelManager — render on state change', () => {
   });
   afterEach(() => { wrapper.remove(); });
 
+  it('gives script and video layers their own icon, not "?"', () => {
+    state.set('design', makeDesign([
+      { id: 's', type: 'script', z: 2, x: 0, y: 0, width: 100, height: 100, js: 'folio.frame(() => {});' } as unknown as Layer,
+      { id: 'v', type: 'video', z: 1, x: 0, y: 0, width: 100, height: 100, src: 'assets/video/a.mp4' } as unknown as Layer,
+    ]));
+    const icons = [...wrapper.querySelectorAll('.layer-icon')].map(e => e.textContent);
+    expect(icons).toEqual(['{}', '▶']);
+  });
+
   it('renders "No layers" when design is empty', () => {
     state.set('design', makeDesign([]));
     const list = wrapper.querySelector('.layer-list');
