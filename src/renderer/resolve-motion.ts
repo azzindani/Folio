@@ -38,7 +38,9 @@ function numberOf(v: unknown, scope: SourceScope): number | string | undefined {
  * "cta+300") — kept by name, so moving the marker moves every rule on it.
  */
 export function ruleStart(v: unknown, scope: SourceScope): number | string | undefined {
-  if (typeof v !== 'string' || isFormula(v)) return numberOf(v, scope);
+  // A formula reads the markers by name too ("=cta + Index * 300"); a name of the design's own wins.
+  // Found live (Opus 5.5 promo): "cta+300" started at the marker while "=cta + 300" was dropped as unknown.
+  if (typeof v !== 'string' || isFormula(v)) return numberOf(v, scope.markers ? { ...scope, names: { ...scope.markers, ...scope.names } } : scope);
   if (/\.(in|out|start|end)\b/.test(v)) return `"${v}" is a layer's time — a rule starts at ms, a marker ("cta+300") or a "=…" formula`;
   return resolveTime(v, { markers: scope.markers ?? {}, layers: [] });
 }

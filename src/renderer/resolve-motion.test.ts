@@ -49,6 +49,21 @@ describe('motion rules', () => {
     expect(compileRules({ preset: 'rise', at: 'title.end' }, scope)).toMatch(/a layer's time/);
   });
 
+  it('reads markers by name inside an "=…" start, so a gallery staggers from one', () => {
+    const cells = L({ id: 'row', type: 'group', z: 1, x: 0, y: 0, width: 900, height: 100, layers: [],
+      gallery: { items: 3, columns: 3, gap: 0, template: [L({ id: 'dot', type: 'rect', z: 0, x: 0, y: 0, width: 100, height: 100, fill: '#000000',
+        animation: { rule: { preset: 'fade_in', at: '=cta + 500 + Index * 400', duration: 200 } } })] } });
+    const spec = { ...design([cells]), markers: { cta: 2000 } } as DesignSpec;
+    const problems: SourceProblem[] = [];
+    const out = resolveSpec(spec, { problems });
+    const kids = (out.layers?.find(l => l.id === 'row') as unknown as { layers: Layer[] }).layers;
+    const delays = kids.map(c => animOf((c as unknown as { layers: Layer[] }).layers, `${c.id}_dot`)?.playback?.delay);
+    expect(problems).toEqual([]);
+    expect(delays).toEqual([2500, 2900, 3300]);
+    const own = compileRules({ preset: 'rise', at: '=Beat * 2' }, { ...scope, markers: { Beat: 99 } }) as AnimationSpec;
+    expect(own.playback?.delay, 'a name of the design wins over a marker of the same name').toBe(1200);
+  });
+
   it('says why a rule cannot compile', () => {
     expect(compileRules({ preset: 'zigzag_nope' }, scope)).toMatch(/preset "zigzag_nope" is unknown/);
     expect(compileRules({ preset: 'rise', at: '=Bet * 2' }, scope)).toMatch(/at: .*Bet/);

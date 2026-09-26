@@ -50,7 +50,7 @@ function recolorSpec(spec: unknown, map: Record<string, string>): number {
   return n;
 }
 const ROUTED_MSG = (n: number): string =>
-  `Routed ${n} path(s) to the field that renders — the path named a key this layer never reads`;
+  `Routed ${n} path(s) to where they land — a layer inside a group, spelled through it, or the field that renders`;
 const isRecolorSelector = (p: string): boolean => p === 'recolor' || p === 'recolor_all';
 const asHexMap = (v: unknown): Record<string, string> | null =>
   v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, string>) : null;
