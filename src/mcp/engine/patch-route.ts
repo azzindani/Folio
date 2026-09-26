@@ -9,7 +9,7 @@
  * hit it twice (tracking on four headlines; an icon swap on `.icon`), and both
  * models rebuilt whole slides to get round it. edit_layer's canonicalizeProps
  * already fixes the same disagreement for `update`; this is that rule at the
- * patch door.
+ * patch door. A layer inside a group is reached by its id the same way.
  */
 import { FLAT_TEXT_STYLE_KEYS } from '../../schema/validator';
 import { tokenizePath, descend } from '../engine-runtime-tools';
@@ -53,11 +53,51 @@ export interface PatchRoute {
 }
 
 /**
- * Route one patch path. Only a trailing KEY on a text, rich_text or icon layer
- * is ever rewritten; every other path passes through untouched. Routing into a
- * missing `style` creates it on `spec`, so the write that follows lands.
+ * Route one patch path: to a layer held inside a group (reachNested), then to
+ * the field that renders (routeField). Every other path passes through untouched.
  */
-export function routePatchPath(spec: Record<string, unknown>, dotPath: string): PatchRoute {
+export function routePatchPath(spec: Record<string, unknown>, asked: string): PatchRoute {
+  const r = routeField(spec, reachNested(spec, asked));
+  return r.path === asked ? { path: asked } : { path: r.path, from: asked };
+}
+
+type Held = { id?: unknown; layers?: unknown };
+
+/** The ids from `layers` down to the layer `id`, depth first; null when no layer holds it. */
+function chainTo(layers: unknown, id: string): string[] | null {
+  if (!Array.isArray(layers)) return null;
+  for (const l of layers as Held[]) {
+    if (l == null || typeof l !== 'object') continue;
+    if (String(l.id) === id) return [id];
+    const below = chainTo(l.layers, id);
+    if (below) return [String(l.id), ...below];
+  }
+  return null;
+}
+
+/**
+ * `layers[id=x]` reaches only the top level, so a layer inside a group — a
+ * continuous scene keeps its whole world in one — did not resolve, and the
+ * reply's only hint was to inspect (found live on the Opus 5.5 promo; edit_layer
+ * reached it). An id held deeper is spelled out through its groups instead.
+ */
+function reachNested(spec: Record<string, unknown>, dotPath: string): string {
+  const m = dotPath.match(/^((?:pages\[[^\]]+\]\.)?)layers\[id=([^\]]+)\](.*)$/);
+  if (!m) return dotPath;
+  const [, prefix = '', id = '', rest = ''] = m;
+  let host: unknown = spec;
+  for (const t of tokenizePath(prefix.replace(/\.$/, ''))) host = descend(host, t);
+  const layers = host != null && typeof host === 'object' ? (host as Held).layers : undefined;
+  const chain = chainTo(layers, id);
+  if (!chain || chain.length < 2) return dotPath;
+  return `${prefix}${chain.map(c => `layers[id=${c}]`).join('.')}${rest}`;
+}
+
+/**
+ * Only a trailing KEY on a text, rich_text or icon layer is ever rewritten.
+ * Routing into a missing `style` creates it on `spec`, so the write that follows lands.
+ */
+function routeField(spec: Record<string, unknown>, dotPath: string): PatchRoute {
   const toks = tokenizePath(dotPath);
   const last = toks[toks.length - 1];
   if (toks.length < 2 || last.kind !== 'key' || !dotPath.endsWith(`.${last.key}`)) return { path: dotPath };

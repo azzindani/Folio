@@ -40,6 +40,15 @@ describe('routePatchPath', () => {
     }
   });
 
+  it('reaches a layer inside a group by its id alone, through every group above it (Opus 5.5 promo)', () => {
+    const s = spec();
+    expect(routePatchPath(s, 'layers[id=h1].y')).toEqual({ path: 'layers[id=world].layers[id=h1].y', from: 'layers[id=h1].y' });
+    expect(routePatchPath(s, 'layers[id=h1].tracking').path).toBe('layers[id=world].layers[id=h1].style.letter_spacing');
+    const paged = { pages: [{ id: 'p2', layers: s['layers'] }] };
+    expect(routePatchPath(paged, 'pages[id=p2].layers[id=ico].x').path).toBe('pages[id=p2].layers[id=world].layers[id=ico].x');
+    for (const p of ['layers[id=world].locked', 'layers[id=nope].x', 'layers[0].x']) expect(routePatchPath(s, p)).toEqual({ path: p });
+  });
+
   it('creates style when routing typography into a text layer without one', () => {
     const s = spec();
     expect(routePatchPath(s, 'layers[0].layers[2].font_size').path).toBe('layers[0].layers[2].style.font_size');
@@ -76,6 +85,15 @@ describe('patch_design routes a shadowed key (r1 benchmark)', () => {
     expect(kids[0]['letter_spacing']).toBeUndefined();
     expect(kids[1]['name']).toBe('clipboard');
     expect(kids[1]['icon']).toBeUndefined();
+  });
+
+  it('writes a nested layer named by id alone, where it lives', () => {
+    const r = patchDesign({ design_path: file, selectors: [{ path: 'layers[id=r].y', value: 500 }] });
+    expect(r.success).toBe(true);
+    expect(r.routed).toEqual([{ from: 'layers[id=r].y', to: 'layers[id=world].layers[id=r].y' }]);
+    const doc = readYAML<{ layers: { layers: Record<string, unknown>[] }[] }>(file);
+    expect(doc.layers[0].layers[3]['y']).toBe(500);
+    expect(doc.layers).toHaveLength(1);
   });
 
   it('dry_run reports the route without writing', () => {
