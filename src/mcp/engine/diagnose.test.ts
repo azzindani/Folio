@@ -174,6 +174,11 @@ describe('analyzeLayers — sparse-content nudge → enrich_brief', () => {
       text('body', 96, 320, 700, 120, 24), text('stat', 96, 500, 400, 100, 72)];
     expect(codes(layers)).not.toContain('sparse_content');
   });
+
+  it('does NOT flag a script component — its drawing is the content (close-out C4)', () => {
+    const walk = { id: 'walk', type: 'script', z: 1, x: 0, y: 0, width: W, height: H, html: '<canvas></canvas>', js: 'folio.frame(t => {})' } as unknown as Layer;
+    expect(codes([bg, walk])).not.toContain('sparse_content');
+  });
 });
 
 describe('analyzeLayers — stacked full-canvas presets (re-added not replaced)', () => {
