@@ -72,6 +72,20 @@ describe('galleries', () => {
     expect(cards.map(c => [c?.x, c?.y])).toEqual([[200, 600], [800, 600 + 201]]);
   });
 
+  it('fills a nested gallery\'s template from ITS rows, not the cell around it (close-out C3, found live)', () => {
+    const inner = L({ id: 'chips', type: 'group', z: 1, x: 0, y: 60, width: 600, height: 40, layers: [], gallery: {
+      items: [{ tag: 'jazz' }, { tag: 'folk' }], template: [L({ id: 'chip', type: 'text', z: 0, x: 0, y: 0, width: 200, height: 40, content: { type: 'plain', value: '{{i}}. {{tag}}' } })] } });
+    const outer = L({ id: 'rows', type: 'group', z: 1, x: 0, y: 0, width: 600, height: 300, layers: [], gallery: { items: [{ t: 'A' }, { t: 'B' }], columns: 1,
+      template: [L({ id: 'title', type: 'text', z: 1, x: 0, y: 0, width: 300, height: 40, content: { type: 'plain', value: '{{i}} {{t}}' } }), inner] } });
+    const text = (id: string): string | undefined => {
+      const find = (ls: Layer[]): Layer | undefined => { for (const l of ls) { if (l.id === id) return l; const k = find(kids(l)); if (k) return k; } return undefined; };
+      return (find(resolveGalleries([outer], { names: {}, W: 1080, H: 1080 })) as { content?: { value?: string } } | undefined)?.content?.value;
+    };
+    expect(text('rows_2_title')).toBe('2 B');
+    expect(text('rows_2_chips_1_chip')).toBe('1. jazz');
+    expect(text('rows_2_chips_2_chip')).toBe('2. folk');
+  });
+
   it('names a list it cannot read', () => {
     const errs = collectFindings(design([gallery({ items: '=Peeple' })]), '/dev/null').filter(f => f.code === 'formula_error');
     expect(errs.map(f => f.message)).toEqual([expect.stringContaining('"people" gallery.items = =Peeple fails')]);

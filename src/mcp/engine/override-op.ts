@@ -24,6 +24,9 @@ export function writeOverride(hit: GeneratedHit, props: Record<string, unknown> 
   return null;
 }
 
+/** A move in px as reported: a fractional cell leaves float noise (-11.666666666666629). */
+const r2 = (v: number): number => Math.round(v * 100) / 100;
+
 const SELECTOR = /^(?:pages\[id=([^\]]+)\]\.)?layers\[id=([^\]]+)\]\.([A-Za-z_][\w.]*)$/;
 
 /**
@@ -77,7 +80,7 @@ export function moveGenerated(args: { design_path: string; project_path?: string
   writeOverride(hit, { x, y });
   writeYAML(dPath, spec);
   return okResult('move_layers', {
-    status: 'ok', layers: [id], dx: x - x0, dy: y - y0, backup,
-    progress: [pOk('Moved 1 layer(s)', `dx ${x - x0}, dy ${y - y0}`), pInfo('Stored as an override of the gallery that makes it — replayed on every render', `"${id}" is made by gallery "${hit.maker ?? hit.gallery.id}"${hit.maker ? `, kept on "${hit.gallery.id}"` : ''}`)],
+    status: 'ok', layers: [id], dx: r2(x - x0), dy: r2(y - y0), backup,
+    progress: [pOk('Moved 1 layer(s)', `dx ${r2(x - x0)}, dy ${r2(y - y0)}`), pInfo('Stored as an override of the gallery that makes it — replayed on every render', `"${id}" is made by gallery "${hit.maker ?? hit.gallery.id}"${hit.maker ? `, kept on "${hit.gallery.id}"` : ''}`)],
   });
 }
