@@ -6,6 +6,7 @@ import yaml from 'js-yaml';
 import { createProject, createDesign } from './engine-project-tools';
 import { addLayers } from './engine-layer-tools';
 import { findGroup } from './engine-layer-parent';
+import { cameraMotion } from './engine/motion-camera-op';
 import type { DesignSpec, Layer } from '../schema/types';
 
 let root = '', dPath = '';
@@ -79,5 +80,29 @@ describe('add_layers {parent_id} — extending a scene that is already built', (
     const r = addLayers({ design_path: dPath, parent_id: 'nope', layers: tiny });
     expect(r.success).toBe(false);
     expect(String((r as unknown as { error: string }).error)).toContain('nope');
+  });
+});
+
+describe('add_layers {parent_id} into a world the camera already holds', () => {
+  const chip = [{ id: 'later', type: 'rect', x: 2100, y: 300, width: 200, height: 80, fill: '#D9774B' }] as unknown as Layer[];
+  const shots = [{ t: 0, target: 'all' }, { t: 1000, target: { x: 1920, y: 0, width: 1920, height: 1080 } }];
+
+  it('passes the layers to the camera, so they move with the world instead of sitting still beside it', () => {
+    addLayers({ design_path: dPath, layers: scene(true) });
+    expect(cameraMotion({ design_path: dPath, shots, world: { x: 0, y: 0, width: 3840, height: 1080 } }).success).toBe(true);
+    const r = addLayers({ design_path: dPath, parent_id: 'scene', layers: chip });
+    expect(r.success).toBe(true);
+    const world = findGroup(load().layers ?? [], 'scene');
+    expect(world?.layers?.map(l => l.id)).toEqual(['__camera']);
+    expect(findGroup(world?.layers, '__camera')?.layers?.map(l => l.id)).toEqual(['__camera_pin', 'card', 'later']);
+    expect(JSON.stringify(r)).toContain('its camera');
+  });
+
+  it('still adds straight into the camera, or into a group without one, when named', () => {
+    addLayers({ design_path: dPath, layers: scene(true) });
+    cameraMotion({ design_path: dPath, shots, world: { x: 0, y: 0, width: 3840, height: 1080 } });
+    const r = addLayers({ design_path: dPath, parent_id: '__camera', layers: chip });
+    expect(JSON.stringify(r)).not.toContain('its camera');
+    expect(findGroup(load().layers ?? [], '__camera')?.layers?.map(l => l.id)).toContain('later');
   });
 });

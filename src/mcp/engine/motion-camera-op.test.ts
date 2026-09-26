@@ -56,6 +56,17 @@ describe('animation op:camera', () => {
     expect(top()[1]?.layers?.some(l => l.id === '__camera')).toBe(false);
   });
 
+  it('names the layers a plain re-run leaves beside the camera, and exclude:[] takes them in', () => {
+    cameraMotion({ design_path: dPath, shots });
+    write([...top(), { id: 'late', type: 'rect', z: 3, x: 900, y: 100, width: 80, height: 80, fill: '#FAF5EC' }]);
+    const r = cameraMotion({ design_path: dPath, shots });
+    expect(JSON.stringify(r)).toContain('beside the camera hold still: late');
+    expect(top().map(l => l.id)).toEqual(['bg', '__camera', 'late']);
+    cameraMotion({ design_path: dPath, shots, exclude: [] });
+    expect(top().map(l => l.id)).toEqual(['bg', '__camera']);
+    expect(top()[1]?.layers?.map(l => l.id)).toContain('late');
+  });
+
   it('holds a layer still when a re-run adds exclude, and puts it back when the list drops it', () => {
     cameraMotion({ design_path: dPath, shots });
     const r = cameraMotion({ design_path: dPath, shots, exclude: ['label'] });

@@ -2,7 +2,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import type { DesignSpec, Layer } from '../schema/types';
-import { addIntoGroup, parentIsLocked, markAutoZ, clearAutoZ } from './engine-layer-parent';
+import { addIntoGroup, addedNote, parentIsLocked, markAutoZ, clearAutoZ } from './engine-layer-parent';
 import { autoFitPosterCanvas } from './engine-layer-autofit';
 import type { ToolResult } from './types';
 
@@ -308,9 +308,9 @@ export function addLayers(args: {
     if (!args.page_id && pages.length === 1) progress.push(pInfo('Routed to the only page', pageId));
     if (!page.layers) page.layers = [];
     if (args.parent_id) {
-      const err = addIntoGroup(page.layers, args.parent_id, incoming, `on page ${pageId}`);
-      if (err) return errResult(op, err, PARENT_HINT, progress);
-      progress.push(pInfo(`Added inside "${args.parent_id}"`, `${incoming.length} layer(s) — the group's own z-order applies`));
+      const added = addIntoGroup(page.layers, args.parent_id, incoming, `on page ${pageId}`);
+      if ('error' in added) return errResult(op, added.error, PARENT_HINT, progress);
+      progress.push(addedNote(args.parent_id, added.into, incoming.length));
     } else {
       const sunk = demoteCoveringBackdrops(page.layers, incoming, spec.document.width, spec.document.height);
       if (sunk) progress.push(pInfo(`Sank ${sunk} full-canvas backdrop(s) behind page content`, 'a background added last would have blanked the page'));
@@ -322,9 +322,9 @@ export function addLayers(args: {
     if (!spec.layers) spec.layers = [];
     const hadContent = spec.layers.length > 0;
     if (args.parent_id) {
-      const err = addIntoGroup(spec.layers, args.parent_id, incoming, 'in this design');
-      if (err) return errResult(op, err, PARENT_HINT, progress);
-      progress.push(pInfo(`Added inside "${args.parent_id}"`, `${incoming.length} layer(s) — the group's own z-order applies`));
+      const added = addIntoGroup(spec.layers, args.parent_id, incoming, 'in this design');
+      if ('error' in added) return errResult(op, added.error, PARENT_HINT, progress);
+      progress.push(addedNote(args.parent_id, added.into, incoming.length));
     } else {
       const sunk = demoteCoveringBackdrops(spec.layers, incoming, spec.document.width, spec.document.height);
       if (sunk) progress.push(pInfo(`Sank ${sunk} full-canvas backdrop(s) behind poster content`, 'a background added last would have blanked the poster'));

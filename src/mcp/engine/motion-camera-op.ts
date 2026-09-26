@@ -15,7 +15,7 @@ import * as fs from 'fs';
 import type { DesignSpec, Layer, Page } from '../../schema/types';
 import type { Keyframe, WorldBox } from '../../animation/types';
 import type { ToolResult } from '../types';
-import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, pOk } from './utils';
+import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, pOk, pInfo } from './utils';
 import { resolveScope, commitScope, motionTargets, toIdList, setAnimation } from './motion';
 import { syncAnimationsToSpec } from './animation-sync';
 import { isKnownEasing, easingHint } from '../../animation/easing';
@@ -179,6 +179,9 @@ export function cameraMotion(args: CameraArgs): ToolResult {
   // Layers set at a depth follow the new shots at their share of the move.
   syncDepth(placed);
   const gaps = gapNotes(placed, W, H);
+  // A camera reused as it stands leaves anything added beside it since held still — say which, and how to take them in.
+  const still = existing && !excludeIds ? placed.filter(l => l.id !== CAMERA && !l.id.startsWith(DEPTH) && !isFullCanvasBgRect(l, W, H)).map(l => l.id) : [];
+  if (still.length) gaps.push(pInfo(`${still.length} layer(s) beside the camera hold still: ${still.slice(0, 6).join(', ')}${still.length > 6 ? '…' : ''}`, 'exclude:[] (or the ids to keep still) takes the rest into it'));
   if (pageGroup) commitScope(spec, scoped.page, [{ ...pageGroup, layers: placed } as Layer]);
   else commitScope(spec, scoped.page, placed);
   if (world) host.world = world; else delete host.world;
