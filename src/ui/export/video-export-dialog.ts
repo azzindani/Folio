@@ -11,6 +11,7 @@
 import type { DesignSpec } from '../../schema/types';
 import { planScenes } from '../../export/scene-plan';
 import { animationDuration } from '../../export/gif-frames';
+import { sourceOptions } from '../../renderer/resolve-source';
 import type { VideoFormat } from './video-export';
 
 export { exportVideo } from './video-export';
@@ -34,7 +35,7 @@ export function sizeOptions(doc: { width: number; height: number }): Array<{ sca
 /** How long the export runs: the whole piece for a deck, the page's motion otherwise. */
 export function exportDurationMs(design: DesignSpec, scenes: boolean): number {
   if (scenes) return planScenes(design).total_ms;
-  return animationDuration(design.pages?.[0]?.layers ?? design.layers ?? []);
+  return animationDuration(design.pages?.[0]?.layers ?? design.layers ?? [], sourceOptions(design, design.pages?.[0]));
 }
 
 const storageKey = (type: VideoFormat): string => `folio.videoExport.${type}`;

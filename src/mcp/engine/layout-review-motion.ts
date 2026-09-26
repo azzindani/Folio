@@ -111,7 +111,7 @@ export function reviewMotionPage(spec: DesignSpec, page: Page | undefined, layer
   // motion lands. Measured over the motion alone, every scene of a 30 s
   // explainer "never held still", and one scene's rest fell in a 50 ms gap
   // between two entrances (benchmark r2).
-  const held = page?.auto_advance;
+  const held = page ? page.auto_advance : spec.length_ms;
   const end = typeof held === 'number' && held > 0 ? held : motionEnd;
   const W = spec.document?.width ?? 0;
   const marks = shotMarks(spec, layers, page);

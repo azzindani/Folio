@@ -12,6 +12,8 @@ import type { DesignSpec, Page, PageTransition, PageTransitionType } from '../..
 import type { ToolResult } from '../types';
 import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, pOk } from './utils';
 import { holdToLength } from './motion-poster-length';
+import { animationDuration, oneShotDuration } from '../../export/gif-frames';
+import { sourceOptions } from '../../renderer/resolve-source';
 import { syncAnimationsToSpec } from './animation-sync';
 import { isKnownEasing } from '../../animation/easing';
 import { planScenes, type ScenePlan } from '../../export/scene-plan';
@@ -106,15 +108,30 @@ export function setScene(args: SceneArgs): ToolResult {
     if (args.transition !== undefined || typeof args.length_ms !== 'number') {
       return errResult(op, 'This design has no pages, so nothing enters: a transition needs a page to play between.', 'length_ms still sets how long it lasts — every track holds its last pose to it.');
     }
-    const held = holdToLength(spec.layers ?? [], Math.round(args.length_ms));
+    // Found live (character lab): a piece moved only by loops, rules and script components
+    // was refused — "Nothing here moves" — because only keyframed one-shot tracks were counted.
+    const length = Math.round(args.length_ms);
+    const { length_ms: _was, ...rest } = spec;
+    void _was;
+    const own = sourceOptions(rest as DesignSpec);
+    if (animationDuration(spec.layers ?? [], own) <= 0) {
+      return errResult(op, 'Nothing here moves, so there is no length to set.', 'Give a layer motion first (op:motion, op:track, a rule, a loop or a script component), then set how long the piece lasts.');
+    }
+    const held = holdToLength(spec.layers ?? [], length);
     if ('error' in held) return errResult(op, held.error, held.hint);
+    const lands = oneShotDuration(spec.layers ?? [], own);
+    if (length > 0 && lands > length) {
+      return errResult(op, `Motion still runs until ${lands} ms — a length of ${length} ms would cut it off.`, `Use length_ms ≥ ${lands}, or close time first (op:retime with a negative shift_ms).`);
+    }
     const bak = snapshot(dPath);
     spec.layers = held.layers;
+    if (length > 0) spec.length_ms = length; else delete spec.length_ms;
     syncAnimationsToSpec(spec);
     writeYAML(dPath, spec);
+    const lasts = animationDuration(spec.layers ?? [], sourceOptions(spec));
     return okResult(op, {
-      design_path: dPath, scene_ms: held.ends_ms, tracks_held: held.tracks,
-      progress: [pOk(`Lasts ${held.ends_ms} ms`, `${held.tracks} track(s) hold their last pose to ${args.length_ms ? 'it' : 'their own last key'}`)],
+      design_path: dPath, scene_ms: lasts, tracks_held: held.tracks,
+      progress: [pOk(`Lasts ${lasts} ms`, `${held.tracks} track(s) hold their last pose to ${length ? 'it' : 'their own last key'}${length ? '; loops, rules and script components run to it' : ''}`)],
       next_action: { tool: 'animation', params: { op: 'timeline', design_path: dPath }, remaining: 0, hint: 'op:timeline shows the length; a GIF export plays it at this length.' },
     }, bak);
   }

@@ -81,11 +81,14 @@ export function retimeMotion(args: RetimeArgs): ToolResult {
   const r: Ripple = { at, by: Math.round(by) };
 
   const rep = emptyReport();
-  const before = animationDuration(scoped.scope);
+  // A poster's own length (op:scene) moves with the time it spans, like a page's auto_advance.
+  const own = (v: number | undefined): { length?: number } => (scoped.page || spec.pages?.length || !v ? {} : { length: v });
+  const before = animationDuration(scoped.scope, own(spec.length_ms));
   const layers: Layer[] = rippleLayers(scoped.scope, r, rep);
   const nextMarkers = rippleMarkers(markers, r, rep);
   const page = scoped.page ?? spec.pages?.[0];
   const length = shift(page?.auto_advance, r, 'the scene length', rep);
+  const pieceLength = scoped.page || spec.pages?.length ? undefined : shift(spec.length_ms, r, 'the piece length', rep);
   const oneScene = (spec.pages?.length ?? 0) <= 1;
   const sounds = rippleSoundAndCaptions(spec, r, rep, oneScene, page);
   if (rep.blocked.length) {
@@ -96,10 +99,11 @@ export function retimeMotion(args: RetimeArgs): ToolResult {
   commitScope(spec, scoped.page, layers);
   writeMarkers(spec, scoped.page, nextMarkers);
   if (page && typeof length === 'number') page.auto_advance = length;
+  if (typeof pieceLength === 'number') spec.length_ms = pieceLength;
   syncAnimationsToSpec(spec);
   writeYAML(dPath, spec);
 
-  const after = animationDuration(layers);
+  const after = animationDuration(layers, own(spec.length_ms));
   const shifted = Object.entries(nextMarkers).filter(([n, t]) => markers[n] !== t).map(([n]) => n);
   const progress: ProgressItem[] = [pOk(`${r.by > 0 ? 'Opened' : 'Closed'} ${Math.abs(r.by)}ms at ${at}ms`, `${rep.moved.size} layer(s), ${shifted.length} marker(s)${sounds.length ? `, ${sounds.length} sound/caption cue(s)` : ''} moved · scene ${before} → ${after}ms`)];
   if (rep.stretched.length) progress.push(pWarn(`Moves under way at that time now run ${r.by > 0 ? 'longer' : 'shorter'}`, `${rep.stretched.slice(0, 6).join('; ')}${rep.stretched.length > 6 ? '; …' : ''} — pick a rest to keep their speed.`));

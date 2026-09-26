@@ -7,6 +7,10 @@ import * as yaml from 'js-yaml';
 import { setScene, sceneTimeline } from './motion-scene-op';
 import { renderFrame } from './motion-frame';
 import { exportAnimation } from './motion-export';
+import { retimeMotion } from './motion-retime-op';
+import { buildPosePlan } from '../../editor/motion-pose';
+import { sourceOptions } from '../../renderer/resolve-source';
+import type { DesignSpec } from '../../schema/types';
 
 const hasFfmpeg = ((): boolean => { try { execSync('ffmpeg -version', { stdio: 'ignore' }); return true; } catch { return false; } })();
 
@@ -113,6 +117,29 @@ describe('scenes across timeline, frame and export', () => {
     expect(setScene({ design_path: sting, length_ms: 0 })).toMatchObject({ success: true, scene_ms: 1600 });
     expect(tracks()).toEqual({ dot: 500, late: 600 });
     expect(setScene({ design_path: sting, transition: 'fade' }).success).toBe(false);
+  });
+
+  // Character lab: a piece moved only by a loop rule, a one-shot rule and a looping script was refused.
+  it('gives a piece moved only by rules, loops and scripts a length every reader keeps, and retime moves it', () => {
+    const lab = path.join(path.dirname(design), 'lab.design.yaml');
+    fs.writeFileSync(lab, yaml.dump({ _protocol: 'design/v1', meta: { id: 'l', name: 'L', type: 'poster' }, document: { width: 64, height: 64 }, layers: [
+      ground('#FBF7F0'),
+      { id: 'mug', type: 'rect', z: 1, x: 10, y: 10, width: 20, height: 20, fill: '#E0654B', animation: { rule: { preset: 'sway' } } },
+      { id: 'hi', type: 'rect', z: 1, x: 40, y: 10, width: 10, height: 10, fill: '#000000', animation: { rule: { preset: 'rise', at: 1000, duration: 600 } } },
+      { id: 'blob', type: 'script', z: 1, x: 0, y: 40, width: 20, height: 20, loop: true, duration: 1400, js: 'folio.frame(t => {});' },
+    ] }));
+    const read = (): Record<string, unknown> => yaml.load(fs.readFileSync(lab, 'utf8')) as Record<string, unknown>;
+    const r = setScene({ design_path: lab, length_ms: 6000 });
+    expect(r, JSON.stringify(r)).toMatchObject({ success: true, scene_ms: 6000, tracks_held: 0 });
+    expect(read()['length_ms']).toBe(6000);
+    expect(renderFrame({ design_path: lab, t: 5500, scale: 0.25 })).toMatchObject({ success: true, scene_ms: 6000 });
+    const spec = read() as unknown as DesignSpec;
+    expect(buildPosePlan(spec.layers ?? [], sourceOptions(spec)).duration, 'the editor plays to it').toBe(6000);
+    expect(String(setScene({ design_path: lab, length_ms: 1200 }).error)).toMatch(/still runs until 1600 ms/);
+    expect(retimeMotion({ design_path: lab, at: '3000', shift_ms: 1000 })).toMatchObject({ success: true, scene_ms: { before: 6000, after: 7000 } });
+    expect(read()['length_ms']).toBe(7000);
+    expect(setScene({ design_path: lab, length_ms: 0 })).toMatchObject({ success: true });
+    expect(read()).not.toHaveProperty('length_ms');
   });
 
   it('timeline lays out every scene and marks the transitions', () => {

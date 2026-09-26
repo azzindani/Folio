@@ -30,6 +30,8 @@ export interface ResolveOptions {
   H?: number;
   /** The surface's time markers — a motion rule may start at one ("cta+300"). */
   markers?: Record<string, number>;
+  /** How long the piece lasts, ms (a poster's length_ms): its motion is never measured shorter. */
+  length?: number;
   /** Where formulas that could not be applied are reported. */
   problems?: SourceProblem[];
 }
@@ -39,7 +41,9 @@ export function sourceOptions(spec: DesignSpec, page?: Page, problems?: SourcePr
   const W = spec.document?.width ?? 1080, H = spec.document?.height ?? 1080;
   const raw = { ...(spec.names ?? {}), ...(page?.names ?? {}) };
   const markers = readMarkers(spec, page);
-  return { names: resolveNames(raw, W, H, problems), W, H, ...(Object.keys(markers).length ? { markers } : {}), ...(problems ? { problems } : {}) };
+  // A deck times each page itself (auto_advance); a poster's length is the whole piece's.
+  const length = !page && !spec.pages?.length && typeof spec.length_ms === 'number' && spec.length_ms > 0 ? spec.length_ms : undefined;
+  return { names: resolveNames(raw, W, H, problems), W, H, ...(Object.keys(markers).length ? { markers } : {}), ...(length ? { length } : {}), ...(problems ? { problems } : {}) };
 }
 
 /** The scope formulas and rules are evaluated in, from a surface's options. */

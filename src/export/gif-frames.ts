@@ -72,7 +72,8 @@ export function animationDuration(source: Layer[], names: ResolveOptions = {}): 
   };
   // Precomp clocks and links change when tracks run: measure the resolved tree.
   for (const l of resolveTimeline(layers)) visit(l as AnimatedLayer);
-  return total;
+  // A poster set to last longer (op:scene length_ms) — loops keep cycling to it.
+  return Math.max(total, names.length ?? 0);
 }
 
 /**
