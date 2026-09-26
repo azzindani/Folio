@@ -67,3 +67,20 @@ describe('render cache keeps every SVG self-contained (no dangling def refs)', (
     expect(idOf(renderPage(layers, 200, 200))).toBe(idOf(renderPage(layers, 200, 200)));
   });
 });
+
+// Close-out C6, found live: the cache keyed a script component by its props alone, so the
+// first render won — a page-strip thumbnail (still) froze the presentation's component, and
+// the canvas's live one ran on inside every thumbnail.
+describe('render cache — a script component follows the render it is in', () => {
+  const art = { id: 'art', type: 'script', x: 0, y: 0, width: 100, height: 100, html: '<canvas></canvas>', js: 'folio.frame(t => {})' } as unknown as Layer;
+  const doc = (svg: SVGSVGElement): string => svg.querySelector('iframe')?.getAttribute('srcdoc') ?? '';
+
+  it('a still thumbnail does not freeze the live render after it, nor a live render run on in a thumbnail', () => {
+    const still = renderPage([art], 100, 100, { stillScripts: true });
+    const live = renderPage([art], 100, 100);
+    const stillAgain = renderPage([art], 100, 100, { stillScripts: true });
+    expect(doc(still)).toMatch(/__folioCapture\s*=\s*true/);
+    expect(doc(live)).not.toMatch(/__folioCapture\s*=\s*true/);
+    expect(doc(stillAgain)).toMatch(/__folioCapture\s*=\s*true/);
+  });
+});
