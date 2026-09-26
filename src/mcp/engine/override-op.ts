@@ -59,7 +59,7 @@ export function moveGenerated(args: { design_path: string; project_path?: string
   const hit = findGenerated(spec, id, args.page_id);
   if (!hit) return null;
   if (!hit.template || Array.isArray((hit.template as Layer & { layers?: unknown }).layers)) {
-    return errResult('move_layers', `"${id}" is made by gallery "${hit.gallery.id}" and moves with its cell.`, 'Move one of its layers, change the gallery\'s columns / gap / cell, or detach the gallery (edit_layer op:detach).');
+    return errResult('move_layers', `"${id}" is made by gallery "${hit.maker ?? hit.gallery.id}" and moves with its cell.`, 'Move one of its layers, change the gallery\'s columns / gap / cell, or detach the gallery (edit_layer op:detach).');
   }
   const drawn = resolveSpec(spec);
   const now = findIn([...(drawn.layers ?? []), ...(drawn.pages ?? []).filter(p => !args.page_id || p.id === args.page_id).flatMap(p => p.layers ?? [])], id) as (Layer & { width?: unknown; height?: unknown }) | undefined;
@@ -78,6 +78,6 @@ export function moveGenerated(args: { design_path: string; project_path?: string
   writeYAML(dPath, spec);
   return okResult('move_layers', {
     status: 'ok', layers: [id], dx: x - x0, dy: y - y0, backup,
-    progress: [pOk('Moved 1 layer(s)', `dx ${x - x0}, dy ${y - y0}`), pInfo('Stored as an override of the gallery that makes it — replayed on every render', `"${id}" is made by gallery "${hit.gallery.id}"`)],
+    progress: [pOk('Moved 1 layer(s)', `dx ${x - x0}, dy ${y - y0}`), pInfo('Stored as an override of the gallery that makes it — replayed on every render', `"${id}" is made by gallery "${hit.maker ?? hit.gallery.id}"${hit.maker ? `, kept on "${hit.gallery.id}"` : ''}`)],
   });
 }

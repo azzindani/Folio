@@ -7,13 +7,14 @@
  */
 
 import type { DesignSpec, GallerySpec, Layer, Page } from '../schema/types';
-import { galleryCells, rowsOf, type Cell } from './resolve-gallery';
-import { locateItem, deepMerge } from './gallery-overrides';
+import { galleryCells, rowsOf, cellScope, frameCell, mergeOverrides, type Cell } from './resolve-gallery';
+import { locateItem, deepMerge, type Overrides } from './gallery-overrides';
 import { sourceOptions, scopeOf } from './resolve-source';
-import { resolveSourceFormulas } from '../scripting/formula-source';
+import { resolveSourceFormulas, type SourceScope } from '../scripting/formula-source';
 
 type Gallery = Layer & { gallery: GallerySpec; layers?: Layer[] };
-export interface GeneratedHit { gallery: Gallery; key: string; cell: Cell; template?: Layer }
+/** `gallery` is where the edit is stored (in the file); `maker` the gallery that makes the item, when it is nested deeper. */
+export interface GeneratedHit { gallery: Gallery; key: string; cell: Cell; template?: Layer; maker?: string }
 
 const isObj = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
 
@@ -34,26 +35,59 @@ export const findIn = (ls: Layer[], id: string): Layer | undefined => {
   return undefined;
 };
 
-/** The gallery that generates `id`, with the item's cell and template layer — null when `id` is no generated item. */
+type Found = Omit<GeneratedHit, 'gallery'>;
+const hasGallery = (l: Layer): l is Gallery => l.type === 'group' && Array.isArray((l as Gallery).gallery?.template);
+
+/**
+ * `id` among the items of the gallery `node` (its box as drawn) — or, below
+ * one of its cells, among the items of a gallery its template nests there,
+ * framed in that cell as the resolver frames it (close-out C3).
+ */
+function searchGallery(node: Gallery, scope: SourceScope, id: string, outer: Overrides | undefined): Found | null {
+  const g = node.gallery;
+  const rows = rowsOf(g, scope, node.id);
+  const cells = galleryCells(g, node, rows.length);
+  const at = locateItem(node.id, g.template, rows.length, id);
+  if (at) {
+    const cell = cells[at.index];
+    return cell ? { key: at.templateId ? `${at.cellId}_${at.templateId}` : at.cellId, cell, maker: node.id, ...(at.templateId ? { template: findIn(g.template, at.templateId) } : {}) } : null;
+  }
+  const m = /^(\d+)_/.exec(id.slice(node.id.length + 1));
+  const i = m ? Number(m[1]) - 1 : -1;
+  const cell = cells[i], row = rows[i];
+  if (!cell || !row) return null;
+  const overrides = mergeOverrides(g.overrides, outer);
+  const cs = cellScope(scope, row, i, cell, rows.length);
+  const walk = (ls: Layer[]): Found | null => {
+    for (const l of ls) {
+      const hit = hasGallery(l) && id.startsWith(`${l.id}_`) ? searchGallery(l, cs, id, overrides) : null;
+      if (hit) return hit;
+      const deeper = walk((l as Layer & { layers?: Layer[] }).layers ?? []);
+      if (deeper) return deeper;
+    }
+    return null;
+  };
+  return walk(frameCell(g.template, `${node.id}_${i + 1}`, row, i, cell, cs, overrides));
+}
+
+/**
+ * The gallery an edit to `id` is stored on — the one in the file, however deep
+ * the gallery that makes `id` is nested — with the item's cell and template
+ * layer. Null when `id` is no generated item.
+ */
 export function findGenerated(spec: DesignSpec, id: string, pageId?: string): GeneratedHit | null {
   const surfaces: { page?: Page; layers: Layer[] }[] = pageId
     ? (spec.pages ?? []).filter(p => p.id === pageId).map(p => ({ page: p, layers: p.layers ?? [] }))
     : [{ layers: spec.layers ?? [] }, ...(spec.pages ?? []).map(p => ({ page: p, layers: p.layers ?? [] }))];
   for (const s of surfaces) {
-    const o = sourceOptions(spec, s.page);
-    const scope = scopeOf(o);
+    const scope = scopeOf(sourceOptions(spec, s.page));
     const walk = (ls: Layer[]): GeneratedHit | null => {
       for (const l of ls) {
-        const g = (l as Gallery).gallery;
-        if (l.type === 'group' && g && Array.isArray(g.template)) {
-          const n = rowsOf(g, scope, l.id).length;
-          const at = locateItem(l.id, g.template, n, id);
-          if (at) {
-            // The box as drawn: the gallery's own formulas (x, width…) applied first.
-            const box = resolveSourceFormulas([l], scope)[0] ?? l;
-            const cell = galleryCells(g, box, n)[at.index];
-            if (cell) return { gallery: l as Gallery, key: at.templateId ? `${at.cellId}_${at.templateId}` : at.cellId, cell, ...(at.templateId ? { template: findIn(g.template, at.templateId) } : {}) };
-          }
+        if (hasGallery(l) && id.startsWith(`${l.id}_`)) {
+          // The box as drawn: the gallery's own formulas (x, width…) applied first.
+          const box = (resolveSourceFormulas([l], scope)[0] ?? l) as Gallery;
+          const found = searchGallery(box, scope, id, undefined);
+          if (found) return { gallery: l, ...found };
         }
         const hit = walk((l as Layer & { layers?: Layer[] }).layers ?? []);
         if (hit) return hit;
@@ -74,7 +108,7 @@ export function withItemOverride(hit: GeneratedHit, props: Record<string, unknow
   else {
     const p = { ...props };
     if (!hit.template && ['x', 'y', 'width', 'height'].some(k => k in p)) {
-      return `"${hit.key}" is a cell of "${hit.gallery.id}" — its box is the gallery's layout. Move its layers (${hit.key}_…), or change the gallery's columns, gap or cell`;
+      return `"${hit.key}" is a cell of "${hit.maker ?? hit.gallery.id}" — its box is the gallery's layout. Move its layers (${hit.key}_…), or change the gallery's columns, gap or cell`;
     }
     // Only what differs from the template: a style merged whole would pin every other key of it.
     const tpl = (hit.template ?? {}) as Record<string, unknown>;
