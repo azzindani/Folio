@@ -36,6 +36,7 @@ export function dispatchEditLayer(a: Args): ToolResult | Promise<ToolResult> {
     case 'patch_spec': return engine.patchDesignSpec(a as Parameters<typeof engine.patchDesignSpec>[0]);
     case 'shape':  return engine.shapeOp(a as unknown as Parameters<typeof engine.shapeOp>[0]);
     case 'split_text': return engine.splitText(a as unknown as Parameters<typeof engine.splitText>[0]);
+    case 'detach': return engine.detachLayers(a as unknown as Parameters<typeof engine.detachLayers>[0]);
     default:       return badOp('edit_layer', a['op']);
   }
 }

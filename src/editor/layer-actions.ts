@@ -4,6 +4,7 @@
 import { StateManager } from './state';
 import type { Layer } from '../schema/types';
 import { serializeYAML, parseYAML } from '../schema/parser';
+import { resolveLayers, sourceOptions, carriesRule } from '../renderer/resolve-source';
 
 let duplicateCounter = 0;
 let groupCounter = 0;
@@ -98,6 +99,28 @@ export function ungroupSelected(state: StateManager): void {
   if (groups.length > 0) {
     const childIds = groups.flatMap(g => ((g as unknown as { layers: Layer[] }).layers ?? []).map((l: Layer) => l.id));
     state.set('selectedLayerIds', childIds);
+  }
+}
+
+/**
+ * Detach: bake the selection's rules — source formulas, a gallery, a motion
+ * rule — into the literal values, cells and keys they draw, so they can be
+ * edited by hand. The same step every render runs (resolve-source), so nothing
+ * moves; one undo puts the rules back.
+ */
+export function detachSelected(state: StateManager): void {
+  const { design, currentPageIndex } = state.get();
+  if (!design) return;
+  const opts = sourceOptions(design, design.pages?.[currentPageIndex]);
+  const ruled = state.getSelectedLayers().filter(carriesRule);
+  let first = true;
+  for (const l of ruled) {
+    const baked = resolveLayers([l], opts)[0];
+    if (!baked || baked === l) continue;
+    const o = baked as unknown as Record<string, unknown>;
+    // The first write records the undo: one step puts every rule back.
+    state.updateLayer(l.id, { ...baked, formulas: o['formulas'], gallery: undefined } as Partial<Layer>, first);
+    first = false;
   }
 }
 

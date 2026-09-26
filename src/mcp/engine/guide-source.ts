@@ -52,6 +52,12 @@ layers[id=…].animation.rule. A rule that cannot compile → diagnose rule_erro
   (a page: pages[id=p2].names / pages[id=p2].layers[id=card].formulas)
 Change the name once → every layer reading it follows.
 
+## Detach — when you want to hand-edit the result
+edit_layer {op:"detach", layer_id} bakes that layer's formulas into values, its
+gallery into literal cells <id>_<n>, its animation.rule into keyframes — drawn
+exactly as before, then editable one by one. No layer_id = every rule on the
+page (page_id) or in the design. In the editor: right-click → Detach rule.
+
 ## When one fails
 It is NOT applied — the property keeps its literal value — and diagnose_design
 reports formula_error naming the layer, the property and the reason.
