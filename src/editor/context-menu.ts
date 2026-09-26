@@ -15,6 +15,7 @@ import {
 } from './interactions';
 import * as actions from './layer-actions';
 import { sc } from '../utils/shortcut';
+import { carriesRule } from '../renderer/resolve-source';
 
 interface MenuItem {
   label: string;
@@ -57,6 +58,7 @@ export class CanvasContextMenu {
     const sel = this.state.getSelectedLayers();
     const n = sel.length;
     const hasGroup = sel.some(l => l.type === 'group');
+    const ruled = sel.some(carriesRule);
     const anyUnlocked = sel.some(l => !(l as { locked?: boolean }).locked);
     const allHidden = n > 0 && sel.every(l => (l as { visible?: boolean }).visible === false);
     const multi = n >= 2;
@@ -74,6 +76,8 @@ export class CanvasContextMenu {
       SEP,
       { label: 'Group', hint: sc('⌘G'), enabled: multi, run: () => actions.groupSelected(s) },
       { label: 'Ungroup', hint: sc('⌘⇧G'), enabled: hasGroup, run: () => actions.ungroupSelected(s) },
+      // A formula, gallery or motion rule baked into literal layers and keys, for hand editing.
+      ...(ruled ? [{ label: 'Detach rule', enabled: true, run: () => actions.detachSelected(s) }] : []),
       SEP,
       // Alignment needs something to align TO, so it only appears with a real
       // multi-selection rather than sitting there permanently greyed out.

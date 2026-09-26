@@ -38,11 +38,16 @@ export function sourceOptions(spec: DesignSpec, page?: Page, problems?: SourcePr
   return { names: resolveNames(raw, W, H, problems), W, H, ...(problems ? { problems } : {}) };
 }
 
+/** Whether the layer itself stores a rule: source formulas, a gallery or a motion rule. */
+export function carriesRule(l: Layer): boolean {
+  return hasSourceFormulas(l) || (l.type === 'group' && !!(l as { gallery?: unknown }).gallery)
+    || (l as { animation?: { rule?: unknown } }).animation?.rule !== undefined;
+}
+
 /** Whether anything under `layers` is a rule this step expands. */
 function hasRules(layers: Layer[], opts: ResolveOptions): boolean {
   return layers.some(l => {
-    if ((opts.place && l.type === 'auto_layout') || hasSourceFormulas(l) || (l.type === 'group' && (l as { gallery?: unknown }).gallery)
-      || (l as { animation?: { rule?: unknown } }).animation?.rule !== undefined) return true;
+    if ((opts.place && l.type === 'auto_layout') || carriesRule(l)) return true;
     const kids = (l as Layer & { layers?: Layer[] }).layers;
     return Array.isArray(kids) && hasRules(kids, opts);
   });

@@ -3,8 +3,9 @@ import { StateManager } from './state';
 import type { DesignSpec, Layer } from '../schema/types';
 import {
   deleteSelected, duplicateSelected, adjustZ,
-  groupSelected, ungroupSelected, toggleLockSelected,
+  groupSelected, ungroupSelected, toggleLockSelected, detachSelected,
 } from './layer-actions';
+import { renderToSVGString } from '../mcp/engine/svg-export';
 
 function makeDesign(layers: Layer[]): DesignSpec {
   return {
@@ -77,5 +78,25 @@ describe('layer-actions (shared by keyboard + context menu + panel)', () => {
     state.set('selectedLayerIds', ['a', 'b']);
     toggleLockSelected(state);
     expect(state.getCurrentLayers().every(l => !(l as { locked?: boolean }).locked)).toBe(true);
+  });
+
+  it('detachSelected bakes a rule into what it draws, and one undo puts it back', () => {
+    const ruled = { ...makeRect('r', 0, 0, 30), formulas: { x: '=W / 4' }, animation: { rule: { preset: 'rise', at: 300 } } } as unknown as Layer;
+    const cells = { id: 'g', type: 'group', z: 40, x: 0, y: 600, width: 900, height: 100, layers: [],
+      gallery: { items: 3, gap: 30, template: [makeRect('cell')] } } as unknown as Layer;
+    state.set('design', makeDesign([ruled, cells]));
+    const before = renderToSVGString(state.get().design as DesignSpec);
+    state.set('selectedLayerIds', ['r', 'g']);
+    detachSelected(state);
+    const [r, g] = state.getCurrentLayers() as (Layer & { formulas?: object; gallery?: object; layers?: Layer[]; animation?: { rule?: unknown; keyframes?: unknown[] } })[];
+    expect(r).toMatchObject({ x: 270 });
+    expect(r?.formulas).toBeUndefined();
+    expect(r?.animation?.rule).toBeUndefined();
+    expect(r?.animation?.keyframes?.length).toBeGreaterThan(1);
+    expect(g?.gallery).toBeUndefined();
+    expect(g?.layers?.map(c => c.id)).toEqual(['g_1', 'g_2', 'g_3']);
+    expect(renderToSVGString(state.get().design as DesignSpec)).toBe(before);
+    state.undo();
+    expect((state.getCurrentLayers()[0] as { animation?: { rule?: unknown } }).animation?.rule).toEqual({ preset: 'rise', at: 300 });
   });
 });
