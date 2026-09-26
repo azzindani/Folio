@@ -13,6 +13,7 @@ import { syncAnimationsToSpec } from '../mcp/engine/animation-sync';
 import { withAnimationMirror } from '../animation/page-animations';
 import { buildPosePlan } from '../editor/motion-pose';
 import { sourceOptions } from './resolve-source';
+import { trackHTML } from '../ui/panels/timeline-track-view';
 
 const scope = { names: { Beat: 600 }, W: 1080, H: 1350 };
 const L = (o: Record<string, unknown>): Layer => o as unknown as Layer;
@@ -66,5 +67,12 @@ describe('motion rules', () => {
     const plan = buildPosePlan(spec.layers ?? [], sourceOptions(spec));
     expect(plan.touched).toContain('card');
     expect(plan.duration).toBeGreaterThan(500);
+    // The timeline row shows the keys the rule compiles to, where they play — not draggable.
+    const card = (spec.layers ?? []).find(l => l.id === 'card') as Layer;
+    const html = trackHTML(card, plan.rows.get('card'), plan.duration, 0);
+    expect(html.match(/class="tl-rule-key"/g)).toHaveLength(2);
+    expect(html).toContain('data-t="500"');
+    expect(html).not.toContain('class="tl-keyframe"');
+    expect(html).not.toContain('class="tl-bar"');
   });
 });
