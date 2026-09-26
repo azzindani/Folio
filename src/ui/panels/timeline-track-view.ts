@@ -84,7 +84,8 @@ export function trackHTML(layer: Layer, timing: RowTiming | undefined, duration:
 
   // The layer's own motion as a bar from its first keyframe to its last: drag it to move all of it in time (timeline-drag.ts).
   const own = timing?.keys ?? [];
-  if (own.length >= 2 && !timing?.link) {
+  // A rule's track moves by editing the rule, not by dragging keys it does not store.
+  if (own.length >= 2 && !timing?.link && layer.animation?.rule === undefined) {
     const a = Math.min(...own), b = Math.max(...own);
     parts.push(`<div class="tl-bar" data-layer-id="${esc(layer.id)}" data-ms="${a}" title="${esc(`${layer.id}'s motion ${fmtMs(a)}–${fmtMs(b)} — drag to move it in time`)}"`
       + ` style="position:absolute;top:${TRACK_H / 2 - 6}px;height:12px;left:${at(a, duration)}%;width:${Math.max(0.4, at(b, duration) - at(a, duration))}%;`
@@ -114,6 +115,15 @@ export function trackHTML(layer: Layer, timing: RowTiming | undefined, duration:
       `class="tl-keyframe" data-layer-id="${esc(layer.id)}" data-i="${i}" data-t="${kf.t}" data-easing="${esc(ease)}"`,
       `${fmtMs(kf.t)}${shift}${ease ? ` · ${ease}` : ''} — drag to retime, click to set easing, right-click to delete`));
   });
+
+  // A motion rule owns no keyframes either: its keys are the ones it compiles to (resolve-motion.ts),
+  // shown where they play and not draggable — the rule is what is edited.
+  if (layer.animation?.rule !== undefined) {
+    for (const t of timing?.keys ?? []) {
+      parts.push(diamond(at(t, duration), 'background:var(--color-accent);opacity:.55;pointer-events:none',
+        `class="tl-rule-key" data-layer-id="${esc(layer.id)}" data-t="${t}"`, `${fmtMs(t)} — from ${layer.id}'s motion rule`));
+    }
+  }
 
   // A follower owns no keyframes: it replays its leader's, a beat late. Hollow, and not editable here.
   const link = timing?.link;
