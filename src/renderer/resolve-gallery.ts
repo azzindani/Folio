@@ -14,6 +14,7 @@
 import type { Layer, GallerySpec } from '../schema/types';
 import { isFormula } from '../scripting/formula';
 import { evalSource, resolveSourceFormulas, type SourceScope, type SourceProblem } from '../scripting/formula-source';
+import { resolveMotionRules } from './resolve-motion';
 
 export const GALLERY_CAP = 200;
 
@@ -93,7 +94,9 @@ export function resolveGalleries(layers: Layer[], scope: SourceScope, problems?:
       const cellId = `${l.id}_${i + 1}`;
       const names = { ...scope.names, Item: row, Index: i, Row: cell.row, Col: cell.col, N: rows.length, CellW: cell.width, CellH: cell.height };
       const filled = g.template.map(t => place(fill(t, { ...row, i: i + 1 }) as Layer, cell, cellId, false));
-      const inner = resolveGalleries(resolveSourceFormulas(filled, { ...scope, names }, problems), { ...scope, names }, problems);
+      const cellScope = { ...scope, names };
+      // A cell's rules read its row: "=Index * 120" staggers the cells.
+      const inner = resolveGalleries(resolveMotionRules(resolveSourceFormulas(filled, cellScope, problems), cellScope, problems), cellScope, problems);
       return { id: cellId, type: 'group', z: i, x: cell.x, y: cell.y, width: cell.width, height: cell.height, layers: inner } as unknown as Layer;
     });
     const rest = { ...(node as unknown as Row) };

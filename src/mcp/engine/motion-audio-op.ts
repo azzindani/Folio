@@ -24,6 +24,7 @@ import type { SoundPlan, SoundTimeline } from '../../export/audio-plan';
 import { resolveAssetFile } from './asset-resolve';
 import { isAudioExt, probeAudio } from './asset-audio';
 import { resolveSound } from './sound-resolve';
+import { sourceOptions } from '../../renderer/resolve-source';
 
 export type AudioArgs = {
   design_path: string;
@@ -53,7 +54,7 @@ export function soundTimeline(spec: DesignSpec, holdMs?: number): SoundTimeline 
     return { total_ms: plan.total_ms, scenes: plan.scenes.map(s => ({ page_id: s.page_id, start_ms: s.start_ms })) };
   }
   const first = pages[0];
-  return { total_ms: animationDuration(first?.layers ?? spec.layers ?? []), scenes: first ? [{ page_id: first.id, start_ms: 0 }] : [] };
+  return { total_ms: animationDuration(first?.layers ?? spec.layers ?? [], sourceOptions(spec, first)), scenes: first ? [{ page_id: first.id, start_ms: 0 }] : [] };
 }
 
 /** The fields a call sets, checked. A string is the problem. */

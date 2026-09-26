@@ -31,7 +31,8 @@ export function collectSpecAnimations(spec: DesignSpec): Record<string, Animatio
   const out: Record<string, AnimationSpec> = {};
 
   const visit = (layer: AnimatedLayer): void => {
-    if (layer.animation && typeof layer.id === 'string') out[layer.id] = layer.animation;
+    // A motion rule is not mirrored: every reader resolves it into its track (renderer/resolve-motion.ts).
+    if (layer.animation && !layer.animation.rule && typeof layer.id === 'string') out[layer.id] = layer.animation;
     if (Array.isArray(layer.layers)) for (const c of layer.layers) visit(c as AnimatedLayer);
   };
 

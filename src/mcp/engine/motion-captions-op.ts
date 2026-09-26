@@ -22,6 +22,7 @@ import { planScenes } from '../../export/scene-plan';
 import { animationDuration } from '../../export/gif-frames';
 import { planCaptions, type CaptionPlan, type CaptionTimeline } from '../../export/caption-plan';
 import { toSrt, toVtt } from '../../export/caption-files';
+import { sourceOptions } from '../../renderer/resolve-source';
 
 export type CaptionArgs = {
   design_path: string; project_path?: string; page_id?: string;
@@ -77,7 +78,7 @@ function readStyle(raw: unknown): CaptionStyle | string {
 export function captionTimeline(spec: DesignSpec, holdMs?: number): CaptionTimeline {
   if ((spec.pages?.length ?? 0) >= 2) return planScenes(spec, { hold_ms: holdMs });
   const first = spec.pages?.[0];
-  const total = animationDuration(first?.layers ?? spec.layers ?? []);
+  const total = animationDuration(first?.layers ?? spec.layers ?? [], sourceOptions(spec, first));
   return { total_ms: total, scenes: first ? [{ page_id: first.id, start_ms: 0, length_ms: total }] : [] };
 }
 

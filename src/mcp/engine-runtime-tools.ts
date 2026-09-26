@@ -17,6 +17,7 @@ import { sceneTracks, sceneLength, renderSceneASCII, lifeWindowList } from './en
 import { resolveTimeline } from '../animation/timeline-resolve';
 import { readMarkers } from './engine/motion-time';
 import { animationDuration } from '../export/gif-frames';
+import { resolveLayers, sourceOptions } from '../renderer/resolve-source';
 import type { Keyframe } from '../animation/types';
 import { getClientScript } from '../export/remote-server';
 import { syncAnimationsToSpec } from './engine/animation-sync';
@@ -232,6 +233,8 @@ export function inspectTimeline(args: {
     // default, the same choice every other motion op makes.
     layers = spec.pages?.[0]?.layers ?? spec.layers ?? [];
   }
+  // Tracks as they play: a motion rule shows the keys it compiles to (resolve-source).
+  layers = resolveLayers(layers, sourceOptions(spec, (spec.pages ?? []).find((p: Page) => p.id === args.page_id) ?? spec.pages?.[0]));
 
   // Scene view: every track (groups descended) as a bar from its delay to its
   // end, so a stagger, a late exit and a loop each read as what they are.

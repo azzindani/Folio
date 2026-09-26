@@ -11,6 +11,7 @@ import { buildEmbeddedFontStyle } from './font-embed';
 import { inlineExternalImages } from './image-embed';
 // @ts-expect-error — dom-to-image-more ships no types
 import domtoimage from 'dom-to-image-more';
+import { resolveSpec } from '../renderer/resolve-source';
 
 export type ExportFormat = 'svg' | 'png' | 'html' | 'html-animated' | 'html-report' | 'pdf';
 
@@ -370,7 +371,7 @@ export async function exportToHTML(spec: DesignSpec, options: ExportOptions): Pr
   // its budget.
   const { buildAnimatedSVG, pathsOnSceneClock } = await import('./svg-animate');
   const { expandCounts } = await import('./count-expand');
-  const embedded = await exportToSVGEmbedded(expandCounts(pathsOnSceneClock(spec, options.pageIndex ?? 0)), options);
+  const embedded = await exportToSVGEmbedded(expandCounts(pathsOnSceneClock(resolveSpec(spec), options.pageIndex ?? 0)), options);
   const svgString = buildAnimatedSVG(spec, { renderSVG: () => embedded, pageIndex: options.pageIndex ?? 0 }).svg;
 
   // Layers ride along so a `tracking` track adds to each text's authored spacing.

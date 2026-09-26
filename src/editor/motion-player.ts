@@ -18,6 +18,7 @@ import type { StateManager, EditorState } from './state';
 import type { Layer } from '../schema/types';
 import { flattenForTimeline, sceneDuration, playsInTime } from '../ui/panels/timeline-model';
 import type { PosePlan, Pose, RowTiming } from './motion-pose';
+import { sourceOptions } from '../renderer/resolve-source';
 
 type PoseEngine = typeof import('./motion-pose');
 
@@ -96,7 +97,8 @@ export class MotionPlayer {
 
   private currentPlan(): PosePlan | null {
     if (!this.engine) return null;
-    this.plan ??= this.engine.buildPosePlan(this.authoredLayers());
+    const { design, currentPageIndex } = this.state.get();
+    this.plan ??= this.engine.buildPosePlan(this.authoredLayers(), design ? sourceOptions(design, design.pages?.[currentPageIndex]) : {});
     return this.plan;
   }
 

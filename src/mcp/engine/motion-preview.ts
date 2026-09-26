@@ -32,6 +32,7 @@ import { buildEditorLink } from './editor-link';
 import { specAt, animationDuration } from '../../export/gif-frames';
 import { cullFrame } from '../../export/frame-cull';
 import { encodeGIF, type GifFrame } from '../../export/gif-encode';
+import { sourceOptions } from '../../renderer/resolve-source';
 
 /** Evenly spaced sample times across a scene, first and last included. */
 export function previewTimes(sceneMs: number, count: number): number[] {
@@ -120,7 +121,7 @@ export function previewMotion(args: PreviewArgs): ToolResult {
     return errResult(op, `Page not found: ${args.page_id}`, `Pages: ${pages.map(p => p.id).join(', ')}`, progress);
   }
   const layers = pages[Math.max(0, pageIndex)]?.layers ?? spec.layers ?? [];
-  const sceneMs = animationDuration(layers);
+  const sceneMs = animationDuration(layers, sourceOptions(spec, pages[Math.max(0, pageIndex)]));
   if (!(sceneMs > 0)) {
     return errResult(op,
       'Nothing on this surface is animated, so a preview would be one still.',

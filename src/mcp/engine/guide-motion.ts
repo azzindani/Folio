@@ -135,6 +135,8 @@ RULES OF THUMB
     loops fight. A pulse >1.08 reads as a bug, not emphasis.
   • op:sequence again RE-TIMES: a step replaces the entrance (or exit) a layer had from an
     earlier call — no op:clear first. Within one call, an entrance and an exit chain as usual.
+  • as_rule:true stores each step as a compact motion RULE (animation.rule) instead of its
+    keyframes — same playback, a fraction of the YAML (get_engine_guide {section:"source"}).
   • Steps without \`at\` chain: each starts when the previous ends. Use \`at\` to
     overlap (a title and its rule can enter together) or to schedule an exit.
   • A LOCKED group animates as ONE unit — right for a carousel page, wrong for

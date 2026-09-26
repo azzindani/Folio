@@ -7,6 +7,7 @@ import type { Layer, TextLayer } from '../schema/types';
 import { generateDesignAnimationCSS } from '../animation/css-generator';
 import { pageAnimations } from '../animation/page-animations';
 import { RULER_SIZE, drawRuler } from './canvas-draw';
+import { resolveLayers, sourceOptions } from '../renderer/resolve-source';
 
 let guideCounter = 0;
 
@@ -188,7 +189,9 @@ export abstract class CanvasBase {
     const { animations, design } = this.state.get();
     // Only the page on screen is painted; ids repeated across pages take the
     // layer's own track, since the flat map holds just one page's entry.
-    const layers = this.state.getCurrentLayers();
+    // As drawn: a motion rule is its track, a gallery its cells (resolve-source).
+    const current = this.state.getCurrentLayers();
+    const layers = design ? resolveLayers(current, sourceOptions(design, design.pages?.[this.state.get().currentPageIndex])) : current;
     const pages = design?.pages?.length ? design.pages.map(p => p.layers ?? []) : [design?.layers ?? []];
     const map = pageAnimations(animations, layers, pages);
     if (map.size === 0) return;

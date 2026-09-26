@@ -21,6 +21,7 @@ import { PREVIEW_FRAME_MS } from '../export/motion-blur';
 import { resolveTimeline } from '../animation/timeline-resolve';
 import { windowOf, type LifeWindow } from '../animation/lifespan';
 import { toSceneTime } from '../animation/clock-time';
+import { resolveLayers, type ResolveOptions } from '../renderer/resolve-source';
 
 /**
  * Every field a sampled frame can change on a layer. Captured before the first
@@ -71,7 +72,9 @@ const num = (v: unknown): number | undefined => (typeof v === 'number' && Number
  * clock. Walks the authored tree beside the resolved one — the authored side
  * says which keyframes the user can edit, the resolved side when they play.
  */
-export function buildPosePlan(layers: Layer[]): PosePlan {
+export function buildPosePlan(authored: Layer[], source: ResolveOptions = {}): PosePlan {
+  // Planned as it plays: a motion rule is its compiled track (resolve-source); `source` = the design's names.
+  const layers = resolveLayers(authored, source);
   const byId = new Map<string, Node>();
   const index = (ls: Layer[]): void => {
     for (const l of ls) {

@@ -21,6 +21,7 @@ import { generateDesignAnimationCSS } from '../animation/css-generator';
 import { usesDraw } from '../animation/keyframe-css';
 import { expandCounts } from './count-expand';
 import { resolveTimeline } from '../animation/timeline-resolve';
+import { resolveSpec } from '../renderer/resolve-source';
 
 export interface AnimatedSVGOptions {
   /** Which page of a multi-page design to export. Defaults to the first. */
@@ -121,8 +122,9 @@ export function pathsOnSceneClock(spec: DesignSpec, pageIndex: number): DesignSp
 /** Render one page of a design as a self-contained animated SVG. */
 export function buildAnimatedSVG(authored: DesignSpec, opts: AnimatedSVGOptions): AnimatedSVGResult {
   const pageIndex = opts.pageIndex ?? 0;
-  // A counting text becomes stepped variants first — CSS cannot change what a <text> says.
-  const spec = expandCounts(pathsOnSceneClock(authored, pageIndex));
+  // Rules first (a motion rule is its track, a gallery its cells — resolve-source); then a counting
+  // text becomes stepped variants — CSS cannot change what a <text> says.
+  const spec = expandCounts(pathsOnSceneClock(resolveSpec(authored), pageIndex));
   const svg = opts.renderSVG(spec, pageIndex);
 
   // Precomp clocks, links and in/out windows onto the scene clock — the same

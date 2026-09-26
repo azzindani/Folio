@@ -36,6 +36,16 @@ Row, Col, N, CellW, CellH: {width:"=CellW", "animation.playback.delay":"=Index*1
 Add it with add_layers (verbose layers); change a row, the template or columns
 with patch_design on layers[id=people].gallery.
 
+## animation.rule — motion stored as what it is
+  animation: {rule: {preset:"rise", at:1200, duration:600, easing:"ease-out"}}
+  animation: {rule: [{preset:"rise", at:0}, {preset:"fade_out", at:"=Beat*8"}]}
+Compiled into the same keyframes op:sequence writes; exports, op:frame,
+op:timeline and the editor play the track. A list = entrance then exit (must not
+overlap); a loop stands alone. at/duration/distance may be "=…" (names; Index in
+a gallery template → "=Index*120" staggers the cells). Write them with
+animation {op:"sequence", as_rule:true, steps:[…]} or patch_design on
+layers[id=…].animation.rule. A rule that cannot compile → diagnose rule_error.
+
 ## Writing them
   patch_design {path:"names", value:{…}}
   patch_design {path:"layers[id=card].formulas", value:{width:"=Col"}}
