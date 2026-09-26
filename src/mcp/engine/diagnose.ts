@@ -5,6 +5,7 @@
 // structured findings with fixes. Pure — no I/O.
 
 import type { Layer } from '../../schema/types';
+import { hasScripts } from '../../scripting/script-frames';
 import { findFlatTextStyle } from '../../schema/validator';
 import { lintComposition, reviewComposition, type Stage } from './design-lint';
 import { lintAiSlop } from './ai-slop-lint';
@@ -359,7 +360,8 @@ export function analyzeLayers(authored: Layer[], W: number, H: number, world?: S
     const c = (l as { content?: { value?: string; text?: string } }).content;
     return n + (c?.value ?? c?.text ?? '').length;
   }, 0);
-  if (!richGroup && textLayers.length <= 1 && textChars < 140) {
+  // A script component draws its own content (close-out C4): a walking-figure piece is not sparse.
+  if (!richGroup && !hasScripts(layers) && textLayers.length <= 1 && textChars < 140) {
     out.push({
       code: 'sparse_content', severity: 'suggestion',
       message: 'This design is sparse — very little content for the canvas.',
