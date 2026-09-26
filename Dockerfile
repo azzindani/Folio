@@ -106,7 +106,9 @@ ENV FOLIO_PROJECTS_DIR=/home/folio/projects
 # straight into it (src/export/video-encode.ts).
 # Bun serves the editor (src/editor/static-server.ts) and the MCP HTTP API
 # (src/mcp/http-server.ts) — no node/npm needed at runtime.
-RUN apk add --no-cache bash curl tini ffmpeg
+# chromium + a font: headless capture of script components for raster exports
+# (src/mcp/engine/script-capture.ts, driven by playwright-core).
+RUN apk add --no-cache bash curl tini ffmpeg chromium font-dejavu
 
 # Unprivileged user. The oven/bun image ships a `bun` user/group at uid 1000;
 # we add a parallel `folio` user with its own home so paths in docs are stable.
