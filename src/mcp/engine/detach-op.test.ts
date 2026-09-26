@@ -62,6 +62,14 @@ describe('edit_layer op:detach', () => {
     expect(ruleCounts(read(p).layers ?? [])).toEqual({ formulas: 0, galleries: 1, rules: 0 });
   });
 
+  it('never writes the markers a script is handed when drawn', () => {
+    const p = path.join(tmpDir, 's.design.yaml');
+    fs.writeFileSync(p, yaml.dump({ ...SPEC, markers: { cta: 1000 }, layers: [...SPEC.layers,
+      { id: 'doodle', type: 'script', z: 3, x: 0, y: 0, width: 200, height: 200, js: 'folio.frame(t => {});' }] }));
+    expect(detachLayers({ design_path: p }).success).toBe(true);
+    expect(fs.readFileSync(p, 'utf-8')).not.toContain('script_markers');
+  });
+
   it('says so when there is nothing to detach, or no such layer', () => {
     const p = write();
     expect(detachLayers({ design_path: p, layer_id: 'bg' }).error).toMatch(/Nothing to detach on bg/);

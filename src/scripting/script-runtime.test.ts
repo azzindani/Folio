@@ -6,8 +6,9 @@ import { buildScriptDoc, seedOf } from './script-runtime';
 import { lintScript } from './script-lint';
 import { collectFindings } from '../mcp/engine/diagnose-collect';
 import { renderToSVGString } from '../mcp/engine/svg-export';
-import { animationDuration } from '../export/gif-frames';
+import { animationDuration, specAt } from '../export/gif-frames';
 import { playsInTime } from '../ui/panels/timeline-model';
+import { resolveSpec } from '../renderer/resolve-source';
 
 const layer = (js: string, extra: Partial<ScriptLayer> = {}): ScriptLayer =>
   ({ id: 'doodle', type: 'script', z: 1, x: 100, y: 200, width: 320, height: 240, js, ...extra }) as ScriptLayer;
@@ -32,6 +33,17 @@ describe('script components', () => {
     expect(r1).not.toBe(r2);
     const other = capture(layer(`folio.frame(t => document.body.setAttribute('data-v', String(folio.random())));`, { seed: 7 }));
     expect(other(0)).not.toBe(capture(layer(`folio.frame(t => document.body.setAttribute('data-v', String(folio.random())));`, { seed: 8 }))(0));
+  });
+
+  it('reads the surface markers as folio.markers, on every path that draws it (Opus 5.5 promo)', () => {
+    const js = `folio.frame(t => document.body.setAttribute('data-v', [folio.markers.g, t - folio.markers.g].join('|')));`;
+    const spec = { meta: { id: 'd', name: 'D', type: 'poster' }, document: { width: 1080, height: 1080 }, markers: { g: 2000 },
+      layers: [layer(js) as unknown as Layer] } as unknown as DesignSpec;
+    const stamped = (s: DesignSpec): ScriptLayer => (s.layers ?? []).find(l => l.id === 'doodle') as unknown as ScriptLayer;
+    expect(capture(stamped(resolveSpec(spec)))(2500)).toBe('2000|500');
+    expect(stamped(specAt(spec, 0, 2500)).script_markers).toEqual({ g: 2000 });
+    expect(capture(stamped(resolveSpec({ ...spec, markers: { g: 3000 } } as DesignSpec)))(3500), 'moving the marker moves the drawing').toBe('3000|500');
+    expect(capture(layer(`folio.frame(() => document.body.setAttribute('data-v', JSON.stringify(folio.markers)));`))(0)).toBe('{}');
   });
 
   it('runs behind a CSP that blocks the network, and keeps its code inside its <script>', () => {

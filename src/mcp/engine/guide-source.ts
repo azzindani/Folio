@@ -69,7 +69,8 @@ Draw the MOMENT t (ms), carrying no state between frames — the editor, the HTM
 export and every video frame then agree. folio.random() restarts each frame
 (stable jitter); folio.hash(n) is per-item noise (boil a hand-drawn line with
 folio.hash(Math.floor(t/120)*97+i)); folio.width/height/duration. duration makes
-the scene at least that long. No network (inline everything), no new Date(), no
+the scene at least that long. folio.markers.<name> is a marker's ms: time a drawing
+by it (t - folio.markers.cta), never by a number, so op:retime / op:markers keep it in step. No network (inline everything), no new Date(), no
 setTimeout — diagnose script_unsafe names them.
 
 ## Detach — when you want to hand-edit the result
