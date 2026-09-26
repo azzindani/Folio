@@ -55,11 +55,19 @@ export function galleryCells(g: GallerySpec, box: { x?: unknown; y?: unknown; wi
   });
 }
 
-/** Every string in `v` with {{key}} filled from the row. */
+/**
+ * Every string in `v` with {{key}} filled from the row — except a nested
+ * gallery's template, which its own rows fill: filled here, its {{i}} read the
+ * outer cell's number and its row keys came out blank (close-out C3, live).
+ */
 function fill(v: unknown, row: Row): unknown {
   if (typeof v === 'string') return v.replace(/\{\{\s*([\w.]+)\s*\}\}/g, (_m, k: string) => (row[k] === undefined || row[k] === null ? '' : String(row[k])));
   if (Array.isArray(v)) return v.map(x => fill(x, row));
-  if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v as Row).map(([k, x]) => [k, fill(x, row)]));
+  if (v && typeof v === 'object') {
+    return Object.fromEntries(Object.entries(v as Row).map(([k, x]) => [k, k === 'gallery' && x && typeof x === 'object' && !Array.isArray(x)
+      ? Object.fromEntries(Object.entries(x as Row).map(([gk, gx]) => [gk, gk === 'template' ? gx : fill(gx, row)]))
+      : fill(x, row)]));
+  }
   return v;
 }
 
