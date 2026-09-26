@@ -22,6 +22,10 @@ import { pruneEmptyDrafts } from './engine-project-tools';
 
 import { setNestedValue, inertPresetKeyWarning } from './engine-runtime-tools';
 import { routePatchPath, TYPO_ALIASES } from './engine/patch-route';
+import { findGenerated, writeOverride, patchGenerated } from './engine/override-op';
+
+const OVERRIDE_NOTE = 'Stored as an override of the gallery that makes it — replayed on every render';
+const DETACH_HINT = 'Edit the item\'s own layers, or detach the gallery (edit_layer op:detach) to edit its cells as plain layers.';
 
 // Global hex recolor: walk the whole spec and replace any color string that
 // exactly matches a key in `map` (case-insensitive) with its mapped value.
@@ -77,7 +81,11 @@ export function patchDesign(args: { design_path: string; selectors: { path: stri
       if (setNestedValue(spec, r.path, sel.value)) {
         wouldPatch.push(r.path);
         if (r.from) routed.push({ from: r.from, to: r.path });
-      } else errors.push(`${sel.path}: path did not resolve (missing parent, out-of-range index, or no filter match)`);
+      } else {
+        const g = patchGenerated(spec as unknown as DesignSpec, sel.path, sel.value);
+        if (g && 'to' in g) { wouldPatch.push(g.to); routed.push({ from: sel.path, to: g.to }); }
+        else errors.push(g ? `${sel.path}: ${g.error}` : `${sel.path}: path did not resolve (missing parent, out-of-range index, or no filter match)`);
+      }
     }
     progress.push(errors.length === 0 ? pOk(`Dry-run: ${wouldPatch.length} path(s) valid`) : pWarn('Dry-run: some paths invalid', errors.join('; ')));
     if (routed.length) progress.push(pInfo(ROUTED_MSG(routed.length), routed.map(x => `${x.from} → ${x.to}`).join(', ')));
@@ -108,7 +116,10 @@ export function patchDesign(args: { design_path: string; selectors: { path: stri
       const w = inertPresetKeyWarning(spec, r.path);
       if (w) inert.push(w);
     } else {
-      unresolved.push(sel.path);
+      // A gallery's generated item: kept as its override (override-op.ts).
+      const g = patchGenerated(spec as unknown as DesignSpec, sel.path, sel.value);
+      if (g && 'to' in g) { patched.push(g.to); routed.push({ from: sel.path, to: g.to }); }
+      else unresolved.push(g ? `${sel.path} (${g.error})` : sel.path);
     }
   }
   // Every selector missed — almost always `layers[0].x` against a design whose
@@ -563,7 +574,14 @@ export function updateLayer(args: { design_path: string; layer_id: string; props
     if (spec.layers) spec.layers = patch(spec.layers);
     if (spec.pages) spec.pages.forEach((page) => { if (page.layers) page.layers = patch(page.layers); });
   }
-  if (!found) return errResult(op, `Layer not found: ${args.layer_id}`, 'Use manage_design {op:"inspect"} to find layer IDs — group children are listed with a parent field.', progress);
+  // Not in the file but made by a gallery: the edit is kept beside it as an override (override-op.ts).
+  const made = found ? null : findGenerated(spec, args.layer_id, args.page_id);
+  if (!found && !made) return errResult(op, `Layer not found: ${args.layer_id}`, 'Use manage_design {op:"inspect"} to find layer IDs — group children are listed with a parent field.', progress);
+  if (made) {
+    const err = writeOverride(made, canonicalizeProps(made.template ?? made.gallery, args.props as Record<string, unknown>));
+    if (err) return errResult(op, err, DETACH_HINT, progress);
+    progress.push(pInfo(OVERRIDE_NOTE, `"${args.layer_id}" is made by gallery "${made.gallery.id}"`));
+  }
 
   spec.meta.modified = new Date().toISOString().split('T')[0];
   writeYAML(dPath, spec);
@@ -605,7 +623,9 @@ export function removeLayer(args: { design_path: string; layer_id: string; page_
     if (spec.layers) spec.layers = drop(spec.layers);
     if (spec.pages) for (const page of spec.pages) { if (page.layers) page.layers = drop(page.layers); }
   }
-  if (removed === 0) return errResult(op, `Layer not found: ${args.layer_id}`, args.page_id ? `No layer "${args.layer_id}" on page "${args.page_id}".` : 'Use manage_design {op:"inspect"} to find layer IDs.', progress);
+  const made = removed === 0 ? findGenerated(spec, args.layer_id, args.page_id) : null;
+  if (removed === 0 && !made) return errResult(op, `Layer not found: ${args.layer_id}`, args.page_id ? `No layer "${args.layer_id}" on page "${args.page_id}".` : 'Use manage_design {op:"inspect"} to find layer IDs.', progress);
+  if (made) { writeOverride(made, null); progress.push(pInfo(OVERRIDE_NOTE, `"${args.layer_id}" is made by gallery "${made.gallery.id}" — it is left out from now on`)); }
 
   spec.meta.modified = new Date().toISOString().split('T')[0];
   writeYAML(dPath, spec);

@@ -223,7 +223,11 @@ export abstract class CanvasBase {
       }
       return undefined;
     };
-    return walk(this.state.getCurrentLayers());
+    const own = walk(this.state.getCurrentLayers());
+    if (own) return own;
+    // A gallery's generated item, as drawn: dragging it writes that item's override (state.updateLayer).
+    const { design, currentPageIndex } = this.state.get();
+    return design ? walk(resolveLayers(this.state.getCurrentLayers(), sourceOptions(design, design.pages?.[currentPageIndex]))) : undefined;
   }
 
   // Collect selected layers by id from anywhere in the tree (group-aware

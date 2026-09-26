@@ -287,6 +287,8 @@ export interface GallerySpec {
   gap?: number | [number, number];
   /** A cell's size (default: the box shared out between the cells). */
   cell?: { width?: number; height?: number };
+  /** Edits to single generated items by id, in the template's frame; null removes one (renderer/gallery-overrides.ts). */
+  overrides?: Record<string, Record<string, unknown> | null>;
 }
 
 export interface GroupLayer extends BaseLayer {

@@ -13,6 +13,7 @@ import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, 
 import { LOCKED_EDIT_NOTE } from './engine/layer-lookup';
 import { buildEditorLink } from './engine/editor-link';
 import { drawnBox, findTargets, scaleAbout, translateSubtree, union, type Rect } from './engine/layer-transform';
+import { moveGenerated } from './engine/override-op';
 
 interface Common { design_path: string; project_path?: string; page_id?: string; layer_id?: string; layer_ids?: string[] }
 export interface MoveArgs extends Common { dx?: number; dy?: number; x?: number; y?: number; to?: 'center' | 'center_h' | 'center_v' }
@@ -67,6 +68,9 @@ function commit(op: string, l: Loaded, before: Rect, detail: string, extra: Reco
 /** Move the selection as one block: by dx/dy, to a top-left x/y, or centred on the canvas. */
 export function moveLayers(args: MoveArgs): ToolResult {
   const op = 'move_layers';
+  // One item a gallery makes (not in the file): the move is kept as its override.
+  const generated = moveGenerated(args);
+  if (generated) return generated;
   const l = load(op, args);
   if ('success' in l) return l;
   const W = l.spec.document?.width ?? 0, H = l.spec.document?.height ?? 0;

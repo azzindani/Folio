@@ -80,6 +80,19 @@ describe('layer-actions (shared by keyboard + context menu + panel)', () => {
     expect(state.getCurrentLayers().every(l => !(l as { locked?: boolean }).locked)).toBe(true);
   });
 
+  it('keeps a drag of a gallery\'s generated item as that item\'s override', () => {
+    const cells = { id: 'g', type: 'group', z: 40, x: 0, y: 600, width: 900, height: 100, layers: [],
+      gallery: { items: 3, gap: 30, template: [makeRect('cell')] } } as unknown as Layer;
+    state.set('design', makeDesign([cells]));
+    state.updateLayer('g_2_cell', { x: 400, y: 650 });
+    const g = state.getCurrentLayers()[0] as unknown as { gallery: { overrides: object } };
+    expect(g.gallery.overrides).toEqual({ g_2_cell: { x: 400 - 310, y: 50 } });
+    state.updateLayer('g_9_cell', { x: 1 });
+    expect((state.getCurrentLayers()[0] as unknown as { gallery: { overrides: object } }).gallery.overrides).toEqual({ g_2_cell: { x: 90, y: 50 } });
+    state.undo();
+    expect((state.getCurrentLayers()[0] as unknown as { gallery: { overrides?: object } }).gallery.overrides).toBeUndefined();
+  });
+
   it('detachSelected bakes a rule into what it draws, and one undo puts it back', () => {
     const ruled = { ...makeRect('r', 0, 0, 30), formulas: { x: '=W / 4' }, animation: { rule: { preset: 'rise', at: 300 } } } as unknown as Layer;
     const cells = { id: 'g', type: 'group', z: 40, x: 0, y: 600, width: 900, height: 100, layers: [],

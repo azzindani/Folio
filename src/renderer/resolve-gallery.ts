@@ -15,6 +15,7 @@ import type { Layer, GallerySpec } from '../schema/types';
 import { isFormula } from '../scripting/formula';
 import { evalSource, resolveSourceFormulas, type SourceScope, type SourceProblem } from '../scripting/formula-source';
 import { resolveMotionRules } from './resolve-motion';
+import { withOverrides, applyOverride } from './gallery-overrides';
 
 export const GALLERY_CAP = 200;
 
@@ -25,7 +26,7 @@ export interface Cell { x: number; y: number; width: number; height: number; row
 const num = (v: unknown): number => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
 
 /** The rows a gallery repeats over: its own list, a count, or a list its formula reads from names. */
-function rowsOf(g: GallerySpec, scope: SourceScope, id: string, problems?: SourceProblem[]): Row[] {
+export function rowsOf(g: GallerySpec, scope: SourceScope, id: string, problems?: SourceProblem[]): Row[] {
   let items: unknown = g.items;
   if (isFormula(items)) {
     const r = evalSource(items, scope);
@@ -89,15 +90,22 @@ export function resolveGalleries(layers: Layer[], scope: SourceScope, problems?:
     if (!g || !Array.isArray(g.template)) return kids && kids !== node.layers ? ({ ...node, layers: kids } as Layer) : l;
     const rows = rowsOf(g, scope, l.id, problems);
     const cells = galleryCells(g, node, rows.length);
-    const items = rows.map((row, i): Layer => {
+    const items = rows.flatMap((row, i): Layer[] => {
       const cell = cells[i] ?? { x: 0, y: 0, width: 0, height: 0, row: 0, col: 0 };
       const cellId = `${l.id}_${i + 1}`;
+      // One item's own edits (gallery-overrides.ts); null takes the item out.
+      const own = g.overrides?.[cellId];
+      if (own === null) return [];
       const names = { ...scope.names, Item: row, Index: i, Row: cell.row, Col: cell.col, N: rows.length, CellW: cell.width, CellH: cell.height };
-      const filled = g.template.map(t => place(fill(t, { ...row, i: i + 1 }) as Layer, cell, cellId, false));
+      const filled = withOverrides(g.template, cellId, g.overrides).map(t => place(fill(t, { ...row, i: i + 1 }) as Layer, cell, cellId, false));
       const cellScope = { ...scope, names };
       // A cell's rules read its row: "=Index * 120" staggers the cells.
       const inner = resolveGalleries(resolveMotionRules(resolveSourceFormulas(filled, cellScope, problems), cellScope, problems), cellScope, problems);
-      return { id: cellId, type: 'group', z: i, x: cell.x, y: cell.y, width: cell.width, height: cell.height, layers: inner } as unknown as Layer;
+      const group = { id: cellId, type: 'group', z: i, x: cell.x, y: cell.y, width: cell.width, height: cell.height, layers: inner } as unknown as Layer;
+      // The cell's box is the layout's: an item moves by its layers' overrides.
+      const { x: _x, y: _y, width: _w, height: _h, layers: _l, ...props } = own ?? {};
+      void _x; void _y; void _w; void _h; void _l;
+      return [Object.keys(props).length ? applyOverride(group, props) : group];
     });
     const rest = { ...(node as unknown as Row) };
     delete rest['gallery'];
