@@ -11,6 +11,7 @@ import { composeTheme } from '../styles/compose';
 import { measureGaps, drawArrowLine, drawLabel } from './canvas-draw';
 import { CanvasInteractions } from './canvas-interactions';
 import { keepScripts } from './canvas-script';
+import type { PoseMap } from '../renderer/pose-overlay';
 
 export class CanvasManager extends CanvasInteractions {
   private motionTrailsOn = false;
@@ -18,6 +19,7 @@ export class CanvasManager extends CanvasInteractions {
    *  Without it the trail is measured from a moving layer and crawls. */
   private authoredLayers: (() => Layer[]) | null = null;
   private isPosed: (() => boolean) | null = null;
+  private generatedPoses: (() => PoseMap) | null = null;
 
   constructor(container: HTMLElement, state: StateManager) {
     super();
@@ -213,6 +215,11 @@ export class CanvasManager extends CanvasInteractions {
     this.isPosed = fn;
   }
 
+  /** The player's frame for layers the design does not hold (gallery cells), drawn while posed. */
+  setGeneratedPoseSource(fn: (() => PoseMap) | null): void {
+    this.generatedPoses = fn;
+  }
+
   /** Draw every animated layer's path in design coordinates, scaled with the
    *  artwork by the overlay's own 100%×100% box. */
   paintMotionTrails(): void {
@@ -272,6 +279,7 @@ export class CanvasManager extends CanvasInteractions {
       pageIndex: pages && pages.length > 0 ? Math.min(currentPageIndex, pages.length - 1) : undefined,
       containerWidth: cw,
       showGrid: this.state.get().gridVisible,
+      ...(this.isPosed?.() && this.generatedPoses ? { poses: this.generatedPoses() } : {}),
     });
     if (flowed) {
       // Cache geometry so drag-to-reorder + span/height resize map cursor

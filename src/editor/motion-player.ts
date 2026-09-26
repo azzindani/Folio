@@ -40,6 +40,10 @@ export class MotionPlayer {
   private plan: PosePlan | null = null;
   /** True while a pose is being written: the player's own writes are not edits. */
   private writing = false;
+  /** The frame for layers the design does not hold (gallery cells) — drawn by the canvas render, never written. */
+  private generated = new Map<string, Pose>();
+  /** Redraws the canvas when a frame moved only such layers (no state write to trigger it). */
+  private redraw: (() => void) | null = null;
 
   constructor(private state: StateManager) {
     state.subscribe((_s, keys) => this.onState(keys));
@@ -65,6 +69,9 @@ export class MotionPlayer {
   }
 
   get time(): number { return this.t; }
+  /** The current frame's poses for layers the design does not hold; empty when nothing is posed. */
+  generatedPoses(): ReadonlyMap<string, Pose> { return this.generated; }
+  setRedraw(fn: () => void): void { this.redraw = fn; }
   get playing(): boolean { return this.isPlaying; }
   /** True while the player is writing a frame — listeners that redraw on edits can skip it. */
   get posing(): boolean { return this.writing; }
@@ -147,6 +154,7 @@ export class MotionPlayer {
   forget(): void {
     this.pause();
     this.baseline = null;
+    this.generated = new Map();
     this.plan = null;
     this.t = 0;
     this.emit();
@@ -168,7 +176,11 @@ export class MotionPlayer {
       this.baseline = new Map();
       this.baselinePage = this.state.get().currentPageIndex;
     }
-    const frame = this.engine.poseFrame(plan, ms);
+    // A gallery's cells are not in the design: their poses are kept apart and drawn by the render (pose-overlay.ts).
+    const held = heldIds(this.state.getCurrentLayers() as Layer[]);
+    const frame = new Map<string, Pose>(), generated = new Map<string, Pose>();
+    for (const [id, pose] of this.engine.poseFrame(plan, ms)) (held.has(id) ? frame : generated).set(id, pose);
+    this.generated = generated;
     const missing = [...frame.keys()].filter(id => !this.baseline?.has(id));
     if (missing.length) {
       const authored = new Map(flattenForTimeline(plan.layers).map(r => [r.layer.id, r.layer as unknown as Record<string, unknown>]));
@@ -179,7 +191,7 @@ export class MotionPlayer {
         this.baseline.set(id, keep);
       }
     }
-    this.write(frame, this.baselinePage);
+    if (frame.size) this.write(frame, this.baselinePage); else if (generated.size) this.redraw?.();
     this.emit();
   }
 
@@ -222,6 +234,18 @@ export class MotionPlayer {
     if (!this.baseline) return;
     const base = this.baseline;
     this.baseline = null;
-    this.write(base, this.baselinePage);
+    const drew = this.generated.size > 0;
+    this.generated = new Map();
+    if (base.size) this.write(base, this.baselinePage); else if (drew) this.redraw?.();
   }
+}
+
+/** Every id the design holds on a surface, at any depth. */
+function heldIds(ls: Layer[], out = new Set<string>()): Set<string> {
+  for (const l of ls) {
+    out.add(l.id);
+    const kids = (l as Layer & { layers?: Layer[] }).layers;
+    if (Array.isArray(kids)) heldIds(kids, out);
+  }
+  return out;
 }

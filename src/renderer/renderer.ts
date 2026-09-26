@@ -19,6 +19,7 @@ import {
 } from './layer-renderers';
 import { renderVideo } from './layer-renderers-video';
 import { renderScript } from './layer-renderers-script';
+import { overlayPoses, type PoseMap } from './pose-overlay';
 
 export interface RenderOptions {
   theme?: ThemeSpec;
@@ -32,6 +33,8 @@ export interface RenderOptions {
   source?: ResolveOptions;
   /** Script components drawn once at t=0, not played — thumbnails (layer-renderers-script.ts). */
   stillScripts?: boolean;
+  /** The editor player's frame for layers the design does not hold — gallery cells (pose-overlay.ts). */
+  poses?: PoseMap;
 }
 
 // ── Render Cache for Dirty Tracking ─────────────────────────
@@ -501,7 +504,7 @@ function renderPlaceholder(layer: Layer, _svg: SVGSVGElement): SVGElement {
 
 function prepareLayers(layers: Layer[], ctx?: TokenResolutionContext, formulaCtx?: FormulaContext, source?: ResolveOptions): Layer[] {
   // Rules become literal layers here and only here (resolve-source.ts); a literal design passes through untouched.
-  let prepared = resolveLayers(layers, source).map(l => expandPositionShorthand(l) as Layer);
+  let prepared = overlayPoses(resolveLayers(layers, source), activeOptions.poses).map(l => expandPositionShorthand(l) as Layer);
 
   // Resolve formula bindings before token substitution
   if (formulaCtx) {

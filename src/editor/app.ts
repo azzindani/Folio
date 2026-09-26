@@ -233,6 +233,9 @@ export class EditorApp extends EditorAppBase {
       // switched on mid-playback.
       this.canvas.setAuthoredLayerSource(() => this.motionPlayer.authoredLayers());
       this.canvas.setPosedSource(() => this.motionPlayer.isPosed);
+      // Gallery cells are posed beside the design: the canvas draws them, and redraws when only they moved.
+      this.canvas.setGeneratedPoseSource(() => this.motionPlayer.generatedPoses());
+      this.motionPlayer.setRedraw(() => this.canvas.render());
     }
 
     // Color scheme panel (inside colors tab)
