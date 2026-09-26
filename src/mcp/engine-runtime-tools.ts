@@ -234,7 +234,8 @@ export function inspectTimeline(args: {
     layers = spec.pages?.[0]?.layers ?? spec.layers ?? [];
   }
   // Tracks as they play: a motion rule shows the keys it compiles to (resolve-source).
-  layers = resolveLayers(layers, sourceOptions(spec, (spec.pages ?? []).find((p: Page) => p.id === args.page_id) ?? spec.pages?.[0]));
+  const source = sourceOptions(spec, (spec.pages ?? []).find((p: Page) => p.id === args.page_id) ?? spec.pages?.[0]);
+  layers = resolveLayers(layers, source);
 
   // Scene view: every track (groups descended) as a bar from its delay to its
   // end, so a stagger, a late exit and a loop each read as what they are.
@@ -247,7 +248,7 @@ export function inspectTimeline(args: {
 
   return okResult(op, {
     track_count: tracks.length,
-    scene_ms: Math.max(sceneLength(tracks), animationDuration(layers)),
+    scene_ms: Math.max(sceneLength(tracks), animationDuration(layers, source.length ? { length: source.length } : {})),
     tracks,
     ...(Object.keys(markers).length ? { markers } : {}),
     ...(windows.length ? { windows } : {}),

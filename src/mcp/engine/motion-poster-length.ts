@@ -32,10 +32,14 @@ function oneShots(layers: Layer[], out: Held[] = []): Held[] {
 
 export type PosterLength = { layers: Layer[]; tracks: number; ends_ms: number } | { error: string; hint: string };
 
-/** The layers with every one-shot track held to `length` ms (0: to its own last key). */
+/**
+ * The layers with every one-shot track held to `length` ms (0: to its own last key).
+ * A piece moved only by loops, rules or script components has no track to hold —
+ * its length is the design's own (length_ms), so that is not a refusal here.
+ */
 export function holdToLength(layers: Layer[], length: number): PosterLength {
   const held = oneShots(layers);
-  if (!held.length) return { error: 'Nothing here moves, so there is no length to set.', hint: 'Give a layer motion first (op:motion, op:track), then set how long the piece lasts.' };
+  if (!held.length) return { layers, tracks: 0, ends_ms: length };
   const late = held.filter(h => h.delay + h.span > length);
   if (length > 0 && late.length) {
     const worst = Math.max(...late.map(h => h.delay + h.span));

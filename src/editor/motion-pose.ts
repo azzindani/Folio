@@ -99,7 +99,8 @@ export function buildPosePlan(authored: Layer[], source: ResolveOptions = {}): P
     }
   };
   walk(layers, []);
-  return { layers, touched, duration: Math.ceil(animationDuration(layers)), rows };
+  // A poster set to last longer (op:scene length_ms) plays to it — its loops keep cycling.
+  return { layers, touched, duration: Math.ceil(animationDuration(layers, source.length ? { length: source.length } : {})), rows };
 }
 
 /** Every layer gets a row, still ones included: a click on its ruler still needs its clocks. */

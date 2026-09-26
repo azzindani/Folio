@@ -341,6 +341,8 @@ export interface DesignSpec {
   markers?: TimeMarkers;
   /** A poster's camera world (a deck keeps it per page). */
   world?: WorldBox;
+  /** How long a poster that moves lasts, ms (animation op:scene length_ms): loops keep cycling, one-shot motion holds (a deck keeps it per page, auto_advance). */
+  length_ms?: number;
   // Mode B interactive output
   _output_mode?: 'static' | 'interactive';
   state?: Record<string, StateDef>;
