@@ -138,13 +138,12 @@ export async function openCapture(): Promise<CaptureSession | string> {
   };
 }
 
-/** One render's captures, in one session. Returns notes for the reply. */
-export async function captureScripts(wanted: { layer: ScriptLayer; t: number }[]): Promise<string[]> {
-  if (!wanted.some(w => !scriptFrame(w.layer, w.t))) return [];
+/** One render's captures, in one session: notes for the reply, and the keys to drop once it has drawn them. */
+export async function captureScripts(wanted: { layer: ScriptLayer; t: number }[]): Promise<{ notes: string[]; keys: string[] }> {
+  if (!wanted.some(w => !scriptFrame(w.layer, w.t))) return { notes: [], keys: [] };
   const session = await openCapture();
-  if (typeof session === 'string') return [session];
-  try { await session.capture(wanted); } finally { await session.close(); }
-  return [];
+  if (typeof session === 'string') return { notes: [session], keys: [] };
+  try { return { notes: [], keys: await session.capture(wanted) }; } finally { await session.close(); }
 }
 
 /** Every layer of a design, all pages. */
@@ -180,8 +179,10 @@ export async function scriptsAhead(spec: DesignSpec, at: (t: number, frameMs?: n
 export async function withScriptCapture(run: () => ToolResult): Promise<ToolResult> {
   const first = collectScripts(run);
   if (!first.missing.length) return first.result;
-  const notes = await captureScripts(first.missing);
-  const again = collectScripts(run).result;
+  const { notes, keys } = await captureScripts(first.missing);
+  // Drawn into the reply's SVG/PNG by now: the frames are not kept (the cache holds up to 4000).
+  let again: ToolResult;
+  try { again = collectScripts(run).result; } finally { dropScriptFrames(keys); }
   if (!notes.length) return again;
   const was = (again as unknown as { notes?: unknown }).notes;
   return { ...again, notes: [...(Array.isArray(was) ? was : []), ...notes] } as ToolResult;

@@ -12,6 +12,7 @@
 
 import type { DesignSpec, Layer, Page } from '../../schema/types';
 import { layersAt, animationDuration } from '../../export/gif-frames';
+import { stampScripts } from '../../scripting/script-frames';
 import { canvasBoxes } from '../../export/frame-cull';
 import { shotMarks } from './motion-time';
 import { shotRests, type ShotRest } from './motion-lint';
@@ -120,7 +121,9 @@ export function reviewMotionPage(spec: DesignSpec, page: Page | undefined, layer
   // had folded away. Such a shot is measured at its fullest moment instead.
   const rests = shotRests(layers, marks, end).slice(0, MAX_SHOTS)
     .map(r => (r.rest_ms >= r.until - r.at - 1 ? { ...r, t: fullestAt(layers, r.at, r.until) } : r));
-  const posed = rests.map(r => ({ id: r.shot, layers: layersAt(layers, r.t) }));
+  // Posed at the shot's moment, script components included (their frame for that time — close-out C4).
+  const pose = (t: number): Layer[] => stampScripts(layersAt(layers, t), t);
+  const posed = rests.map(r => ({ id: r.shot, layers: pose(r.t) }));
   const measured = measureEntries(spec, posed, projectDir);
   // A shot whose only still moment comes before anything has entered measured
   // a blank frame and called a full scene "100% empty" (found on a 7-scene
@@ -131,7 +134,7 @@ export function reviewMotionPage(spec: DesignSpec, page: Page | undefined, layer
   const opening = (r: ShotRest): boolean => r.t + 1 - r.rest_ms <= r.at;
   const blankAt = rests.flatMap((r, i) => (((measured[i]?.ink ?? 0) < BLANK_INK || opening(r)) && r.until - 1 > r.t ? [i] : []));
   if (blankAt.length) {
-    const again = blankAt.map(i => ({ id: rests[i]?.shot, layers: layersAt(layers, (rests[i]?.until ?? 1) - 1) }));
+    const again = blankAt.map(i => ({ id: rests[i]?.shot, layers: pose((rests[i]?.until ?? 1) - 1) }));
     const remeasured = measureEntries(spec, again, projectDir);
     blankAt.forEach((i, j) => {
       const r = rests[i], m = remeasured[j], pose = again[j];
