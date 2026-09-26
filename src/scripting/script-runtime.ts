@@ -27,12 +27,12 @@ export function seedOf(id: string): number {
 const CSP = "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; font-src data:; media-src data: blob:";
 
 /** The shim: Folio's clock and seed, before the component's code runs. */
-function shim(seed: number, w: number, h: number, duration: number, loop: boolean): string {
+function shim(seed: number, w: number, h: number, duration: number, loop: boolean, markers: Record<string, number>): string {
   return `(function(){
 var SEED=${seed >>> 0},s=SEED,now=0,frames=[],raf=[],realRaf=window.requestAnimationFrame.bind(window);
 function rnd(){s|=0;s=s+0x6D2B79F5|0;var t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;}
 function hash(n){var x=Math.imul((n|0)^SEED,0x9E3779B1);x^=x>>>15;x=Math.imul(x,0x85EBCA77);x^=x>>>13;return(x>>>0)/4294967296;}
-var folio={width:${w},height:${h},duration:${duration},loop:${loop},random:rnd,hash:hash,frame:function(fn){frames.push(fn);},get t(){return now;}};
+var folio={width:${w},height:${h},duration:${duration},loop:${loop},markers:Object.freeze(${JSON.stringify(markers)}),random:rnd,hash:hash,frame:function(fn){frames.push(fn);},get t(){return now;}};
 Math.random=rnd;Date.now=function(){return 1700000000000+now;};performance.now=function(){return now;};
 window.requestAnimationFrame=function(fn){raf.push(fn);return raf.length;};window.cancelAnimationFrame=function(){};
 window.setTimeout=window.setInterval=function(){return 0;};
@@ -66,7 +66,7 @@ export function buildScriptDoc(layer: ScriptLayer, still = false): string {
     + (layer.css ? `<style>${inStyle(layer.css)}</style>` : '')
     + `</head><body>${layer.html ?? ''}`
     + (still ? '<script>window.__folioCapture=true;</script>' : '')
-    + `<script>${shim(seed, w, h, duration, layer.loop === true)}</script>`
+    + `<script>${shim(seed, w, h, duration, layer.loop === true, layer.script_markers ?? {})}</script>`
     + `<script>${inScript(layer.js ?? '')}</script>`
     + `<script>${DRIVER}</script></body></html>`;
 }

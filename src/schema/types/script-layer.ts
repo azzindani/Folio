@@ -24,4 +24,6 @@ export interface ScriptLayer extends BaseLayer {
   loop?: boolean;
   /** Set by the frame sampler, never authored: the page time a raster render draws it at (scripting/script-frames.ts). */
   script_t?: number;
+  /** Set when the surface is resolved, never authored: its markers, which the code reads as folio.markers. */
+  script_markers?: Record<string, number>;
 }

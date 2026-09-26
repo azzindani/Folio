@@ -14,7 +14,7 @@ import * as fs from 'fs';
 import type { DesignSpec, Layer, Page } from '../../schema/types';
 import type { ToolResult, ProgressItem } from '../types';
 import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, pOk, pWarn } from './utils';
-import { resolveLayers, sourceOptions } from '../../renderer/resolve-source';
+import { resolveLayers, sourceOptions, unstampMarkers } from '../../renderer/resolve-source';
 import { hasSourceFormulas, type SourceProblem } from '../../scripting/formula-source';
 import { syncAnimationsToSpec } from './animation-sync';
 import { toIdList } from './motion';
@@ -38,7 +38,7 @@ function bake(layers: Layer[], ids: Set<string> | null, spec: DesignSpec, page: 
   const hit: string[] = [];
   const opts = sourceOptions(spec, page, problems);
   const walk = (ls: Layer[]): Layer[] => ls.map(l => {
-    if (!ids || ids.has(l.id)) { hit.push(l.id); return resolveLayers([l], opts)[0] ?? l; }
+    if (!ids || ids.has(l.id)) { hit.push(l.id); return unstampMarkers(resolveLayers([l], opts))[0] ?? l; }
     const kids = (l as Node).layers;
     return Array.isArray(kids) ? ({ ...l, layers: walk(kids) } as Layer) : l;
   });

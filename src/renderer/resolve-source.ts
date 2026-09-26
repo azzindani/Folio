@@ -55,7 +55,7 @@ export function carriesRule(l: Layer): boolean {
 /** Whether anything under `layers` is a rule this step expands. */
 function hasRules(layers: Layer[], opts: ResolveOptions): boolean {
   return layers.some(l => {
-    if ((opts.place && l.type === 'auto_layout') || carriesRule(l)) return true;
+    if ((opts.place && l.type === 'auto_layout') || carriesRule(l) || (l.type === 'script' && opts.markers)) return true;
     const kids = (l as Layer & { layers?: Layer[] }).layers;
     return Array.isArray(kids) && hasRules(kids, opts);
   });
@@ -67,8 +67,34 @@ export function resolveLayers(layers: Layer[], opts: ResolveOptions = {}): Layer
   const scope = scopeOf(opts);
   // A gallery's own formulas (its box, its columns) first; its cells then read their row.
   const galleries = resolveGalleries(resolveSourceFormulas(layers, scope, opts.problems), scope, opts.problems);
-  const moving = resolveMotionRules(galleries, scope, opts.problems);
+  const moving = stampMarkers(resolveMotionRules(galleries, scope, opts.problems), opts.markers);
   return opts.place ? resolveAutoLayouts(moving) : moving;
+}
+
+/**
+ * Every script component with the surface's markers, read as folio.markers.
+ * Found live (Opus 5.5 promo): a script timed itself by writing the marker's
+ * ms into its code ("t - 35600"), so op:retime or op:markers moved the scene
+ * and left the drawing behind. "t - folio.markers.g" moves with it.
+ */
+function stampMarkers(layers: Layer[], markers: Record<string, number> | undefined): Layer[] {
+  if (!markers) return layers;
+  const out = layers.map((l): Layer => {
+    if (l.type === 'script') return { ...l, script_markers: markers } as Layer;
+    const kids = (l as Layer & { layers?: Layer[] }).layers;
+    const next = Array.isArray(kids) ? stampMarkers(kids, markers) : kids;
+    return next === kids ? l : ({ ...l, layers: next } as Layer);
+  });
+  return out.every((l, i) => l === layers[i]) ? layers : out;
+}
+
+/** The layers without the stamp — for a resolved tree that is written back (edit_layer detach). */
+export function unstampMarkers(layers: Layer[]): Layer[] {
+  return layers.map((l): Layer => {
+    const { script_markers: _m, ...rest } = l as Layer & { script_markers?: unknown; layers?: Layer[] };
+    void _m;
+    return (Array.isArray(rest.layers) ? { ...rest, layers: unstampMarkers(rest.layers) } : rest) as Layer;
+  });
 }
 
 /** A design as consumers see it: its layers and every page's resolved — the same object when nothing changes. */
