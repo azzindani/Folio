@@ -243,12 +243,13 @@ export function inspectTimeline(args: {
   const resolved = resolveTimeline(layers);
   const tracks = sceneTracks(resolved);
   const markers = readMarkers(spec, args.page_id ? (spec.pages ?? []).find((p: Page) => p.id === args.page_id) : undefined);
-  const ascii = renderSceneASCII(resolved, tracks, 56, markers);
+  const sceneMs = Math.max(sceneLength(tracks), animationDuration(layers, source.length ? { length: source.length } : {}));
+  const ascii = renderSceneASCII(resolved, tracks, 56, markers, sceneMs);
   const windows = lifeWindowList(resolved);
 
   return okResult(op, {
     track_count: tracks.length,
-    scene_ms: Math.max(sceneLength(tracks), animationDuration(layers, source.length ? { length: source.length } : {})),
+    scene_ms: sceneMs,
     tracks,
     ...(Object.keys(markers).length ? { markers } : {}),
     ...(windows.length ? { windows } : {}),
