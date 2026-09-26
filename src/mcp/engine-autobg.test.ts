@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { isFullCanvasBgRect, hasFullCanvasBackdrop, hasRenderableContent } from './engine-layer-tools';
-import type { Layer } from '../schema/types';
+import type { Layer, DesignSpec } from '../schema/types';
+import { hasRenderableContent as specHasContent } from './engine-edit-tools';
 
 const W = 1080, H = 1350;
 const L = (o: Record<string, unknown>): Layer => o as unknown as Layer;
@@ -46,5 +47,13 @@ describe('auto-bg detection — guarantee a canvas ground (suite-022/042 white-v
     expect(hasRenderableContent([])).toBe(false);
     expect(hasRenderableContent([L({ type: 'text', content: { type: 'plain', value: '   ' } })])).toBe(false);
     expect(hasRenderableContent([L({ type: 'image', src: 'x.png' })])).toBe(true);
+  });
+
+  it('counts a gallery by its template — the group itself stores no items (seal refused it as blank)', () => {
+    const gallery = L({ id: 'g', type: 'group', z: 1, x: 80, y: 80, width: 920, height: 600, layers: [],
+      gallery: { items: [{ t: 'One' }, { t: 'Two' }], template: [L({ id: 't', type: 'text', z: 0, content: { type: 'plain', value: '{{t}}' } })] } });
+    expect(hasRenderableContent([gallery])).toBe(true);
+    const spec = { meta: { id: 'd', name: 'D', type: 'poster' }, document: { width: W, height: H }, layers: [gallery] } as unknown as DesignSpec;
+    expect(specHasContent(spec)).toBe(true);
   });
 });

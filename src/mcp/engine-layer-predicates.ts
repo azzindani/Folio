@@ -75,6 +75,9 @@ export function hasRenderableContent(layers: Layer[]): boolean {
     }
     const kids = (l as unknown as Record<string, unknown>)['layers'];
     if (Array.isArray(kids) && hasRenderableContent(kids as Layer[])) return true;
+    // A gallery stores one cell (resolve-gallery.ts): its template is what every item draws.
+    const cell = (l as { gallery?: { template?: unknown } }).gallery?.template;
+    if (Array.isArray(cell) && hasRenderableContent(cell as Layer[])) return true;
   }
   return false;
 }
