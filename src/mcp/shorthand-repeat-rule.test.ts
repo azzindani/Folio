@@ -41,6 +41,15 @@ describe('repeat keep:"rule" — one gallery instead of N copies', () => {
     expect(texts).toEqual(['Free · 1', 'Pro · 2', 'Team · 3']);
   });
 
+  it("reads a row's own n and i as its values, written out or kept as a rule", () => {
+    const rows = [{ n: '01', i: 'cloud' }, { n: '02', i: 'terminal' }];
+    const sh: ShorthandLayer = { id: 'st', type: 'text', repeat: rows, x: 0, y: 0, width: 200, height: 40, text: '{{n}} {{i}}', size: 20 };
+    const copies = expandShorthandLayers([sh]) as Node[];
+    expect(copies.map(c => c.content?.value)).toEqual(['01 cloud', '02 terminal']);
+    const kept = resolveLayers(expandShorthandLayers([{ ...sh, keep: 'rule' }]));
+    expect(['st_1', 'st_2'].map(c => (find(kept, c)?.layers?.[0] as Node | undefined)?.content?.value)).toEqual(['01 cloud', '02 terminal']);
+  });
+
   it('a count repeats the template that many times, one row by default', () => {
     const [g] = expandShorthandLayers([{ id: 'dot', type: 'circle', repeat: 5, keep: 'rule', x: 0, y: 500, width: 40, height: 40, repeat_gap: 10, color: '#E4572E' }]) as Node[];
     expect(g).toMatchObject({ type: 'group', width: 240, height: 40, gallery: { items: 5, columns: 5 } });
