@@ -25,6 +25,7 @@ import { poseTransform, FRAME_POSE, REST_POSE, type FramePose } from './frame-po
 import { resolveTimeline } from '../animation/timeline-resolve';
 import { windowOf, aliveAt, windowEnd } from '../animation/lifespan';
 import { shutterOf, smearOf } from './motion-blur';
+import { resolveLayers } from '../renderer/resolve-source';
 
 const fmt = (n: number): string => String(Number(n.toFixed(3)));
 
@@ -417,9 +418,9 @@ export function specAt(spec: DesignSpec, pageIndex: number, t: number, frameMs?:
   if (pages && pages.length > 0) {
     const idx = Math.min(Math.max(pageIndex, 0), pages.length - 1);
     const page = pages[idx];
-    return { ...spec, pages: [{ ...page, layers: layersAt(page.layers ?? [], t, frameMs) }] };
+    return { ...spec, pages: [{ ...page, layers: layersAt(resolveLayers(page.layers ?? []), t, frameMs) }] };
   }
-  return { ...spec, layers: layersAt(spec.layers ?? [], t, frameMs) };
+  return { ...spec, layers: layersAt(resolveLayers(spec.layers ?? []), t, frameMs) };
 }
 
 /** Evenly spaced sample times covering one full run. */
