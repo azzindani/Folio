@@ -98,9 +98,9 @@ export class MinimapManager {
     if (design.pages && design.pages.length > 0) {
       const pi = Math.min(currentPageIndex, design.pages.length - 1);
       const page = design.pages[pi];
-      svg = renderPage(page?.layers ?? [], width, height, { theme: composed, source: sourceOptions(design, page) });
+      svg = renderPage(page?.layers ?? [], width, height, { theme: composed, stillScripts: true, source: sourceOptions(design, page) });
     } else {
-      svg = renderDesign(design, { theme: composed });
+      svg = renderDesign(design, { theme: composed, stillScripts: true });
     }
     svg.setAttribute('width',  String(THUMB_W));
     svg.setAttribute('height', String(THUMB_H));

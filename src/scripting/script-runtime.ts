@@ -54,8 +54,8 @@ if(window.__folioCapture)window.__folioRender(0);else window.__folioRealRaf(tick
 const inScript = (code: string): string => code.replace(/<\/script/gi, '<\\/script');
 const inStyle = (css: string): string => css.replace(/<\/style/gi, '<\\/style');
 
-/** The whole document a script layer runs in. */
-export function buildScriptDoc(layer: ScriptLayer): string {
+/** The whole document a script layer runs in; `still` draws t=0 once and never plays (a thumbnail). */
+export function buildScriptDoc(layer: ScriptLayer, still = false): string {
   const w = typeof layer.width === 'number' ? layer.width : 400;
   const h = typeof layer.height === 'number' ? layer.height : 300;
   const seed = typeof layer.seed === 'number' ? layer.seed : seedOf(layer.id);
@@ -65,6 +65,7 @@ export function buildScriptDoc(layer: ScriptLayer): string {
     + `<style>html,body{margin:0;padding:0;width:${w}px;height:${h}px;overflow:hidden;background:transparent}</style>`
     + (layer.css ? `<style>${inStyle(layer.css)}</style>` : '')
     + `</head><body>${layer.html ?? ''}`
+    + (still ? '<script>window.__folioCapture=true;</script>' : '')
     + `<script>${shim(seed, w, h, duration, layer.loop === true)}</script>`
     + `<script>${inScript(layer.js ?? '')}</script>`
     + `<script>${DRIVER}</script></body></html>`;

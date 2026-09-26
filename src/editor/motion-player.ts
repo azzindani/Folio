@@ -160,8 +160,10 @@ export class MotionPlayer {
   /** Pose every touched layer at `ms`, capturing each one's authored fields the first time. */
   private applyAt(ms: number): void {
     const plan = this.currentPlan();
-    if (!this.engine || !plan || plan.touched.length === 0) return;
+    if (!this.engine || !plan) return;
     this.t = ms;
+    // Nothing to pose (a piece moved only by script components): the clock still runs for them.
+    if (plan.touched.length === 0) { this.emit(); return; }
     if (!this.baseline) {
       this.baseline = new Map();
       this.baselinePage = this.state.get().currentPageIndex;

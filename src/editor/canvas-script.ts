@@ -36,7 +36,8 @@ export function driveScripts(player: MotionPlayer, container: HTMLElement): () =
   const post = (f: HTMLIFrameElement): void => { f.contentWindow?.postMessage(msg, '*'); };
   const all = (): HTMLIFrameElement[] => Array.from(container.querySelectorAll<HTMLIFrameElement>(SCRIPTS));
   const unsub = player.subscribe(s => {
-    msg = s.playing || player.isPosed ? { folio: 't', t: s.time } : { folio: 'free' };
+    // Playing, posed or paused mid-piece: the playhead. Stopped at the start: it plays by itself, as CSS motion does.
+    msg = s.playing || player.isPosed || s.time > 0 ? { folio: 't', t: s.time } : { folio: 'free' };
     all().forEach(post);
   });
   // A component that loads mid-pose starts on the playhead, not at 0.

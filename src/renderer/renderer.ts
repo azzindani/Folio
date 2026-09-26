@@ -30,6 +30,8 @@ export interface RenderOptions {
   formulaContext?: FormulaContext;
   /** The design's names and canvas for source formulas (resolve-source sourceOptions); renderDesign derives them. */
   source?: ResolveOptions;
+  /** Script components drawn once at t=0, not played — thumbnails (layer-renderers-script.ts). */
+  stillScripts?: boolean;
 }
 
 // ── Render Cache for Dirty Tracking ─────────────────────────
@@ -243,7 +245,7 @@ function renderLayerUncached(layer: Layer, svg: SVGSVGElement): SVGElement {
     case 'embed_code':          el = renderEmbedCode(layer, svg); break;
     case 'popup':               el = renderPopup(layer, svg, renderLayer); break;
     case 'particle':            el = renderParticle(layer, svg); break;
-    case 'script':              el = renderScript(layer); break;
+    case 'script':              el = renderScript(layer, activeOptions.stillScripts === true); break;
     case 'button':              el = renderButton(layer, svg); break;
     case 'tabs':                el = renderTabs(layer, svg); break;
     case 'accordion':           el = renderAccordion(layer, svg); break;

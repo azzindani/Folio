@@ -125,8 +125,14 @@ export abstract class EditorAppBase {
    */
   /** Script components follow the transport (canvas-script.ts). */
   protected wireScripts(): void {
-    const container = document.querySelector<HTMLElement>('.canvas-svg-container');
-    if (container) driveScripts(this.motionPlayer, container);
+    let wired = false;
+    const check = (): void => {
+      const container = wired ? null : document.querySelector<HTMLElement>('.canvas-svg-container');
+      if (container) { wired = true; driveScripts(this.motionPlayer, container); }
+    };
+    // The canvas is built after the layout: wire on the first design that reaches it.
+    this.state.subscribe((_s, keys) => { if (keys.includes('design')) check(); });
+    check();
   }
   protected wireCanvasVideo(): void {
     const check = (): void => {

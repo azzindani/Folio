@@ -120,7 +120,7 @@ export class PageStrip {
       const composed = theme
         ? composeTheme(theme, { palette: palette ?? undefined, typePack: typePack ?? undefined, effectsPack: effectsPack ?? undefined })
         : undefined;
-      const svg = renderPage(page.layers ?? [], docW, docH, { theme: composed, ...(design ? { source: sourceOptions(design, page) } : {}) });
+      const svg = renderPage(page.layers ?? [], docW, docH, { theme: composed, stillScripts: true, ...(design ? { source: sourceOptions(design, page) } : {}) });
       svg.setAttribute('width', String(THUMB_W));
       svg.setAttribute('height', String(THUMB_H));
       svg.style.display = 'block';
