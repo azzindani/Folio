@@ -52,6 +52,7 @@ const diamond = (left: number, extra: string, attrs: string, title: string): str
 /** One layer's row. `timing` is absent until the sampler loads; the row then draws keyframes at their raw t. */
 export function trackHTML(layer: Layer, timing: RowTiming | undefined, duration: number, depth: number): string {
   const keyframes = (layer.animation?.keyframes ?? []) as Keyframe[];
+  const ruled = layer.animation?.rule !== undefined;
   const parts: string[] = [];
 
   const w = timing?.window;
@@ -85,7 +86,7 @@ export function trackHTML(layer: Layer, timing: RowTiming | undefined, duration:
   // The layer's own motion as a bar from its first keyframe to its last: drag it to move all of it in time (timeline-drag.ts).
   const own = timing?.keys ?? [];
   // A rule's track moves by editing the rule, not by dragging keys it does not store.
-  if (own.length >= 2 && !timing?.link && layer.animation?.rule === undefined) {
+  if (own.length >= 2 && !timing?.link && !ruled) {
     const a = Math.min(...own), b = Math.max(...own);
     parts.push(`<div class="tl-bar" data-layer-id="${esc(layer.id)}" data-ms="${a}" title="${esc(`${layer.id}'s motion ${fmtMs(a)}–${fmtMs(b)} — drag to move it in time`)}"`
       + ` style="position:absolute;top:${TRACK_H / 2 - 6}px;height:12px;left:${at(a, duration)}%;width:${Math.max(0.4, at(b, duration) - at(a, duration))}%;`
@@ -118,7 +119,7 @@ export function trackHTML(layer: Layer, timing: RowTiming | undefined, duration:
 
   // A motion rule owns no keyframes either: its keys are the ones it compiles to (resolve-motion.ts),
   // shown where they play and not draggable — the rule is what is edited.
-  if (layer.animation?.rule !== undefined) {
+  if (ruled) {
     for (const t of timing?.keys ?? []) {
       parts.push(diamond(at(t, duration), 'background:var(--color-accent);opacity:.55;pointer-events:none',
         `class="tl-rule-key" data-layer-id="${esc(layer.id)}" data-t="${t}"`, `${fmtMs(t)} — from ${layer.id}'s motion rule`));
@@ -140,8 +141,8 @@ export function trackHTML(layer: Layer, timing: RowTiming | undefined, duration:
              title="${esc(layer.id)}${link ? ` — follows ${esc(link.to)} +${link.lag}ms` : ''}">
           ${depth ? '<span style="opacity:.45">└</span>' : ''}<span style="overflow:hidden;text-overflow:ellipsis">${esc(layer.id)}</span>${badges ? `<span style="opacity:.5">${esc(badges)}</span>` : ''}
         </div>
-        <div class="tl-track-area" data-layer-id="${esc(layer.id)}"
-          style="flex:1;position:relative;cursor:crosshair;background:var(--color-surface-2)">
+        <div class="tl-track-area" data-layer-id="${esc(layer.id)}"${ruled ? ` title="${esc(`${layer.id} moves by a rule — edit the rule, or right-click the layer → Detach rule to edit its keys`)}"` : ''}
+          style="flex:1;position:relative;cursor:${ruled ? 'default' : 'crosshair'};background:var(--color-surface-2)">
           ${parts.join('')}
         </div>
       </div>`;

@@ -58,7 +58,9 @@ export function playsInTime(l: Layer): boolean {
   const o = l as unknown as Record<string, unknown>;
   // Footage moves by itself: a page holding only a clip still plays (found live —
   // the Play button stayed hidden on a video-only page).
-  return (l.animation?.keyframes ?? []).length > 0 || Boolean(o['motion_path']) || Boolean(o['link'])
+  // A motion rule plays the track it compiles to (renderer/resolve-motion.ts): a rule-only
+  // design hid its Play button and a mixed one its rule rows.
+  return (l.animation?.keyframes ?? []).length > 0 || l.animation?.rule !== undefined || Boolean(o['motion_path']) || Boolean(o['link'])
     || typeof o['in'] === 'number' || typeof o['out'] === 'number' || l.type === 'video';
 }
 const hasMotion = playsInTime;

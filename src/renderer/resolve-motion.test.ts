@@ -14,6 +14,7 @@ import { withAnimationMirror } from '../animation/page-animations';
 import { buildPosePlan } from '../editor/motion-pose';
 import { sourceOptions } from './resolve-source';
 import { trackHTML } from '../ui/panels/timeline-track-view';
+import { timelineRows } from '../ui/panels/timeline-model';
 
 const scope = { names: { Beat: 600 }, W: 1080, H: 1350 };
 const L = (o: Record<string, unknown>): Layer => o as unknown as Layer;
@@ -74,5 +75,7 @@ describe('motion rules', () => {
     expect(html).toContain('data-t="500"');
     expect(html).not.toContain('class="tl-keyframe"');
     expect(html).not.toContain('class="tl-bar"');
+    // Listed beside written tracks, and it counts as motion (the Play button).
+    expect(timelineRows(spec.layers ?? [], []).map(r => r.layer.id)).toEqual(['card', 'lit']);
   });
 });
