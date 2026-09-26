@@ -137,6 +137,8 @@ function isPositionless(o: Rec): boolean {
   // everything that reads x/y (motion readouts, bbox checks) saw a bar at the foot.
   if (['x1', 'y1', 'x2', 'y2'].every(k => num(o[k]) !== undefined)) return false;
   if (num(o['cx']) !== undefined && num(o['cy']) !== undefined) return false;
+  // A path draws its own `d` (a polygon its points): placing it moved a lamp string to y 2300 (phase 3, S8 live).
+  if ((typeof o['d'] === 'string' && o['d'].trim()) || Array.isArray(o['points'])) return false;
   return num(o['x']) === undefined || num(o['y']) === undefined;
 }
 

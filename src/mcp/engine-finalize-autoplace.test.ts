@@ -227,4 +227,13 @@ describe('placePositionlessLayers', () => {
     ] as unknown as Layer[];
     expect(placePositionlessLayers(layers, 1080, 1080)).toBe(0);
   });
+
+  it('leaves a path where its own d draws it (a lamp string was moved to y 2300)', () => {
+    const layers = [
+      { id: 'string', type: 'path', z: 1, d: 'M 0 30 Q 400 80 800 40', stroke: { color: '#1F2A36', width: 2 } },
+      { id: 'tri', type: 'polygon', z: 1, points: [[0, 0], [10, 0], [5, 8]] },
+    ] as unknown as Layer[];
+    expect(placePositionlessLayers(layers, 1080, 1080)).toBe(0);
+    expect(layers[0]).not.toHaveProperty('y');
+  });
 });

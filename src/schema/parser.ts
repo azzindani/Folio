@@ -1,5 +1,6 @@
 import yaml from 'js-yaml';
 import type { DesignSpec, ThemeSpec, ComponentSpec, TemplateSpec } from './types';
+import { compactYAML } from './yaml-compact';
 
 export class ParseError extends Error {
   constructor(message: string, public line?: number, public column?: number) {
@@ -21,15 +22,9 @@ export function parseYAML<T = unknown>(source: string): T {
   }
 }
 
+/** A design as the editor saves and shows it — compact, as the server writes it (yaml-compact.ts). */
 export function serializeYAML(data: unknown): string {
-  return yaml.dump(data, {
-    indent: 2,
-    lineWidth: 120,
-    noRefs: true,
-    sortKeys: false,
-    quotingType: '"',
-    forceQuotes: false,
-  });
+  return compactYAML(data);
 }
 
 // A weak model (via patch_design) sometimes writes `layers` as a SINGLE object
