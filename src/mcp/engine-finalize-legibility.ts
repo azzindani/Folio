@@ -3,7 +3,8 @@
 // backdrop it actually sits on (the dominant canvas wash OR a local band/card/badge).
 import type { Layer, ThemeSpec } from '../schema/types';
 import { resolveToken } from '../engine/token-resolver';
-import { layerBBox, layerText, isLocked } from './engine-finalize-geom';
+import { layerBBox, layerText } from './engine-finalize-geom';
+import { keepsItsPlace } from './engine-finalize-time';
 import { capsFloorPx, isDisplaySize } from './engine/caps-tracking';
 import { hexToRgb } from './engine/color-math';
 import { contrastRatio } from './engine/marks-contrast';
@@ -42,7 +43,7 @@ function flattenLayers(layers: Layer[]): Layer[] {
   const out: Layer[] = [];
   const walk = (ls: Layer[]): void => {
     for (const l of ls) {
-      if (isLocked(l)) continue;   // authored subtree — exempt from re-lighting
+      if (keepsItsPlace(l)) continue;   // authored subtree, or placed for its moment — exempt from re-lighting
       out.push(l);
       const kids = (l as unknown as Record<string, unknown>)['layers'];
       if (Array.isArray(kids)) walk(kids as Layer[]);

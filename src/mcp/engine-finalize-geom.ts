@@ -6,6 +6,7 @@ import { isDeliberateCanvasRatio } from './poster-ratio';
 import { FLAT_TEXT_STYLE_KEYS } from '../schema/validator';
 import { specOf } from './design-spec';
 import { rasterizeNonBarChartLayer } from './engine-finalize-charts';
+import { keepsItsPlace } from './engine-finalize-time';
 
 export function collectLayerIds(spec: DesignSpec): Set<string> {
   const ids = new Set<string>();
@@ -556,7 +557,7 @@ export function ensureTopMargin(layers: Layer[], docW: number, docH: number): nu
     return (l.type === 'rect' || l.type === 'image') && (b.r - b.x) >= docW * 0.9 && (b.b - b.y) >= docH * 0.9;
   };
   const CONTENT = new Set(['text', 'rich_text', 'image', 'icon', 'kpi_card', 'chart', 'mermaid']);
-  const shiftable = layers.filter(l => l && !isBg(l) && !isMotifLayer(l) && !isLocked(l));
+  const shiftable = layers.filter(l => l && !isBg(l) && !isMotifLayer(l) && !keepsItsPlace(l));
   if (!shiftable.length) return 0;
   // Measure the top/bottom from real CONTENT only — a degenerate decoration parked
   // at (0,0) must not drive the margin or it over-shifts content that already clears.
