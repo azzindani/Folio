@@ -19,7 +19,7 @@ import { IDENTITY, poseAffine, compose, mapBox, type Affine } from './layout-pos
 import { drawnBox } from '../../export/frame-geometry';
 import { feedZoneBoxes } from './diagnose-safe';
 import { seenTexts, textMask, textOnGround, legibilityNotes, hardToRead, type TextOnGround } from './layout-legibility';
-import { sourceOptions } from '../../renderer/resolve-source';
+import { sourceOptions, resolveLayers } from '../../renderer/resolve-source';
 import {
   inkGrid, occupancy, emptyRects, balance, thirds, contentBox, round2,
   type Rect, type Balance,
@@ -308,9 +308,13 @@ export function measureEntries(spec: DesignSpec, entries: Entry[], projectDir: s
 
 /** The pages of a design (or the one asked for) as entries. */
 export function pageEntries(spec: DesignSpec, pageId?: string): Array<Entry & { world: boolean }> {
+  // Read as its rules make it (phase 3): the renderer draws gallery cells and
+  // rule-driven tracks, so the text mask, the ground and every posed shot must
+  // see them too — a rebuilt b29 was measured with its title on screen in a
+  // shot it had faded out of. A literal page comes back as the same array.
   return spec.pages?.length
-    ? spec.pages.filter(p => !pageId || p.id === pageId).map(p => ({ id: p.id, layers: p.layers ?? [], world: !!(p as { world?: unknown }).world }))
-    : [{ layers: spec.layers ?? [], world: !!(spec as { world?: unknown }).world }];
+    ? spec.pages.filter(p => !pageId || p.id === pageId).map(p => ({ id: p.id, layers: resolveLayers(p.layers ?? [], sourceOptions(spec, p)), world: !!(p as { world?: unknown }).world }))
+    : [{ layers: resolveLayers(spec.layers ?? [], sourceOptions(spec)), world: !!(spec as { world?: unknown }).world }];
 }
 
 /** Review every page (or one) of a design as authored. */
