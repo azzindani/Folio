@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import type { DesignSpec, Layer } from '../../schema/types';
 import { cameraZoom, timeNotes, reviewMotionPage, withMotion, fullestAt, type ShotLayout } from './layout-review-motion';
 import { shotRests } from './motion-lint';
-import { reviewLayout } from './layout-review';
+import { reviewLayout, pageEntries } from './layout-review';
 
 const move = (delay: number, dur: number, from: Record<string, number>, to: Record<string, number>): object =>
   ({ keyframes: [{ t: 0, ...from }, { t: dur, ...to }], playback: { duration: dur, delay, origin: 'offset', easing: 'linear' } });
@@ -99,6 +99,25 @@ describe('reviewMotionPage (rendered)', () => {
     expect(m?.shots[0]?.still_ms).toBeGreaterThanOrEqual(4600);
     expect(m?.notes.join(' ')).not.toMatch(/never hold still/);
   }, 30_000);
+
+  it('poses a motion rule\'s layers as they play, not as authored (phase 3, S8: b29 rebuilt)', () => {
+    // The card leaves on a rule at 1000 ms; by shot "late" only the chip is on screen.
+    const card = box('card', 100, 200, 1200, 700, { animation: { rule: { preset: 'fade_out', at: 1000, duration: 400 } } });
+    const chip = box('chip', 1500, 100, 200, 100, { animation: { rule: { preset: 'pop', at: 2500, duration: 400 } } });
+    const s = spec([bg, chip, card], { early: 0, late: 1500 });
+    const m = withMotion(reviewLayout(s, '/tmp'), s, '/tmp')[0]?.motion;
+    const [early, late] = m?.shots ?? [];
+    expect(late?.ink ?? 1).toBeLessThan((early?.ink ?? 0) / 2);
+  }, 30_000);
+
+  it('reads a page as its rules make it — gallery cells included — and a literal page as it is', () => {
+    const cell = { id: 'tag', type: 'rect', x: 0, y: 0, width: 100, height: 40, z: 1, fill: '#1f2937' } as unknown as Layer;
+    const grid = { id: 'tags', type: 'group', x: 100, y: 100, width: 400, height: 40, z: 1, layers: [],
+      gallery: { items: [{}, {}, {}], template: [cell], columns: 3 } } as unknown as Layer;
+    expect(pageEntries(spec([bg, grid]))[0]?.layers.flatMap(l => (l as { layers?: Layer[] }).layers ?? []).length).toBe(3);
+    const literal = spec([bg, box('card', 0, 0, 10, 10)]);
+    expect(pageEntries(literal)[0]?.layers).toBe(literal.layers);
+  });
 
   it('a still page gets no motion block', () => {
     const s = spec([bg, box('card', 100, 100, 400, 400)]);
