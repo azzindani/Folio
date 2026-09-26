@@ -20,6 +20,7 @@ import { readMarkers, writeMarkers, resolveTime, shotMarks } from './motion-time
 import { compileStates, type CompiledStates } from './motion-states';
 import { parseStoryboard } from './motion-storyboard-parse';
 import { lintComposition, type LintNote } from './motion-lint';
+import { sourceOptions } from '../../renderer/resolve-source';
 import { animationDuration } from '../../export/gif-frames';
 
 type StoryboardArgs = {
@@ -86,7 +87,7 @@ export function storyboardMotion(args: StoryboardArgs): ToolResult {
   writeYAML(dPath, spec);
 
   const canvas = { width: spec.document?.width ?? 1080, height: spec.document?.height ?? 1080 };
-  const lint = lintComposition(scope, canvas, parsed.shots, end);
+  const lint = lintComposition(scope, canvas, parsed.shots, end, sourceOptions(spec, scoped.page));
   const shots = parsed.shots.map((s, i) => ({ id: s.id, at: s.at, until: parsed.shots[i + 1]?.at ?? end, layers: s.layers }));
   progress.unshift(pOk(`Storyboard: ${parsed.shots.length} shot(s), ${compiled.size} layer(s)`, `one continuous scene of ${end}ms — each layer is one ordinary track`));
   if (replaced.length) progress.push(pWarn('Replaced existing motion', `${replaced.join(', ')} — the storyboard owns these tracks now.`));
@@ -112,7 +113,7 @@ export function lintMotion(args: { design_path: string; page_id?: string; projec
   const end = animationDuration(scoped.scope);
   if (end <= 0) return errResult(op, 'Nothing on this page moves, so there is no timeline to check.', 'Build one with animation(op:storyboard) or op:sequence first.');
   const marks = shotMarks(spec, scoped.scope, scoped.page).sort((a, b) => a.at - b.at);
-  const notes = lintComposition(scoped.scope, { width: spec.document?.width ?? 1080, height: spec.document?.height ?? 1080 }, marks, end);
+  const notes = lintComposition(scoped.scope, { width: spec.document?.width ?? 1080, height: spec.document?.height ?? 1080 }, marks, end, sourceOptions(spec, scoped.page));
   return okResult(op, {
     design_path: dPath, scene_ms: end, marks, notes,
     progress: [pInfo(`Checked ${end}ms`, marks.length ? `${marks.length} marker(s) as shots` : 'no markers — the whole piece as one shot'), ...lintProgress(notes)],

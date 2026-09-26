@@ -11,6 +11,7 @@
 import type { DesignSpec, Layer } from '../schema/types';
 import { computeFlowLayout } from './flow-layout';
 import { renderDesign, renderPage } from './renderer';
+import { sourceOptions } from './resolve-source';
 import type { RenderOptions } from './renderer';
 
 export interface RenderEntryOptions extends RenderOptions {
@@ -72,12 +73,14 @@ export function renderEntry(spec: DesignSpec, opts: RenderEntryOptions = {}): Re
   if (pages && pages.length > 0) {
     const idx = Math.min(Math.max(pageIndex ?? 0, 0), pages.length - 1);
     const layers = pages[idx]?.layers ?? [];
+    // The page's names over the design's reach its source formulas (resolve-source).
+    pageOpts.source = renderOpts.source ?? sourceOptions(spec, pages[idx]);
     if (flow) return renderFlow(layers);
     return { svg: renderPage(layers, width, height, pageOpts), width, height, isFlow: false };
   }
 
   // No pages → poster (or a flow report authored at the root).
-  if (flow && spec.layers) return renderFlow(spec.layers);
+  if (flow && spec.layers) { pageOpts.source = renderOpts.source ?? sourceOptions(spec); return renderFlow(spec.layers); }
 
   return { svg: renderDesign(spec, renderOpts), width, height, isFlow: false };
 }

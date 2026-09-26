@@ -11,18 +11,32 @@
  * measure boxes (the renderer places those children itself while it draws).
  */
 
-import type { Layer, DesignSpec } from '../schema/types';
+import type { Layer, DesignSpec, Page } from '../schema/types';
 import { resolveAutoLayouts } from './auto-layout-place';
+import { resolveSourceFormulas, resolveNames, hasSourceFormulas, type SourceProblem } from '../scripting/formula-source';
 
 export interface ResolveOptions {
   /** Give auto-layout children the x/y/width/height their container places them at. */
   place?: boolean;
+  /** The design's resolved names, and its canvas — what source formulas read (sourceOptions). */
+  names?: Record<string, unknown>;
+  W?: number;
+  H?: number;
+  /** Where formulas that could not be applied are reported. */
+  problems?: SourceProblem[];
+}
+
+/** What a surface's source formulas read: the design's names with the page's over them, and the canvas. */
+export function sourceOptions(spec: DesignSpec, page?: Page, problems?: SourceProblem[]): ResolveOptions {
+  const W = spec.document?.width ?? 1080, H = spec.document?.height ?? 1080;
+  const raw = { ...(spec.names ?? {}), ...(page?.names ?? {}) };
+  return { names: resolveNames(raw, W, H, problems), W, H, ...(problems ? { problems } : {}) };
 }
 
 /** Whether anything under `layers` is a rule this step expands. */
 function hasRules(layers: Layer[], opts: ResolveOptions): boolean {
   return layers.some(l => {
-    if (opts.place && l.type === 'auto_layout') return true;
+    if ((opts.place && l.type === 'auto_layout') || hasSourceFormulas(l)) return true;
     const kids = (l as Layer & { layers?: Layer[] }).layers;
     return Array.isArray(kids) && hasRules(kids, opts);
   });
@@ -31,15 +45,16 @@ function hasRules(layers: Layer[], opts: ResolveOptions): boolean {
 /** A layer list as consumers see it — the same array when there is nothing to resolve. */
 export function resolveLayers(layers: Layer[], opts: ResolveOptions = {}): Layer[] {
   if (!hasRules(layers, opts)) return layers;
-  return opts.place ? resolveAutoLayouts(layers) : layers;
+  const formulas = resolveSourceFormulas(layers, { names: opts.names ?? {}, W: opts.W ?? 1080, H: opts.H ?? 1080 }, opts.problems);
+  return opts.place ? resolveAutoLayouts(formulas) : formulas;
 }
 
 /** A design as consumers see it: its layers and every page's resolved — the same object when nothing changes. */
 export function resolveSpec(spec: DesignSpec, opts: ResolveOptions = {}): DesignSpec {
-  const layers = spec.layers ? resolveLayers(spec.layers, opts) : spec.layers;
+  const layers = spec.layers ? resolveLayers(spec.layers, { ...sourceOptions(spec, undefined, opts.problems), ...opts }) : spec.layers;
   let pagesChanged = false;
   const pages = spec.pages?.map(p => {
-    const ls = p.layers ? resolveLayers(p.layers, opts) : p.layers;
+    const ls = p.layers ? resolveLayers(p.layers, { ...sourceOptions(spec, p, opts.problems), ...opts }) : p.layers;
     if (ls !== p.layers) pagesChanged = true;
     return ls === p.layers ? p : { ...p, layers: ls };
   });

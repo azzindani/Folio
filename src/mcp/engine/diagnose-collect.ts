@@ -32,7 +32,8 @@ import { orphanFindings } from './diagnose-orphan';
 import { moments } from './diagnose-safe';
 import { accentNote } from './ai-slop-lint';
 import { validateDesignSpec } from '../../schema/validator';
-import { resolveLayers } from '../../renderer/resolve-source';
+import { resolveLayers, sourceOptions } from '../../renderer/resolve-source';
+import type { SourceProblem } from '../../scripting/formula-source';
 import { italicFindings } from './diagnose-italic';
 import { withImageInk } from './image-ink';
 
@@ -90,6 +91,18 @@ function asSeen(spec: DesignSpec, still: Finding[], layers: Layer[], page?: Page
   return note ? [...kept, { code: 'ai_slop', severity: 'suggestion', message: note }] : kept;
 }
 
+/** A source formula that could not be applied — drawn without it, where the report runtime would draw its raw text. */
+function formulaFindings(problems: SourceProblem[]): Finding[] {
+  return problems.map((p): Finding => ({
+    code: 'formula_error', severity: 'error',
+    message: p.layer_id === '(names)'
+      ? `names.${p.prop} = ${p.formula} fails: ${p.error}.`
+      : `"${p.layer_id}" ${p.prop} = ${p.formula} fails: ${p.error} — the property keeps its literal value.`,
+    fix: 'A formula reads the design\'s names, W, H and utils; fix the expression or the name it reads (patch_design).',
+    ...(p.layer_id === '(names)' ? {} : { layers: [p.layer_id] }),
+  }));
+}
+
 export function collectFindings(
   spec: DesignSpec,
   designPath: string,
@@ -100,7 +113,8 @@ export function collectFindings(
   // A moving surface is also judged where each shot rests (diagnose-motion.ts).
   const run = (raw: Layer[] | undefined, page?: Page): PageFinding[] => {
     // Measured where the renderer draws: an auto-layout container's children carry no x/y of their own.
-    const layers = withImageInk(resolveLayers(raw ?? [], { place: true }), designPath, projectPath);
+    const problems: SourceProblem[] = [];
+    const layers = withImageInk(resolveLayers(raw ?? [], { ...sourceOptions(spec, page, problems), place: true }), designPath, projectPath);
     const moving = motionFindings(spec, layers, page);
     // A pair judged where the shots rest is not judged again as authored.
     // The static message names its pair first: "a" and "b" (both text) overlap …
@@ -116,7 +130,7 @@ export function collectFindings(
     const overprint = overprintFindings(layers, W, H);
     const orphans = orphanFindings(spec, layers, page);
     const italics = italicFindings(layers, designPath, projectPath);
-    return [...asSeen(spec, still, layers, page), ...moving, ...safe, ...glyphs, ...italics, ...overprint, ...orphans].map(f => (page ? { ...f, page: page.id } : f));
+    return [...formulaFindings(problems), ...asSeen(spec, still, layers, page), ...moving, ...safe, ...glyphs, ...italics, ...overprint, ...orphans].map(f => (page ? { ...f, page: page.id } : f));
   };
 
   const findings: PageFinding[] = [];

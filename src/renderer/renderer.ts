@@ -3,7 +3,7 @@ import { resolveLayerTokens, type TokenResolutionContext } from '../engine/token
 import { resolveComponent } from '../engine/component-resolver';
 import { expandPositionShorthand } from '../schema/validator';
 import { resolveAllFormulas, type FormulaContext } from '../scripting/formula';
-import { resolveLayers } from './resolve-source';
+import { resolveLayers, sourceOptions, type ResolveOptions } from './resolve-source';
 import { createSVGRoot, createSVGElement } from './svg-utils';
 import { clipRectFor, applyClipRect } from './clip-rect';
 import { pathSMIL } from '../animation/path-ease';
@@ -27,6 +27,8 @@ export interface RenderOptions {
   showGrid?: boolean;
   gridConfig?: { columns: number; gutter: number; margin: number; baseline: number };
   formulaContext?: FormulaContext;
+  /** The design's names and canvas for source formulas (resolve-source sourceOptions); renderDesign derives them. */
+  source?: ResolveOptions;
 }
 
 // ── Render Cache for Dirty Tracking ─────────────────────────
@@ -490,9 +492,9 @@ function renderPlaceholder(layer: Layer, _svg: SVGSVGElement): SVGElement {
   return g;
 }
 
-function prepareLayers(layers: Layer[], ctx?: TokenResolutionContext, formulaCtx?: FormulaContext): Layer[] {
+function prepareLayers(layers: Layer[], ctx?: TokenResolutionContext, formulaCtx?: FormulaContext, source?: ResolveOptions): Layer[] {
   // Rules become literal layers here and only here (resolve-source.ts); a literal design passes through untouched.
-  let prepared = resolveLayers(layers).map(l => expandPositionShorthand(l) as Layer);
+  let prepared = resolveLayers(layers, source).map(l => expandPositionShorthand(l) as Layer);
 
   // Resolve formula bindings before token substitution
   if (formulaCtx) {
@@ -536,7 +538,7 @@ export function renderDesign(spec: DesignSpec, options: RenderOptions = {}): SVG
     ? spec.pages[0].layers
     : spec.layers;
   if (rootLayers) {
-    const layers = prepareLayers(rootLayers, ctx, options.formulaContext);
+    const layers = prepareLayers(rootLayers, ctx, options.formulaContext, options.source ?? sourceOptions(spec, spec.pages?.[0]));
     buildClipDefs(layers, svg);
     for (const layer of layers) {
       svg.appendChild(renderLayer(layer, svg));
@@ -621,7 +623,7 @@ export function renderPage(
     };
   }
 
-  const prepared = prepareLayers(layers, ctx, options.formulaContext);
+  const prepared = prepareLayers(layers, ctx, options.formulaContext, options.source ?? { W: width, H: height });
   buildClipDefs(prepared, svg);
   for (const layer of prepared) {
     svg.appendChild(renderLayer(layer, svg));

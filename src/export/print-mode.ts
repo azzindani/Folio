@@ -1,6 +1,7 @@
 import { type StateManager } from '../editor/state';
 import { renderDesign, renderPage } from '../renderer/renderer';
 import type { DesignSpec } from '../schema/types';
+import { sourceOptions } from '../renderer/resolve-source';
 import { FAVICON_LINK } from '../utils/favicon';
 
 export interface PrintOptions {
@@ -28,7 +29,7 @@ export function openPrintWindow(state: StateManager, opts: PrintOptions = {}): v
   const pageSVGs = pages.map((layers, i) => {
     let svg: SVGSVGElement;
     if (design.pages && design.pages.length > 0) {
-      svg = renderPage(layers, width, height, { theme: theme ?? undefined });
+      svg = renderPage(layers, width, height, { theme: theme ?? undefined, source: sourceOptions(design, design.pages[i]) });
     } else {
       svg = renderDesign(design, { theme: theme ?? undefined });
     }

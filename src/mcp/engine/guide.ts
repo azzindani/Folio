@@ -6,6 +6,7 @@ import { ASSETS_GUIDE } from './guide-assets';
 import { STYLE_GUIDE } from './guide-style';
 import { MOTION_GUIDE } from './guide-motion';
 import { WORKFLOW_GUIDE } from './guide-workflow';
+import { SOURCE_GUIDE } from './guide-source';
 
 const SECTIONS: Record<string, string> = {
   motion: MOTION_GUIDE,
@@ -243,7 +244,7 @@ Rules:
   - Always pass task_path in append_page — enables auto-handover
   - Call tasks(op:resume, task_path) after any context reset
   - 3–8 layers per page is ideal
-  - Load guide sections on demand: shorthand | layers | workflow | reference | motion (animation)
+  - Load guide sections on demand: shorthand | layers | workflow | reference | motion (animation) | source (names + formulas)
   - MATCHING a reference image (Canva/screenshot)? Call extract_reference FIRST
     (colors you see + optional data:/path image) → palette + canvas + brief, then
     create_design + add_layers. Load the \`reference\` guide section for the full loop.
@@ -650,6 +651,7 @@ editable Folio design that matches the reference, not a pasted picture.`,
 
   assets: ASSETS_GUIDE,
   style: STYLE_GUIDE,
+  source: SOURCE_GUIDE,
 };
 
 // Frontier (minimal) instances: prepend a note that reframes the aesthetic

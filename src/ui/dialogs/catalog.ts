@@ -18,6 +18,7 @@ import { loadThemeCatalog, getThemeById } from '../../templates/theme-registry';
 import { injectIntoTemplate, type TemplateSpec } from '../../schema/template';
 import { serializeYAML } from '../../schema/parser';
 import { renderDesign, renderPage } from '../../renderer/renderer';
+import { sourceOptions } from '../../renderer/resolve-source';
 import type { DesignSpec } from '../../schema/types';
 import { BUILTIN_THEMES } from '../../themes/builtin';
 import { FEATURED_COMBOS } from './catalog-combos';
@@ -476,7 +477,7 @@ export class CatalogDialog extends CatalogDialogBase {
             <button data-page-nav="next" ${nextDisabled} aria-label="Next page" type="button">›</button>
           </div>
         `;
-        svg = renderPage(page.layers ?? [], design.document.width, design.document.height, { theme: composedTheme });
+        svg = renderPage(page.layers ?? [], design.document.width, design.document.height, { theme: composedTheme, source: sourceOptions(design, page) });
       } else {
         svg = renderDesign(design, { theme: composedTheme });
       }
