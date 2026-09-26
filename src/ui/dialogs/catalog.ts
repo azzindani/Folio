@@ -381,7 +381,7 @@ export class CatalogDialog extends CatalogDialogBase {
         ? (design.theme as { ref?: string }).ref
         : undefined;
       const themeSpec = themeId ? getThemeById(themeId)?.spec : undefined;
-      const svg = renderDesign(design, { theme: themeSpec });
+      const svg = renderDesign(design, { theme: themeSpec, stillScripts: true });
       svg.setAttribute('viewBox', `0 0 ${design.document.width} ${design.document.height}`);
       svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
       svg.setAttribute('width', '100%');
@@ -477,9 +477,9 @@ export class CatalogDialog extends CatalogDialogBase {
             <button data-page-nav="next" ${nextDisabled} aria-label="Next page" type="button">›</button>
           </div>
         `;
-        svg = renderPage(page.layers ?? [], design.document.width, design.document.height, { theme: composedTheme, source: sourceOptions(design, page) });
+        svg = renderPage(page.layers ?? [], design.document.width, design.document.height, { theme: composedTheme, stillScripts: true, source: sourceOptions(design, page) });
       } else {
-        svg = renderDesign(design, { theme: composedTheme });
+        svg = renderDesign(design, { theme: composedTheme, stillScripts: true });
       }
       this.fitSVG(svg, design);
       preview.innerHTML = nav;

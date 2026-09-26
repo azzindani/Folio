@@ -39,6 +39,9 @@ describe('script components', () => {
     expect(doc).toContain(`content="default-src 'none'; script-src 'unsafe-inline'`);
     expect(doc).toContain('<\\/script><b>x</b>');
     expect(doc).toContain('<canvas id="c"></canvas>');
+    // A thumbnail draws t=0 once and never plays.
+    expect(buildScriptDoc(layer(`folio.frame(() => {});`), true)).toContain('<script>window.__folioCapture=true;</script>');
+    expect(doc).not.toContain('__folioCapture=true');
     expect(seedOf('doodle')).toBe(seedOf('doodle'));
     expect(seedOf('doodle')).not.toBe(seedOf('doodle2'));
   });

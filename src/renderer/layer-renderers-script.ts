@@ -7,7 +7,7 @@ import { createSVGElement } from './svg-utils';
 import { applyCommonAttributes } from './layer-renderers-shared';
 import { buildScriptDoc } from '../scripting/script-runtime';
 
-export function renderScript(layer: ScriptLayer): SVGElement {
+export function renderScript(layer: ScriptLayer, still = false): SVGElement {
   const w = typeof layer.width === 'number' ? layer.width : 400;
   const h = typeof layer.height === 'number' ? layer.height : 300;
   const fo = createSVGElement('foreignObject', { x: layer.x ?? 0, y: layer.y ?? 0, width: w, height: h });
@@ -16,7 +16,7 @@ export function renderScript(layer: ScriptLayer): SVGElement {
   iframe.style.cssText = `width:${w}px;height:${h}px;border:none;background:transparent;display:block`;
   iframe.setAttribute('sandbox', 'allow-scripts');
   iframe.setAttribute('data-folio-script', layer.id);
-  iframe.setAttribute('srcdoc', buildScriptDoc(layer));
+  iframe.setAttribute('srcdoc', buildScriptDoc(layer, still));
   fo.appendChild(iframe);
   applyCommonAttributes(fo, layer);
   return fo;
