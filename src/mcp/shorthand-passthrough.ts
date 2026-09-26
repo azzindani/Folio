@@ -12,7 +12,7 @@ import type { ShorthandLayer } from './shorthand-helpers';
 const CONSUMED_SHORTHAND_KEYS = new Set([
   'type', 'id', 'z', 'pos', 'position', 'at', 'size', 'x', 'y', 'width', 'height',
   'opacity', 'rotation', 'rotate', 'angle', 'flip_h', 'flip_v', 'visible', 'locked', 'link',
-  'repeat', 'repeat_data', 'span', 'flow_h',
+  'repeat', 'repeat_data', 'keep', 'repeat_columns', 'repeat_gap', 'span', 'flow_h',
 ]);
 
 /**

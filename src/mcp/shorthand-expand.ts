@@ -18,6 +18,7 @@ import { passThroughUnknown, applyFlowGrid } from './shorthand-passthrough';
 import { fitPresetToBox, isFittablePreset } from './preset-fit';
 import { attachAuthoredSpec } from './design-spec';
 import { coerceShorthandLayers } from './shorthand-coerce';
+import { keepsRule, repeatAsGallery, galleryOf } from './shorthand-repeat-rule';
 
 // Two things happen to every expanded layer here, and only to presets:
 //
@@ -252,6 +253,8 @@ function expandShorthandLayer(sh: ShorthandLayer): Layer {
         // infer type → ids → visible defaults), so nested layers get the same
         // small-model robustness as top-level ones.
         layers: expandShorthandLayers(coerceShorthandLayers(sh.layers)),
+        // A gallery (written here, or by repeat keep:"rule") keeps its rule; its template takes the same pipeline.
+        ...galleryOf(sh, t => expandShorthandLayers(coerceShorthandLayers(t))),
       } as Layer;
 
     // Landscape container — see shorthand-presets-columns.ts. Children go
@@ -588,6 +591,8 @@ export function expandRepeats(layers: ShorthandLayer[]): ShorthandLayer[] {
   const out: ShorthandLayer[] = [];
   for (const sh of layers) {
     if (!sh || typeof sh !== 'object' || sh.repeat === undefined) { out.push(sh); continue; }
+    // keep:"rule" stores the layer once as a gallery instead of writing the copies.
+    if (keepsRule(sh)) { out.push(repeatAsGallery(sh, REPEAT_CAP)); continue; }
     const { repeat, ...rest } = sh;
     const rows: (Record<string, unknown> | null)[] = Array.isArray(repeat)
       ? repeat.slice(0, REPEAT_CAP)
