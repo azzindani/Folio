@@ -37,12 +37,51 @@ const meet = (a: Box, b: Box): number => {
   const h = Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y);
   return w > 0 && h > 0 ? w * h : 0;
 };
+/** The part of `a` inside `b`, or null when they do not meet. */
+const cut = (a: Box, b: Box): Box | null => {
+  const x = Math.max(a.x, b.x), y = Math.max(a.y, b.y);
+  const w = Math.min(a.x + a.width, b.x + b.width) - x, h = Math.min(a.y + a.height, b.y + b.height) - y;
+  return w > 0 && h > 0 ? { x, y, width: w, height: h } : null;
+};
 const union = (a: Box, b: Box): Box => {
   const x = Math.min(a.x, b.x), y = Math.min(a.y, b.y);
   return { x, y, width: Math.max(a.x + a.width, b.x + b.width) - x, height: Math.max(a.y + a.height, b.y + b.height) - y };
 };
-/** The share of the smaller of two boxes the other covers. */
-const shareOf = (a: Box, b: Box): number => meet(a, b) / Math.max(1, Math.min(area(a), area(b)));
+/** What an object draws on: its outer box, and the boxes of the parts it is made of. */
+interface Drawn { box: Box; parts: Box[] }
+/** Past this many overlapping bits the outer boxes stand in: a crowd of parts is read as its outline. */
+const MAX_BITS = 400;
+
+/** The area a set of rectangles covers, overlaps counted once — a sweep across x. */
+function unionArea(rs: Box[]): number {
+  const xs = [...new Set(rs.flatMap(r => [r.x, r.x + r.width]))].sort((p, q) => p - q);
+  let total = 0;
+  for (let i = 0; i + 1 < xs.length; i++) {
+    const x0 = xs[i] ?? 0, x1 = xs[i + 1] ?? 0;
+    const spans = rs.filter(r => r.x <= x0 && r.x + r.width >= x1).map(r => [r.y, r.y + r.height] as const).sort((p, q) => p[0] - q[0]);
+    let covered = 0, end = -Infinity;
+    for (const [y0, y1] of spans) {
+      if (y1 <= end) continue;
+      covered += y1 - Math.max(y0, end);
+      end = y1;
+    }
+    total += covered * (x1 - x0);
+  }
+  return total;
+}
+
+/**
+ * Where two objects both draw: their parts' meeting, not their outer boxes. Found live (entity-ocr,
+ * 2026-09-27): a caption group — a headline at the top, a button at the bottom — "came to rest over
+ * 86%" of the form a camera landed between them, measured by the box around both.
+ */
+function drawnMeet(a: Drawn, b: Drawn): number {
+  const bits: Box[] = [];
+  for (const p of a.parts) for (const q of b.parts) { const r = cut(p, q); if (r) bits.push(r); }
+  return bits.length > MAX_BITS ? meet(a.box, b.box) : unionArea(bits);
+}
+/** The share of the smaller of two objects the other covers. */
+const shareOf = (a: Drawn, b: Drawn): number => drawnMeet(a, b) / Math.max(1, Math.min(area(a.box), area(b.box)));
 
 /** The tree in paint order: siblings by ascending z, ties as written. */
 export function paintOrder(layers: Layer[]): Layer[] {
@@ -54,7 +93,7 @@ export function paintOrder(layers: Layer[]): Layer[] {
 type Point = { x: number; y: number };
 
 /** `ends`: where a line — an open, unfilled path standing alone — starts and stops on the canvas. */
-export interface Unit { id: string; box: Box; opacity: number; paint: number; text: boolean; leaves: string[]; ends?: Point[] }
+export interface Unit extends Drawn { id: string; opacity: number; paint: number; text: boolean; leaves: string[]; ends?: Point[] }
 
 /** Below this a leaf is not on screen at the moment measured. */
 const UNSEEN = 0.02;
@@ -130,8 +169,8 @@ export function frameUnits(frame: Layer[], canvas: { width: number; height: numb
       return holders.get(id) === false;
     }) ?? b.layer.id;
     const u = units.get(owner);
-    if (u) Object.assign(u, { box: union(u.box, b.box), opacity: Math.max(u.opacity, b.opacity), paint: Math.max(u.paint, paint), text: u.text && b.layer.type === 'text', leaves: [...u.leaves, b.layer.id], ends: undefined });
-    else units.set(owner, { id: owner, box: b.box, opacity: b.opacity, paint, text: b.layer.type === 'text', leaves: [b.layer.id], ends: lineEnds(b) });
+    if (u) Object.assign(u, { box: union(u.box, b.box), parts: [...u.parts, b.box], opacity: Math.max(u.opacity, b.opacity), paint: Math.max(u.paint, paint), text: u.text && b.layer.type === 'text', leaves: [...u.leaves, b.layer.id], ends: undefined });
+    else units.set(owner, { id: owner, box: b.box, parts: [b.box], opacity: b.opacity, paint, text: b.layer.type === 'text', leaves: [b.layer.id], ends: lineEnds(b) });
   });
   return [...units.values()];
 }
@@ -159,26 +198,24 @@ const clip = (b: Box | undefined, f: Box): Box | null => {
  * Text on text is the overlap check's (the caller drops pairs it reports as buried).
  */
 export function collisions(rest: Unit[], authored: Unit[], placed: (id: string) => boolean, spaces?: Spaces): Collision[] {
-  const was = new Map(authored.map(u => [u.id, u.box]));
+  const was = new Map(authored.map(u => [u.id, u]));
   const out: Collision[] = [];
   const seen = rest.filter(u => u.opacity > 0.3);
-  const boxes = (a: Unit, b: Unit): [Box, Box] | null => {
-    if (!spaces || (spaces.carried(a.id) && spaces.carried(b.id))) return [a.box, b.box];
-    const sa = clip(spaces.screen.get(a.id)?.box, spaces.frame), sb = clip(spaces.screen.get(b.id)?.box, spaces.frame);
-    return sa && sb ? [sa, sb] : null;
+  // An object as the pair is measured: in the world when the camera carries both, else on the screen, inside the frame.
+  const view = (u: Unit, onScreen: boolean): Unit | null => {
+    if (!onScreen || !spaces) return u;
+    const s = spaces.screen.get(u.id), box = clip(s?.box, spaces.frame);
+    return s && box ? { ...s, box, parts: s.parts.map(p => clip(p, spaces.frame)).filter((p): p is Box => p !== null) } : null;
   };
   for (let i = 0; i < seen.length; i++) {
     for (let j = i + 1; j < seen.length; j++) {
       const a = seen[i], b = seen[j];
       if (!a || !b || (a.text && b.text)) continue;
       if (!a.leaves.some(placed) && !b.leaves.some(placed) && !placed(a.id) && !placed(b.id)) continue;
-      const pair = boxes(a, b);
-      if (!pair) continue;
-      // The ends must be read in the space the boxes were: the screen's unless the camera carries both.
-      const onScreen = spaces && !(spaces.carried(a.id) && spaces.carried(b.id));
-      const [la, lb] = onScreen ? [spaces.screen.get(a.id), spaces.screen.get(b.id)] : [a, b];
-      if (touches(la, pair[1]) || touches(lb, pair[0])) continue;
-      const share = shareOf(pair[0], pair[1]);
+      const onScreen = !!spaces && !(spaces.carried(a.id) && spaces.carried(b.id));
+      const va = view(a, onScreen), vb = view(b, onScreen);
+      if (!va || !vb || touches(va, vb.box) || touches(vb, va.box)) continue;
+      const share = shareOf(va, vb);
       if (share < MIN_SHARE || share > TUCKED) continue;
       const wa = was.get(a.id), wb = was.get(b.id);
       if (!wa || !wb || shareOf(wa, wb) > APART) continue;
