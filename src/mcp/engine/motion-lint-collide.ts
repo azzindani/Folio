@@ -51,7 +51,41 @@ export function paintOrder(layers: Layer[]): Layer[] {
     .map(l => (Array.isArray(l.layers) ? ({ ...l, layers: paintOrder(l.layers) } as Layer) : l));
 }
 
-export interface Unit { id: string; box: Box; opacity: number; paint: number; text: boolean; leaves: string[] }
+type Point = { x: number; y: number };
+
+/** `ends`: where a line — an open, unfilled path standing alone — starts and stops on the canvas. */
+export interface Unit { id: string; box: Box; opacity: number; paint: number; text: boolean; leaves: string[]; ends?: Point[] }
+
+/** Below this a leaf is not on screen at the moment measured. */
+const UNSEEN = 0.02;
+/** A line's end this close to an object meets it. */
+const TOUCH = 6;
+const CMD = /([MLHVCSQT])([^MLHVCSQT]*)/g;
+
+/** The ends of an open, unfilled path on the canvas. Absolute commands only; anything else is not read as a line. */
+function lineEnds(b: CanvasBox): Point[] | undefined {
+  const l = b.layer as { type?: string; d?: unknown; fill?: unknown };
+  const m = b.matrix;
+  if (l.type !== 'path' || typeof l.d !== 'string' || !m || (l.fill !== undefined && l.fill !== 'none')) return undefined;
+  if (/[^MLHVCSQT\d\s.,eE+-]/.test(l.d)) return undefined;
+  let first: Point | undefined;
+  let at: Point = { x: 0, y: 0 };
+  for (const [, cmd, args] of l.d.matchAll(CMD)) {
+    const n = (args ?? '').trim().split(/[\s,]+/).filter(Boolean).map(Number);
+    if (n.some(v => !Number.isFinite(v))) return undefined;
+    const [x0 = at.x, y0 = at.y] = n;
+    const [x1 = at.x, y1 = at.y] = n.slice(-2);
+    if (!first && cmd === 'M') first = { x: x0, y: y0 };
+    at = cmd === 'H' ? { x: n[n.length - 1] ?? at.x, y: at.y } : cmd === 'V' ? { x: at.x, y: n[n.length - 1] ?? at.y } : { x: x1, y: y1 };
+  }
+  if (!first) return undefined;
+  const map = (p: Point): Point => ({ x: m[0] * p.x + m[2] * p.y + m[4], y: m[1] * p.x + m[3] * p.y + m[5] });
+  return [map(first), map(at)];
+}
+
+/** A line whose end lies on an object is drawn to meet it — a cable into its plug, an arrow at its card. */
+const touches = (line: Unit | undefined, b: Box): boolean => (line?.ends ?? []).some(p =>
+  p.x >= b.x - TOUCH && p.x <= b.x + b.width + TOUCH && p.y >= b.y - TOUCH && p.y <= b.y + b.height + TOUCH);
 
 /** What to call an object: its one leaf when a wrapper holds only that. */
 const nameOf = (u: Unit): string => (u.leaves.length === 1 ? u.leaves[0] ?? u.id : u.id);
@@ -86,7 +120,9 @@ export function frameUnits(frame: Layer[], canvas: { width: number; height: numb
     && ((b.box.x <= canvas.width * 0.01 && b.box.x + b.box.width >= canvas.width * 0.99)
       || (b.box.y <= canvas.height * 0.01 && b.box.y + b.box.height >= canvas.height * 0.99));
   boxes.forEach((b, paint) => {
-    if (area(b.box) <= 0 || area(b.box) >= 0.8 * whole || band(b)) return;
+    // What is not showing at this moment is no part of the object then. Found live (entity-ocr): a caption
+    // group's payoff button, still invisible, stretched the group down over the form the camera brought in.
+    if (area(b.box) <= 0 || area(b.box) >= 0.8 * whole || band(b) || b.opacity < UNSEEN) return;
     const chain = up.get(b.layer.id) ?? [];
     // The outermost enclosing group that is not a scene holder names the object.
     const owner = chain.find(id => {
@@ -94,8 +130,8 @@ export function frameUnits(frame: Layer[], canvas: { width: number; height: numb
       return holders.get(id) === false;
     }) ?? b.layer.id;
     const u = units.get(owner);
-    if (u) Object.assign(u, { box: union(u.box, b.box), opacity: Math.max(u.opacity, b.opacity), paint: Math.max(u.paint, paint), text: u.text && b.layer.type === 'text', leaves: [...u.leaves, b.layer.id] });
-    else units.set(owner, { id: owner, box: b.box, opacity: b.opacity, paint, text: b.layer.type === 'text', leaves: [b.layer.id] });
+    if (u) Object.assign(u, { box: union(u.box, b.box), opacity: Math.max(u.opacity, b.opacity), paint: Math.max(u.paint, paint), text: u.text && b.layer.type === 'text', leaves: [...u.leaves, b.layer.id], ends: undefined });
+    else units.set(owner, { id: owner, box: b.box, opacity: b.opacity, paint, text: b.layer.type === 'text', leaves: [b.layer.id], ends: lineEnds(b) });
   });
   return [...units.values()];
 }
@@ -138,6 +174,10 @@ export function collisions(rest: Unit[], authored: Unit[], placed: (id: string) 
       if (!a.leaves.some(placed) && !b.leaves.some(placed) && !placed(a.id) && !placed(b.id)) continue;
       const pair = boxes(a, b);
       if (!pair) continue;
+      // The ends must be read in the space the boxes were: the screen's unless the camera carries both.
+      const onScreen = spaces && !(spaces.carried(a.id) && spaces.carried(b.id));
+      const [la, lb] = onScreen ? [spaces.screen.get(a.id), spaces.screen.get(b.id)] : [a, b];
+      if (touches(la, pair[1]) || touches(lb, pair[0])) continue;
       const share = shareOf(pair[0], pair[1]);
       if (share < MIN_SHARE || share > TUCKED) continue;
       const wa = was.get(a.id), wb = was.get(b.id);
