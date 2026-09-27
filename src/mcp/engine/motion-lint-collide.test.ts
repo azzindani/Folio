@@ -45,9 +45,16 @@ describe('motion lint — what shows, and what a line is drawn to meet', () => {
   // the character "was cut" by it.
   it('measures a group by what shows of it at that moment', () => {
     const card = rect('card', 1200, 300, 500, 400, slide(-600));
-    const hud = (cta: object): Layer => ({ id: 'hud', type: 'group', z: 9, layers: [text('caption', 90, 88, 'Speaks your system'), rect('cta', 90, 900, 580, 76, cta)] } as unknown as Layer);
+    const hud = (cta: object): Layer => ({ id: 'hud', type: 'group', z: 9, layers: [text('caption', 90, 88, 'Speaks your system'), rect('cta', 300, 400, 500, 200, cta)] } as unknown as Layer);
     expect(of('collision', [ground, card, hud({ opacity: 0 })])).toEqual([]);
     expect(of('collision', [ground, card, hud({})])).toEqual(['hud>card']);
+  });
+
+  it('measures a group by where its parts draw, not the box around them', () => {
+    // A headline at the top and a button at the bottom: the form the camera lands between them meets neither.
+    const card = rect('card', 1200, 300, 500, 400, slide(-600));
+    const hud = { id: 'hud', type: 'group', z: 9, layers: [text('caption', 90, 88, 'Define the fields once.'), rect('cta', 90, 900, 580, 76)] } as unknown as Layer;
+    expect(of('collision', [ground, card, hud])).toEqual([]);
   });
 
   it('lets a line meet what it is drawn to, and still flags one laid across an object', () => {
