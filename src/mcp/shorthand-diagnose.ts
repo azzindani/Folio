@@ -191,6 +191,11 @@ export function diagnoseLayers(layers: Layer[]): string[] {
           notes.push(`text "${l.id}": the content looks like a feature_grid encoded as a string. Send it as a JSON object, not a colon/equals string: {type:"feature_grid", title:"…", subtitle:"…", bg:"gradient", items:[{icon:"…", title:"…", desc:"…"}]}.`);
         }
       }
+      // A rule's track replaces keyframes written beside it (resolve-motion.ts) — found building entity-ocr.
+      const anim = (l as Layer & { animation?: { rule?: unknown; keyframes?: unknown } }).animation;
+      if (anim?.rule !== undefined && Array.isArray(anim.keyframes) && anim.keyframes.length > 0) {
+        notes.push(`"${l.id}": animation.rule AND keyframes — the rule plays, the keyframes never do. Keep one: a pop-in then a flight is all keyframes, or a rule list.`);
+      }
       // Recurse into ANY nested container — group, auto_layout, feature_grid
       // cards… — not just `group`. Presets nest their icons and text inside
       // auto_layout rows, so a group-only walk silently skipped them and an
