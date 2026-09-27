@@ -90,7 +90,9 @@ export function resolveMotionRules(layers: Layer[], scope: SourceScope, problems
         problems?.push({ layer_id: l.id, prop: 'animation.rule', formula: JSON.stringify(rule), error: track });
       } else {
         const { rule: _rule, keyframes: _k, playback: _p, ...rest } = node.animation ?? {};
-        void _rule; void _k; void _p;
+        void _rule; void _p;
+        // The rule's track replaces any keyframes written beside it — say so, or they silently never play.
+        if (Array.isArray(_k) && _k.length > 0) problems?.push({ layer_id: l.id, prop: 'animation.keyframes', formula: '', error: 'replaced by animation.rule' });
         next = { ...next, animation: { ...rest, ...track } };
       }
     }

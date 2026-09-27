@@ -137,6 +137,8 @@ RULES OF THUMB
     earlier call — no op:clear first. Within one call, an entrance and an exit chain as usual.
   • as_rule:true stores each step as a compact motion RULE (animation.rule) instead of its
     keyframes — same playback, a fraction of the YAML (get_engine_guide {section:"source"}).
+    A layer plays ONE of them: written beside keyframes, the rule replaces them. A pop-in
+    then a flight is all keyframes, or a rule list — never both on one layer.
   • Steps without \`at\` chain: each starts when the previous ends. Use \`at\` to
     overlap (a title and its rule can enter together) or to schedule an exit.
   • A LOCKED group animates as ONE unit — right for a carousel page, wrong for
