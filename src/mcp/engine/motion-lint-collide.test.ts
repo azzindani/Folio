@@ -39,6 +39,25 @@ describe('motion lint — objects the motion cuts into each other', () => {
   });
 });
 
+describe('motion lint — what shows, and what a line is drawn to meet', () => {
+  // Found live (entity-ocr, 2026-09-27): a caption group was measured with its payoff button, still
+  // invisible, and "came to rest over 86%" of the form the camera brought in; a cable plugged into
+  // the character "was cut" by it.
+  it('measures a group by what shows of it at that moment', () => {
+    const card = rect('card', 1200, 300, 500, 400, slide(-600));
+    const hud = (cta: object): Layer => ({ id: 'hud', type: 'group', z: 9, layers: [text('caption', 90, 88, 'Speaks your system'), rect('cta', 90, 900, 580, 76, cta)] } as unknown as Layer);
+    expect(of('collision', [ground, card, hud({ opacity: 0 })])).toEqual([]);
+    expect(of('collision', [ground, card, hud({})])).toEqual(['hud>card']);
+  });
+
+  it('lets a line meet what it is drawn to, and still flags one laid across an object', () => {
+    const cable = { id: 'cable', type: 'path', z: 1, x: 500, y: 400, width: 200, height: 320, d: 'M 500 700 C 600 720 700 600 680 400', fill: 'none', stroke: { color: '#111111', width: 5 } } as unknown as Layer;
+    const bot = (dx: number, y: number): Layer => rect('bot', -300, y, 150, 150, { z: 3, ...slide(dx) });
+    expect(of('collision', [ground, cable, bot(740, 640)])).toEqual([]);
+    expect(of('collision', [ground, cable, bot(900, 560)])).toEqual(['bot>cable']);
+  });
+});
+
 describe('motion lint — text resting on text', () => {
   it('does not call an echo of the same words an overlap, but still flags two different lines on one spot', () => {
     const title = text('title', 100, 400, 'SMALL MACHINES', slide(0));
