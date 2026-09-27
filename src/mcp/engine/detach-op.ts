@@ -66,13 +66,16 @@ export function detachLayers(args: { design_path: string; project_path?: string;
   const problems: SourceProblem[] = [];
   const found = new Set<string>();
   const baked = surfaces.map(s => { const b = bake(s.layers, ids, spec, s.page, problems); b.hit.forEach(h => found.add(h)); return { ...s, layers: b.layers }; });
+  // A rule that fails stays a rule; keyframes a rule replaced are a notice, not a failure.
+  const failed = problems.filter(p => p.prop !== 'animation.keyframes');
+  const replaced = problems.filter(p => p.prop === 'animation.keyframes');
   const missing = wanted.filter(id => !found.has(id));
   if (missing.length) return errResult(op, `No layer ${missing.map(m => `"${m}"`).join(', ')}${args.page_id ? ` on page ${args.page_id}` : ''}.`, 'Pass real layer ids (manage_design op:inspect); a gallery\'s cells are detached through the gallery layer.');
   const after = ruleCounts(baked.flatMap(s => s.layers));
   const done: RuleCounts = { formulas: before.formulas - after.formulas, galleries: before.galleries - after.galleries, rules: before.rules - after.rules };
   if (!done.formulas && !done.galleries && !done.rules) {
-    return errResult(op, `Nothing to detach${ids ? ` on ${wanted.join(', ')}` : ''}: no formula, gallery or motion rule${problems.length ? ' that resolves' : ''}.`,
-      problems.length ? 'A rule that fails stays a rule — diagnose_design names it (formula_error / rule_error); fix it, then detach.' : 'Detach bakes names formulas, a gallery or animation.rule; plain layers are already literal.');
+    return errResult(op, `Nothing to detach${ids ? ` on ${wanted.join(', ')}` : ''}: no formula, gallery or motion rule${failed.length ? ' that resolves' : ''}.`,
+      failed.length ? 'A rule that fails stays a rule — diagnose_design names it (formula_error / rule_error); fix it, then detach.' : 'Detach bakes names formulas, a gallery or animation.rule; plain layers are already literal.');
   }
 
   const bak = snapshot(dPath);
@@ -86,7 +89,8 @@ export function detachLayers(args: { design_path: string; project_path?: string;
   const what = [done.formulas ? `${done.formulas} layer(s) of formulas → values` : '', done.galleries ? `${done.galleries} gallery(ies) → literal cells` : '',
     done.rules ? `${done.rules} motion rule(s) → keyframes` : ''].filter(Boolean).join(', ');
   const progress: ProgressItem[] = [pOk(`Detached ${ids ? wanted.join(', ') : 'every rule'}`, `${what} — drawn exactly as before, now editable by hand`)];
-  for (const p of problems) progress.push(pWarn('Kept as a rule', `"${p.layer_id}" ${p.prop}: ${p.error}`));
+  for (const p of failed) progress.push(pWarn('Kept as a rule', `"${p.layer_id}" ${p.prop}: ${p.error}`));
+  for (const p of replaced) progress.push(pWarn('Keyframes replaced', `"${p.layer_id}" had keyframes beside its rule — the rule's track is what played, and is what it keeps now`));
   return okResult(op, {
     design_path: dPath, detached: done, progress,
     next_action: { tool: 'manage_design', params: { op: 'inspect', design_path: dPath }, remaining: 0, hint: 'The cells and keys are ordinary layers now: edit_layer update or animation op:track edits one of them.' },
