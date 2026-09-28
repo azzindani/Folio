@@ -43,8 +43,22 @@ describe('animation op:export in the background', () => {
     const r = await call({ op: 'export', design_path: dPath, type: 'gif' });
     expect(r['job_id']).toBeUndefined();
     expect(r).toMatchObject({ success: true, frames: 6 });
-    const long = await call({ op: 'export', design_path: dPath, type: 'gif', background: true, duration: 90_000 });
+    const long = await call({ op: 'export', design_path: dPath, type: 'gif', background: true, duration: 200_000 });
     expect(long.success).toBe(false);
     expect(long['job_id']).toBeUndefined();
   });
+
+  it('a video runs past a minute — found live: a 61.5 s promo could not be exported at all', async () => {
+    const r = await call({ op: 'export', design_path: dPath, type: 'mp4', duration: 75_000, fps: 1, background: true });
+    expect(r, JSON.stringify(r)).toMatchObject({ success: true, background: true, frames: 75 });
+    let s = await call({ op: 'export_status', job_id: String(r['job_id']) });
+    for (let i = 0; i < 800 && (s['state'] === 'queued' || s['state'] === 'running'); i++) {
+      await new Promise<void>(res => { setTimeout(res, 25); });
+      s = await call({ op: 'export_status', job_id: String(r['job_id']) });
+    }
+    expect(s, JSON.stringify(s)).toMatchObject({ success: true, state: 'done' });
+    const tooLong = await call({ op: 'export', design_path: dPath, type: 'mp4', duration: 700_000 });
+    expect(tooLong, JSON.stringify(tooLong)).toMatchObject({ success: false });
+    expect(String(tooLong['error'])).toContain('10 min');
+  }, 60_000);
 });

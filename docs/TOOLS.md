@@ -192,7 +192,7 @@ Slide presentations + live presenting/collab. **Req:** `op`.
 Animation timeline + motion export. **Req:** `op`, `design_path`.
 - `timeline` — keyframe tracks as an ASCII timeline (`page_id` to filter).
 - `keyframe` (req layer_id, keyframe:{t,x?,y?,opacity?,scale?,rotation?}) — add/replace a keyframe.
-- `export` (req type = svg|html|gif|mp4|webm; `fps`, `duration` ≤60s, `page_id`, `all_pages`) — SVG/HTML written in-process; GIF streamed in-process; MP4 (H.264) / WebM (VP9) piped into ffmpeg.
+- `export` (req type = svg|html|gif|mp4|webm; `fps`, `duration` ≤2 min gif / ≤10 min mp4·webm, `page_id`, `all_pages`) — SVG/HTML written in-process; GIF streamed in-process; MP4 (H.264) / WebM (VP9) piped into ffmpeg.
 - Continuous composition (one scene, many sub-sequences — [COMPOSITION.md](COMPOSITION.md)):
   - `storyboard` (req shots:[{id?, at, states:{<id>: state | "hidden" | "still" | "<preset>"}}]) — where each object is per shot → one track per layer, in/out points, a marker per shot, a time-aware lint. A state's `loop` (+ `loop_ms`) is how the layer rests: whole passes until its next change.
   - `markers` (markers:{name: time}) · `span` (layer_id|layer_ids, in, out) — named times; a layer's in/out points.

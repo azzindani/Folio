@@ -28,6 +28,7 @@ import { VideoPipe, type VideoType } from '../../export/video-encode';
 import { tryFfmpeg } from '../../export/animation-export';
 import { muxSound, type MuxClip } from '../../export/audio-mux';
 import { scriptsAhead } from './script-capture';
+import { maxClipMs, clipLimitText } from '../../export/clip-limits';
 
 export interface RasterMotionArgs {
   /** The design's sound, found and planned — mixed under an mp4/webm once the frames are encoded. */
@@ -57,9 +58,6 @@ export interface FrameSource {
 }
 
 type Frame = Pick<Raster, 'width' | 'height' | 'pixels'>;
-
-/** Longest clip. A bound on CPU time — frames stream, so memory is flat at any length. */
-export const MAX_CLIP_MS = 60_000;
 
 /** GIF delays under 2cs are slowed down by browsers, so 50fps is the fastest a GIF plays. */
 const FPS_LIMITS = { gif: { def: 12, max: 50 }, video: { def: 30, max: 60 } } as const;
@@ -111,9 +109,10 @@ export async function exportRasterMotion(
       'Add motion with animation(op:motion) or animation(op:keyframe) first, ' +
       'or use export_design(format:"png") if a still is what you want.');
   }
-  if (runMs > MAX_CLIP_MS) {
-    return errResult(OP, `The clip is ${(runMs / 1000).toFixed(1)}s; ${type} export stops at ${MAX_CLIP_MS / 1000}s.`,
-      'Pass `duration` (ms) to export the first part, or split the scene across pages and export each.');
+  if (runMs > maxClipMs(type)) {
+    return errResult(OP, `The clip is ${(runMs / 1000).toFixed(1)}s; ${type} export stops at ${clipLimitText(maxClipMs(type))}.`,
+      video ? 'Pass `duration` (ms) to export the first part, or split the piece and export each part.'
+        : `A GIF that long is a video: export type:"mp4" (up to ${clipLimitText(maxClipMs('mp4'))}), or pass \`duration\` (ms) for the first part.`);
   }
   if (video && !tryFfmpeg()) {
     return errResult(OP, `${type} export needs ffmpeg, which this host does not have.`,

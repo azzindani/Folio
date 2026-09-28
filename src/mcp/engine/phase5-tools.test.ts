@@ -177,9 +177,11 @@ describe('exportAnimation', () => {
     }, 60_000);
 
     it('refuses a clip longer than the export limit and names the way out', async () => {
-      const r = await exportAnimation({ design_path: makeAnimatedDesign(), type: 'gif', duration: 90_000 });
+      const r = await exportAnimation({ design_path: makeAnimatedDesign(), type: 'gif', duration: 150_000 });
       expect(r.success).toBe(false);
+      expect(String(r['error'])).toContain('2 min');
       expect(String(r['hint'])).toContain('duration');
+      expect(String(r['hint'])).toContain('mp4');
     });
 
     it('refuses an unknown type instead of guessing an encoder', async () => {

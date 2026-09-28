@@ -146,7 +146,7 @@ RULES OF THUMB
   • op:track when a preset is not it: any channels, per-frame easing, holds.
     keyframes:[{t:0,opacity:0,y:30,easing:"ease-out-expo"},{t:500,opacity:1,y:0,hold:true},{t:2500,y:0},{t:2900,opacity:0,y:-20}]
   • Every format plays every channel. gif/mp4/webm stream frame by frame, so a
-    30s scene keeps its fps (clips up to 60s; gif ≤50fps, video ≤60fps).
+    30s scene keeps its fps (gif up to 2 min ≤50fps, mp4/webm up to 10 min ≤60fps).
   • Size and smoothness are yours to choose: scale 0.1–1 renders gif/mp4/webm at a
     fraction of the canvas (0.5 → 960×540 from 1920×1080, a quarter of the pixels);
     fps sets smoothness (a GIF at the default 12 looks stepped, 20–25 plays smooth).

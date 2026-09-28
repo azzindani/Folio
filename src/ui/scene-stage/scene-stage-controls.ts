@@ -15,6 +15,7 @@ import type { ScenePlayer, ScenePlayerSnapshot } from '../../editor/scene-player
 import type { PageTransitionType } from '../../schema/types';
 import { APPROXIMATED } from '../../export/scene-transition';
 import { DEFAULT_TRANSITION_MS } from '../../export/scene-plan';
+import { MAX_CLIP_MS } from '../../export/clip-limits';
 
 export interface Transport { element: HTMLElement; update(s: ScenePlayerSnapshot): void }
 
@@ -122,7 +123,7 @@ export function buildTransport(state: StateManager, player: ScenePlayer, onClose
     len.className = 'scene-stage-length';
     len.title = 'Time on screen, ms. Empty = its motion plus a 1.5s hold.';
     len.addEventListener('change', () => {
-      state.setPageScene(index, { auto_advance: len.value.trim() === '' ? null : clampMs(len.value, 100, 60_000) });
+      state.setPageScene(index, { auto_advance: len.value.trim() === '' ? null : clampMs(len.value, 100, MAX_CLIP_MS.video) });
     });
     inspector.append(labelled('Enters with', type), labelled('for ms', dur), labelled('On screen ms', len));
     const approx = page.transition ? APPROXIMATED[page.transition.type] : undefined;
