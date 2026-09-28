@@ -12,6 +12,7 @@
  */
 
 import type { Layer } from '../../schema/types';
+import { unitWidth } from './text-unit-width';
 
 type Node = Layer & { layers?: Layer[]; split_of?: unknown; animation?: unknown };
 
@@ -47,11 +48,21 @@ function joined(pieces: Node[]): Layer {
     const ordered = [...l].sort((a, b) => num(a.x) - num(b.x));
     return ordered.map(said).join(ordered.every(p => [...said(p).trim()].length <= 1) ? '' : ' ');
   }).join('\n');
+  // The pieces fix where each line breaks, so the block is judged at those lines — never re-wrapped.
+  // Its box is at least what the wrap rule needs to keep each line whole (a unit's box is sized the
+  // same way, text-unit-width.ts), grown on the side its alignment leaves free. Found live
+  // (rag-library): the union of font-placed words was a hair narrower than the rule reads the
+  // sentence, and the gate called a one-line question a 2-line overflow.
+  const style = (first as { style?: Record<string, unknown> }).style ?? {};
+  const drawn = x1 - x0;
+  const width = Math.max(drawn, ...text.split('\n').map(line => unitWidth(line, style, 0)));
+  const align = style['align'] ?? style['text_align'];
+  const x = align === 'center' ? x0 - (width - drawn) / 2 : align === 'right' ? x0 - (width - drawn) : x0;
   // Judged as authored: no motion, and no longer a piece.
   const rest: Record<string, unknown> = { ...first };
   delete rest['animation'];
   delete rest['split_of'];
-  return { ...rest, x: x0, y: y0, width: x1 - x0, height: y1 - y0, content: { type: 'plain', value: text } } as unknown as Layer;
+  return { ...rest, x, y: y0, width, height: y1 - y0, content: { type: 'plain', value: text } } as unknown as Layer;
 }
 
 /** `layers` with every split line joined back into one block, at any depth. Unsplit layers pass through as they are. */

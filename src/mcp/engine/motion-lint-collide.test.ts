@@ -57,6 +57,20 @@ describe('motion lint — what shows, and what a line is drawn to meet', () => {
     expect(of('collision', [ground, card, hud])).toEqual([]);
   });
 
+  it('judges "apart" where things began, not where a keyframed layer is written', () => {
+    // Found live (rag-library): a page written on the desk rises out of its book first; "apart as
+    // authored" read the desk, so every book "cut into" its own page.
+    const book = rect('book', 100, 300, 100, 200, { z: 2 });
+    const page = (from: object): Layer => rect('page', 700, 700, 100, 100, { z: 5, animation: { keyframes: [
+      { t: 0, ...from, opacity: 0 }, { t: 400, ...from, opacity: 0 }, { t: 600, x: -600, y: -440, opacity: 1 }], playback: { duration: 600, origin: 'offset' } } });
+    expect(of('collision', [ground, book, page({ x: -600, y: -400 })])).toEqual([]);
+    expect(of('collision', [ground, book, page({ x: 0, y: 0 })])).toEqual(['page>book']);
+    // A lid written on its jar, both popping in from 60%: apart in the first frame only because each
+    // shrinks about its own centre (guard page bench-r2-b07 "need") — together as written, so together.
+    const pop = { animation: { keyframes: [{ t: 0, scale: 0.6, opacity: 0 }, { t: 450, scale: 1, opacity: 1 }], playback: { duration: 450, origin: 'offset', delay: 300 } } };
+    expect(of('collision', [ground, rect('lid', 118, 400, 204, 64, { z: 3, ...pop }), rect('jar', 100, 450, 240, 270, pop)])).toEqual([]);
+  });
+
   it('lets a line meet what it is drawn to, and still flags one laid across an object', () => {
     const cable = { id: 'cable', type: 'path', z: 1, x: 500, y: 400, width: 200, height: 320, d: 'M 500 700 C 600 720 700 600 680 400', fill: 'none', stroke: { color: '#111111', width: 5 } } as unknown as Layer;
     const bot = (dx: number, y: number): Layer => rect('bot', -300, y, 150, 150, { z: 3, ...slide(dx) });

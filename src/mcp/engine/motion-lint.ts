@@ -331,11 +331,14 @@ function restNotes(layers: Layer[], canvas: { width: number; height: number }, m
   const notes: LintNote[] = [];
   const seenPairs = new Set<string>(), seenEdges = new Set<string>(), seenBuried = new Set<string>();
   const views = shotViews(layers, canvas, marks, moves, endMs);
-  // Where everything was before anything moved — the camera's own pose left out, as at rest.
-  const authored = frameUnits(layers.map(l => (l.id === CAMERA_ID ? ({ ...l, transform: undefined } as Layer) : l)), canvas);
+  // Where everything was before anything moved — the camera's own pose left out, as at rest: the
+  // layout as written, and the scene's first frame (a keyframed layer is written where it ENDS).
+  const still = (ls: Layer[]): Layer[] => ls.map(l => (l.id === CAMERA_ID ? ({ ...l, transform: undefined } as Layer) : l));
+  const authored = frameUnits(still(layers), canvas);
+  const began = new Map(frameUnits(still(layersAt(layers, 0)), canvas, { hidden: true }).map(u => [u.id, u]));
   for (const v of views) {
     const { mark, t, texts } = v;
-    for (const c of collisions(v.units, authored, v.entered, v.spaces)) {
+    for (const c of collisions(v.units, authored, v.entered, v.spaces, began)) {
       const key = [c.under, c.over].sort().join('+');
       if (seenPairs.has(key) || v.buried.some(b => b.text === c.under && b.under === c.over)) continue;
       seenPairs.add(key);

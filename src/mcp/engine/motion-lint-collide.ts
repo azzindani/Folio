@@ -134,7 +134,7 @@ const nameOf = (u: Unit): string => (u.leaves.length === 1 ? u.leaves[0] ?? u.id
  * unless it holds the scene: the camera, or a group as big as the canvas.
  * Leaves as big as the canvas are ground, not objects.
  */
-export function frameUnits(frame: Layer[], canvas: { width: number; height: number }): Unit[] {
+export function frameUnits(frame: Layer[], canvas: { width: number; height: number }, opts: { hidden?: boolean } = {}): Unit[] {
   const whole = canvas.width * canvas.height;
   // An image is what it draws, not its box: an icon's transparent margin meets nothing (image-ink.ts, r8).
   const inked = (b: CanvasBox): Box => {
@@ -161,7 +161,8 @@ export function frameUnits(frame: Layer[], canvas: { width: number; height: numb
   boxes.forEach((b, paint) => {
     // What is not showing at this moment is no part of the object then. Found live (entity-ocr): a caption
     // group's payoff button, still invisible, stretched the group down over the form the camera brought in.
-    if (area(b.box) <= 0 || area(b.box) >= 0.8 * whole || band(b) || b.opacity < UNSEEN) return;
+    // (`hidden`: where things ARE, shown or not — the baseline a later entrance is measured from.)
+    if (area(b.box) <= 0 || area(b.box) >= 0.8 * whole || band(b) || (!opts.hidden && b.opacity < UNSEEN)) return;
     const chain = up.get(b.layer.id) ?? [];
     // The outermost enclosing group that is not a scene holder names the object.
     const owner = chain.find(id => {
@@ -197,8 +198,15 @@ const clip = (b: Box | undefined, f: Box): Box | null => {
  * one of which this shot placed (`placed` — entered or moved, itself or a parent).
  * Text on text is the overlap check's (the caller drops pairs it reports as buried).
  */
-export function collisions(rest: Unit[], authored: Unit[], placed: (id: string) => boolean, spaces?: Spaces): Collision[] {
+export function collisions(rest: Unit[], authored: Unit[], placed: (id: string) => boolean, spaces?: Spaces, began?: Map<string, Unit>): Collision[] {
   const was = new Map(authored.map(u => [u.id, u]));
+  // Apart means apart as written AND in the first frame. A keyframed layer is written where it ends
+  // (pages rising out of their books, rag-library); an entrance that scales in place is apart at t=0
+  // only because each piece shrinks about its own centre (a lid on its jar, guard page b07).
+  const together = (a: Unit, b: Unit): boolean => {
+    const ba = began?.get(a.id), bb = began?.get(b.id);
+    return !!ba && !!bb && shareOf(ba, bb) > APART;
+  };
   const out: Collision[] = [];
   const seen = rest.filter(u => u.opacity > 0.3);
   // An object as the pair is measured: in the world when the camera carries both, else on the screen, inside the frame.
@@ -218,7 +226,7 @@ export function collisions(rest: Unit[], authored: Unit[], placed: (id: string) 
       const share = shareOf(va, vb);
       if (share < MIN_SHARE || share > TUCKED) continue;
       const wa = was.get(a.id), wb = was.get(b.id);
-      if (!wa || !wb || shareOf(wa, wb) > APART) continue;
+      if (!wa || !wb || shareOf(wa, wb) > APART || together(a, b)) continue;
       const [under, over] = a.paint < b.paint ? [a, b] : [b, a];
       out.push({ under: nameOf(under), over: nameOf(over), share: Math.round(share * 100) / 100 });
     }
