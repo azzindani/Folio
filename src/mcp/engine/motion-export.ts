@@ -15,7 +15,8 @@ import { resolveDesignPath, readYAML, errResult, okResult } from './utils';
 import { buildAnimatedSVG, wrapAnimatedHTML } from '../../export/svg-animate';
 import { renderToSVGString } from './svg-export';
 import { resolveImageAssets } from './asset-resolve';
-import { exportRasterMotion, rasterPlan, variantName, MAX_CLIP_MS, type FrameSource, type RasterMotionArgs } from './motion-export-raster';
+import { maxClipMs } from '../../export/clip-limits';
+import { exportRasterMotion, rasterPlan, variantName, type FrameSource, type RasterMotionArgs } from './motion-export-raster';
 import { startExportJob, BACKGROUND_FRAMES } from './export-jobs';
 import { tryFfmpeg } from '../../export/animation-export';
 import { specAt, animationDuration } from '../../export/gif-frames';
@@ -163,7 +164,7 @@ function raster(
   const { background, ...rest } = rArgs;
   const runMs = rest.duration ?? source.durationMs;
   const plan = rasterPlan(rest.type, runMs, rest.fps);
-  const renderable = runMs > 0 && runMs <= MAX_CLIP_MS && (rest.type === 'gif' || tryFfmpeg());
+  const renderable = runMs > 0 && runMs <= maxClipMs(rest.type) && (rest.type === 'gif' || tryFfmpeg());
   if (!renderable || !(background ?? plan.frames > BACKGROUND_FRAMES)) return exportRasterMotion(spec, dPath, source, outputPath, rest);
 
   const { job, joined } = startExportJob({ design_path: dPath, output_path: outputPath, type: rest.type, frames_total: plan.frames },
