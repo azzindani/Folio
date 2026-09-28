@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import type { DesignSpec, Layer, ScriptLayer } from '../../schema/types';
-import { captureScripts, chromiumPath, openCapture, withScriptCapture } from './script-capture';
+import { captureScripts, chromiumPath, openCapture, scriptsAhead, withScriptCapture } from './script-capture';
 import { Cdp } from './cdp-client';
 import { clearScriptFrames, collectScripts, componentTime, scriptFrame, setScriptFrame, stampScripts, stampedScripts, dropScriptFrames } from '../../scripting/script-frames';
 import { renderToSVGString } from './svg-export';
@@ -59,6 +59,29 @@ describe('script frames', () => {
     expect(c).not.toBe(a);
     const r = await withScriptCapture(() => ({ success: true, progress: [], token_estimate: 0, svg: renderToSVGString(design(script() as unknown as Layer)) }) as never);
     expect((r as unknown as { svg: string }).svg).toMatch(/<image[^>]*href="data:image\/png/);
+  }, 60000);
+
+  // Found live (opus promo, 61.5 s, nine characters): its export sat at 0 frames for ten minutes.
+  it.skipIf(!chromiumPath() || !Cdp.available())('shoot one component after another without waiting on a background page', async () => {
+    const session = await openCapture();
+    if (typeof session === 'string') throw new Error(session);
+    const four = [0, 1, 2, 3].map(i => script({ id: `s${i}`, width: 200 + 10 * i }));
+    const started = performance.now();
+    try {
+      for (let k = 0; k < 10; k++) await session.capture(four.map(layer => ({ layer, t: 100 * k })));
+    } finally { await session.close(); }
+    expect(four.every(l => scriptFrame(l, 900)?.startsWith('data:image/png'))).toBe(true);
+    expect(performance.now() - started).toBeLessThan(12_000);
+  }, 120000);
+
+  it.skipIf(!chromiumPath() || !Cdp.available())('capture only what the frame draws, not a character parked off the canvas', async () => {
+    const spec = { ...design(script() as unknown as Layer), layers: [script(), script({ id: 'far', x: 3000, width: 180 })] } as unknown as DesignSpec;
+    const s = await scriptsAhead(spec, t => specAt(spec, 0, t), [0, 500], 500, []);
+    try {
+      await s?.ahead(0);
+      expect(scriptFrame(script(), 500)?.startsWith('data:image/png')).toBe(true);
+      expect(scriptFrame(script({ id: 'far', x: 3000, width: 180 }), 500)).toBeUndefined();
+    } finally { await s?.close(); }
   }, 60000);
 });
 
