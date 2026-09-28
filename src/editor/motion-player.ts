@@ -15,7 +15,7 @@
  */
 
 import type { StateManager, EditorState } from './state';
-import type { Layer } from '../schema/types';
+import type { DesignSpec, Layer } from '../schema/types';
 import { flattenForTimeline, sceneDuration, playsInTime } from '../ui/panels/timeline-model';
 import type { PosePlan, Pose, RowTiming } from './motion-pose';
 import { sourceOptions } from '../renderer/resolve-source';
@@ -213,20 +213,21 @@ export class MotionPlayer {
    */
   authoredLayers(): Layer[] {
     const layers = this.state.getCurrentLayers() as Layer[];
+    return this.baseline ? unpose(layers, this.baseline) : layers;
+  }
+
+  /**
+   * `design` with any live pose undone, on the page it was posed on — what a
+   * save writes. Found live: Export saves first, and a piece paused at 40 s
+   * was saved AS that frame (its camera a row down, three stations at opacity
+   * 0); every render after it drew a blank world.
+   */
+  authoredDesign(design: DesignSpec): DesignSpec {
     const base = this.baseline;
-    if (!base) return layers;
-    // Spread through a plain record: Layer is a large discriminated union and
-    // spreading it directly makes the checker enumerate every combination.
-    const unpose = (ls: Layer[]): Layer[] => ls.map(l => {
-      const b = base.get(l.id);
-      const o = l as unknown as Record<string, unknown>;
-      const restored: Record<string, unknown> = b ? { ...o, ...b } : { ...o };
-      if (b) for (const k of Object.keys(b)) if (b[k] === undefined) delete restored[k];
-      const kids = o['layers'];
-      if (Array.isArray(kids)) restored['layers'] = unpose(kids as Layer[]);
-      return restored as unknown as Layer;
-    });
-    return unpose(layers);
+    if (!base) return design;
+    const pages = design.pages;
+    if (pages?.length) return { ...design, pages: pages.map((p, i) => (i === this.baselinePage ? { ...p, layers: unpose(p.layers ?? [], base) } : p)) };
+    return { ...design, layers: unpose(design.layers ?? [], base) };
   }
 
   /** Put every posed layer back the way it was authored, on the page it was posed on. */
@@ -238,6 +239,21 @@ export class MotionPlayer {
     this.generated = new Map();
     if (base.size) this.write(base, this.baselinePage); else if (drew) this.redraw?.();
   }
+}
+
+/** Layers with each posed field put back as authored, at any depth. */
+function unpose(ls: Layer[], base: Map<string, Pose>): Layer[] {
+  // Spread through a plain record: Layer is a large discriminated union and
+  // spreading it directly makes the checker enumerate every combination.
+  return ls.map(l => {
+    const b = base.get(l.id);
+    const o = l as unknown as Record<string, unknown>;
+    const restored: Record<string, unknown> = b ? { ...o, ...b } : { ...o };
+    if (b) for (const k of Object.keys(b)) if (b[k] === undefined) delete restored[k];
+    const kids = o['layers'];
+    if (Array.isArray(kids)) restored['layers'] = unpose(kids as Layer[], base);
+    return restored as unknown as Layer;
+  });
 }
 
 /** Every id the design holds on a surface, at any depth. */

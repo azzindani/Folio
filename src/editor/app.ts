@@ -541,8 +541,8 @@ export class EditorApp extends EditorAppBase {
   getYAML(): string {
     const design = this.state.get().design;
     if (!design) return '';
-    // The top-level animations map is a mirror of the tracks: refresh it, never write back the one loaded.
-    return serializeYAML(withAnimationMirror(design));
+    // As authored, never the frame on the canvas (motion-player.ts); the animations mirror refreshed, never the one loaded.
+    return serializeYAML(withAnimationMirror(this.motionPlayer.authoredDesign(design)));
   }
 
   /** Manual save (Ctrl+S / Save button). Persists through the active sink — the
