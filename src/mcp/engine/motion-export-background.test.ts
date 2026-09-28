@@ -5,6 +5,7 @@ import * as path from 'path';
 import yaml from 'js-yaml';
 import { dispatchAnimation } from '../dispatch';
 import type { ToolResult } from '../types';
+import { tryFfmpeg } from '../../export/animation-export';
 
 // Driven through dispatch, the door a client uses — not the engine function.
 const root = fs.mkdtempSync(path.join(os.tmpdir(), 'folio-bgexport-'));
@@ -48,8 +49,9 @@ describe('animation op:export in the background', () => {
     expect(long['job_id']).toBeUndefined();
   });
 
-  it('a video runs past a minute — found live: a 61.5 s promo could not be exported at all', async () => {
-    const r = await call({ op: 'export', design_path: dPath, type: 'mp4', duration: 75_000, fps: 1, background: true });
+  // Found live: a 61.5 s promo could not be exported at all.
+  const rendered = async (type: string): Promise<void> => {
+    const r = await call({ op: 'export', design_path: dPath, type, duration: 75_000, fps: 1, background: true });
     expect(r, JSON.stringify(r)).toMatchObject({ success: true, background: true, frames: 75 });
     let s = await call({ op: 'export_status', job_id: String(r['job_id']) });
     for (let i = 0; i < 800 && (s['state'] === 'queued' || s['state'] === 'running'); i++) {
@@ -57,8 +59,14 @@ describe('animation op:export in the background', () => {
       s = await call({ op: 'export_status', job_id: String(r['job_id']) });
     }
     expect(s, JSON.stringify(s)).toMatchObject({ success: true, state: 'done' });
+  };
+
+  it('a clip runs past a minute, and a video stops at 10 min', async () => {
+    await rendered('gif');
     const tooLong = await call({ op: 'export', design_path: dPath, type: 'mp4', duration: 700_000 });
     expect(tooLong, JSON.stringify(tooLong)).toMatchObject({ success: false });
     expect(String(tooLong['error'])).toContain('10 min');
   }, 60_000);
+
+  it.skipIf(!tryFfmpeg())('an mp4 renders past a minute', async () => { await rendered('mp4'); }, 60_000);
 });
