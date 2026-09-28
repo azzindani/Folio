@@ -17,6 +17,7 @@ import { spawn } from 'child_process';
 import type { DesignSpec, Layer, ScriptLayer } from '../../schema/types';
 import { buildScriptDoc } from '../../scripting/script-runtime';
 import { Cdp } from './cdp-client';
+import { cullFrame } from '../../export/frame-cull';
 import { componentTime, scriptFrame, scriptKey, setScriptFrame, dropScriptFrames, stampedScripts, hasScripts, collectScripts } from '../../scripting/script-frames';
 import type { ToolResult } from '../types';
 
@@ -106,9 +107,14 @@ export async function openCapture(): Promise<CaptureSession | string> {
     if (!p) { p = openPage(run.cdp, layer); pages.set(key, p); }
     return p;
   };
+  let front = '';
   const shoot = async (w: { layer: ScriptLayer; t: number }): Promise<string> => {
     const sessionId = await pageFor(w.layer);
     const at = `"${w.layer.id}" at ${Math.round(w.t)} ms`;
+    // Headless Chromium paints the front tab at once and a background one when it gets round to it:
+    // with a page per component, one screenshot in eight waited 1-20 s for a frame (the 61.5 s
+    // promo's export sat at 0 frames for ten minutes, its browser relaunched on each timeout).
+    if (front !== sessionId) { await run.cdp.send('Page.bringToFront', {}, sessionId, `showing ${at}`); front = sessionId; }
     await run.cdp.send('Runtime.evaluate', { expression: `window.__folioRender(${componentTime(w.layer, w.t)})` }, sessionId, `drawing ${at}`);
     const { data } = await run.cdp.send<{ data: string }>('Page.captureScreenshot', { format: 'png', fromSurface: true }, sessionId, `capturing ${at}`);
     return data;
@@ -124,6 +130,7 @@ export async function openCapture(): Promise<CaptureSession | string> {
           run.cdp.close(); run.stop();
           run = await startBrowser(exe);
           pages = new Map();
+          front = '';
           png = await shoot(w);
         }
         filled.push(setScriptFrame(w.layer, w.t, `data:image/png;base64,${png}`));
@@ -165,7 +172,9 @@ export async function scriptsAhead(spec: DesignSpec, at: (t: number, frameMs?: n
     async ahead(i) {
       if (i % CHUNK) return;
       dropScriptFrames(held);
-      held = await session.capture(times.slice(i, i + CHUNK).flatMap(t => stampedScripts(allLayers(at(t, frameMs)))));
+      // Only what the frame draws: its render is culled the same way (frame-cull.ts), so a character
+      // parked at a station the camera has not reached is never shot — nine stations, one in view.
+      held = await session.capture(times.slice(i, i + CHUNK).flatMap(t => stampedScripts(allLayers(cullFrame(at(t, frameMs))))));
     },
     async close() { dropScriptFrames(held); held = []; await session.close(); },
   };
