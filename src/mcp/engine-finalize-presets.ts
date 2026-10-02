@@ -299,6 +299,18 @@ export function dropThrashDuplicates(layers: Layer[], docW: number, docH: number
 // overlapping NEAR-DUPLICATE text (same spot, ≥50% shared tokens — so two distinct
 // labels that merely abut are never merged) → keep the last.
 
+/** When a layer is on screen: [in, out), the whole scene when unset. */
+function liveSpan(l: Layer): [number, number] {
+  const o = l as unknown as Record<string, unknown>;
+  return [typeof o['in'] === 'number' ? o['in'] : 0, typeof o['out'] === 'number' ? o['out'] : Infinity];
+}
+
+/** Two layers shown at disjoint times never overprint — a video's lower thirds swap in one spot, they are not a rebuild. */
+export function onScreenTogether(a: Layer, b: Layer): boolean {
+  const [a0, a1] = liveSpan(a), [b0, b1] = liveSpan(b);
+  return a0 < b1 && b0 < a1;
+}
+
 export function dedupOverlappingDuplicates(layers: Layer[], docW: number, docH: number): number {
   const drop = new Set<number>();
   const baseId = (l: Layer): string => String((l as unknown as Record<string, unknown>)['id'] ?? '').replace(/-\d+$/, '');
@@ -311,7 +323,7 @@ export function dedupOverlappingDuplicates(layers: Layer[], docW: number, docH: 
   const groups = layers.map((l, i) => ({ l, i })).filter(x => x.l.type === 'group' && !isFullBleedContentPreset(x.l, docW, docH) && baseId(x.l));
   for (let a = 0; a < groups.length; a++) {
     for (let b = a + 1; b < groups.length; b++) {
-      if (baseId(groups[a].l) === baseId(groups[b].l) && sameBox(groups[a].l, groups[b].l)) drop.add(groups[a].i);
+      if (baseId(groups[a].l) === baseId(groups[b].l) && sameBox(groups[a].l, groups[b].l) && onScreenTogether(groups[a].l, groups[b].l)) drop.add(groups[a].i);
     }
   }
   // (2) heavily-overlapping near-duplicate text — keep the last
@@ -327,7 +339,7 @@ export function dedupOverlappingDuplicates(layers: Layer[], docW: number, docH: 
   for (let a = 0; a < texts.length; a++) {
     if (drop.has(texts[a].i)) continue;
     for (let b = a + 1; b < texts.length; b++) {
-      if (drop.has(texts[b].i)) continue;
+      if (drop.has(texts[b].i) || !onScreenTogether(texts[a].l, texts[b].l)) continue;
       // Rename-twins: an id collision produced `X` + `X-2` (distinct ids, same
       // base). When the SAME line is re-placed across two add_layers calls the two
       // copies land at DIFFERENT y (a menu split into two offset ladders), so the

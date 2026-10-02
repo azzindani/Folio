@@ -206,3 +206,25 @@ describe('dedupOverlappingDuplicates — rename-twin removal', () => {
     expect(layers).toHaveLength(2);
   });
 });
+
+describe('dedupOverlappingDuplicates — layers shown at different times', () => {
+  const timed = (id: string, value: string, win: Record<string, number>): Layer => ({ ...txt(id, value, 96, 1000), ...win } as unknown as Layer);
+
+  it('keeps lower thirds that swap in one spot over a video', () => {
+    // Found live: "Part one: the talk" and "Part three: back to the talk" share half their words
+    // and their box, so the first was dropped as a rebuild — though they are never on screen together.
+    const layers = [
+      timed('lt_a', 'Part one: the talk', { in: 0, out: 25000 }),
+      timed('lt_b', 'Part two: the take', { in: 25000, out: 45000 }),
+      timed('lt_c', 'Part three: back to the talk', { in: 45000, out: 60000 }),
+    ];
+    expect(dedupOverlappingDuplicates(layers, W, H)).toBe(0);
+    expect(layers.map(l => l.id)).toEqual(['lt_a', 'lt_b', 'lt_c']);
+  });
+
+  it('still collapses near-duplicates whose windows overlap', () => {
+    const layers = [timed('a', 'Part one: the talk', { in: 0, out: 30000 }), timed('b', 'Part three: back to the talk', { in: 20000 })];
+    expect(dedupOverlappingDuplicates(layers, W, H)).toBe(1);
+    expect(layers.map(l => l.id)).toEqual(['b']);
+  });
+});
