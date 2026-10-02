@@ -218,6 +218,35 @@ Runtime guards: `/mcp` body ≤ `FOLIO_MAX_BODY_BYTES` (32 MiB), OAuth bodies �
 `editorBroadcast` skips files over `FOLIO_MAX_BROADCAST_BYTES` (16 MiB), dead SSE
 clients pruned on write. Steady state ≈ 230 MiB idle, ≈ 400 MiB during PNG export.
 
+### 5.4 Video export on a bigger host
+
+A gif/mp4/webm frame goes through four stages: pose → SVG → resvg raster (worker
+processes) → encoder (ffmpeg). Footage clips are decoded by one ffmpeg stream per clip and
+composited as pixels between the graphics above and below them. A graphics band whose SVG
+is unchanged since an earlier frame reuses that raster (`rasters_reused` in the receipt).
+On a shared 4-core host the **encoder is the floor** (x264 `medium` ≈ 70 ms per 1080p frame),
+not the server thread. So more cores, a faster preset or a hardware encoder are what pay off.
+
+| Knob | Effect |
+|---|---|
+| `FOLIO_RENDER_WORKERS` | resvg processes per export (default: cores − 1, max 3). Raise it on a host with spare cores |
+| `FOLIO_VIDEO_PRESET` | x264 preset. `veryfast` trades file size for speed; quality stays at CRF 18 |
+| `FOLIO_VIDEO_ENCODER` | `h264_nvenc` · `h264_vaapi` · `h264_videotoolbox` move encoding off the CPU. Each is test-encoded once, and libx264 is used when the device is missing (receipt `encoder` says which ran) |
+| `FOLIO_MAX_VIDEO_BYTES` | per-clip upload cap. Every upload also gets a 720p short-GOP proxy for the editor and storyboards, while export reads the original |
+
+Measure before and after with the bench. It builds a synthetic clip and a footage +
+graphics design in `$TMPDIR`, exports through the same call as `animation(op:export)`,
+prints the receipt, and deletes everything:
+
+```bash
+docker exec folio bun /app/scripts/bench-export.ts 6 30          # seconds fps [width height]
+docker exec -e FOLIO_VIDEO_PRESET=veryfast folio bun /app/scripts/bench-export.ts
+```
+
+Reference, a shared 4-core host (load 2–6 from sibling services, so ±30%):
+180 frames of 1080p30 → 10–14 s at the defaults (56–78 ms/frame), 10.8 s with `veryfast`.
+Before the footage work, the same export took 101.5 s.
+
 ### 5.3 Access hardening — the editor / library front-door
 
 The link any tool returns (`open_url`, `short_url`, `view_url`) is **self-authenticating**:
@@ -413,6 +442,12 @@ Tail it: `docker compose logs -f folio`.
 | `FOLIO_MEM_LIMIT` | `4g` | Container memory ceiling |
 | `FOLIO_MAX_BODY_BYTES` | `33554432` | `/mcp` request body cap |
 | `FOLIO_MAX_BROADCAST_BYTES` | `16777216` | Max file size read for editor SSE fan-out |
+| `FOLIO_MAX_VIDEO_BYTES` | `67108864` | Per-clip video upload cap (artwork keeps `FOLIO_MAX_ASSET_BYTES`, 8 MiB) |
+| `FOLIO_RENDER_WORKERS` | cores − 1, max 3 | resvg renderer processes per gif/mp4/webm export (1–8). See [§5.4](#54-video-export-on-a-bigger-host) |
+| `FOLIO_RESVG_ISOLATE` | `1` under Bun | `0` rasterises in the server process (node/tests); `1` in child processes, so a resvg crash fails the render, not the server |
+| `FOLIO_VIDEO_PRESET` | `medium` | x264 preset for mp4 export (`ultrafast` … `veryslow`) |
+| `FOLIO_VIDEO_ENCODER` | `libx264` | `h264_nvenc` · `h264_vaapi` · `h264_videotoolbox`. Falls back to libx264 when the device is unavailable |
+| `FOLIO_VAAPI_DEVICE` | `/dev/dri/renderD128` | Render node for `h264_vaapi` |
 | `FOLIO_SKIP_TESTS` | `0` | `1` skips the test suite during `docker build` |
 | `FOLIO_UI_PORT` / `FOLIO_MCP_PORT` | `4173` / `3333` | Compose: host port mappings |
 
