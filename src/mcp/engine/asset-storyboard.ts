@@ -14,6 +14,7 @@ import { okResult, errResult, buildContext, buildHandover, pOk } from './utils';
 import { probeVideo } from './asset-video';
 import { detectSilence, SILENCE_DB, SILENCE_MIN_MS, type Span } from './video-silence';
 import { proxyFor } from './video-proxy';
+import { editPoints, type EditPoints } from './video-edit-points';
 import { encodePNG } from '../../utils/png-codec';
 import { rasterize } from '../../utils/resvg-isolate';
 import { showinfoTimes } from './video-decode';
@@ -112,8 +113,29 @@ export function sampleTiles(file: string, fromMs: number, toMs: number, bin = 'f
   });
 }
 
-/** The tiles laid out COLS wide with their times burned in, as one PNG. */
-export function storyboardPNG(tiles: Tile[], font: ResvgRenderOptions['font']): { png: Buffer; width: number; height: number } {
+/** Which shot a moment belongs to, 1-based: one more than the cuts at or before it. */
+export const shotOf = (ms: number, shots: number[]): number => 1 + shots.filter(c => c <= ms).length;
+
+/**
+ * Every shot gets a tile: a shot the near-duplicate pass left without one takes
+ * its first sample. Thinned evenly back to MAX_TILES when that overflows.
+ */
+export function withShotTiles(kept: Tile[], all: Tile[], shots: number[]): Tile[] {
+  const out = [...kept];
+  shots.forEach((cut, i) => {
+    const next = shots[i + 1] ?? Infinity;
+    if (out.some(t => t.ms >= cut && t.ms < next)) return;
+    const first = all.find(t => t.ms >= cut && t.ms < next);
+    if (first) out.push(first);
+  });
+  out.sort((a, b) => a.ms - b.ms);
+  if (out.length <= MAX_TILES) return out;
+  const step = out.length / MAX_TILES;
+  return Array.from({ length: MAX_TILES }, (_, i) => out[Math.floor(i * step)] as Tile);
+}
+
+/** The tiles laid out COLS wide with their times (and shot numbers, when the clip has cuts) burned in, as one PNG. */
+export function storyboardPNG(tiles: Tile[], font: ResvgRenderOptions['font'], shots: number[] = []): { png: Buffer; width: number; height: number } {
   const cols = Math.min(COLS, Math.max(1, tiles.length));
   const rows = Math.max(1, Math.ceil(tiles.length / cols));
   const width = cols * TILE_W, height = rows * TILE_H;
@@ -130,8 +152,9 @@ export function storyboardPNG(tiles: Tile[], font: ResvgRenderOptions['font']): 
   const sheet = encodePNG({ width, height, pixels: px }).toString('base64');
   const labels = tiles.map((t, n) => {
     const x = (n % cols) * TILE_W, y = Math.floor(n / cols) * TILE_H + TILE_H - 15;
-    return `<rect x="${x}" y="${y}" width="44" height="15" fill="#000" fill-opacity="0.7"/>` +
-      `<text x="${x + 4}" y="${y + 11}" font-family="DejaVu Sans" font-weight="700" font-size="10" fill="#fff">${stamp(t.ms)}</text>`;
+    const label = shots.length ? `S${shotOf(t.ms, shots)} ${stamp(t.ms)}` : stamp(t.ms);
+    return `<rect x="${x}" y="${y}" width="${shots.length ? 64 : 44}" height="15" fill="#000" fill-opacity="0.7"/>` +
+      `<text x="${x + 4}" y="${y + 11}" font-family="DejaVu Sans" font-weight="700" font-size="10" fill="#fff">${label}</text>`;
   }).join('');
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><image href="data:image/png;base64,${sheet}" width="${width}" height="${height}"/>${labels}</svg>`;
   const r = rasterize({ svg, opts: { font }, want: 'png' });
@@ -155,17 +178,24 @@ export async function storyboardRead(rel: string, abs: string, win: { from_ms?: 
   let tiles: Tile[];
   // Looking reads the 720p proxy when one is built (video-proxy.ts) — same clock, faster decode.
   const look = proxyFor(abs) ?? abs;
+  // Where the sound stops (the dead air op:video cut can take out) and where the picture cuts —
+  // measured alongside the sampling; a failed measure is not a failed read.
+  const silenceP: Promise<Span[] | null> = probe.has_audio ? detectSilence(look, from, to).catch(() => null) : Promise.resolve(null);
+  const pointsP: Promise<EditPoints | null> = editPoints(look, from, to, probe.has_audio).catch(() => null);
   try { tiles = await sampleTiles(look, from, to); } catch (e) { return errResult(OP, `Could not sample ${rel}: ${(e as Error).message}`, 'Check the file plays: manage_design {op:"asset_list"} shows its duration.'); }
-  const kept = distinctTiles(tiles);
+  const [silence, points] = await Promise.all([silenceP, pointsP]);
+  const shots = points?.shots ?? [];
+  const kept = withShotTiles(distinctTiles(tiles), tiles, shots);
   if (!kept.length) return errResult(OP, `No frames in ${stamp(from)}–${stamp(to)} of ${rel}`, 'Widen the window, or omit from_ms/to_ms for the whole clip.');
-  const sheet = storyboardPNG(kept, font);
-  // Where the sound stops — the dead air op:video cut can take out. A failed measure is not a failed read.
-  let silence: Span[] | null = null;
-  if (probe.has_audio) { try { silence = await detectSilence(look, from, to); } catch { silence = null; } }
+  const sheet = storyboardPNG(kept, font, shots);
   return okResult(OP, {
     asset_path: rel, kind: 'video', duration_ms: dur, width: probe.width, height: probe.height, ...(probe.fps ? { fps: probe.fps } : {}),
     window: { from_ms: from, to_ms: to }, sampled: tiles.length,
-    tiles: kept.map((t, i) => ({ tile: i + 1, ms: t.ms })),
+    tiles: kept.map((t, i) => ({ tile: i + 1, ms: t.ms, ...(shots.length ? { shot: shotOf(t.ms, shots) } : {}) })),
+    ...(points ? {
+      shots: points.shots, ...(points.shots_dropped ? { shots_dropped: points.shots_dropped } : {}),
+      activity: { ...points.activity, note: `Per ${points.activity.bucket_ms} ms from window.from_ms: motion = mean frame change within shots (0 still … 100), loud_db = sound level (-90 silent). Lively stretches move AND sound; cut on shots[], the file-clock times a new shot starts.` },
+    } : {}),
     ...(silence ? { sound: { silences: silence, threshold_db: SILENCE_DB, min_ms: SILENCE_MIN_MS, note: 'Spans quieter than the threshold for at least min_ms, on the file clock. op:video cut:[[from_ms, to_ms], …] removes chosen spans and closes the gap.' } } : {}),
     note: 'One image: tiles left to right, top to bottom, each stamped with its time on the FILE clock — the clock op:video offset_ms / duration_ms use. Near-identical frames are dropped, so one tile can stand for a long shot. Zoom in with from_ms/to_ms.',
     progress: [pOk('Storyboard', `${kept.length} tile(s) from ${tiles.length} samples of ${stamp(from)}–${stamp(to)}`)],

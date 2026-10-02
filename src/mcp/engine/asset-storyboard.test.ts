@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import { spawnSync } from 'child_process';
-import { stamp, distinctTiles, sampleArgs, isVideoAsset, storyboardRead, TILE_W, TILE_H, type Tile } from './asset-storyboard';
+import { stamp, distinctTiles, withShotTiles, shotOf, sampleArgs, isVideoAsset, storyboardRead, TILE_W, TILE_H, type Tile } from './asset-storyboard';
 import { resvgFontOption } from './fonts';
 
 const hasFfmpeg = spawnSync('ffmpeg', ['-version']).error === undefined && spawnSync('ffprobe', ['-version']).error === undefined;
@@ -21,6 +21,11 @@ describe('storyboard pieces', () => {
   it('a single long shot is still shown across its span', () => {
     const still = Array.from({ length: 60 }, (_, i) => solid(i * 100, 50));
     expect(distinctTiles(still).map(t => t.ms)).toEqual([0, 1000, 2000, 3000, 4000, 5000]);
+  });
+  it('every shot gets a tile, numbered by the cuts before it', () => {
+    const all = Array.from({ length: 30 }, (_, i) => solid(i * 100, 50));
+    expect(withShotTiles([solid(0, 50)], all, [1200, 2500]).map(t => t.ms)).toEqual([0, 1200, 2500]);
+    expect([shotOf(0, [1200, 2500]), shotOf(1200, [1200, 2500]), shotOf(2900, [1200, 2500])]).toEqual([1, 2, 3]);
   });
   it('decodes every frame of a short window, only keyframes of a long one', () => {
     expect(sampleArgs('/c.mp4', 0, 10_000).join(' ')).toContain('fps=12.0000');
@@ -46,13 +51,16 @@ describe.skipIf(!hasFfmpeg)('storyboardRead', () => {
 
   it('one image, one tile per shot, times on the file clock', async () => {
     const r = await storyboardRead('assets/video/two-shots.mp4', file, {}, resvgFontOption()) as unknown as {
-      success: boolean; tiles: Array<{ ms: number }>; duration_ms: number; _attachments: Array<{ mimeType: string; data: string }>;
+      success: boolean; tiles: Array<{ ms: number; shot?: number }>; shots?: number[]; duration_ms: number; _attachments: Array<{ mimeType: string; data: string }>;
     };
     expect(r.success).toBe(true);
     // Two shots, filled out to the minimum six across the clip — the cut at 2 s is one of them.
     expect(r.tiles.length).toBe(6);
     expect(r.tiles[0]?.ms).toBeLessThan(200);
     expect(r.tiles.some(t => Math.abs(t.ms - 2000) < 120)).toBe(true);
+    // The cut is measured too, to the frame, and the tiles carry their shot.
+    expect(r.shots).toEqual([2000]);
+    expect(r.tiles.filter(t => t.ms >= 2000).every(t => t.shot === 2)).toBe(true);
     expect(r._attachments[0]?.mimeType).toBe('image/png');
     expect(Buffer.from(r._attachments[0]?.data ?? '', 'base64').subarray(1, 4).toString()).toBe('PNG');
   }, 30_000);
