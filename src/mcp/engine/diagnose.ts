@@ -372,7 +372,10 @@ export function analyzeLayers(authored: Layer[], W: number, H: number, world?: S
   // dead weight the model can't SEE. Flag it with the ids to remove.
   // The engine's own rigs — a camera, the depth wrappers beside it — are full-canvas boxes
   // around an invisible pin, not presets (B7, live: four of them were called duplicates).
-  const fullGroups = boxes(layers).filter(b => b.type === 'group' && FULL_BG(b, W, H) && !b.id.startsWith('__'));
+  // A LOCKED group is the author's own scene layer (a world and a hud over it): transparent
+  // containers that are meant to overlap, and nothing a re-added preset ever arrives locked.
+  const lockedIds = new Set(layers.filter(l => (l as { locked?: unknown }).locked === true).map(l => l.id));
+  const fullGroups = boxes(layers).filter(b => b.type === 'group' && FULL_BG(b, W, H) && !b.id.startsWith('__') && !lockedIds.has(b.id));
   if (fullGroups.length > 1) {
     const ids = fullGroups.map(b => b.id);
     out.push({
