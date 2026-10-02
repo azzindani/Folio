@@ -11,6 +11,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import type { DesignSpec, Layer } from '../../schema/types';
+import { readTransition, predecessorOf, TRANSITION_TYPES, MIN_TRANSITION_MS, MAX_TRANSITION_MS } from '../../animation/clip-transition';
 import { summarize, cutClip, type ClipLayer } from '../../animation/video-clip';
 import type { ToolResult, ProgressItem } from '../types';
 import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, pOk, pWarn } from './utils';
@@ -54,7 +55,7 @@ export interface VideoOpArgs {
   design_path: string; project_path?: string; page_id?: string; layer_id?: string;
   in?: unknown; out?: unknown; split_at?: unknown; cut?: unknown; ripple?: boolean;
   offset_ms?: number; duration_ms?: number; speed?: number; volume?: number; muted?: boolean; loop?: boolean;
-  fade_in?: unknown; fade_out?: unknown; audio_lead_ms?: unknown; audio_tail_ms?: unknown;
+  fade_in?: unknown; fade_out?: unknown; audio_lead_ms?: unknown; audio_tail_ms?: unknown; clip_transition?: unknown;
 }
 
 const FIELDS = ['offset_ms', 'duration_ms', 'speed', 'volume', 'muted', 'loop'] as const;
@@ -105,6 +106,17 @@ export function videoMotion(args: VideoOpArgs): ToolResult {
     const ms = resolveTime(raw, ctx);
     if (typeof ms === 'string') return errResult(op, `${key}: ${ms}`, 'Fix that time and call again.');
     next[key] = ms;
+  }
+
+  // clip_transition, not transition: the animation tool's `transition` is op:scene's page entrance.
+  if (args.clip_transition === null) delete v.transition;
+  else if (args.clip_transition !== undefined) {
+    const t = readTransition(args.clip_transition);
+    if (typeof t === 'string') return errResult(op, t, `Use {type: ${TRANSITION_TYPES.join('|')}, duration_ms? ${MIN_TRANSITION_MS}–${MAX_TRANSITION_MS}, color? "#rrggbb" (dip), direction? left|right|up|down (wipe, push)}; null clears.`);
+    if (!predecessorOf(scoped.scope.filter(l => l.id !== clip.id), next)) {
+      return errResult(op, `No clip ends where "${clip.id}" starts (${Number(next.in) || 0} ms) — a transition joins a clip to the one before it on its track.`, 'Lay the clips end to end first (op:video in on this clip, or split_at on one clip), then add the transition.');
+    }
+    v.transition = t;
   }
 
   let result: ClipLayer[] = [next];

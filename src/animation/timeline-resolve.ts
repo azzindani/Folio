@@ -17,6 +17,7 @@ import type { Layer } from '../schema/types';
 import type { AnimationSpec, Keyframe, LayerClock, LayerLink } from './types';
 import { interpolateKeyframes } from './keyframe-engine';
 import { windowOf, intersectWindows, type LifeWindow } from './lifespan';
+import { applyClipTransitions } from './clip-transition';
 
 type Node = Layer & { animation?: AnimationSpec; layers?: Layer[]; clock?: LayerClock; link?: LayerLink; in?: number; out?: number };
 
@@ -34,8 +35,10 @@ const CACHE = new WeakMap<Layer[], Layer[]>();
 export function resolveTimeline(layers: Layer[]): Layer[] {
   const hit = CACHE.get(layers);
   if (hit) return hit;
-  if (!usesTimeFeatures(layers)) { CACHE.set(layers, layers); return layers; }
-  const out = applyWindows(applyLinks(layers.map(l => applyClocks(l as Node))), null);
+  // Clip transitions compile into windows and keys first (clip-transition.ts), on each list's own clock.
+  const base = applyClipTransitions(layers);
+  if (!usesTimeFeatures(base)) { CACHE.set(layers, base); return base; }
+  const out = applyWindows(applyLinks(base.map(l => applyClocks(l as Node))), null);
   CACHE.set(layers, out);
   CACHE.set(out, out);
   return out;
