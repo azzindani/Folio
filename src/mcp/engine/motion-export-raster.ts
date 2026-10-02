@@ -11,7 +11,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import type { Raster } from '../../utils/resvg-isolate';
+import type { Raster, RasterJob } from '../../utils/resvg-isolate';
 import { RasterPool } from '../../utils/raster-pool';
 import type { DesignSpec } from '../../schema/types';
 import type { ToolResult } from '../types';
@@ -30,6 +30,7 @@ import { muxSound, type MuxClip } from '../../export/audio-mux';
 import { scriptsAhead } from './script-capture';
 import { maxClipMs, clipLimitText } from '../../export/clip-limits';
 import { FootageFeed } from './video-feed';
+import { bandedFrame, paintBanded } from './footage-bands';
 
 export interface RasterMotionArgs {
   /** The design's sound, found and planned — mixed under an mp4/webm once the frames are encoded. */
@@ -150,9 +151,22 @@ export async function exportRasterMotion(
   const scale = exportScale(args.scale);
   const fit = scale < 1 ? { fitTo: { mode: 'zoom' as const, value: scale } } : {};
   // A clip far off the canvas aborts resvg outright. See frame-cull.ts.
-  const draw = async (s: DesignSpec, opaque = video): Promise<Raster> => {
-    await feed.prepare(s);
-    return pool.render({ svg: renderToSVGString(cullFrame(s)), opts: opaque ? { font, background: '#FFFFFF', ...fit } : { font, ...fit }, want: 'pixels' });
+  const rasterOpts = (opaque: boolean): RasterJob['opts'] => (opaque ? { font, background: '#FFFFFF', ...fit } : { font, ...fit });
+  // Footage frames: plain clips are painted as decoded pixels between graphics bands (footage-bands.ts);
+  // anything else embeds the clip's picture in the SVG for resvg.
+  const counts = { pixel_frames: 0, embedded_frames: 0 };
+  const draw = async (s: DesignSpec, opaque = video): Promise<Frame> => {
+    const frame = cullFrame(s);
+    const banded = bandedFrame(frame);
+    if (banded) {
+      const img = await paintBanded(banded, scale, {
+        render: (svg, ground) => pool.render({ svg, opts: rasterOpts(ground && opaque), want: 'pixels' }),
+        clip: (slot, w, h) => feed.pixelsAt(slot, w, h),
+      });
+      if (img) { counts.pixel_frames++; return img; }
+    }
+    if (await feed.prepare(frame)) counts.embedded_frames++;
+    return pool.render({ svg: renderToSVGString(frame), opts: rasterOpts(opaque), want: 'pixels' });
   };
   const renderAt = (t: number): Promise<Frame> => {
     const turn = source.turning?.(t, frameMs);
@@ -254,7 +268,7 @@ export async function exportRasterMotion(
     ...(gifStats ? { images_written: gifStats.images_written } : {}),
     render_ms: Math.round(performance.now() - started),
     render_workers: pool.size,
-    ...(footage.clips ? { footage_decoders: footage } : {}),
+    ...(footage.clips ? { footage: { ...footage, ...counts } } : {}),
     ...(args.extra ?? {}),
     ...(notes.length ? { notes } : {}),
     ...(soundWarning ? { warning: soundWarning } : {}),

@@ -14,10 +14,19 @@ import { applyCommonAttributes } from './layer-renderers-shared';
 
 const XHTML = 'http://www.w3.org/1999/xhtml';
 
+/** How a clip fills its box — the same in the editor's <video> and the server's <image>: cover unless the layer says otherwise. */
+export function videoFit(fit: unknown): 'cover' | 'contain' | 'fill' | 'none' {
+  return fit === 'contain' || fit === 'fill' || fit === 'none' ? fit : 'cover';
+}
+
 export function renderVideo(layer: VideoLayer, svg: SVGSVGElement): SVGElement {
   const frame = (layer as VideoLayer & { _video_frame?: string })._video_frame;
   if (typeof frame === 'string' || !layer.src) {
-    return renderImage({ ...layer, type: 'image', src: frame ?? '' } as unknown as ImageLayer, svg);
+    // An <image> with no preserveAspectRatio letterboxes; the <video> covers, or stretches for fill.
+    const fit = videoFit(layer.fit);
+    const el = renderImage({ ...layer, type: 'image', src: frame ?? '', fit: fit === 'cover' || fit === 'contain' ? fit : undefined } as unknown as ImageLayer, svg);
+    if (fit === 'fill') (el.tagName.toLowerCase() === 'image' ? el : el.querySelector('image'))?.setAttribute('preserveAspectRatio', 'none');
+    return el;
   }
   const x = layer.x ?? 0, y = layer.y ?? 0;
   const w = typeof layer.width === 'number' ? layer.width : 640;
@@ -29,8 +38,7 @@ export function renderVideo(layer: VideoLayer, svg: SVGSVGElement): SVGElement {
   video.setAttribute('playsinline', '');
   video.setAttribute('preload', 'auto');
   video.setAttribute('data-video-layer', layer.id);
-  const fit = layer.fit === 'contain' ? 'contain' : layer.fit === 'fill' ? 'fill' : layer.fit === 'none' ? 'none' : 'cover';
-  video.setAttribute('style', `width:100%;height:100%;display:block;object-fit:${fit}`);
+  video.setAttribute('style', `width:100%;height:100%;display:block;object-fit:${videoFit(layer.fit)}`);
   fo.appendChild(video);
   applyCommonAttributes(fo, layer);
   return fo;

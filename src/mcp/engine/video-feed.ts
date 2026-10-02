@@ -5,7 +5,8 @@
 import type { DesignSpec, Layer } from '../../schema/types';
 import { ClipStream } from './video-stream';
 import { frameRequest, primeVideoFrame, type FrameRequest } from './video-frame';
-import { frameEdge } from './video-decode';
+import { frameEdge, jpegFormat, rgbaFormat, type DecodeFormat } from './video-decode';
+import type { FootageSlot } from './footage-bands';
 
 function collect(layers: Layer[] | undefined, out: FrameRequest[]): void {
   for (const l of layers ?? []) {
@@ -28,21 +29,31 @@ export class FootageFeed {
 
   constructor(private readonly bin = 'ffmpeg') {}
 
-  /** Decode every clip's frame for this frame of the export. A clip that gives none is left to the render's own fallback. */
-  async prepare(spec: DesignSpec): Promise<void> {
+  /** Decode every clip's frame for this frame of the export; how many clips it draws. A clip that gives none is left to the render's own fallback. */
+  async prepare(spec: DesignSpec): Promise<number> {
     const reqs = frameRequests(spec);
-    if (!reqs.length) return;
+    if (!reqs.length) return 0;
     await Promise.all(reqs.map(async r => {
       const edge = frameEdge(r.w, r.h);
-      const key = `${r.id}|${r.file}|${edge}`;
-      let stream = this.streams.get(key);
-      if (!stream) {
-        stream = new ClipStream(r.file, edge, this.bin);
-        this.streams.set(key, stream);
-      }
-      const jpeg = await stream.frameAt(r.ms);
+      const jpeg = await this.stream(`${r.id}|${r.file}|${edge}`, r.file, () => jpegFormat(edge)).frameAt(r.ms);
       if (jpeg) primeVideoFrame(r.file, r.ms, r.w, r.h, jpeg);
     }));
+    return reqs.length;
+  }
+
+  /** A plain clip's picture for this frame: straight-alpha RGBA of exactly w×h, fitted as its <image> would draw. */
+  pixelsAt(slot: FootageSlot, w: number, h: number): Promise<Buffer | null> {
+    const key = `${slot.req.id}|${slot.req.file}|${w}x${h}|${slot.fit}|${slot.focal?.join(',') ?? ''}`;
+    return this.stream(key, slot.req.file, () => rgbaFormat(w, h, slot.fit, slot.focal)).frameAt(slot.req.ms);
+  }
+
+  private stream(key: string, file: string, format: () => DecodeFormat): ClipStream {
+    let stream = this.streams.get(key);
+    if (!stream) {
+      stream = new ClipStream(file, format(), this.bin);
+      this.streams.set(key, stream);
+    }
+    return stream;
   }
 
   /** Clips decoded, and decoders started across them (a seek each). */
