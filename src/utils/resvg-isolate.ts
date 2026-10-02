@@ -15,6 +15,7 @@
 import { spawn, spawnSync, type ChildProcess } from 'child_process';
 import * as path from 'path';
 import type { ResvgRenderOptions } from '@resvg/resvg-js';
+import { narrowFonts } from './font-narrow';
 
 export type Want = 'png' | 'pixels' | 'both';
 export interface Raster { width: number; height: number; png: Buffer; pixels: Buffer }
@@ -37,7 +38,7 @@ export function isolationDefault(): boolean {
 export function renderInProcess(job: RasterJob): Raster {
   // Required here, not imported: an isolated server never maps resvg into its own process.
   const { Resvg } = require('@resvg/resvg-js') as typeof import('@resvg/resvg-js');
-  const img = new Resvg(job.svg, job.opts ?? {}).render();
+  const img = new Resvg(job.svg, narrowFonts(job.svg, job.opts) ?? {}).render();
   const want = job.want ?? 'png';
   return {
     width: img.width, height: img.height,

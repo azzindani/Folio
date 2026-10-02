@@ -8,6 +8,7 @@
  */
 
 import { Resvg, type ResvgRenderOptions } from '@resvg/resvg-js';
+import { narrowFonts } from './font-narrow';
 
 type Want = 'png' | 'pixels' | 'both';
 
@@ -26,7 +27,7 @@ function send(header: Record<string, unknown>, png: Buffer, pixels: Buffer): Pro
 async function handle(body: Buffer): Promise<void> {
   try {
     const req = JSON.parse(body.toString('utf8')) as { svg: string; opts?: ResvgRenderOptions; want?: Want };
-    const img = new Resvg(req.svg, req.opts ?? {}).render();
+    const img = new Resvg(req.svg, narrowFonts(req.svg, req.opts) ?? {}).render();
     const png = req.want === 'pixels' ? EMPTY : Buffer.from(img.asPng());
     const pixels = req.want === 'pixels' || req.want === 'both' ? Buffer.from(img.pixels) : EMPTY;
     await send({ ok: true, width: img.width, height: img.height }, png, pixels);

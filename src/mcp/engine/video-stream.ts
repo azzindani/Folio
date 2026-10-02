@@ -4,8 +4,9 @@
 //
 // Moments are answered in the order asked (an export asks in time order). A
 // moment behind the stream, or far ahead of it, starts a fresh decoder at a seek.
-// Frames are PULLED (video-pipe.ts): ffmpeg decodes no further than one frame past
-// the moment asked for, so a long clip never piles up in memory.
+// Frames are PULLED (video-pipe.ts): after each answer the stream reads a few frames
+// ahead (2 raw, 6 JPEG) so ffmpeg decodes while the frame is drawn, and no further —
+// a long clip never piles up in memory.
 
 import { FramePipe } from './video-pipe';
 import { showinfoTimes, showsAt, SEEK_LEAD_MS, type DecodeFormat } from './video-decode';
@@ -14,6 +15,9 @@ import { showinfoTimes, showsAt, SEEK_LEAD_MS, type DecodeFormat } from './video
 const JUMP_MS = 1500;
 /** Bytes asked of the pipe at a time while a variable-size frame (a JPEG) comes in. */
 const CHUNK = 256 * 1024;
+/** Frames decoded ahead of the reader: raw frames are 8 MB at 1080p, JPEGs ~0.1–0.4 MB. */
+const LEAD_RAW = 2;
+const LEAD_JPEG = 6;
 
 interface Decoded { ms: number; data: Buffer }
 
@@ -44,7 +48,7 @@ export class ClipStream {
   /** The frame showing at `ms` of the file, in the stream's format; null when the file gave no frame. */
   frameAt(ms: number): Promise<Buffer | null> {
     const run = this.queue.then(() => this.read(ms));
-    this.queue = run.catch(() => undefined);
+    this.queue = run.then(() => this.fill(), () => undefined).catch(() => undefined);
     return run;
   }
 
@@ -66,6 +70,15 @@ export class ClipStream {
       if (next) this.ahead.push(next); else await this.finish();
     }
     return (this.shown ?? this.ahead[0] ?? null)?.data ?? null;
+  }
+
+  /** Read ahead to the lead while the answered frame is drawn. */
+  private async fill(): Promise<void> {
+    const lead = this.format.frameBytes ? LEAD_RAW : LEAD_JPEG;
+    while (this.pipe && !this.ended && this.ahead.length < lead) {
+      const next = await this.pull();
+      if (next) this.ahead.push(next); else await this.finish();
+    }
   }
 
   private needsSeek(ms: number): boolean {
