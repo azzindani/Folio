@@ -46,6 +46,7 @@ export { cameraMotion } from './engine/motion-camera-op';
 export { morphMotion } from './engine/motion-morph-op';
 export { audioMotion } from './engine/motion-audio-op';
 export { videoMotion } from './engine/motion-video-op';
+export { cutVideo } from './engine/motion-video-cut';
 export { executeSteps, bindStepHandlers } from './engine/task-execute';
 export { saveRecipe, runRecipe, listRecipes } from './engine/task-recipes';
 export { beatsMotion } from './engine/motion-beats-op';

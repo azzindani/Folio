@@ -79,7 +79,7 @@ export const projectOf = (designPath: string, projectPath?: string): string => p
 
 export interface VideoOpArgs {
   design_path: string; project_path?: string; page_id?: string; layer_id?: string;
-  in?: unknown; out?: unknown; split_at?: unknown;
+  in?: unknown; out?: unknown; split_at?: unknown; cut?: unknown; ripple?: boolean;
   offset_ms?: number; duration_ms?: number; speed?: number; volume?: number; muted?: boolean; loop?: boolean;
 }
 
@@ -140,6 +140,12 @@ export function videoMotion(args: VideoOpArgs): ToolResult {
     next_action: { tool: 'animation', params: { op: 'frame', design_path: dPath, t: clips[clips.length - 1]?.plays.from ?? 0, ...(args.page_id ? { page_id: args.page_id } : {}) }, remaining: 0,
       hint: 'op:frame shows the frame at a time; edit_layer move/scale places a half; edit_layer remove drops one — a cut.' },
   }, bak);
+}
+
+/** The two halves of a clip split at scene time t, or [] when t is not while it plays. */
+export function splitClip(l: ClipLayer, t: number, secondId: string): ClipLayer[] {
+  const halves = cutClip(l, t, secondId);
+  return typeof halves === 'string' ? [] : halves;
 }
 
 /** Split a clip at scene time t: the first half ends there, the second starts there, from the frame the first stopped on. */

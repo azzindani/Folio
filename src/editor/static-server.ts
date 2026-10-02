@@ -41,6 +41,8 @@ import { loadCollections, allCollections } from '../mcp/engine/library-collectio
 import { clientIp, ipAllowed, loadEditorGuards } from '../mcp/access-guard';
 // Asset ingest — same path the MCP manage_design {op:"asset_add"} uses.
 import { listAssets, listProjects, manageAssets, uploadAsset, createProjectRoute } from './server-assets';
+import { isRangedMedia, mediaResponse } from './server-media';
+import { proxyFor } from '../mcp/engine/video-proxy';
 import { exportRoute, attachmentHeader } from './server-export';
 import { isLibraryPath, libraryAbsPath } from '../mcp/engine/asset-library';
 // Shared inline favicon so server-rendered pages get the same tab icon as the editor.
@@ -569,12 +571,14 @@ Bun.serve({
       if (!target || !fs.existsSync(target) || fs.statSync(target).isDirectory()) {
         return new Response('Not found', { status: 404 });
       }
-      const body = fs.readFileSync(target);
+      // ?proxy plays a clip's 720p stand-in when one is built (video-proxy.ts); the clip itself otherwise.
+      if (url.searchParams.has('proxy')) target = proxyFor(target) ?? target;
       const headers: Record<string, string> = { 'Content-Type': mime(target), 'Cache-Control': 'no-store' };
       // ?download asks the browser to save the file: the editor's video export hands its render over this way.
       if (url.searchParams.has('download')) headers['Content-Disposition'] = attachmentHeader(path.basename(target));
       if (refresh) headers['Set-Cookie'] = refresh;
-      return new Response(body, { status: 200, headers });
+      if (isRangedMedia(headers['Content-Type'] ?? '') && !url.searchParams.has('download')) return mediaResponse(target, req.headers.get('range'), headers);
+      return new Response(fs.readFileSync(target), { status: 200, headers });
     }
 
     // ── Editor auth gate ────────────────────────────────────────────────

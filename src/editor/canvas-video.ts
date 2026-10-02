@@ -29,6 +29,12 @@ const REST_MS = 40;
 
 interface Timing { in: number; out: number; video?: VideoTiming }
 
+/** The URL a canvas <video> plays: a project clip's 720p proxy (the server falls back to the clip without one). */
+export function proxiedSrc(src: string): string {
+  if (!src.includes('/__project_files/') || /[?&]proxy=/.test(src)) return src;
+  return `${src}${src.includes('?') ? '&' : '?'}proxy=1`;
+}
+
 export class CanvasVideo {
   private kept = new Map<string, HTMLVideoElement>();
   private timings = new Map<string, Timing>();
@@ -50,11 +56,15 @@ export class CanvasVideo {
       seen.add(id);
       const kept = this.kept.get(id);
       if (kept === fresh) continue;
-      if (kept && kept.getAttribute('src') === fresh.getAttribute('src')) {
+      const src = fresh.getAttribute('src') ?? '';
+      if (kept && kept.dataset['origin'] === src) {
         kept.setAttribute('style', fresh.getAttribute('style') ?? '');
         fresh.replaceWith(kept);
       } else {
+        // Plays the clip's 720p proxy: decodes and seeks fast while scrubbing; an export reads the original.
         fresh.muted = true;
+        fresh.dataset['origin'] = src;
+        fresh.setAttribute('src', proxiedSrc(src));
         this.kept.set(id, fresh);
       }
     }

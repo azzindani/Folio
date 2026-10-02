@@ -40,6 +40,12 @@ describe('editor server asset routes', () => {
     fs.rmSync(tmp, { recursive: true, force: true });
   });
 
+  it('a clip is held to the video cap, not the 8 MB artwork cap', async () => {
+    // 9 MB: past the artwork cap. Whatever the probe says of these bytes (no ffprobe on some CI hosts), it is not "too large".
+    const up = await uploadAsset(postBytes(Buffer.alloc(9 * 1024 * 1024, 1)), URL_NO_ALT, proj, 'video', undefined, 'phone.mp4');
+    expect(up.status).not.toBe(413);
+  });
+
   it('uploads into the project root and lists it', async () => {
     const up = await uploadAsset(postBytes(PNG), URL_NO_ALT, proj, 'images', undefined, 'shot.png');
     expect(up.status).toBe(200);
