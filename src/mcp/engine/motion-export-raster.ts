@@ -29,6 +29,7 @@ import { tryFfmpeg } from '../../export/animation-export';
 import { muxSound, type MuxClip } from '../../export/audio-mux';
 import { scriptsAhead } from './script-capture';
 import { maxClipMs, clipLimitText } from '../../export/clip-limits';
+import { FootageFeed } from './video-feed';
 
 export interface RasterMotionArgs {
   /** The design's sound, found and planned — mixed under an mp4/webm once the frames are encoded. */
@@ -132,6 +133,9 @@ export async function exportRasterMotion(
   // Renderer processes for the whole clip (raster-pool.ts): frames rasterise in parallel, and if
   // resvg aborts this export fails while the server stays up.
   const pool = new RasterPool();
+  // Footage decoded as one stream per clip, a frame ahead of each render (video-feed.ts).
+  const feed = new FootageFeed();
+  const shutdown = async (): Promise<void> => { pool.close(); feed.close(); await scripts?.close(); };
   // Frames in flight, oldest first. Each is caught once as it is made so a later frame failing
   // while an earlier one is awaited is not an unhandled rejection; awaiting it still throws.
   const window = pool.size * 2;
@@ -146,8 +150,10 @@ export async function exportRasterMotion(
   const scale = exportScale(args.scale);
   const fit = scale < 1 ? { fitTo: { mode: 'zoom' as const, value: scale } } : {};
   // A clip far off the canvas aborts resvg outright. See frame-cull.ts.
-  const draw = (s: DesignSpec, opaque = video): Promise<Raster> =>
-    pool.render({ svg: renderToSVGString(cullFrame(s)), opts: opaque ? { font, background: '#FFFFFF', ...fit } : { font, ...fit }, want: 'pixels' });
+  const draw = async (s: DesignSpec, opaque = video): Promise<Raster> => {
+    await feed.prepare(s);
+    return pool.render({ svg: renderToSVGString(cullFrame(s)), opts: opaque ? { font, background: '#FFFFFF', ...fit } : { font, ...fit }, want: 'pixels' });
+  };
   const renderAt = (t: number): Promise<Frame> => {
     const turn = source.turning?.(t, frameMs);
     return turn ? drawTurning(turn) : draw(source.at(t, frameMs));
@@ -188,8 +194,7 @@ export async function exportRasterMotion(
       while (inflight.length) await writeOldest();
       if (out.pipe) bytes = (await out.pipe.finish()).bytes;
     } catch (e) {
-      pool.close();
-      await scripts?.close();
+      await shutdown();
       await out.pipe?.abort();
       return errResult(OP, `${type} export failed: ${(e as Error).message}`,
         'A render error names the layer — run diagnose_design. An ffmpeg error names the encoder.');
@@ -228,15 +233,14 @@ export async function exportRasterMotion(
       if (out.gif) gifStats = out.gif.finish();
       bytes = gifStats?.bytes ?? 0;
     } catch (e) {
-      pool.close();
-      await scripts?.close();
+      await shutdown();
       sink.abort();
       return errResult(OP, `Frame rendering failed: ${(e as Error).message}`, 'Run diagnose_design to find the bad layer.');
     }
   }
 
-  pool.close();
-  await scripts?.close();
+  const footage = feed.stats();
+  await shutdown();
   return okResult(OP, {
     design_path: dPath,
     output_path: outputPath,
@@ -250,6 +254,7 @@ export async function exportRasterMotion(
     ...(gifStats ? { images_written: gifStats.images_written } : {}),
     render_ms: Math.round(performance.now() - started),
     render_workers: pool.size,
+    ...(footage.clips ? { footage_decoders: footage } : {}),
     ...(args.extra ?? {}),
     ...(notes.length ? { notes } : {}),
     ...(soundWarning ? { warning: soundWarning } : {}),
