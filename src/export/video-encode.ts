@@ -12,6 +12,7 @@ import { spawn, type ChildProcess } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 import type { Writable } from 'stream';
+import { h264Args, h264Encoder, type H264Encoder } from './video-codec';
 
 export type VideoType = 'mp4' | 'webm';
 
@@ -27,22 +28,22 @@ export interface VideoOptions {
 const STDERR_TAIL = 2000;
 
 /** ffmpeg arguments for one encode — exported so the codec choices are testable without ffmpeg. */
-export function ffmpegArgs(o: VideoOptions, target: string): string[] {
+export function ffmpegArgs(o: VideoOptions, target: string, enc: H264Encoder = 'libx264'): string[] {
+  const h264 = h264Args(enc);
   const input = [
-    '-hide_banner', '-loglevel', 'error', '-y',
+    '-hide_banner', '-loglevel', 'error', '-y', ...(o.type === 'mp4' ? h264.global : []),
     '-f', 'rawvideo', '-pix_fmt', 'rgba', '-s', `${o.width}x${o.height}`,
     '-framerate', String(o.fps), '-i', 'pipe:0', '-an',
   ];
   // yuv420p — the one chroma layout every phone and feed decodes — needs even
   // dimensions. Pad a pixel on rather than cut a pixel off the design.
   const odd = o.width % 2 !== 0 || o.height % 2 !== 0;
-  const filter = odd ? ['-vf', 'pad=ceil(iw/2)*2:ceil(ih/2)*2:0:0:white'] : [];
+  const filters = [...(odd ? ['pad=ceil(iw/2)*2:ceil(ih/2)*2:0:0:white'] : []), ...(o.type === 'mp4' ? h264.filters : [])];
+  const filter = filters.length ? ['-vf', filters.join(',')] : [];
   const codec = o.type === 'mp4'
-    // tune=animation spends bits on hard edges and flat fills, which is all a
-    // design is. faststart puts the index first so a feed can play before the
-    // whole file has downloaded.
-    ? ['-c:v', 'libx264', '-preset', 'medium', '-tune', 'animation', '-crf', '18',
-       '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-f', 'mp4']
+    // The encoder and its effort are host knobs (video-codec.ts). faststart puts the
+    // index first so a feed can play before the whole file has downloaded.
+    ? [...h264.codec, '-movflags', '+faststart', '-f', 'mp4']
     : ['-c:v', 'libvpx-vp9', '-b:v', '0', '-crf', '32', '-row-mt', '1',
        '-deadline', 'good', '-cpu-used', '4', '-pix_fmt', 'yuv420p', '-f', 'webm'];
   return [...input, ...filter, ...codec, target];
@@ -58,11 +59,14 @@ export class VideoPipe {
   private gone = false;
   /** Releases a write() parked on a full pipe — called on drain, or when ffmpeg goes away. */
   private wake: (() => void) | null = null;
+  /** The encoder this file is made with — for the receipt. */
+  readonly encoder: H264Encoder | 'libvpx-vp9';
 
   constructor(private readonly opts: VideoOptions, bin = 'ffmpeg') {
     fs.mkdirSync(path.dirname(opts.outputPath), { recursive: true });
     this.partial = `${opts.outputPath}.partial`;
-    this.child = spawn(bin, ffmpegArgs(opts, this.partial), { stdio: ['pipe', 'ignore', 'pipe'] });
+    this.encoder = opts.type === 'mp4' ? h264Encoder(bin) : 'libvpx-vp9';
+    this.child = spawn(bin, ffmpegArgs(opts, this.partial, this.encoder === 'libvpx-vp9' ? 'libx264' : this.encoder), { stdio: ['pipe', 'ignore', 'pipe'] });
     this.child.stderr?.on('data', (d: Buffer) => { this.stderr = (this.stderr + d.toString()).slice(-STDERR_TAIL); });
     // EPIPE when ffmpeg dies mid-write; without a listener it would crash the server.
     this.child.stdin?.on('error', (e: Error) => { if (!this.failure) this.failure = e; });

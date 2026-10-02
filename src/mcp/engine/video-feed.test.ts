@@ -61,10 +61,11 @@ describe.skipIf(!hasFfmpeg)('FootageFeed — an export decodes each clip once', 
     const s = spec('assets/video/take.mp4');
     const out = path.join(dir, 'out.mp4');
     const r = await exportRasterMotion(s, design(), { durationMs: 1000, at: t => specAt(s, 0, t) }, out, { type: 'mp4', fps: 10, project_path: dir });
-    const body = r as unknown as { success: boolean; error?: string; frames?: number; footage?: unknown };
+    const body = r as unknown as { success: boolean; error?: string; frames?: number; footage?: unknown; rasters_reused?: number };
     expect(body.error).toBeUndefined();
     expect(body.frames).toBe(10);
     expect(body.footage).toEqual({ clips: 1, seeks: 1, pixel_frames: 10, embedded_frames: 0 });
+    expect(body.rasters_reused).toBe(9);   // the clip's empty ground band, drawn once
     fs.rmSync(out, { force: true });
   }, 60_000);
 });
