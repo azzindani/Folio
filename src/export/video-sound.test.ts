@@ -38,6 +38,15 @@ describe('cut edges, fades and J/L cuts', () => {
     expect(one({ in: 0 }, { 'assets/video/a.mp4': 3000 })).toMatchObject({ length_ms: 3000, fade_in_ms: 0, fade_out_ms: 0 });
   });
 
+  it('a split the file plays straight through keeps no dip; a jump in the file does', () => {
+    const halves = [vid('a', { in: 0, video: { offset_ms: 1000, duration_ms: 2000 } }), vid('a', { id: 'a_2', in: 2000, video: { offset_ms: 3000, duration_ms: 2000 } })];
+    const [x, y] = videoSoundClips(halves, 0, 20_000, F);
+    expect([x?.fade_out_ms, y?.fade_in_ms]).toEqual([0, 0]);
+    expect(x?.fade_in_ms).toBe(SEAM_FADE_MS);   // its head still cuts into the file
+    const jumped = [halves[0] as Layer, vid('a', { id: 'a_2', in: 2000, video: { offset_ms: 4500, duration_ms: 2000 } })];
+    expect(videoSoundClips(jumped, 0, 20_000, F).map(c => [c.fade_in_ms, c.fade_out_ms])).toEqual([[SEAM_FADE_MS, SEAM_FADE_MS], [SEAM_FADE_MS, SEAM_FADE_MS]]);
+  });
+
   it('asked-for fades win over the seam, and never overrun the clip', () => {
     expect(one({ video: { offset_ms: 1000, duration_ms: 3000, fade_in_ms: 400, fade_out_ms: 900 } })).toMatchObject({ fade_in_ms: 400, fade_out_ms: 900 });
     expect(one({ video: { offset_ms: 1000, duration_ms: 1000, fade_in_ms: 800, fade_out_ms: 800 } })).toMatchObject({ fade_in_ms: 500, fade_out_ms: 500 });

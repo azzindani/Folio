@@ -30,7 +30,7 @@ const num = (v: unknown): number | undefined => (typeof v === 'number' && Number
 
 /** Every sounding video layer of a page, as clips starting `startMs` into the piece. */
 export function videoSoundClips(layers: Layer[], startMs: number, totalMs: number, fileMs: Record<string, number | undefined> = {}): SoundClip[] {
-  const out: SoundClip[] = [];
+  const out: Draft[] = [];
   const walk = (ls: VideoNode[]): void => {
     for (const l of ls) {
       if (Array.isArray(l.layers)) walk(l.layers);
@@ -58,18 +58,36 @@ export function videoSoundClips(layers: Layer[], startMs: number, totalMs: numbe
       if (!(length > 0)) continue;
       const fileFrom = offset - lead * speed;
       const toFileEnd = !loop && file !== undefined && fileFrom + length * speed >= file - 1;
-      const fadeIn = Math.min(Math.max(num(l.video?.fade_in_ms) ?? 0, fileFrom > 0.5 ? SEAM_FADE_MS : 0), length / 2);
-      const fadeOut = Math.min(Math.max(num(l.video?.fade_out_ms) ?? 0, toFileEnd ? 0 : SEAM_FADE_MS), length - fadeIn);
       out.push({
-        id: `${l.id}-sound`, src, start_ms: Math.round(from), offset_ms: Math.round(fileFrom), length_ms: length,
-        volume: Math.min(1, Math.max(0, num(l.video?.volume) ?? 1)), fade_in_ms: Math.round(fadeIn), fade_out_ms: Math.round(fadeOut),
-        loop, cut: soundEnd > totalMs, ...(speed !== 1 ? { speed } : {}),
+        clip: {
+          id: `${l.id}-sound`, src, start_ms: Math.round(from), offset_ms: Math.round(fileFrom), length_ms: length,
+          volume: Math.min(1, Math.max(0, num(l.video?.volume) ?? 1)), fade_in_ms: 0, fade_out_ms: 0,
+          loop, cut: soundEnd > totalMs, ...(speed !== 1 ? { speed } : {}),
+        },
+        askIn: num(l.video?.fade_in_ms) ?? 0, askOut: num(l.video?.fade_out_ms) ?? 0,
+        seamIn: fileFrom > 0.5, seamOut: !toFileEnd,
       });
     }
   };
   walk(resolveTimeline(layers) as unknown as VideoNode[]);
-  return out;
+  // A split the file plays straight through — the next clip picks up the same file where this
+  // one stopped, at the same moment, speed and level — has no jump to hide: no dip there.
+  for (const a of out) {
+    for (const b of out) {
+      const A = a.clip, B = b.clip;
+      if (a === b || A.src !== B.src || A.loop || (A.speed ?? 1) !== (B.speed ?? 1) || A.volume !== B.volume) continue;
+      if (Math.abs(A.start_ms + A.length_ms - B.start_ms) <= 1 && Math.abs(A.offset_ms + A.length_ms * (A.speed ?? 1) - B.offset_ms) <= 2) { a.seamOut = false; b.seamIn = false; }
+    }
+  }
+  return out.map(({ clip, askIn, askOut, seamIn, seamOut }) => {
+    const fadeIn = Math.min(Math.max(askIn, seamIn ? SEAM_FADE_MS : 0), clip.length_ms / 2);
+    const fadeOut = Math.min(Math.max(askOut, seamOut ? SEAM_FADE_MS : 0), clip.length_ms - fadeIn);
+    return { ...clip, fade_in_ms: Math.round(fadeIn), fade_out_ms: Math.round(fadeOut) };
+  });
 }
+
+/** A clip's sound before its edges are settled: what was asked for, and which edges cut the waveform. */
+interface Draft { clip: SoundClip; askIn: number; askOut: number; seamIn: boolean; seamOut: boolean }
 
 /** Every src a video layer names, anywhere in the tree. */
 export function videoSources(layers: Layer[] | undefined): string[] {
