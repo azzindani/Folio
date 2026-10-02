@@ -3144,3 +3144,34 @@ button:focus:not(:focus-visible) { outline: none; }
   .ax-crumb { min-height: 44px; }
   .ax-menu-item { min-height: 44px; }
 }
+
+/* Clip blocks — a video layer's row in the timeline (timeline-clips.ts): the
+   part it plays, with trim grips on both ends. */
+.tl-clip {
+  background: color-mix(in srgb, var(--color-accent) 22%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-accent) 60%, transparent);
+  border-radius: 4px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+.tl-clip-label {
+  position: absolute;
+  left: 9px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 10px;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  pointer-events: none;
+}
+.tl-clip-h {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 7px;
+  background: var(--color-accent);
+  opacity: .5;
+  cursor: ew-resize;
+  touch-action: none;
+}
+.tl-clip-h:hover, .tl-clip-h.tl-dragging { opacity: .95; }

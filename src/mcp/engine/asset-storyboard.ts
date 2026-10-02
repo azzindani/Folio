@@ -22,6 +22,8 @@ export const TILE_W = 160;
 export const TILE_H = 90;
 const COLS = 6;
 const MAX_TILES = 36;
+/** Fewest tiles a storyboard shows, so a single long shot is still seen across its span. */
+const MIN_TILES = 6;
 /** Frames sampled before near-duplicates are dropped. */
 const CANDIDATES = 120;
 /** Longer than this, only keyframes are decoded — an overview, not every frame. */
@@ -58,7 +60,7 @@ function lumaGrid(rgb: Buffer): Float32Array {
   return g;
 }
 
-/** Tiles that differ from the last kept one, thinned evenly to at most MAX_TILES. */
+/** Tiles that differ from the last kept one, thinned evenly to at most MAX_TILES and filled to at least MIN_TILES. */
 export function distinctTiles(tiles: Tile[]): Tile[] {
   const kept: Tile[] = [];
   let last: Float32Array | null = null;
@@ -71,6 +73,12 @@ export function distinctTiles(tiles: Tile[]): Tile[] {
     }
     last = g;
     kept.push(t);
+  }
+  if (kept.length < MIN_TILES && tiles.length > kept.length) {
+    // One long shot still needs its span shown: evenly spaced samples join what changed.
+    const want = Math.min(MIN_TILES, tiles.length);
+    const even = Array.from({ length: want }, (_, i) => tiles[Math.floor((i * tiles.length) / want)] as Tile);
+    return [...new Map([...kept, ...even].map(t => [t.ms, t])).values()].sort((a, b) => a.ms - b.ms);
   }
   if (kept.length <= MAX_TILES) return kept;
   const step = kept.length / MAX_TILES;

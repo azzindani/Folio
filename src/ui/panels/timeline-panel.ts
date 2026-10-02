@@ -8,6 +8,7 @@ import { trackHTML, markerStripHTML, markersOf, fmtMs, HEADER_W } from './timeli
 import { timelineRows, setKeyframeEasing, shiftKeyframes, flattenForTimeline } from './timeline-model';
 import { bindTimelineEdits } from './timeline-edit';
 import { bindTimelineDrags } from './timeline-drag';
+import { bindClipEdits, bindClipMoves, splitAtPlayhead, type ClipEditContext } from './timeline-clips';
 import { soundLane, analyse, type SoundAnalysis, type SoundDeps } from './timeline-sound';
 import { resolveAssetUrl } from '../../renderer/render-context';
 
@@ -95,6 +96,7 @@ export class TimelinePanelManager {
             ms
           </label>
           <button class="btn btn-sm" id="tl-stagger-apply" style="margin-left:4px">Stagger</button>
+          <button class="btn btn-sm" id="tl-split" style="margin-left:4px" title="Cut the selected clip — or the top clip under the playhead — in two at the playhead">✂ Split</button>
           <label style="font-size:11px;color:var(--color-text-muted);margin-left:10px;display:flex;align-items:center;gap:4px;cursor:pointer"
                  title="Draw each animated layer's path on the canvas — spacing shows the easing.">
             <input id="tl-trails" type="checkbox"> Trails
@@ -120,6 +122,12 @@ export class TimelinePanelManager {
     stopBtn.addEventListener('click', () => {
       this.player.stop();
       playBtn.textContent = '▶';
+    });
+    // Bound once, with the toolbar: bound per render, one click staggered once for every render so far.
+    this.container.querySelector<HTMLElement>('#tl-stagger-apply')?.addEventListener('click', () => this.applyStagger());
+    this.container.querySelector<HTMLElement>('#tl-split')?.addEventListener('click', () => {
+      const selected = this.state.getSelectedLayers().find(l => l.type === 'video');
+      splitAtPlayhead(this.state, this.scrubMs, this.player.rows(), selected?.id);
     });
     const trails = this.container.querySelector<HTMLInputElement>('#tl-trails');
     trails?.addEventListener('change', () => {
@@ -254,8 +262,18 @@ export class TimelinePanelManager {
       });
     });
 
-    const stagger = this.container.querySelector<HTMLElement>('#tl-stagger-apply');
-    if (stagger) stagger.addEventListener('click', () => this.applyStagger());
+    // Clip blocks: trim by their grips, drag to reorder; ✂ cuts at the playhead (timeline-clips.ts).
+    const clipCtx: ClipEditContext = {
+      state: this.state,
+      duration: () => this.duration,
+      playhead: () => this.scrubMs,
+      rows: () => this.player.rows(),
+      markers: () => { const { design, currentPageIndex } = this.state.get(); return markersOf(design, currentPageIndex); },
+      preview: ms => { const tc = this.container.querySelector<HTMLElement>('#tl-timecode'); if (tc) tc.textContent = fmtMs(ms); },
+      beats: () => this.beats,
+    };
+    bindClipEdits(body, clipCtx);
+    bindClipMoves(body, clipCtx);
 
     // Scrubber click
     const scrub = body.querySelector<HTMLElement>('.tl-scrub-area');

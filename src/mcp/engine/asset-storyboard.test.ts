@@ -15,8 +15,12 @@ describe('storyboard pieces', () => {
     expect(stamp(65_250)).toBe('1:05.3');
   });
   it('drops near-identical samples, keeping the first of each shot', () => {
-    const kept = distinctTiles([solid(0, 10), solid(100, 12), solid(200, 200), solid(300, 201), solid(400, 10)]);
-    expect(kept.map(t => t.ms)).toEqual([0, 200, 400]);
+    const shots = [10, 200, 10, 200, 10, 200, 10].flatMap((v, i) => [solid(i * 200, v), solid(i * 200 + 100, v + 2)]);
+    expect(distinctTiles(shots).map(t => t.ms)).toEqual([0, 200, 400, 600, 800, 1000, 1200]);
+  });
+  it('a single long shot is still shown across its span', () => {
+    const still = Array.from({ length: 60 }, (_, i) => solid(i * 100, 50));
+    expect(distinctTiles(still).map(t => t.ms)).toEqual([0, 1000, 2000, 3000, 4000, 5000]);
   });
   it('decodes every frame of a short window, only keyframes of a long one', () => {
     expect(sampleArgs('/c.mp4', 0, 10_000).join(' ')).toContain('fps=12.0000');
@@ -45,9 +49,10 @@ describe.skipIf(!hasFfmpeg)('storyboardRead', () => {
       success: boolean; tiles: Array<{ ms: number }>; duration_ms: number; _attachments: Array<{ mimeType: string; data: string }>;
     };
     expect(r.success).toBe(true);
-    expect(r.tiles.length).toBe(2);
+    // Two shots, filled out to the minimum six across the clip — the cut at 2 s is one of them.
+    expect(r.tiles.length).toBe(6);
     expect(r.tiles[0]?.ms).toBeLessThan(200);
-    expect(Math.abs((r.tiles[1]?.ms ?? 0) - 2000)).toBeLessThan(200);
+    expect(r.tiles.some(t => Math.abs(t.ms - 2000) < 120)).toBe(true);
     expect(r._attachments[0]?.mimeType).toBe('image/png');
     expect(Buffer.from(r._attachments[0]?.data ?? '', 'base64').subarray(1, 4).toString()).toBe('PNG');
   }, 30_000);
@@ -55,7 +60,6 @@ describe.skipIf(!hasFfmpeg)('storyboardRead', () => {
   it('a window zooms in: only the second shot', async () => {
     const r = await storyboardRead('x.mp4', file, { from_ms: 2500, to_ms: 4000 }, resvgFontOption()) as unknown as { tiles: Array<{ ms: number }>; window: { from_ms: number } };
     expect(r.window.from_ms).toBe(2500);
-    expect(r.tiles.length).toBe(1);
-    expect(r.tiles[0]?.ms).toBeGreaterThanOrEqual(2500);
+    expect(r.tiles.every(t => t.ms >= 2500 && t.ms < 4000)).toBe(true);
   }, 30_000);
 });

@@ -315,6 +315,24 @@ export class StateManager {
     }
   }
 
+  /** Put `next` where layer `layerId` stands (one layer, or the two halves of a cut) — one undo step. */
+  replaceLayer(layerId: string, next: Layer[]): void {
+    if (!this.state.design) return;
+    this.pushUndo();
+    const swap = (layers: Layer[]): Layer[] => layers.flatMap(l => {
+      if (l.id === layerId) return next;
+      const kids = (l as Layer & { layers?: Layer[] }).layers;
+      return Array.isArray(kids) ? [{ ...l, layers: swap(kids) } as Layer] : [l];
+    });
+    const design = this.state.design;
+    if (design.pages && design.pages.length > 0) {
+      const pages = design.pages.map((page, i) => (i === this.state.currentPageIndex && page.layers ? { ...page, layers: swap(page.layers) } : page));
+      this.set('design', { ...design, pages }, false);
+    } else if (design.layers) {
+      this.set('design', { ...design, layers: swap(design.layers) }, false);
+    }
+  }
+
   renameLayer(layerId: string, newId: string): void {
     if (!this.state.design) return;
     this.pushUndo();

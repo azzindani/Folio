@@ -12,6 +12,7 @@
 import type { DesignSpec, Layer } from '../../schema/types';
 import type { Keyframe, TimeMarkers } from '../../animation/types';
 import type { RowTiming } from '../../editor/motion-pose';
+import { clipMarkup } from './timeline-clips';
 
 export const TRACK_H = 32;       // px per track row
 export const HEADER_W = 120;     // px left-side label area
@@ -55,15 +56,18 @@ export function trackHTML(layer: Layer, timing: RowTiming | undefined, duration:
   const ruled = layer.animation?.rule !== undefined;
   const parts: string[] = [];
 
+  // A clip is a block with trim grips (timeline-clips.ts), not a window with in/out handles.
+  const clip = layer.type === 'video';
+  if (clip) parts.push(clipMarkup(layer, timing, duration, TRACK_H));
   const w = timing?.window;
-  if (w) {
+  if (w && !clip) {
     const out = Number.isFinite(w.out) ? w.out : duration;
     parts.push(`<div class="tl-window" title="${esc(`on screen ${fmtMs(w.in)} – ${Number.isFinite(w.out) ? fmtMs(w.out) : 'end'}`)}"`
       + ` style="position:absolute;top:3px;bottom:3px;left:${at(w.in, duration)}%;width:${Math.max(0.4, at(out, duration) - at(w.in, duration))}%;`
       + 'background:var(--color-accent);opacity:.14;border-radius:3px;pointer-events:none"></div>');
   }
   // In/out handles (timeline-edit.ts): on the band's edges, or waiting at the ends of a row that lives the whole scene.
-  if (timing) {
+  if (timing && !clip) {
     const inIdle = !w || w.in <= 0, outIdle = !w || !Number.isFinite(w.out);
     const handle = (edge: 'in' | 'out', pct: number, idle: boolean, title: string): string =>
       `<div class="tl-life-h${idle ? ' tl-idle' : ''}" data-edge="${edge}" data-layer-id="${esc(layer.id)}" title="${esc(title)}"`
