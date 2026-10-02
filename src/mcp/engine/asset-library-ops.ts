@@ -20,6 +20,9 @@ import {
   sanitizeFolderPath,
 } from './asset-library';
 import type { LibraryEntry } from './asset-library-index';
+import { parseAssetPath } from './asset-paths';
+import { resvgFontOption } from './fonts';
+import { isVideoAsset, storyboardRead } from './asset-storyboard';
 
 const KINDS: AssetKind[] = ['images', 'icons', 'fonts', 'docs', 'audio', 'video'];
 
@@ -276,15 +279,34 @@ export { libraryAbsPath };
 /** Largest text a read returns — the project reader's own ceiling. */
 const LIB_READ_CAP = 256 * 1024;
 
+/** A clip in either store, read as its storyboard (asset-storyboard.ts). */
+function readClip(rel: string, args: { project_path?: string; from_ms?: number; to_ms?: number }): ToolResult | Promise<ToolResult> {
+  const op = 'asset_read';
+  let abs: string | null = null;
+  let fontDir: string | undefined;
+  if (isLibraryPath(rel)) {
+    abs = libraryAbsPath(rel);
+  } else {
+    const proj = requireProject(op, args.project_path);
+    if (isErr(proj)) return proj;
+    if (parseAssetPath(rel)?.kind !== 'video') return errResult(op, `asset_path must look like "assets/video/<file>"`, 'manage_design {op:"asset_list"} shows the exact paths.');
+    abs = path.join(proj.dir, rel.replace(/^\/+/, ''));
+    fontDir = proj.dir;
+  }
+  if (!abs || !fs.existsSync(abs)) return errResult(op, `Asset not found: ${rel}`, 'manage_design {op:"asset_list"} shows what exists.');
+  return storyboardRead(rel, abs, args, resvgFontOption(fontDir));
+}
+
 /**
  * asset_read for either store. A `lib/…` SVG or text file is read from the shared
  * library; everything else goes to the project reader. Found building a video: the
  * ChatGPT knot sat in lib/ai/logos as an SVG, and a model could not read its path
  * data to rebuild it as a native path it can recolour, draw on and morph.
  */
-export function assetReadAny(args: { project_path?: string; asset_path?: string; max_bytes?: number }): ToolResult {
+export function assetReadAny(args: { project_path?: string; asset_path?: string; max_bytes?: number; from_ms?: number; to_ms?: number }): ToolResult | Promise<ToolResult> {
   const op = 'asset_read';
   const rel = String(args.asset_path ?? '').trim();
+  if (isVideoAsset(rel)) return readClip(rel, args);
   if (!isLibraryPath(rel)) return projectAssetRead(args);
   const abs = libraryAbsPath(rel);
   if (!abs || !fs.existsSync(abs)) return errResult(op, `Asset not found: ${rel}`, 'manage_design {op:"asset_list", scope:"library"} shows the exact paths.');

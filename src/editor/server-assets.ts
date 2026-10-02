@@ -5,6 +5,7 @@
 // call (ingestAsset / collectAssets / assetDelete / assetMove), so the phone's
 // file manager and the model always see one store, one set of rules, one truth.
 import { ingestAsset, collectAssets, sanitizeFolder, AssetError, maxAssetBytes } from '../mcp/engine/assets';
+import { assetCap } from '../mcp/engine/asset-media';
 // The routing versions: they follow a "lib/" path into the SHARED library and
 // fall back to the project store otherwise — same rules the MCP ops apply.
 import { assetDelete, assetMove } from '../mcp/engine/asset-library-ops';
@@ -153,12 +154,14 @@ export async function uploadAsset(
   req: Request, url: URL, projectDir: string,
   kind: string, folder: string | undefined, name: string, refresh?: string | null,
 ): Promise<Response> {
-  if (parseInt(req.headers.get('content-length') ?? '0', 10) > maxAssetBytes()) {
+  // The cap is the kind's: a clip has its own (FOLIO_MAX_VIDEO_BYTES) — the 8 MB artwork cap refused every phone video.
+  const cap = assetCap(kind, maxAssetBytes()).bytes;
+  if (parseInt(req.headers.get('content-length') ?? '0', 10) > cap) {
     return json({ ok: false, error: 'Asset too large' }, 413);
   }
   let buf: Buffer;
   try { buf = Buffer.from(await req.arrayBuffer()); } catch { return json({ ok: false, error: 'Bad body' }, 400); }
-  if (buf.length > maxAssetBytes()) return json({ ok: false, error: 'Asset too large' }, 413);
+  if (buf.length > cap) return json({ ok: false, error: 'Asset too large' }, 413);
 
   // ?scope=library files it in the shared store instead, where ?folder= may
   // nest ("microsoft/logos") — the URL's own folder segment cannot.

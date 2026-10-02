@@ -114,6 +114,7 @@ import { MAX_PROJECT_FOLDER_DEPTH, sanitizeFolder, parseAssetPath } from './asse
 import { AUDIO_EXT_KIND, AUDIO_MIME_EXT } from './asset-audio';
 import { VIDEO_EXT_KIND, VIDEO_MIME_EXT } from './asset-video';
 import { assetCap, probeMedia, mediaNextAction, type MediaMeta } from './asset-media';
+import { queueProxy } from './video-proxy';
 
 // ── Metadata extraction ───────────────────────────────────────
 export interface AssetMeta extends Partial<MediaMeta> {
@@ -337,6 +338,7 @@ export function ingestAsset(args: IngestArgs): { entry: AssetEntry; warnings: st
   const existed = fs.existsSync(abs);
   if (existed) { snapshot(abs); warnings.push(`replaced existing ${relPath}`); }
   fs.writeFileSync(abs, buf);
+  if (kind === 'video') void queueProxy(abs);
 
   const meta: AssetMeta = probed ? probed.meta : extractAssetMeta(buf, clean.ext);
   const entry: AssetEntry = {

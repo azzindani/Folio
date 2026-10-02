@@ -64,6 +64,33 @@ function rippleSoundAndCaptions(spec: DesignSpec, r: Ripple, rep: RippleReport, 
   return moved;
 }
 
+type Scoped = { scope: Layer[]; page?: Page };
+
+/** A ripple of a design's scope, computed in memory: nothing is written until commitRipple. */
+export interface SpecRipple { rep: RippleReport; layers: Layer[]; markers: TimeMarkers; sounds: string[]; length?: number; pieceLength?: number; page?: Page }
+
+/** Ripple a scope's layers, markers, scene length and (on one scene) its sound and captions. Read rep.blocked before committing. */
+export function rippleSpec(spec: DesignSpec, scoped: Scoped, markers: TimeMarkers, r: Ripple): SpecRipple {
+  const rep = emptyReport();
+  const layers: Layer[] = rippleLayers(scoped.scope, r, rep);
+  const nextMarkers = rippleMarkers(markers, r, rep);
+  const page = scoped.page ?? spec.pages?.[0];
+  // A poster's own length (op:scene) moves with the time it spans, like a page's auto_advance.
+  const length = shift(page?.auto_advance, r, 'the scene length', rep);
+  const pieceLength = scoped.page || spec.pages?.length ? undefined : shift(spec.length_ms, r, 'the piece length', rep);
+  const sounds = rippleSoundAndCaptions(spec, r, rep, (spec.pages?.length ?? 0) <= 1, page);
+  return { rep, layers, markers: nextMarkers, sounds, ...(length !== undefined ? { length } : {}), ...(pieceLength !== undefined ? { pieceLength } : {}), ...(page ? { page } : {}) };
+}
+
+/** Write a computed ripple into the spec (the caller writes the file). */
+export function commitRipple(spec: DesignSpec, scoped: Scoped, rip: SpecRipple): void {
+  commitScope(spec, scoped.page, rip.layers);
+  writeMarkers(spec, scoped.page, rip.markers);
+  if (rip.page && typeof rip.length === 'number') rip.page.auto_advance = rip.length;
+  if (typeof rip.pieceLength === 'number') spec.length_ms = rip.pieceLength;
+  syncAnimationsToSpec(spec);
+}
+
 export function retimeMotion(args: RetimeArgs): ToolResult {
   const op = 'retime';
   const dPath = resolveDesignPath(args.design_path, args.project_path);
@@ -80,27 +107,18 @@ export function retimeMotion(args: RetimeArgs): ToolResult {
   if (typeof at === 'string') return errResult(op, `at: ${at}`, 'A time in ms or a name: "result+3000" opens time 3 s into the shot "result".');
   const r: Ripple = { at, by: Math.round(by) };
 
-  const rep = emptyReport();
-  // A poster's own length (op:scene) moves with the time it spans, like a page's auto_advance.
   const own = (v: number | undefined): { length?: number } => (scoped.page || spec.pages?.length || !v ? {} : { length: v });
   const before = animationDuration(scoped.scope, own(spec.length_ms));
-  const layers: Layer[] = rippleLayers(scoped.scope, r, rep);
-  const nextMarkers = rippleMarkers(markers, r, rep);
-  const page = scoped.page ?? spec.pages?.[0];
-  const length = shift(page?.auto_advance, r, 'the scene length', rep);
-  const pieceLength = scoped.page || spec.pages?.length ? undefined : shift(spec.length_ms, r, 'the piece length', rep);
+  const rip = rippleSpec(spec, scoped, markers, r);
+  const { rep, layers, sounds } = rip;
+  const nextMarkers = rip.markers;
   const oneScene = (spec.pages?.length ?? 0) <= 1;
-  const sounds = rippleSoundAndCaptions(spec, r, rep, oneScene, page);
   if (rep.blocked.length) {
     return errResult(op, `${rep.blocked.length} thing(s) are timed inside ${at}–${at - r.by}ms, the span to close: ${rep.blocked.slice(0, 8).join('; ')}${rep.blocked.length > 8 ? '; …' : ''}.`,
       'Close a span where nothing starts or lands — a rest — or move those first. op:timeline shows where the tracks sit.');
   }
   const bak = snapshot(dPath);
-  commitScope(spec, scoped.page, layers);
-  writeMarkers(spec, scoped.page, nextMarkers);
-  if (page && typeof length === 'number') page.auto_advance = length;
-  if (typeof pieceLength === 'number') spec.length_ms = pieceLength;
-  syncAnimationsToSpec(spec);
+  commitRipple(spec, scoped, rip);
   writeYAML(dPath, spec);
 
   const after = animationDuration(layers, own(spec.length_ms));
