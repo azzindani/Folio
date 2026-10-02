@@ -3,8 +3,6 @@
 // an export). Both ask ffmpeg for MJPEG frames with `showinfo` timestamps and pick
 // with ONE rule, so op:frame and the exported video show the same frame.
 
-/** Frames a stream keeps ahead of its reader before ffmpeg is paused. */
-export const STREAM_AHEAD = 24;
 /** How far before a moment decoding starts, so the frame already showing at it is decoded too. */
 export const SEEK_LEAD_MS = 250;
 /** Timestamp slack: a frame at 33.3333 ms counts as showing at 33.333 ms. */
@@ -86,8 +84,8 @@ export function frameEdge(boxW: number, boxH: number): number {
 }
 
 /**
- * ffmpeg arguments: frames from `seekMs` on through `vf`, each logged by showinfo,
- * one per decoded frame. A limit is a `trim` BEFORE showinfo: an output-side
+ * ffmpeg arguments, up to the output: frames from `seekMs` on through `vf`, each logged
+ * by showinfo, one per decoded frame. A limit is a `trim` BEFORE showinfo: an output-side
  * -t/-frames lets the graph log frames it then drops, and the log would no longer pair up.
  */
 function streamArgs(file: string, seekMs: number, vf: string, out: string[], limit?: { frames?: number; ms?: number }): string[] {
@@ -95,14 +93,16 @@ function streamArgs(file: string, seekMs: number, vf: string, out: string[], lim
   return [
     '-hide_banner', '-nostats', '-v', 'info',
     '-ss', (Math.max(0, seekMs) / 1000).toFixed(3), '-i', file, '-an', '-sn', '-dn',
-    '-vf', `${trim}showinfo,${vf}`, '-fps_mode', 'passthrough', ...out, 'pipe:1',
+    '-vf', `${trim}showinfo,${vf}`, '-fps_mode', 'passthrough', ...out,
   ];
 }
 
-/** MJPEG frames no longer than `edge` on their longest side — the picture an SVG <image> embeds. */
+const jpegOut = ['-f', 'image2pipe', '-vcodec', 'mjpeg', '-q:v', '3'];
+const jpegScale = (edge: number): string => `scale=w=${edge}:h=${edge}:force_original_aspect_ratio=decrease`;
+
+/** MJPEG frames on stdout, no longer than `edge` on their longest side — the picture an SVG <image> embeds. */
 export function decodeArgs(file: string, seekMs: number, edge: number, limit?: { frames?: number; ms?: number }): string[] {
-  return streamArgs(file, seekMs, `scale=w=${edge}:h=${edge}:force_original_aspect_ratio=decrease`,
-    ['-f', 'image2pipe', '-vcodec', 'mjpeg', '-q:v', '3'], limit);
+  return [...streamArgs(file, seekMs, jpegScale(edge), jpegOut, limit), 'pipe:1'];
 }
 
 export type ClipFit = 'cover' | 'contain' | 'fill';
@@ -126,18 +126,16 @@ export function fitFilter(w: number, h: number, fit: ClipFit, focal: readonly [n
   return `scale=${w}:${h}:force_original_aspect_ratio=increase,crop=${w}:${h}:(iw-ow)*${fx}:(ih-oh)*${fy},format=rgba`;
 }
 
-/** How a stream turns a file into frames: the ffmpeg arguments, and where one frame ends in the pipe. */
+/** How a stream turns a file into frames: the ffmpeg arguments up to the output, and where one frame ends. */
 export interface DecodeFormat {
   args(file: string, seekMs: number): string[];
   split(buf: Buffer): { frames: Buffer[]; rest: Buffer };
-  /** A fixed frame size: the pipe is only joined once a whole frame has arrived. */
+  /** A fixed frame size, read whole. */
   frameBytes?: number;
-  /** Frames decoded ahead of the reader before ffmpeg is paused. */
-  ahead: number;
 }
 
 export function jpegFormat(edge: number): DecodeFormat {
-  return { args: (file, seekMs) => decodeArgs(file, seekMs, edge), split: splitJpegs, ahead: STREAM_AHEAD };
+  return { args: (file, seekMs) => streamArgs(file, seekMs, jpegScale(edge), jpegOut), split: splitJpegs };
 }
 
 /** Straight-alpha RGBA frames of exactly w×h, fitted like the layer's <image>. */
@@ -145,8 +143,6 @@ export function rgbaFormat(w: number, h: number, fit: ClipFit, focal: readonly [
   const size = w * h * 4;
   return {
     frameBytes: size,
-    // A 1080p frame is 8 MB: a short read-ahead keeps several clips inside a small host.
-    ahead: 3,
     args: (file, seekMs) => streamArgs(file, seekMs, fitFilter(w, h, fit, focal), ['-f', 'rawvideo', '-pix_fmt', 'rgba']),
     split: buf => {
       const frames: Buffer[] = [];
