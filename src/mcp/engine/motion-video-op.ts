@@ -54,9 +54,13 @@ export interface VideoOpArgs {
   design_path: string; project_path?: string; page_id?: string; layer_id?: string;
   in?: unknown; out?: unknown; split_at?: unknown; cut?: unknown; ripple?: boolean;
   offset_ms?: number; duration_ms?: number; speed?: number; volume?: number; muted?: boolean; loop?: boolean;
+  fade_in?: unknown; fade_out?: unknown; audio_lead_ms?: unknown; audio_tail_ms?: unknown;
 }
 
 const FIELDS = ['offset_ms', 'duration_ms', 'speed', 'volume', 'muted', 'loop'] as const;
+/** Edge sound: the arg (fade_in/fade_out share op:audio's names) and the clip field it writes. 0 or null clears. */
+const SOUND = [['fade_in', 'fade_in_ms'], ['fade_out', 'fade_out_ms'], ['audio_lead_ms', 'audio_lead_ms'], ['audio_tail_ms', 'audio_tail_ms']] as const;
+const MAX_EDGE_MS = 10_000;
 
 export function videoMotion(args: VideoOpArgs): ToolResult {
   const op = 'video';
@@ -76,6 +80,13 @@ export function videoMotion(args: VideoOpArgs): ToolResult {
   const v = next.video ?? {};
   for (const k of FIELDS) if (args[k] !== undefined) (v as Record<string, unknown>)[k] = args[k];
   if (typeof v.volume === 'number') v.volume = Math.min(1, Math.max(0, v.volume));
+  for (const [arg, key] of SOUND) {
+    const n = args[arg];
+    if (n === undefined) continue;
+    if (n === null || n === 0) { delete (v as Record<string, unknown>)[key]; continue; }
+    if (typeof n !== 'number' || !(n > 0 && n <= MAX_EDGE_MS)) return errResult(op, `${arg} ${String(n)} is out of range.`, `Use ms from 1 to ${MAX_EDGE_MS} (0 or null clears it).`);
+    (v as Record<string, unknown>)[key] = Math.round(n);
+  }
   const progress: ProgressItem[] = [];
   // Moving the start keeps "the rest of the file" unless a length was given.
   if (args.offset_ms !== undefined && args.duration_ms === undefined && fileMs) v.duration_ms = Math.max(1, fileMs - Math.max(0, Number(v.offset_ms) || 0));

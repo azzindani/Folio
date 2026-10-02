@@ -9,8 +9,17 @@ import type { VideoTiming } from './video-time';
 
 export type ClipLayer = Layer & {
   in?: number; out?: number; src?: string; layers?: Layer[];
-  video?: VideoTiming & { volume?: number; muted?: boolean };
+  video?: VideoTiming & ClipSound;
 };
+
+/** How a clip sounds at its edges (export/video-sound.ts mixes it): fades, and sound before (J) or after (L) its picture. */
+export interface ClipSound { volume?: number; muted?: boolean; fade_in_ms?: number; fade_out_ms?: number; audio_lead_ms?: number; audio_tail_ms?: number }
+
+/** Sound fields that belong to a clip's START edge, and to its END edge — a cut keeps each with its own half. */
+const START_SOUND = ['fade_in_ms', 'audio_lead_ms'] as const;
+const END_SOUND = ['fade_out_ms', 'audio_tail_ms'] as const;
+const without = (v: ClipLayer['video'], keys: readonly string[]): NonNullable<ClipLayer['video']> =>
+  Object.fromEntries(Object.entries(v ?? {}).filter(([k]) => !keys.includes(k)));
 
 export interface ClipSummary {
   id: string;
@@ -19,6 +28,8 @@ export interface ClipSummary {
   /** Which part of the file that is, ms. */
   file: { from: number; to: number | null };
   speed: number; volume: number; muted: boolean; loop: boolean;
+  /** Edge sound when any is set: fades, and how far the sound leads or trails the picture, ms. */
+  sound?: { fade_in_ms?: number; fade_out_ms?: number; lead_ms?: number; tail_ms?: number };
 }
 
 /** Shortest a trim leaves a clip, ms on the scene clock. */
@@ -36,7 +47,15 @@ export function summarize(l: ClipLayer): ClipSummary {
     id: l.id, plays: { from, until: until === null ? null : Math.round(until) },
     file: { from: offset, to: used === null ? null : offset + used },
     speed, volume: Math.min(1, Math.max(0, Number(v.volume ?? 1))), muted: v.muted === true, loop: v.loop === true,
+    ...edgeSound(v),
   };
+}
+
+function edgeSound(v: ClipSound): Pick<ClipSummary, 'sound'> {
+  const pick = (n: unknown): number | undefined => (Number(n) > 0 ? Math.round(Number(n)) : undefined);
+  const sound = Object.fromEntries(Object.entries({ fade_in_ms: pick(v.fade_in_ms), fade_out_ms: pick(v.fade_out_ms), lead_ms: pick(v.audio_lead_ms), tail_ms: pick(v.audio_tail_ms) })
+    .filter(([, n]) => n !== undefined));
+  return Object.keys(sound).length ? { sound } : {};
 }
 
 /** Split a clip at scene time t: the first half ends there, the second starts there, from the frame the first stopped on. */
@@ -47,8 +66,8 @@ export function cutClip(l: ClipLayer, t: number, secondId: string): ClipLayer[] 
   }
   const used = Math.round((t - s.plays.from) * s.speed);
   const rest = s.file.to === null ? undefined : Math.max(1, s.file.to - s.file.from - used);
-  const first: ClipLayer = { ...l, out: Math.round(t), video: { ...(l.video ?? {}), duration_ms: used } };
-  const second: ClipLayer = { ...l, id: secondId, in: Math.round(t), video: { ...(l.video ?? {}), offset_ms: s.file.from + used, ...(rest !== undefined ? { duration_ms: rest } : {}) } };
+  const first: ClipLayer = { ...l, out: Math.round(t), video: { ...without(l.video, END_SOUND), duration_ms: used } };
+  const second: ClipLayer = { ...l, id: secondId, in: Math.round(t), video: { ...without(l.video, START_SOUND), offset_ms: s.file.from + used, ...(rest !== undefined ? { duration_ms: rest } : {}) } };
   if (typeof l.out === 'number') second.out = l.out; else delete second.out;
   return [first, second];
 }

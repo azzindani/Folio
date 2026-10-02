@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { DesignSpec, Layer } from '../schema/types';
-import { videoSoundClips, videoSources } from './video-sound';
+import { videoSoundClips, videoSources, SEAM_FADE_MS } from './video-sound';
 import { planSound, clipFilePosition } from './audio-plan';
 import { atempoChain, soundFilter } from './audio-mux';
 
@@ -25,6 +25,36 @@ describe('videoSoundClips', () => {
     const g = { id: 'g', type: 'group', layers: [vid('a')] } as unknown as Layer;
     expect(videoSoundClips([g], 5000, 10_000, { 'assets/video/a.mp4': 2000 })[0]?.start_ms).toBe(5000);
     expect(videoSources([g])).toEqual(['assets/video/a.mp4']);
+  });
+});
+
+describe('cut edges, fades and J/L cuts', () => {
+  const F = { 'assets/video/a.mp4': 8000 };
+  const one = (extra: Record<string, unknown>, file: Record<string, number> = F): ReturnType<typeof videoSoundClips>[number] | undefined =>
+    videoSoundClips([vid('a', extra)], 0, 20_000, file)[0];
+
+  it('a cut edge fades out the click; the file\'s own start and end stay as recorded', () => {
+    expect(one({ in: 1000, video: { offset_ms: 2000, duration_ms: 3000 } })).toMatchObject({ fade_in_ms: SEAM_FADE_MS, fade_out_ms: SEAM_FADE_MS });
+    expect(one({ in: 0 }, { 'assets/video/a.mp4': 3000 })).toMatchObject({ length_ms: 3000, fade_in_ms: 0, fade_out_ms: 0 });
+  });
+
+  it('asked-for fades win over the seam, and never overrun the clip', () => {
+    expect(one({ video: { offset_ms: 1000, duration_ms: 3000, fade_in_ms: 400, fade_out_ms: 900 } })).toMatchObject({ fade_in_ms: 400, fade_out_ms: 900 });
+    expect(one({ video: { offset_ms: 1000, duration_ms: 1000, fade_in_ms: 800, fade_out_ms: 800 } })).toMatchObject({ fade_in_ms: 500, fade_out_ms: 500 });
+  });
+
+  it('audio_lead_ms starts the sound before its picture, within the file and the scene', () => {
+    expect(one({ in: 5000, video: { offset_ms: 3000, duration_ms: 2000, audio_lead_ms: 1000 } })).toMatchObject({ start_ms: 4000, offset_ms: 2000, length_ms: 3000 });
+    // Only 300 ms of file before the offset: the lead stops at the file's start, which needs no fade.
+    expect(one({ in: 5000, video: { offset_ms: 300, duration_ms: 2000, audio_lead_ms: 1000 } })).toMatchObject({ start_ms: 4700, offset_ms: 0, fade_in_ms: 0 });
+    expect(one({ in: 200, video: { offset_ms: 3000, duration_ms: 2000, audio_lead_ms: 1000 } })?.start_ms).toBe(0);
+  });
+
+  it('audio_tail_ms runs the sound on past the picture, while the file has sound', () => {
+    expect(one({ in: 0, out: 3000, video: { offset_ms: 0, duration_ms: 3000, audio_tail_ms: 1500 } })).toMatchObject({ length_ms: 4500, fade_out_ms: SEAM_FADE_MS });
+    expect(one({ in: 0, video: { offset_ms: 0, duration_ms: 3000, audio_tail_ms: 1500 } }, { 'assets/video/a.mp4': 3500 })).toMatchObject({ length_ms: 3500, fade_out_ms: 0 });
+    // At double speed the picture uses 2 s of file per piece second; so does the tail.
+    expect(one({ in: 0, video: { offset_ms: 0, duration_ms: 4000, speed: 2, audio_tail_ms: 1000 } })?.length_ms).toBe(3000);
   });
 });
 

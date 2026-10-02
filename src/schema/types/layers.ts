@@ -227,7 +227,13 @@ export interface VideoLayer extends BaseLayer {
   focal?: [number, number];
   overlay?: { fill?: string; opacity?: number; blend?: string };
   frame?: { stroke?: string; width?: number; offset?: number };
-  video?: { offset_ms?: number; duration_ms?: number; speed?: number; volume?: number; muted?: boolean; loop?: boolean };
+  video?: {
+    offset_ms?: number; duration_ms?: number; speed?: number; volume?: number; muted?: boolean; loop?: boolean;
+    /** Sound fades at the clip's edges, ms (a cut edge always gets a short de-click fade). */
+    fade_in_ms?: number; fade_out_ms?: number;
+    /** Sound starts this long before the picture (J-cut) / runs on this long after it (L-cut), ms. */
+    audio_lead_ms?: number; audio_tail_ms?: number;
+  };
 }
 
 export interface IconLayer extends BaseLayer {
