@@ -31,7 +31,7 @@ import {
   promptMoveFolder, moveFolderInto, type FolderCtx,
 } from './asset-explorer-folders';
 
-const ACCEPT = 'image/png,image/jpeg,image/webp,image/gif,image/avif,image/svg+xml,font/ttf,font/otf,font/woff2,font/woff,.ttf,.otf,.woff,.woff2,.md,.markdown,.txt,.csv,.json,.yaml,.yml,text/markdown,text/plain,text/csv,application/json';
+const ACCEPT = 'image/png,image/jpeg,image/webp,image/gif,image/avif,image/svg+xml,font/ttf,font/otf,font/woff2,font/woff,.ttf,.otf,.woff,.woff2,.md,.markdown,.txt,.csv,.json,.yaml,.yml,text/markdown,text/plain,text/csv,application/json,video/mp4,video/quicktime,video/webm,.mp4,.m4v,.mov,.webm,audio/mpeg,audio/wav,audio/mp4,audio/ogg,.mp3,.wav,.m4a,.aac,.ogg,.opus,.flac';
 
 export class AssetPanelManager {
   private container: HTMLElement;

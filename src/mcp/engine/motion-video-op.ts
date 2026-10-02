@@ -11,7 +11,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import type { DesignSpec, Layer } from '../../schema/types';
-import type { VideoTiming } from '../../animation/video-time';
+import { summarize, cutClip, type ClipLayer } from '../../animation/video-clip';
 import type { ToolResult, ProgressItem } from '../types';
 import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, pOk, pWarn } from './utils';
 import { resolveScope, commitScope } from './motion';
@@ -19,19 +19,7 @@ import { readMarkers, resolveTime, type TimeContext } from './motion-time';
 import { resolveAssetFile } from './asset-resolve';
 import { clipFileLength } from './video-length';
 
-export type ClipLayer = Layer & {
-  in?: number; out?: number; src?: string; layers?: Layer[];
-  video?: VideoTiming & { volume?: number; muted?: boolean };
-};
-
-export interface ClipSummary {
-  id: string;
-  /** When it plays, on the scene clock. `until` is null for a loop or an unknown length. */
-  plays: { from: number; until: number | null };
-  /** Which part of the file that is, ms. */
-  file: { from: number; to: number | null };
-  speed: number; volume: number; muted: boolean; loop: boolean;
-}
+export { summarize, splitClip, type ClipLayer, type ClipSummary } from '../../animation/video-clip';
 
 export function findClip(layers: Layer[], id: string): ClipLayer | null {
   for (const l of layers as ClipLayer[]) {
@@ -58,21 +46,6 @@ export function uniqueClipId(layers: Layer[], base: string): string {
   let n = 2;
   while (taken.has(`${base}_${n}`)) n++;
   return `${base}_${n}`;
-}
-
-export function summarize(l: ClipLayer): ClipSummary {
-  const v = l.video ?? {};
-  const speed = Number(v.speed) > 0 ? Number(v.speed) : 1;
-  const offset = Math.max(0, Number(v.offset_ms) || 0);
-  const used = Number(v.duration_ms) > 0 ? Number(v.duration_ms) : null;
-  const from = Number(l.in) || 0;
-  const natural = used !== null && !v.loop ? from + used / speed : null;
-  const until = natural !== null && typeof l.out === 'number' ? Math.min(natural, l.out) : natural ?? (typeof l.out === 'number' ? l.out : null);
-  return {
-    id: l.id, plays: { from, until: until === null ? null : Math.round(until) },
-    file: { from: offset, to: used === null ? null : offset + used },
-    speed, volume: Math.min(1, Math.max(0, Number(v.volume ?? 1))), muted: v.muted === true, loop: v.loop === true,
-  };
 }
 
 export const projectOf = (designPath: string, projectPath?: string): string => projectPath ?? path.dirname(path.dirname(designPath));
@@ -125,7 +98,8 @@ export function videoMotion(args: VideoOpArgs): ToolResult {
 
   let result: ClipLayer[] = [next];
   if (args.split_at !== undefined) {
-    const cut = cutClip(next, resolveTime(args.split_at, ctx), uniqueClipId(scoped.scope, next.id));
+    const at = resolveTime(args.split_at, ctx);
+    const cut = typeof at === 'string' ? `split_at: ${at}` : cutClip(next, at, uniqueClipId(scoped.scope, next.id));
     if (typeof cut === 'string') return errResult(op, cut, 'Pick a split_at inside the time the clip plays (the reply of a call without split_at shows it).');
     result = cut;
   }
@@ -140,25 +114,4 @@ export function videoMotion(args: VideoOpArgs): ToolResult {
     next_action: { tool: 'animation', params: { op: 'frame', design_path: dPath, t: clips[clips.length - 1]?.plays.from ?? 0, ...(args.page_id ? { page_id: args.page_id } : {}) }, remaining: 0,
       hint: 'op:frame shows the frame at a time; edit_layer move/scale places a half; edit_layer remove drops one — a cut.' },
   }, bak);
-}
-
-/** The two halves of a clip split at scene time t, or [] when t is not while it plays. */
-export function splitClip(l: ClipLayer, t: number, secondId: string): ClipLayer[] {
-  const halves = cutClip(l, t, secondId);
-  return typeof halves === 'string' ? [] : halves;
-}
-
-/** Split a clip at scene time t: the first half ends there, the second starts there, from the frame the first stopped on. */
-function cutClip(l: ClipLayer, t: number | string, secondId: string): ClipLayer[] | string {
-  if (typeof t === 'string') return `split_at: ${t}`;
-  const s = summarize(l);
-  if (!(t > s.plays.from) || (s.plays.until !== null && t >= s.plays.until)) {
-    return `split_at ${t}ms is not while "${l.id}" plays (${s.plays.from}–${s.plays.until ?? '…'}ms).`;
-  }
-  const used = Math.round((t - s.plays.from) * s.speed);
-  const rest = s.file.to === null ? undefined : Math.max(1, s.file.to - s.file.from - used);
-  const first: ClipLayer = { ...l, out: t, video: { ...(l.video ?? {}), duration_ms: used } };
-  const second: ClipLayer = { ...l, id: secondId, in: t, video: { ...(l.video ?? {}), offset_ms: s.file.from + used, ...(rest !== undefined ? { duration_ms: rest } : {}) } };
-  if (typeof l.out === 'number') second.out = l.out; else delete second.out;
-  return [first, second];
 }

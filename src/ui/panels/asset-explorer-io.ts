@@ -9,7 +9,7 @@
 export interface AssetRow {
   id: string;
   path: string;
-  kind: 'images' | 'icons' | 'fonts' | 'docs' | 'audio';
+  kind: 'images' | 'icons' | 'fonts' | 'docs' | 'audio' | 'video';
   folder?: string;
   bytes: number;
   width?: number;
@@ -17,6 +17,8 @@ export interface AssetRow {
   luminance?: string;
   alt?: string;
   added?: string;
+  /** A clip's length, ms (the server measures it at upload). */
+  duration_ms?: number;
 }
 
 export interface Listing {
@@ -68,6 +70,7 @@ export function kindForFile(name: string): AssetRow['kind'] {
   if (/\.(ttf|otf|woff2?)$/i.test(name)) return 'fonts';
   if (/\.(md|markdown|txt|csv|json|ya?ml)$/i.test(name)) return 'docs';
   if (/\.(mp3|wav|m4a|aac|ogg|oga|opus|flac)$/i.test(name)) return 'audio';
+  if (/\.(mp4|m4v|mov|webm)$/i.test(name)) return 'video';
   return 'images';
 }
 

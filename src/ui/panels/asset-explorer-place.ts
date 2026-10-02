@@ -32,12 +32,14 @@ export function placeAsset(state: StateManager, a: AssetRow, quiet = false): voi
   const maxZ = Math.max(0, ...state.getCurrentLayers().map(l => l.z));
   const id = `${a.id}-${++insertCounter}`;
 
+  // A clip places as a video layer at its own aspect; it plays from 0 and the clip track trims it.
   state.addLayer({
-    id, type: 'image', z: maxZ + 1,
+    id, type: a.kind === 'video' ? 'video' : 'image', z: maxZ + 1,
     x: Math.round((docW - lw) / 2), y: Math.round((docH - lh) / 2),
     width: lw, height: lh,
     src: a.path, fit: 'cover',
     ...(a.alt ? { alt: a.alt } : {}),
+    ...(a.kind === 'video' && a.duration_ms ? { video: { offset_ms: 0, duration_ms: a.duration_ms } } : {}),
   } as unknown as Layer);
   state.set('selectedLayerIds', [id]);
 
