@@ -6,6 +6,7 @@
 
 import type { Layer } from '../schema/types';
 import type { VideoTiming } from './video-time';
+import type { ClipTransition } from './clip-transition';
 
 export type ClipLayer = Layer & {
   in?: number; out?: number; src?: string; layers?: Layer[];
@@ -13,10 +14,12 @@ export type ClipLayer = Layer & {
 };
 
 /** How a clip sounds at its edges (export/video-sound.ts mixes it): fades, and sound before (J) or after (L) its picture. */
-export interface ClipSound { volume?: number; muted?: boolean; fade_in_ms?: number; fade_out_ms?: number; audio_lead_ms?: number; audio_tail_ms?: number }
+export interface ClipSound { volume?: number; muted?: boolean; fade_in_ms?: number; fade_out_ms?: number; audio_lead_ms?: number; audio_tail_ms?: number;
+  /** How it enters from the clip that ends where it starts (clip-transition.ts). */
+  transition?: ClipTransition }
 
-/** Sound fields that belong to a clip's START edge, and to its END edge — a cut keeps each with its own half. */
-const START_SOUND = ['fade_in_ms', 'audio_lead_ms'] as const;
+/** Fields that belong to a clip's START edge (its transition in among them), and to its END edge — a cut keeps each with its own half. */
+const START_SOUND = ['fade_in_ms', 'audio_lead_ms', 'transition'] as const;
 const END_SOUND = ['fade_out_ms', 'audio_tail_ms'] as const;
 const without = (v: ClipLayer['video'], keys: readonly string[]): NonNullable<ClipLayer['video']> =>
   Object.fromEntries(Object.entries(v ?? {}).filter(([k]) => !keys.includes(k)));
@@ -30,6 +33,7 @@ export interface ClipSummary {
   speed: number; volume: number; muted: boolean; loop: boolean;
   /** Edge sound when any is set: fades, and how far the sound leads or trails the picture, ms. */
   sound?: { fade_in_ms?: number; fade_out_ms?: number; lead_ms?: number; tail_ms?: number };
+  transition?: ClipTransition;
 }
 
 /** Shortest a trim leaves a clip, ms on the scene clock. */
@@ -47,7 +51,7 @@ export function summarize(l: ClipLayer): ClipSummary {
     id: l.id, plays: { from, until: until === null ? null : Math.round(until) },
     file: { from: offset, to: used === null ? null : offset + used },
     speed, volume: Math.min(1, Math.max(0, Number(v.volume ?? 1))), muted: v.muted === true, loop: v.loop === true,
-    ...edgeSound(v),
+    ...edgeSound(v), ...(v.transition ? { transition: v.transition } : {}),
   };
 }
 

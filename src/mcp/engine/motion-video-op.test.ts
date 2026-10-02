@@ -62,6 +62,16 @@ describe.skipIf(!hasFfmpeg)('animation {op:"video"}', () => {
     expect((videoMotion({ design_path: fp, layer_id: 'take', audio_tail_ms: -5 }) as unknown as R).error).toContain('out of range');
   });
 
+  it('a transition joins a clip to the one ending where it starts; a lone clip has none to join', () => {
+    videoMotion({ design_path: fp, layer_id: 'take', split_at: 1500 });
+    const r = videoMotion({ design_path: fp, layer_id: 'take_2', clip_transition: { type: 'crossfade', duration_ms: 400 } }) as unknown as R & { clips: Array<{ transition?: unknown }> };
+    expect(r.success).toBe(true);
+    expect(r.clips[0]?.transition).toEqual({ type: 'crossfade', duration_ms: 400 });
+    expect((videoMotion({ design_path: fp, layer_id: 'take', clip_transition: { type: 'dip' } }) as unknown as R).error).toContain('No clip ends where');
+    expect((videoMotion({ design_path: fp, layer_id: 'take_2', clip_transition: { type: 'spin' } }) as unknown as R).error).toContain('Unknown transition type');
+    expect((videoMotion({ design_path: fp, layer_id: 'take_2', clip_transition: null }) as unknown as R & { clips: Array<{ transition?: unknown }> }).clips[0]?.transition).toBeUndefined();
+  });
+
   it('refuses a cut outside the clip, an offset past the file, and a layer that is not a clip', () => {
     expect((videoMotion({ design_path: fp, layer_id: 'take', split_at: 9000 }) as unknown as R).success).toBe(false);
     expect((videoMotion({ design_path: fp, layer_id: 'take', offset_ms: 9000 }) as unknown as R).error).toContain('past the end');

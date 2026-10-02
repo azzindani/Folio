@@ -233,6 +233,8 @@ export interface VideoLayer extends BaseLayer {
     fade_in_ms?: number; fade_out_ms?: number;
     /** Sound starts this long before the picture (J-cut) / runs on this long after it (L-cut), ms. */
     audio_lead_ms?: number; audio_tail_ms?: number;
+    /** How this clip enters from the clip that ends where it starts (animation/clip-transition.ts). */
+    transition?: { type: 'crossfade' | 'dip' | 'wipe' | 'push'; duration_ms?: number; color?: string; direction?: 'left' | 'right' | 'up' | 'down' };
   };
 }
 
