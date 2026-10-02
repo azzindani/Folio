@@ -4,27 +4,29 @@
 //
 // Moments are answered in the order asked (an export asks in time order). A
 // moment behind the stream, or far ahead of it, starts a fresh decoder at a seek.
-// The reader pauses ffmpeg once the format's read-ahead is full, so a long clip
-// never piles up in memory.
+// Frames are PULLED (video-pipe.ts): ffmpeg decodes no further than one frame past
+// the moment asked for, so a long clip never piles up in memory.
 
-import { spawn, type ChildProcess } from 'child_process';
+import { FramePipe } from './video-pipe';
 import { showinfoTimes, showsAt, SEEK_LEAD_MS, type DecodeFormat } from './video-decode';
 
 /** Further ahead than this, seeking is cheaper than decoding the gap. */
 const JUMP_MS = 1500;
+/** Bytes asked of the pipe at a time while a variable-size frame (a JPEG) comes in. */
+const CHUNK = 256 * 1024;
 
 interface Decoded { ms: number; data: Buffer }
 
 export class ClipStream {
-  private proc: ChildProcess | null = null;
+  private pipe: FramePipe | null = null;
   private started = false;
   private ended = false;
+  private exited = false;
   private seekMs = 0;
-  private chunks: Buffer[] = [];
-  private pending = 0;
-  private decoded: Buffer[] = [];
   private times: number[] = [];
   private log = '';
+  private carry: Buffer | null = null;
+  private spare: Buffer[] = [];
   private ahead: Decoded[] = [];
   private shown: Decoded | null = null;
   private passed = 0;
@@ -60,10 +62,9 @@ export class ClipStream {
         this.passed++;
       }
       if (this.ahead.length || this.ended) break;
-      this.proc?.stdout?.resume();
-      await new Promise<void>(resolve => { this.wake = resolve; });
+      const next = await this.pull();
+      if (next) this.ahead.push(next); else await this.finish();
     }
-    if (this.ahead.length < this.format.ahead) this.proc?.stdout?.resume();
     return (this.shown ?? this.ahead[0] ?? null)?.data ?? null;
   }
 
@@ -80,65 +81,74 @@ export class ClipStream {
     this.stop();
     this.started = true;
     this.ended = false;
-    this.chunks = [];
-    this.pending = 0;
-    this.decoded = [];
+    this.exited = false;
     this.times = [];
     this.log = '';
+    this.carry = null;
+    this.spare = [];
     this.ahead = [];
     this.shown = null;
     this.passed = 0;
     this.tail = '';
     this.seekMs = Math.max(0, ms - SEEK_LEAD_MS);
     this.starts++;
-    const proc = spawn(this.bin, this.format.args(this.file, this.seekMs), { stdio: ['ignore', 'pipe', 'pipe'] });
-    this.proc = proc;
-    proc.stdout.on('data', (chunk: Buffer) => {
-      if (this.proc !== proc) return;
-      this.chunks.push(chunk);
-      this.pending += chunk.length;
-      // A fixed-size frame is joined once, when it is whole — not re-copied chunk by chunk.
-      if (this.format.frameBytes && this.pending < this.format.frameBytes) return;
-      const { frames, rest } = this.format.split(this.chunks.length === 1 ? chunk : Buffer.concat(this.chunks, this.pending));
-      this.chunks = rest.length ? [rest] : [];
-      this.pending = rest.length;
-      this.decoded.push(...frames);
-      this.pair();
-      if (this.ahead.length >= this.format.ahead) proc.stdout.pause();
+    const pipe = new FramePipe(this.bin, this.format.args(this.file, this.seekMs), text => {
+      if (this.pipe === pipe) this.takeLog(text, false);
     });
-    proc.stderr.on('data', (chunk: Buffer) => {
-      if (this.proc !== proc) return;
-      this.log += chunk.toString();
-      const nl = this.log.lastIndexOf('\n');
-      if (nl < 0) return;
-      this.takeLog(this.log.slice(0, nl));
-      this.log = this.log.slice(nl + 1);
+    this.pipe = pipe;
+    void pipe.exited.then(() => {
+      if (this.pipe !== pipe) return;
+      this.exited = true;
+      this.takeLog('', true);
     });
-    proc.on('error', (e: Error) => { if (this.proc === proc) { this.tail += e.message; this.finish(false); } });
-    proc.on('close', (code: number | null) => { if (this.proc === proc) this.finish(code === 0); });
   }
 
-  private takeLog(lines: string): void {
-    for (const s of showinfoTimes(lines)) this.times.push(this.seekMs + s * 1000);
-    this.tail = (this.tail + lines).slice(-2000);
-    this.pair();
+  /** The next decoded frame with its start time, or null at the end of the output. */
+  private async pull(): Promise<Decoded | null> {
+    const pipe = this.pipe;
+    if (!pipe) return null;
+    const data = await this.nextFrame(pipe);
+    if (!data || this.pipe !== pipe) return null;
+    while (!this.times.length && !this.exited && this.pipe === pipe) await new Promise<void>(resolve => { this.wake = resolve; });
+    const ms = this.times.shift();
+    return ms === undefined || this.pipe !== pipe ? null : { ms, data };
   }
 
-  private pair(): void {
-    while (this.decoded.length && this.times.length) {
-      const ms = this.times.shift(), data = this.decoded.shift();
-      if (ms === undefined || data === undefined) break;
-      this.ahead.push({ ms, data });
+  private async nextFrame(pipe: FramePipe): Promise<Buffer | null> {
+    const size = this.format.frameBytes;
+    if (size) {
+      const frame = await pipe.read(size);
+      return frame && frame.length === size ? frame : null;
     }
-    this.signal();
+    for (;;) {
+      const ready = this.spare.shift();
+      if (ready) return ready;
+      const chunk = await pipe.readSome(CHUNK);
+      if (!chunk) return null;
+      const { frames, rest } = this.format.split(this.carry ? Buffer.concat([this.carry, chunk]) : chunk);
+      // Copied out: a frame must not pin the whole chunk it arrived in.
+      this.spare.push(...frames.map(f => Buffer.from(f)));
+      this.carry = rest.length ? Buffer.from(rest) : null;
+    }
   }
 
-  private finish(ranToEnd: boolean): void {
-    this.takeLog(this.log);
-    this.log = '';
+  private async finish(): Promise<void> {
+    const pipe = this.pipe;
     this.ended = true;
-    this.proc = null;
-    if (ranToEnd) this.final = this.ahead[this.ahead.length - 1] ?? this.shown ?? this.final;
+    const code = pipe ? await pipe.exited : null;
+    // Ran to the end of the file: the frame on show is its last.
+    if (code === 0 && this.pipe === pipe) this.final = this.shown ?? this.final;
+  }
+
+  private takeLog(text: string, flush: boolean): void {
+    this.log += text;
+    const nl = flush ? this.log.length : this.log.lastIndexOf('\n');
+    if (nl >= 0) {
+      const lines = this.log.slice(0, nl);
+      this.log = this.log.slice(nl);
+      for (const s of showinfoTimes(lines)) this.times.push(this.seekMs + s * 1000);
+      this.tail = (this.tail + lines).slice(-2000);
+    }
     this.signal();
   }
 
@@ -149,8 +159,9 @@ export class ClipStream {
   }
 
   private stop(): void {
-    const proc = this.proc;
-    this.proc = null;
-    proc?.kill('SIGKILL');
+    const pipe = this.pipe;
+    this.pipe = null;
+    pipe?.close();
+    this.signal();
   }
 }
