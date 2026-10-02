@@ -57,14 +57,14 @@ describe.skipIf(!hasFfmpeg)('FootageFeed — an export decodes each clip once', 
     expect(videoFrameUri(twin, 1200, 320, 180)).toBe(uris[7]);
   }, 30_000);
 
-  it('a raster export reports its decoders: one clip, one seek', async () => {
+  it('a raster export paints a plain clip as pixels from one stream: one clip, one seek', async () => {
     const s = spec('assets/video/take.mp4');
     const out = path.join(dir, 'out.mp4');
     const r = await exportRasterMotion(s, design(), { durationMs: 1000, at: t => specAt(s, 0, t) }, out, { type: 'mp4', fps: 10, project_path: dir });
-    const body = r as unknown as { success: boolean; error?: string; frames?: number; footage_decoders?: unknown };
+    const body = r as unknown as { success: boolean; error?: string; frames?: number; footage?: unknown };
     expect(body.error).toBeUndefined();
     expect(body.frames).toBe(10);
-    expect(body.footage_decoders).toEqual({ clips: 1, seeks: 1 });
+    expect(body.footage).toEqual({ clips: 1, seeks: 1, pixel_frames: 10, embedded_frames: 0 });
     fs.rmSync(out, { force: true });
   }, 60_000);
 });

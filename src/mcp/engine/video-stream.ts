@@ -4,11 +4,11 @@
 //
 // Moments are answered in the order asked (an export asks in time order). A
 // moment behind the stream, or far ahead of it, starts a fresh decoder at a seek.
-// The reader pauses ffmpeg once STREAM_AHEAD frames wait, so a long clip never
-// piles up in memory.
+// The reader pauses ffmpeg once the format's read-ahead is full, so a long clip
+// never piles up in memory.
 
 import { spawn, type ChildProcess } from 'child_process';
-import { decodeArgs, splitJpegs, showinfoTimes, showsAt, STREAM_AHEAD, SEEK_LEAD_MS } from './video-decode';
+import { showinfoTimes, showsAt, SEEK_LEAD_MS, type DecodeFormat } from './video-decode';
 
 /** Further ahead than this, seeking is cheaper than decoding the gap. */
 const JUMP_MS = 1500;
@@ -20,8 +20,9 @@ export class ClipStream {
   private started = false;
   private ended = false;
   private seekMs = 0;
-  private bytes: Buffer = Buffer.alloc(0);
-  private jpegs: Buffer[] = [];
+  private chunks: Buffer[] = [];
+  private pending = 0;
+  private decoded: Buffer[] = [];
   private times: number[] = [];
   private log = '';
   private ahead: Decoded[] = [];
@@ -36,9 +37,9 @@ export class ClipStream {
   /** Decoders started — one seek each. */
   starts = 0;
 
-  constructor(private readonly file: string, private readonly edge: number, private readonly bin = 'ffmpeg') {}
+  constructor(private readonly file: string, private readonly format: DecodeFormat, private readonly bin = 'ffmpeg') {}
 
-  /** The JPEG showing at `ms` of the file; null when the file gave no frame. */
+  /** The frame showing at `ms` of the file, in the stream's format; null when the file gave no frame. */
   frameAt(ms: number): Promise<Buffer | null> {
     const run = this.queue.then(() => this.read(ms));
     this.queue = run.catch(() => undefined);
@@ -62,7 +63,7 @@ export class ClipStream {
       this.proc?.stdout?.resume();
       await new Promise<void>(resolve => { this.wake = resolve; });
     }
-    if (this.ahead.length < STREAM_AHEAD) this.proc?.stdout?.resume();
+    if (this.ahead.length < this.format.ahead) this.proc?.stdout?.resume();
     return (this.shown ?? this.ahead[0] ?? null)?.data ?? null;
   }
 
@@ -79,8 +80,9 @@ export class ClipStream {
     this.stop();
     this.started = true;
     this.ended = false;
-    this.bytes = Buffer.alloc(0);
-    this.jpegs = [];
+    this.chunks = [];
+    this.pending = 0;
+    this.decoded = [];
     this.times = [];
     this.log = '';
     this.ahead = [];
@@ -89,15 +91,20 @@ export class ClipStream {
     this.tail = '';
     this.seekMs = Math.max(0, ms - SEEK_LEAD_MS);
     this.starts++;
-    const proc = spawn(this.bin, decodeArgs(this.file, this.seekMs, this.edge), { stdio: ['ignore', 'pipe', 'pipe'] });
+    const proc = spawn(this.bin, this.format.args(this.file, this.seekMs), { stdio: ['ignore', 'pipe', 'pipe'] });
     this.proc = proc;
     proc.stdout.on('data', (chunk: Buffer) => {
       if (this.proc !== proc) return;
-      const { frames, rest } = splitJpegs(this.bytes.length ? Buffer.concat([this.bytes, chunk]) : chunk);
-      this.bytes = rest;
-      this.jpegs.push(...frames);
+      this.chunks.push(chunk);
+      this.pending += chunk.length;
+      // A fixed-size frame is joined once, when it is whole — not re-copied chunk by chunk.
+      if (this.format.frameBytes && this.pending < this.format.frameBytes) return;
+      const { frames, rest } = this.format.split(this.chunks.length === 1 ? chunk : Buffer.concat(this.chunks, this.pending));
+      this.chunks = rest.length ? [rest] : [];
+      this.pending = rest.length;
+      this.decoded.push(...frames);
       this.pair();
-      if (this.ahead.length >= STREAM_AHEAD) proc.stdout.pause();
+      if (this.ahead.length >= this.format.ahead) proc.stdout.pause();
     });
     proc.stderr.on('data', (chunk: Buffer) => {
       if (this.proc !== proc) return;
@@ -118,8 +125,8 @@ export class ClipStream {
   }
 
   private pair(): void {
-    while (this.jpegs.length && this.times.length) {
-      const ms = this.times.shift(), data = this.jpegs.shift();
+    while (this.decoded.length && this.times.length) {
+      const ms = this.times.shift(), data = this.decoded.shift();
       if (ms === undefined || data === undefined) break;
       this.ahead.push({ ms, data });
     }
