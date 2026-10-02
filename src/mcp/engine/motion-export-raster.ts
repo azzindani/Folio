@@ -25,12 +25,14 @@ import type { TurningFrame } from '../../export/scene-compose';
 import { paintTurning } from '../../export/warp';
 import { GifStream, fileSink, type GifStreamStats } from '../../export/gif-stream';
 import { VideoPipe, type VideoType } from '../../export/video-encode';
+import { x264Preset } from '../../export/video-codec';
 import { tryFfmpeg } from '../../export/animation-export';
 import { muxSound, type MuxClip } from '../../export/audio-mux';
 import { scriptsAhead } from './script-capture';
 import { maxClipMs, clipLimitText } from '../../export/clip-limits';
 import { FootageFeed } from './video-feed';
 import { bandedFrame, paintBanded } from './footage-bands';
+import { RasterMemo, svgKey } from '../../export/raster-memo';
 
 export interface RasterMotionArgs {
   /** The design's sound, found and planned — mixed under an mp4/webm once the frames are encoded. */
@@ -152,6 +154,10 @@ export async function exportRasterMotion(
   const fit = scale < 1 ? { fitTo: { mode: 'zoom' as const, value: scale } } : {};
   // A clip far off the canvas aborts resvg outright. See frame-cull.ts.
   const rasterOpts = (opaque: boolean): RasterJob['opts'] => (opaque ? { font, background: '#FFFFFF', ...fit } : { font, ...fit });
+  // A frame or band drawing what a recent one drew reuses its raster (raster-memo.ts): holds, rests, static overlays.
+  const memo = new RasterMemo<Raster>();
+  const raster = (svg: string, opaque: boolean): Promise<Raster> =>
+    memo.get(`${opaque ? 'o' : 't'}|${svgKey(svg)}`, () => pool.render({ svg, opts: rasterOpts(opaque), want: 'pixels' }));
   // Footage frames: plain clips are painted as decoded pixels between graphics bands (footage-bands.ts);
   // anything else embeds the clip's picture in the SVG for resvg.
   const counts = { pixel_frames: 0, embedded_frames: 0 };
@@ -160,13 +166,13 @@ export async function exportRasterMotion(
     const banded = bandedFrame(frame);
     if (banded) {
       const img = await paintBanded(banded, scale, {
-        render: (svg, ground) => pool.render({ svg, opts: rasterOpts(ground && opaque), want: 'pixels' }),
+        render: (svg, ground) => raster(svg, ground && opaque),
         clip: (slot, w, h) => feed.pixelsAt(slot, w, h),
       });
       if (img) { counts.pixel_frames++; return img; }
     }
     if (await feed.prepare(frame)) counts.embedded_frames++;
-    return pool.render({ svg: renderToSVGString(frame), opts: rasterOpts(opaque), want: 'pixels' });
+    return raster(renderToSVGString(frame), opaque);
   };
   const renderAt = (t: number): Promise<Frame> => {
     const turn = source.turning?.(t, frameMs);
@@ -184,6 +190,7 @@ export async function exportRasterMotion(
   let width = 0, height = 0, bytes = 0, done = 0;
   let gifStats: GifStreamStats | null = null;
   let soundNote = '';
+  let encoder = '';
   let soundWarning = '';
 
   if (video) {
@@ -194,6 +201,7 @@ export async function exportRasterMotion(
       if (!out.pipe) {
         ({ width, height } = img);
         out.pipe = new VideoPipe({ type, width, height, fps, outputPath });
+        encoder = out.pipe.encoder === 'libx264' ? `libx264 ${x264Preset()}` : out.pipe.encoder;
       }
       await out.pipe.write(img.pixels);
       args.onFrame?.(++done);
@@ -268,6 +276,8 @@ export async function exportRasterMotion(
     ...(gifStats ? { images_written: gifStats.images_written } : {}),
     render_ms: Math.round(performance.now() - started),
     render_workers: pool.size,
+    rasters_reused: memo.hits,
+    ...(encoder ? { encoder } : {}),
     ...(footage.clips ? { footage: { ...footage, ...counts } } : {}),
     ...(args.extra ?? {}),
     ...(notes.length ? { notes } : {}),

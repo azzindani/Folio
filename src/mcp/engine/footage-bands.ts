@@ -94,7 +94,7 @@ export function bandedFrame(spec: DesignSpec): BandedFrame | null {
 
 export interface Painted { width: number; height: number; pixels: Buffer }
 
-/** How a banded frame gets its pixels: a band rasterised (band 0 on the frame's ground), a clip decoded at w×h. */
+/** How a banded frame gets its pixels: a band rasterised (band 0 on the frame's ground; rasters may be shared, never written), a clip decoded at w×h. */
 export interface BandPainter {
   render(svg: string, ground: boolean): Promise<Painted>;
   clip(slot: FootageSlot, w: number, h: number): Promise<Buffer | null>;
@@ -108,8 +108,9 @@ export async function paintBanded(b: BandedFrame, scale: number, p: BandPainter)
     Promise.all(b.bands.map((svg, i) => (svg === null ? null : p.render(svg, i === 0)))),
     Promise.all(b.slots.map((s, i) => (s.opacity > 0 ? p.clip(s, rects[i]?.w ?? 1, rects[i]?.h ?? 1) : null))),
   ]);
-  const base = layers[0];
-  if (!base) return null;
+  const ground = layers[0];
+  if (!ground) return null;
+  const base = { width: ground.width, height: ground.height, pixels: Buffer.from(ground.pixels) };
   for (const [i, s] of b.slots.entries()) {
     const r = rects[i], px = clips[i];
     if (s.opacity > 0) {
