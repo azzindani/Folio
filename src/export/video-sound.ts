@@ -8,6 +8,11 @@
  * point — at `speed` (the mix changes tempo to match) and `volume`. `muted`
  * leaves it silent. Times are the RESOLVED ones (precomp clocks applied), the
  * same the flipbook draws the frames at.
+ *
+ * Edges: a cut mid-waveform clicks, so every edge that is not the file's own
+ * start or end fades over SEAM_FADE_MS; `fade_in_ms` / `fade_out_ms` ask for
+ * longer. `audio_lead_ms` starts the sound before its picture (a J-cut) and
+ * `audio_tail_ms` runs it on after (an L-cut), within the file and the scene.
  */
 
 import type { Layer } from '../schema/types';
@@ -15,7 +20,11 @@ import { resolveTimeline } from '../animation/timeline-resolve';
 import type { SoundClip } from './audio-plan';
 
 interface VideoNode { id: string; type: string; src?: string; in?: number; out?: number; layers?: VideoNode[];
-  video?: { offset_ms?: number; duration_ms?: number; speed?: number; volume?: number; muted?: boolean; loop?: boolean } }
+  video?: { offset_ms?: number; duration_ms?: number; speed?: number; volume?: number; muted?: boolean; loop?: boolean;
+    fade_in_ms?: number; fade_out_ms?: number; audio_lead_ms?: number; audio_tail_ms?: number } }
+
+/** The fade on a cut edge, ms: short enough to hear as a cut, long enough not to click. */
+export const SEAM_FADE_MS = 12;
 
 const num = (v: unknown): number | undefined => (typeof v === 'number' && Number.isFinite(v) ? v : undefined);
 
@@ -38,12 +47,23 @@ export function videoSoundClips(layers: Layer[], startMs: number, totalMs: numbe
       // Piece time the clip sounds: its used part at speed, up to its out point and the end.
       const outMs = num(l.out) !== undefined ? startMs + (num(l.out) ?? 0) : Infinity;
       const natural = loop ? Infinity : used / speed;
-      const length = Math.min(natural, outMs - start, totalMs - start);
+      const pictureEnd = Math.min(start + natural, outMs);
+      // J-cut: earlier on both clocks, never before the file's start or the scene's.
+      const lead = Math.min(Math.max(0, num(l.video?.audio_lead_ms) ?? 0), offset / speed, start - startMs);
+      // L-cut: on past the picture, while the file has sound left.
+      const room = loop ? Infinity : file !== undefined ? Math.max(0, (file - offset - used) / speed) : Infinity;
+      const tail = Math.min(Math.max(0, num(l.video?.audio_tail_ms) ?? 0), room);
+      const from = start - lead, soundEnd = pictureEnd + tail;
+      const length = Math.round(Math.min(soundEnd, totalMs) - from);
       if (!(length > 0)) continue;
+      const fileFrom = offset - lead * speed;
+      const toFileEnd = !loop && file !== undefined && fileFrom + length * speed >= file - 1;
+      const fadeIn = Math.min(Math.max(num(l.video?.fade_in_ms) ?? 0, fileFrom > 0.5 ? SEAM_FADE_MS : 0), length / 2);
+      const fadeOut = Math.min(Math.max(num(l.video?.fade_out_ms) ?? 0, toFileEnd ? 0 : SEAM_FADE_MS), length - fadeIn);
       out.push({
-        id: `${l.id}-sound`, src, start_ms: start, offset_ms: offset, length_ms: Math.round(length),
-        volume: Math.min(1, Math.max(0, num(l.video?.volume) ?? 1)), fade_in_ms: 0, fade_out_ms: 0,
-        loop, cut: natural > totalMs - start, ...(speed !== 1 ? { speed } : {}),
+        id: `${l.id}-sound`, src, start_ms: Math.round(from), offset_ms: Math.round(fileFrom), length_ms: length,
+        volume: Math.min(1, Math.max(0, num(l.video?.volume) ?? 1)), fade_in_ms: Math.round(fadeIn), fade_out_ms: Math.round(fadeOut),
+        loop, cut: soundEnd > totalMs, ...(speed !== 1 ? { speed } : {}),
       });
     }
   };

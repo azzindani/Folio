@@ -7,7 +7,7 @@ import { load } from 'js-yaml';
 import { videoMotion, summarize, type ClipLayer } from './motion-video-op';
 
 const hasFfmpeg = spawnSync('ffmpeg', ['-version']).error === undefined && spawnSync('ffprobe', ['-version']).error === undefined;
-type R = { success: boolean; error?: string; clips?: Array<{ id: string; plays: { from: number; until: number | null }; file: { from: number; to: number | null }; speed: number }> };
+type R = { success: boolean; error?: string; clips?: Array<{ id: string; plays: { from: number; until: number | null }; file: { from: number; to: number | null }; speed: number; sound?: Record<string, number> }> };
 
 describe('summarize', () => {
   it('reads a clip on both clocks', () => {
@@ -50,6 +50,16 @@ describe.skipIf(!hasFfmpeg)('animation {op:"video"}', () => {
     expect(a).toMatchObject({ id: 'take', plays: { from: 0, until: 1200 }, file: { from: 0, to: 1200 } });
     expect(b).toMatchObject({ id: 'take_2', plays: { from: 1200 }, file: { from: 1200 } });
     expect(layers().map(l => l.id)).toEqual(['bg', 'take', 'take_2']);
+  });
+
+  it('sets the clip\'s edge sound, keeps each edge with its half on a split, and 0 clears', () => {
+    const r = videoMotion({ design_path: fp, layer_id: 'take', fade_in: 300, fade_out: 400, audio_lead_ms: 250, audio_tail_ms: 500 }) as unknown as R;
+    expect(r.clips?.[0]).toMatchObject({ sound: { fade_in_ms: 300, fade_out_ms: 400, lead_ms: 250, tail_ms: 500 } });
+    const [a, b] = (videoMotion({ design_path: fp, layer_id: 'take', split_at: 1500 }) as unknown as R).clips ?? [];
+    expect(a?.sound).toEqual({ fade_in_ms: 300, lead_ms: 250 });
+    expect(b?.sound).toEqual({ fade_out_ms: 400, tail_ms: 500 });
+    expect((videoMotion({ design_path: fp, layer_id: 'take', fade_in: 0, audio_lead_ms: null }) as unknown as R).clips?.[0]?.sound).toBeUndefined();
+    expect((videoMotion({ design_path: fp, layer_id: 'take', audio_tail_ms: -5 }) as unknown as R).error).toContain('out of range');
   });
 
   it('refuses a cut outside the clip, an offset past the file, and a layer that is not a clip', () => {
