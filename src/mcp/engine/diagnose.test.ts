@@ -196,6 +196,16 @@ describe('analyzeLayers — stacked full-canvas presets (re-added not replaced)'
       layers: [{ id: `${id}_pin`, type: 'rect', z: -1, x: 0, y: 0, width: W, height: H, fill: '#000000', opacity: 0 }, text(`${id}_t`, 80, 80, 400, 50, 28)] } as unknown as Layer);
     expect(analyzeLayers([rig('__camera'), rig('__depth_2'), rig('__depth_m0_5')], W, H).some(x => x.code === 'stacked_presets')).toBe(false);
   });
+  it('does not call locked scene groups (a world and a hud over it) stacked presets', () => {
+    const scene = (id: string): Layer => ({ ...fg(id), locked: true } as unknown as Layer);
+    expect(analyzeLayers([scene('world'), scene('hud')], W, H).some(x => x.code === 'stacked_presets')).toBe(false);
+  });
+  it('still flags unlocked duplicates beside a locked scene group', () => {
+    const scene = { ...fg('world'), locked: true } as unknown as Layer;
+    const hit = analyzeLayers([scene, fg('feature_grid_1'), fg('feature_grid_1-2')], W, H).find(x => x.code === 'stacked_presets');
+    expect(hit).toBeTruthy();
+    expect(hit!.message).not.toContain('world');
+  });
   it('does NOT warn for a single full-canvas preset group', () => {
     expect(analyzeLayers([fg('feature_grid_1')], W, H).some(x => x.code === 'stacked_presets')).toBe(false);
   });
