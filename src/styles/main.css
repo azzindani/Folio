@@ -131,6 +131,9 @@ html, body {
    window uses the same collapsed templates as a wide one, since it is still
    running the desktop grid. */
 @media (min-width: 1024px), (pointer: fine) {
+  /* The last column is the right rail's: --ractbar-width is 0 once the rail has folded into the panel header
+     (rpanel-tabs.ts). Written as the rail's full width here, a folded layout kept a dead 48px strip at the
+     right edge whenever a panel was collapsed. */
   /* Collapsed left panel (activity bars still visible) */
   #app.panel-collapsed {
     grid-template-columns:
@@ -138,7 +141,7 @@ html, body {
       0px
       1fr
       var(--right-panel-width)
-      var(--activity-bar-width);
+      var(--ractbar-width);
   }
 
   /* Collapsed right panel (right activity bar still visible) */
@@ -148,7 +151,7 @@ html, body {
       min(var(--left-panel-width), calc(100vw - 2 * var(--activity-bar-width) - 200px))
       1fr
       0px
-      var(--activity-bar-width);
+      var(--ractbar-width);
   }
 
   /* Both panels collapsed */
@@ -158,7 +161,7 @@ html, body {
       0px
       1fr
       0px
-      var(--activity-bar-width);
+      var(--ractbar-width);
   }
 }
 
