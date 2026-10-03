@@ -74,7 +74,7 @@ const EXT_KIND: Record<string, AssetKind> = {
   // lay out. Stored as plain text and read back with asset_read — the design is
   // built FROM these, they are never executed or rendered as markup.
   md: 'docs', markdown: 'docs', txt: 'docs', csv: 'docs', json: 'docs',
-  yaml: 'docs', yml: 'docs',
+  yaml: 'docs', yml: 'docs', cube: 'docs',   // .cube: a colour LUT a clip's grade applies
   ...AUDIO_EXT_KIND,   // a video's soundtrack and sound cues (asset-audio.ts)
   ...VIDEO_EXT_KIND,   // footage for a video layer (asset-video.ts)
 };

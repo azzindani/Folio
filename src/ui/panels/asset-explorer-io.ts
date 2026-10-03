@@ -68,7 +68,7 @@ export function storeOf(a: AssetRow): Scope {
  *  destination before the upload starts. */
 export function kindForFile(name: string): AssetRow['kind'] {
   if (/\.(ttf|otf|woff2?)$/i.test(name)) return 'fonts';
-  if (/\.(md|markdown|txt|csv|json|ya?ml)$/i.test(name)) return 'docs';
+  if (/\.(md|markdown|txt|csv|json|ya?ml|cube)$/i.test(name)) return 'docs';
   if (/\.(mp3|wav|m4a|aac|ogg|oga|opus|flac)$/i.test(name)) return 'audio';
   if (/\.(mp4|m4v|mov|webm)$/i.test(name)) return 'video';
   return 'images';

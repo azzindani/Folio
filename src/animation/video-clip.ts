@@ -8,6 +8,7 @@ import type { Layer } from '../schema/types';
 import { naturalLength, rampKeys, fileOffsetAt, edgeRates, shiftRamp, type VideoTiming } from './video-time';
 import type { ClipTransition } from './clip-transition';
 import { baseCrop, hasCrop, panKeys } from './clip-crop';
+import { colorOf, type ClipColor } from './clip-color';
 
 export type ClipLayer = Layer & {
   in?: number; out?: number; src?: string; layers?: Layer[];
@@ -39,6 +40,8 @@ export interface ClipSummary {
   crop?: { focus: [number, number]; zoom: number; pan_keys?: number };
   /** A freeze: one frame held for its length. */
   still?: true;
+  /** The clip's grade when it has one. */
+  color?: ClipColor;
   /** Speed keys when the clip ramps. */
   ramp?: Array<{ at_ms: number; speed: number }>;
 }
@@ -63,6 +66,7 @@ export function summarize(l: ClipLayer): ClipSummary {
     ...edgeSound(v), ...(v.transition ? { transition: v.transition } : {}),
     ...(hasCrop(l) ? { crop: { ...baseCrop(l), ...(panKeys(l).length ? { pan_keys: panKeys(l).length } : {}) } } : {}),
     ...(v.still ? { still: true as const } : {}), ...(rampKeys(v).length ? { ramp: rampKeys(v) } : {}),
+    ...(colorOf(l) ? { color: colorOf(l) as ClipColor } : {}),
   };
 }
 

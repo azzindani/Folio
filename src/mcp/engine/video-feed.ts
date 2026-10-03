@@ -48,8 +48,8 @@ export class FootageFeed {
   pixelsAt(slot: FootageSlot, w: number, h: number): Promise<Buffer | null> {
     if (slot.panned && slot.fit === 'cover') return this.pannedAt(slot, w, h);
     const c = slot.crop;
-    const key = `${slot.req.id}|${slot.req.file}|${w}x${h}|${slot.fit}|${c.focus.map(v => v.toFixed(4)).join(',')}|${c.zoom.toFixed(4)}`;
-    return this.stream(key, slot.req.file, () => rgbaFormat(w, h, slot.fit, c)).frameAt(slot.req.ms);
+    const key = `${slot.req.id}|${slot.req.file}|${w}x${h}|${slot.fit}|${c.focus.map(v => v.toFixed(4)).join(',')}|${c.zoom.toFixed(4)}|${slot.grade ?? ''}`;
+    return this.stream(key, slot.req.file, () => rgbaFormat(w, h, slot.fit, c, slot.grade)).frameAt(slot.req.ms);
   }
 
   /**
@@ -64,8 +64,8 @@ export class FootageFeed {
     // Detail the closest zoom needs, but never more than the file has: smaller footage is enlarged by the resample, not by ffmpeg.
     const scale = Math.min(cover * slot.zoomMax, 1);
     const dw = Math.max(2, Math.round((file.width * scale) / 2) * 2), dh = Math.max(2, Math.round((file.height * scale) / 2) * 2);
-    const key = `${slot.req.id}|${slot.req.file}|pan|${dw}x${dh}`;
-    const frame = await this.stream(key, slot.req.file, () => rgbaFormat(dw, dh, 'fill', null)).frameAt(slot.req.ms);
+    const key = `${slot.req.id}|${slot.req.file}|pan|${dw}x${dh}|${slot.grade ?? ''}`;
+    const frame = await this.stream(key, slot.req.file, () => rgbaFormat(dw, dh, 'fill', null, slot.grade)).frameAt(slot.req.ms);
     if (!frame) return null;
     const win = cropWindow(file.width, file.height, w, h, slot.crop.focus, slot.crop.zoom, dw / file.width);
     return resampleRegion(frame, dw, dh, win.rx, win.ry, win.rw, win.rh, w, h);
