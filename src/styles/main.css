@@ -3186,6 +3186,25 @@ body.clip-reframing, body.clip-reframing * { cursor: grab !important; }
   white-space: nowrap;
   pointer-events: none;
 }
+.tl-join {
+  width: 22px;
+  height: 22px;
+  margin-top: -11px;
+  z-index: 2;
+  cursor: pointer;
+  touch-action: none;
+}
+.tl-join::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  background: var(--color-text-muted);
+  opacity: .6;
+  clip-path: polygon(0 0, 100% 100%, 100% 0, 0 100%);
+}
+.tl-join:hover::after, .tl-join:focus-visible::after { opacity: 1; }
+.tl-join:focus-visible { outline: none; }
+.tl-join-on::after { background: var(--color-accent); opacity: .95; }
 .tl-clip-h {
   position: absolute;
   top: 0;

@@ -17,8 +17,43 @@ import type { TimeMarkers } from '../../animation/types';
 import type { RowTiming } from '../../editor/motion-pose';
 import { fromSceneTime, toSceneTime } from '../../animation/clock-time';
 import { summarize, trimClip, splitClip, type ClipLayer } from '../../animation/video-clip';
+import { predecessorOf, DEFAULT_TRANSITION_MS, type ClipTransition } from '../../animation/clip-transition';
 import { follow } from './timeline-edit';
+import { writeClip } from './clip-commit';
+import { openBlock } from './clip-controls';
 import { lookHTML, type ClipLook } from './timeline-filmstrip';
+
+/** A clip that starts where another ends — a join — with the transition into it, if any. */
+export interface ClipJoin { transition?: ClipTransition }
+export type JoinOf = (l: Layer) => ClipJoin | undefined;
+
+/** Every join in the tree: for each list of layers, the video layers that start where another one in it stops. */
+export function clipJoins(layers: Layer[]): Map<string, ClipJoin> {
+  const out = new Map<string, ClipJoin>();
+  const walk = (list: Layer[]): void => {
+    for (const l of list) {
+      if (l.type === 'video' && predecessorOf(list, l)) {
+        const t = (l as ClipLayer).video?.transition;
+        out.set(l.id, t ? { transition: t } : {});
+      }
+      const kids = (l as Layer & { layers?: Layer[] }).layers;
+      if (Array.isArray(kids)) walk(kids);
+    }
+  };
+  walk(layers);
+  return out;
+}
+
+const TYPE_NAME: Record<string, string> = { crossfade: 'Crossfade', dip: 'Dip to colour', wipe: 'Wipe', push: 'Push' };
+
+/** The marker on a join: filled when a transition plays over it, hollow when the cut is hard. Click opens it (see bindClipJoins). */
+function joinMarkup(l: Layer, join: ClipJoin, left: number): string {
+  const t = join.transition;
+  const title = t ? `${TYPE_NAME[t.type] ?? t.type} · ${t.duration_ms ?? DEFAULT_TRANSITION_MS} ms — click to edit it`
+    : 'A hard cut — click to add a crossfade';
+  return `<div class="tl-join${t ? ' tl-join-on' : ''}" data-layer-id="${esc(l.id)}" role="button" tabindex="0" aria-label="${esc(title)}" title="${esc(title)}"`
+    + ` style="position:absolute;top:50%;left:calc(${left}% - 11px)"></div>`;
+}
 
 /** A clip block's thumbnails and waveform, asked for with how much of the ruler the block spans (%). */
 export type LookFor = (l: Layer, widthPct: number) => ClipLook | undefined;
@@ -44,7 +79,7 @@ export function clipSpan(l: Layer, row: Pick<RowTiming, 'clocks'> | undefined, d
 }
 
 /** A video row's clip block with its two trim grips, dressed with its footage and sound when `look` gives them. */
-export function clipMarkup(l: Layer, row: RowTiming | undefined, duration: number, trackH: number, look?: LookFor): string {
+export function clipMarkup(l: Layer, row: RowTiming | undefined, duration: number, trackH: number, look?: LookFor, join?: ClipJoin): string {
   const { from, until } = clipSpan(l, row, duration);
   const s = summarize(l as ClipLayer);
   const file = `file ${(s.file.from / 1000).toFixed(1)}–${s.file.to === null ? 'end' : `${(s.file.to / 1000).toFixed(1)}s`}${s.speed !== 1 ? ` at ${s.speed}×` : ''}`;
@@ -54,7 +89,8 @@ export function clipMarkup(l: Layer, row: RowTiming | undefined, duration: numbe
     + ` style="${edge === 'start' ? 'left:0' : 'right:0'}"></div>`;
   return `<div class="tl-clip" data-layer-id="${esc(l.id)}" title="${esc(`${l.id} — ${file}`)}"`
     + ` style="position:absolute;top:3px;height:${trackH - 6}px;left:${left}%;width:${width}%">`
-    + `${lookHTML(look?.(l, width))}<span class="tl-clip-label">${esc(file)}</span>${grip('start')}${grip('end')}</div>`;
+    + `${lookHTML(look?.(l, width))}<span class="tl-clip-label">${esc(file)}</span>${grip('start')}${grip('end')}</div>`
+    + (join ? joinMarkup(l, join, left) : '');
 }
 
 /** The clip trimmed so `edge` lands on scene time `ms` — through the clip's clocks. */
@@ -112,6 +148,24 @@ export function bindClipEdits(body: HTMLElement, ctx: ClipEditContext): void {
         },
         ms => { if (ms !== null) ctx.state.updateLayers(new Map([[id, trimmedAt(layer, edge, ms, row) as Record<string, unknown>]]), true); });
     });
+  });
+}
+
+/** Click a join: the clip after it is selected and its Transition section opens — a hard cut first gets a crossfade (one undo step). */
+export function bindClipJoins(body: HTMLElement, ctx: ClipEditContext): void {
+  body.querySelectorAll<HTMLElement>('.tl-join').forEach(m => {
+    const id = m.dataset['layerId'] ?? '';
+    const go = (): void => {
+      const layer = ctx.state.findLayer(id) as ClipLayer | undefined;
+      if (!layer) return;
+      if (!layer.video?.transition) writeClip({ state: ctx.state, layerId: id, refresh: () => undefined }, { clip_transition: { type: 'crossfade' } });
+      openBlock('Transition');
+      ctx.state.set('selectedLayerIds', [id], false);
+      document.querySelector<HTMLElement>('.rpanel-tab[data-tab="properties"]')?.click();
+    };
+    m.addEventListener('pointerdown', e => e.stopPropagation());
+    m.addEventListener('click', e => { e.stopPropagation(); go(); });
+    m.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
   });
 }
 
