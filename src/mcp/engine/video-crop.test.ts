@@ -57,6 +57,20 @@ describe.skipIf(!hasFfmpeg)('pan and zoom inside the footage', () => {
     feed.close?.();
   }, 60_000);
 
+  it('a decoder no frame has asked for lately is closed, and opens afresh when asked again', async () => {
+    const feed = new FootageFeed();
+    const slot = plainClip(clip({ focus: [0, 0], zoom: 2 }));
+    if (!slot) throw new Error('not plain');
+    expect(await feed.pixelsAt(slot, 160, 90)).not.toBeNull();
+    feed.tick(2); feed.tick(2);
+    expect(feed.stats()).toEqual({ clips: 1, seeks: 1 });
+    feed.tick(2);
+    // Closed: asked again it decodes from a fresh seek — the same picture.
+    expect(near(mean((await feed.pixelsAt(slot, 160, 90)) ?? Buffer.alloc(4)), RED)).toBe(true);
+    expect(feed.stats()).toEqual({ clips: 2, seeks: 2 });
+    feed.close();
+  }, 60_000);
+
   it('the renderer\'s frame comes cut to the box the same way', () => {
     const crop: ClipCrop = { focus: [0, 0], zoom: 2 };
     const uri = videoFrameUri(file, 0, 160, 90, 'ffmpeg', { crop });
