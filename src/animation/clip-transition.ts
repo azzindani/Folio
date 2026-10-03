@@ -141,12 +141,11 @@ function dress(c: Clip, tracks: Track[]): Layer {
   return out;
 }
 
-/** The layers with every clip transition compiled in; the same array when there are none. Nested lists are done first. */
-export function applyClipTransitions(layers: Layer[]): Layer[] {
-  if (!usesClipTransitions(layers)) return layers;
-  const list = layers.map(l => (Array.isArray((l as Clip).layers) ? ({ ...l, layers: applyClipTransitions((l as Clip).layers ?? []) } as Layer) : l));
-  // Windows come from the clips as authored; widening then stacks (a clip can be both the end and the start of a transition).
-  const plans: Array<{ a: number; b: number; t: ClipTransition; w: NonNullable<ReturnType<typeof transitionWindow>> }> = [];
+type Plan = { a: number; b: number; t: ClipTransition; w: NonNullable<ReturnType<typeof transitionWindow>> };
+
+/** Each transition of one list: which clips it joins and the window it plays over (read from the clips as authored). */
+function plansOf(list: Layer[]): Plan[] {
+  const plans: Plan[] = [];
   list.forEach((l, b) => {
     const t = (l as Clip).video?.transition;
     if (l.type !== 'video' || !t || !TRANSITION_TYPES.includes(t.type)) return;
@@ -154,6 +153,39 @@ export function applyClipTransitions(layers: Layer[]): Layer[] {
     const w = prev ? transitionWindow(prev, l, t) : null;
     if (prev && w) plans.push({ a: list.indexOf(prev), b, t, w });
   });
+  return plans;
+}
+
+/** The colour a dip passes through: a rect over the incoming clip's box, behind both clips, for the window. */
+function dipRect(A: Clip, B: Clip, p: Plan): Layer {
+  const s = p.w.cut - p.w.before, d = p.w.before + p.w.after;
+  return { id: `${B.id}__dip`, type: 'rect', z: Math.min(num(A.z) ?? 0, num(B.z) ?? 0), x: B.x ?? 0, y: B.y ?? 0, width: B.width ?? 0, height: B.height ?? 0,
+    in: s, out: s + d, fill: { type: 'solid', color: p.t.color ?? '#000000' } } as unknown as Layer;
+}
+
+/**
+ * The colour rects of a design's dip transitions, with the two clips each lies behind. The compiled timeline
+ * carries them as layers; a player that draws the AUTHORED layers (the editor's canvas) needs them separately.
+ */
+export function dipUnderlays(layers: Layer[], nested = true): Array<{ rect: Layer; clips: [string, string] }> {
+  const out: Array<{ rect: Layer; clips: [string, string] }> = [];
+  const walk = (list: Layer[]): void => {
+    for (const p of plansOf(list)) {
+      const A = list[p.a] as Clip | undefined, B = list[p.b] as Clip | undefined;
+      if (p.t.type === 'dip' && A && B) out.push({ rect: dipRect(A, B, p), clips: [A.id, B.id] });
+    }
+    if (nested) for (const l of list) { const kids = (l as Clip).layers; if (Array.isArray(kids)) walk(kids); }
+  };
+  walk(layers);
+  return out;
+}
+
+/** The layers with every clip transition compiled in; the same array when there are none. Nested lists are done first. */
+export function applyClipTransitions(layers: Layer[]): Layer[] {
+  if (!usesClipTransitions(layers)) return layers;
+  const list = layers.map(l => (Array.isArray((l as Clip).layers) ? ({ ...l, layers: applyClipTransitions((l as Clip).layers ?? []) } as Layer) : l));
+  // Windows come from the clips as authored; widening then stacks (a clip can be both the end and the start of a transition).
+  const plans = plansOf(list);
   if (!plans.length) return list;
   const work = list.map(l => (l.type === 'video' ? ({ ...l } as Clip) : (l as Clip)));
   const tracks = new Map<number, Track[]>();
@@ -167,10 +199,7 @@ export function applyClipTransitions(layers: Layer[]): Layer[] {
     const s = p.w.cut - p.w.before, d = p.w.before + p.w.after;
     const keys = tracksFor(p.t, s, d, aTop, num(B.width) ?? 0, num(B.height) ?? 0);
     add(p.a, keys.a); add(p.b, keys.b);
-    if (p.t.type === 'dip') {
-      dips.push({ at: Math.min(p.a, p.b), rect: { id: `${B.id}__dip`, type: 'rect', z: Math.min(zA, zB), x: B.x ?? 0, y: B.y ?? 0, width: B.width ?? 0, height: B.height ?? 0,
-        in: s, out: s + d, fill: { type: 'solid', color: p.t.color ?? '#000000' } } as unknown as Layer });
-    }
+    if (p.t.type === 'dip') dips.push({ at: Math.min(p.a, p.b), rect: dipRect(A, B, p) });
   }
   const dressed: Layer[] = work.map((c, i) => (tracks.has(i) ? dress(c, tracks.get(i) ?? []) : c));
   for (const dip of [...dips].sort((p, q) => q.at - p.at)) dressed.splice(dip.at, 0, dip.rect);

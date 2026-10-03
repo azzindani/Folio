@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { DesignSpec, Layer } from '../schema/types';
 import { specAt } from '../export/gif-frames';
-import { applyClipTransitions, predecessorOf, transitionWindow } from './clip-transition';
+import { applyClipTransitions, predecessorOf, transitionWindow, dipUnderlays } from './clip-transition';
 import { resolveTimeline } from './timeline-resolve';
 import { videoSoundClips } from '../export/video-sound';
 
@@ -89,5 +89,23 @@ describe('every player gets it through resolveTimeline', () => {
     const [sa, sb] = videoSoundClips(layers, 0, 10_000);
     expect([sa?.length_ms, sa?.fade_out_ms]).toEqual([2250, 500]);
     expect([sb?.start_ms, sb?.offset_ms, sb?.fade_in_ms]).toEqual([1750, 2750, 500]);
+  });
+});
+
+describe('dipUnderlays', () => {
+  const clip = (id: string, at: number, extra: Record<string, unknown> = {}): Layer =>
+    ({ id, type: 'video', z: 1, x: 5, y: 6, width: 200, height: 100, src: `${id}.mp4`, in: at, out: at + 2000, video: { offset_ms: 1000, duration_ms: 2000, ...extra } }) as unknown as Layer;
+  it('is the rect the compiled timeline carries — same window, colour and box — with the two clips it lies behind', () => {
+    const layers = [clip('a', 0), clip('b', 2000, { transition: { type: 'dip', duration_ms: 500, color: '#112233' } })];
+    const [d] = dipUnderlays(layers);
+    const compiled = applyClipTransitions(layers).find(l => l.id === 'b__dip');
+    expect(d?.clips).toEqual(['a', 'b']);
+    expect(d?.rect).toEqual(compiled);
+    expect(dipUnderlays([clip('a', 0), clip('b', 2000, { transition: { type: 'wipe' } })])).toEqual([]);
+  });
+  it('looks inside groups unless told not to', () => {
+    const g = { id: 'g', type: 'group', z: 1, x: 0, y: 0, width: 200, height: 100, layers: [clip('a', 0), clip('b', 2000, { transition: { type: 'dip' } })] } as unknown as Layer;
+    expect(dipUnderlays([g]).length).toBe(1);
+    expect(dipUnderlays([g], false).length).toBe(0);
   });
 });

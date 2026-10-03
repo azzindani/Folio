@@ -10,6 +10,7 @@ import { gradeSection } from './properties-clip-grade';
 import { keySection } from './properties-clip-key';
 import { reframeSection } from './properties-clip-reframe';
 import { rampSection } from './properties-clip-ramp';
+import { transitionSection } from './properties-clip-transition';
 
 const secs = (ms: number | null, open = 'end'): string => (ms === null ? open : `${(ms / 1000).toFixed(2)}s`);
 const info = (label: string, value: string): string => `<div class="prop-info-row"><span>${esc(label)}</span><span>${esc(value)}</span></div>`;
@@ -52,6 +53,15 @@ function soundEdges(layer: ClipLayer, env: ClipEnv): Section {
 export function clipPanel(layer: Layer, env: ClipEnv): Section | null {
   if (layer.type !== 'video') return null;
   const clip = layer as ClipLayer;
-  const parts = [basics(clip, env), rampSection(clip, env), reframeSection(clip, env), gradeSection(clip, env), keySection(clip, env), soundEdges(clip, env)];
-  return { html: parts.map(p => p.html).join(''), bind: root => { parts.forEach(p => p.bind(root)); rememberBlocks(root); } };
+  const parts = [basics(clip, env), transitionSection(clip, env), rampSection(clip, env), reframeSection(clip, env), gradeSection(clip, env), keySection(clip, env), soundEdges(clip, env)];
+  return {
+    html: parts.map(p => p.html).join(''),
+    bind: root => {
+      // Each section binds to ITS block alone: two sections share control names (Grade and Reframe both have a
+      // Reset, Transition and Green screen both a colour) and bound to the whole panel each would answer the other's.
+      const blocks = Array.from(root.querySelectorAll<HTMLElement>('[data-clip-block]'));
+      parts.forEach((p, i) => { const own = blocks[i]; if (own) p.bind(own); });
+      rememberBlocks(root);
+    },
+  };
 }

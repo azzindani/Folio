@@ -21,7 +21,7 @@ const design = (video: object, inMs = 1000): DesignSpec => ({
 function rig(d: DesignSpec): { cv: CanvasVideo; container: HTMLElement; emit: (s: Partial<PlayerSnapshot>) => void; render: () => HTMLVideoElement } {
   let listener: (s: PlayerSnapshot) => void = () => undefined;
   const state = { get: () => ({ design: d, currentPageIndex: 0 }) } as unknown as StateManager;
-  const player = { time: 0, duration: 10_000, playing: false, subscribe: (fn: (s: PlayerSnapshot) => void) => { listener = fn; return () => undefined; } } as unknown as MotionPlayer;
+  const player = { time: 0, duration: 10_000, playing: false, authoredLayers: () => [], subscribe: (fn: (s: PlayerSnapshot) => void) => { listener = fn; return () => undefined; } } as unknown as MotionPlayer;
   const container = document.createElement('div');
   const render = (): HTMLVideoElement => {
     const v = document.createElement('video');

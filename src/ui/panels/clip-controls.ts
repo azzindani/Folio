@@ -44,6 +44,9 @@ export function button(act: string, label: string, title = '', disabled = false)
   return `<button type="button" class="btn btn-sm" data-clip-act="${act}" title="${esc(title)}"${disabled ? ' disabled' : ''}>${esc(label)}</button>`;
 }
 
+/** The same controls, greyed out — for what the clip's state cannot use yet. */
+export const disable = (html: string): string => html.replace(/<(input|select)\b/g, '<$1 disabled');
+
 export function note(text: string): string { return `<div class="clip-note">${esc(text)}</div>`; }
 
 /** Which blocks the person opened or closed — the panel redraws on every edit and must not undo that. */
@@ -54,6 +57,9 @@ export function block(title: string, body: string, collapsed = false): string {
   const shut = toggled.get(title) ?? collapsed;
   return `<div class="prop-section${shut ? ' collapsed' : ''}" data-clip-block="${esc(title)}"><div class="prop-section-header">${esc(title)}</div><div class="prop-section-body">${body}</div></div>`;
 }
+
+/** Show a block open the next time the panel draws it. */
+export function openBlock(title: string): void { toggled.set(title, false); }
 
 /** Remember each block's open/closed state as it is clicked (after the panel's own accordion has flipped it). */
 export function rememberBlocks(root: HTMLElement): void {

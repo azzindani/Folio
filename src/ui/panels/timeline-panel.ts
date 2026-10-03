@@ -8,7 +8,7 @@ import { trackHTML, markerStripHTML, markersOf, fmtMs, HEADER_W, TRACK_H } from 
 import { timelineRows, setKeyframeEasing, shiftKeyframes, flattenForTimeline } from './timeline-model';
 import { bindTimelineEdits } from './timeline-edit';
 import { bindTimelineDrags } from './timeline-drag';
-import { bindClipEdits, bindClipMoves, splitAtPlayhead, type ClipEditContext } from './timeline-clips';
+import { bindClipEdits, bindClipMoves, bindClipJoins, clipJoins, splitAtPlayhead, type ClipEditContext } from './timeline-clips';
 import { freezeAtPlayhead, holdMs, setHoldMs } from './clip-freeze';
 import { soundLane, analyse, type SoundAnalysis, type SoundDeps } from './timeline-sound';
 import { stripTimes, clipWave, browserFrames, type ClipLook } from './timeline-filmstrip';
@@ -193,9 +193,10 @@ export class TimelinePanelManager {
 
     const sound = soundLane(design, currentPageIndex, this.duration, this.sounds, HEADER_W);
     this.beats = sound.beats;
+    const joins = clipJoins(authored);
     this.measure(sound.unmeasured);
     body.innerHTML = markerStripHTML(markersOf(design, currentPageIndex), this.duration) + sound.html
-      + rows.map(r => trackHTML(r.layer, timing?.get(r.layer.id), this.duration, r.depth, this.lookFor)).join('');
+      + rows.map(r => trackHTML(r.layer, timing?.get(r.layer.id), this.duration, r.depth, this.lookFor, l => joins.get(l.id))).join('');
 
     // Scrubber
     body.insertAdjacentHTML('beforeend', `
@@ -316,6 +317,7 @@ export class TimelinePanelManager {
     };
     bindClipEdits(body, clipCtx);
     bindClipMoves(body, clipCtx);
+    bindClipJoins(body, clipCtx);
 
     // Scrubber click
     const scrub = body.querySelector<HTMLElement>('.tl-scrub-area');

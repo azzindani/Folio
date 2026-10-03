@@ -23,6 +23,7 @@ import { videoSourceMs, speedAt, naturalLength, type VideoTiming } from '../anim
 import { resolveTimeline } from '../animation/timeline-resolve';
 import { cropAt, panKeys } from '../animation/clip-crop';
 import { videoFit } from '../renderer/layer-renderers-video';
+import { CanvasDip } from './canvas-dip';
 
 /** How far an element may stray from the clock before it is re-seeked, ms. */
 const DRIFT_MS = 250;
@@ -42,8 +43,10 @@ export class CanvasVideo {
   private timings = new Map<string, Timing>();
   private timedFrom: unknown = null;
   private observer: MutationObserver;
+  private dips: CanvasDip;
 
   constructor(private state: StateManager, private player: MotionPlayer, private container: HTMLElement) {
+    this.dips = new CanvasDip(player, container);
     this.observer = new MutationObserver(() => this.adopt());
     this.observer.observe(container, { childList: true, subtree: true });
     player.subscribe(s => this.follow(s));
@@ -105,6 +108,7 @@ export class CanvasVideo {
 
   dispose(): void {
     this.observer.disconnect();
+    this.dips.dispose();
     for (const v of this.kept.values()) v.pause();
     this.kept.clear();
   }
