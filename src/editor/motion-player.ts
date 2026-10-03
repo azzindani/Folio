@@ -19,6 +19,7 @@ import type { DesignSpec, Layer } from '../schema/types';
 import { flattenForTimeline, sceneDuration, playsInTime } from '../ui/panels/timeline-model';
 import type { PosePlan, Pose, RowTiming } from './motion-pose';
 import { sourceOptions } from '../renderer/resolve-source';
+import { registerMotionPlayer } from './motion-host';
 
 type PoseEngine = typeof import('./motion-pose');
 
@@ -46,6 +47,7 @@ export class MotionPlayer {
   private redraw: (() => void) | null = null;
 
   constructor(private state: StateManager) {
+    registerMotionPlayer(this);
     state.subscribe((_s, keys) => this.onState(keys));
     void this.load();
   }

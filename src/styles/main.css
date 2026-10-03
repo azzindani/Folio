@@ -2190,6 +2190,20 @@ button:focus:not(:focus-visible) { outline: none; }
 .prop-input:focus { border-color: var(--color-primary); }
 .prop-input-sm { max-width: 60px; }
 
+/* The Clip inspector's rows (ui/panels/clip-controls.ts): label, control, value. */
+.clip-row { display: flex; align-items: center; gap: 6px; padding: 2px 0; min-height: 26px; }
+.clip-row .prop-label { min-width: 84px; }
+.clip-input {
+  flex: 1; min-width: 0; padding: 3px 6px; border: 1px solid var(--color-border); border-radius: var(--radius-sm);
+  background: var(--color-bg); color: var(--color-text); font-size: 11px; font-family: var(--font-sans); outline: none;
+}
+.clip-input:focus { border-color: var(--color-primary); }
+.clip-range { flex: 1; min-width: 0; accent-color: var(--color-accent, var(--color-primary)); }
+.clip-val { font-size: 11px; font-family: var(--font-mono, monospace); color: var(--color-text); min-width: 44px; text-align: right; }
+.clip-unit { font-size: 11px; color: var(--color-text-muted); }
+.clip-swatch { width: 28px; height: 22px; padding: 0; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: none; cursor: pointer; }
+.clip-note { font-size: 10px; line-height: 1.4; color: var(--color-text-muted); padding: 4px 2px; }
+
 .color-well {
   width: 28px; height: 22px;
   border: 1px solid var(--color-border);
