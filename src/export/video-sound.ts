@@ -17,11 +17,12 @@
 
 import type { Layer } from '../schema/types';
 import { resolveTimeline } from '../animation/timeline-resolve';
+import { rampKeys } from '../animation/video-time';
 import type { SoundClip } from './audio-plan';
 
 interface VideoNode { id: string; type: string; src?: string; in?: number; out?: number; layers?: VideoNode[];
   video?: { offset_ms?: number; duration_ms?: number; speed?: number; volume?: number; muted?: boolean; loop?: boolean;
-    fade_in_ms?: number; fade_out_ms?: number; audio_lead_ms?: number; audio_tail_ms?: number } }
+    fade_in_ms?: number; fade_out_ms?: number; audio_lead_ms?: number; audio_tail_ms?: number; still?: boolean; ramp?: Array<{ at_ms: number; speed: number }> } }
 
 /** The fade on a cut edge, ms: short enough to hear as a cut, long enough not to click. */
 export const SEAM_FADE_MS = 12;
@@ -35,6 +36,8 @@ export function videoSoundClips(layers: Layer[], startMs: number, totalMs: numbe
     for (const l of ls) {
       if (Array.isArray(l.layers)) walk(l.layers);
       if (l.type !== 'video' || !l.src?.trim() || l.video?.muted === true) continue;
+      // A freeze is silent; a ramp's own sound is left out — a tempo that changes continuously does not mix cleanly.
+      if (l.video?.still === true || rampKeys(l.video).length) continue;
       const src = l.src.trim();
       const speed = (num(l.video?.speed) ?? 0) > 0 ? (num(l.video?.speed) ?? 1) : 1;
       const offset = Math.max(0, num(l.video?.offset_ms) ?? 0);

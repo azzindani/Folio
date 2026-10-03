@@ -19,7 +19,7 @@
 import type { StateManager } from './state';
 import type { MotionPlayer, PlayerSnapshot } from './motion-player';
 import type { Layer } from '../schema/types';
-import { videoSourceMs, type VideoTiming } from '../animation/video-time';
+import { videoSourceMs, speedAt, naturalLength, type VideoTiming } from '../animation/video-time';
 import { resolveTimeline } from '../animation/timeline-resolve';
 import { cropAt, panKeys } from '../animation/clip-crop';
 import { videoFit } from '../renderer/layer-renderers-video';
@@ -82,11 +82,12 @@ export class CanvasVideo {
       const tm = this.timings.get(id);
       if (!tm) continue;
       const target = videoSourceMs(s.time, tm.in, tm.video) / 1000;
-      const speed = Number(tm.video?.speed) > 0 ? Number(tm.video?.speed) : 1;
-      const used = Number(tm.video?.duration_ms) > 0 ? Number(tm.video?.duration_ms) : Infinity;
-      const live = s.time >= tm.in && s.time < tm.out && (tm.video?.loop === true || (s.time - tm.in) * speed < used);
+      // A ramp plays at the speed it has now; a still never plays — it rests on its frame (video-time.ts).
+      const speed = speedAt(tm.video, s.time - tm.in);
+      const length = naturalLength(tm.video);
+      const live = speed > 0 && s.time >= tm.in && s.time < tm.out && (length === null || s.time - tm.in < length);
       if (s.playing && live) {
-        v.playbackRate = speed;
+        v.playbackRate = Math.max(0.0625, Math.min(16, speed));
         if (v.paused) { v.currentTime = target; void v.play().catch(() => undefined); }
         else if (Math.abs(v.currentTime - target) * 1000 > DRIFT_MS) v.currentTime = target;
       } else {

@@ -14,6 +14,7 @@ import type { DesignSpec, Layer } from '../../schema/types';
 import { readTransition, predecessorOf, TRANSITION_TYPES, MIN_TRANSITION_MS, MAX_TRANSITION_MS } from '../../animation/clip-transition';
 import { summarize, cutClip, type ClipLayer } from '../../animation/video-clip';
 import { readCropArgs } from '../../animation/clip-crop';
+import { MIN_SPEED, MAX_SPEED } from '../../animation/video-time';
 import type { ToolResult, ProgressItem } from '../types';
 import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, pOk, pWarn } from './utils';
 import { resolveScope, commitScope } from './motion';
@@ -56,7 +57,7 @@ export interface VideoOpArgs {
   design_path: string; project_path?: string; page_id?: string; layer_id?: string;
   in?: unknown; out?: unknown; split_at?: unknown; cut?: unknown; ripple?: boolean;
   offset_ms?: number; duration_ms?: number; speed?: number; volume?: number; muted?: boolean; loop?: boolean;
-  fade_in?: unknown; fade_out?: unknown; audio_lead_ms?: unknown; audio_tail_ms?: unknown; clip_transition?: unknown; focus?: unknown; zoom?: unknown; pan?: unknown;
+  fade_in?: unknown; fade_out?: unknown; audio_lead_ms?: unknown; audio_tail_ms?: unknown; clip_transition?: unknown; focus?: unknown; zoom?: unknown; pan?: unknown; ramp?: unknown;
 }
 
 const FIELDS = ['offset_ms', 'duration_ms', 'speed', 'volume', 'muted', 'loop'] as const;
@@ -126,6 +127,16 @@ export function videoMotion(args: VideoOpArgs): ToolResult {
   for (const k of ['focus', 'zoom', 'pan'] as const) {
     if (crop[k] === null) delete (v as Record<string, unknown>)[k];
     else if (crop[k] !== undefined) (v as Record<string, unknown>)[k] = crop[k];
+  }
+
+  // A speed ramp (video-time.ts): keys on the clip's own clock; null clears.
+  if (args.ramp === null) delete v.ramp;
+  else if (args.ramp !== undefined) {
+    const keys = Array.isArray(args.ramp) ? args.ramp as Array<Record<string, unknown>> : [];
+    const bad = !keys.length || keys.some(k => typeof k['at_ms'] !== 'number' || k['at_ms'] < 0 || typeof k['speed'] !== 'number' || !(k['speed'] >= MIN_SPEED && k['speed'] <= MAX_SPEED));
+    if (bad) return errResult(op, `ramp must be [{at_ms, speed}] — at_ms from the clip's start (ms), speed ${MIN_SPEED}–${MAX_SPEED}.`, 'ramp:[{at_ms:0, speed:1}, {at_ms:800, speed:0.25}, {at_ms:2000, speed:1}] slows into a moment and back out.');
+    if (v.still) return errResult(op, `"${clip.id}" is a freeze; it has no speed to ramp.`, 'Ramp the clip it was frozen from.');
+    v.ramp = keys.map(k => ({ at_ms: Math.round(k['at_ms'] as number), speed: k['speed'] as number })).sort((a, b) => a.at_ms - b.at_ms);
   }
 
   let result: ClipLayer[] = [next];

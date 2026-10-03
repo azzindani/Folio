@@ -57,6 +57,10 @@ export function cutVideo(args: CutArgs): ToolResult {
   }
 
   // Last span first: the clip's earlier piece keeps its id and its scene times stay valid.
+  // Spans are on the file clock and closed at the clip's one speed: a ramp or a freeze has no single mapping.
+  if (clip.video?.still || (Array.isArray((clip.video as { ramp?: unknown } | undefined)?.ramp) && ((clip.video as { ramp?: unknown[] }).ramp ?? []).length)) {
+    return errResult(op, `"${clip.id}" ${clip.video?.still ? 'is a freeze' : 'ramps its speed'} — cut spans of its file before ${clip.video?.still ? 'freezing' : 'ramping'} it.`, 'op:video ramp:null clears a ramp; then cut and ramp again.');
+  }
   let layers: Layer[] = scoped.scope;
   let removed = 0;
   for (const [a, b] of [...spans].reverse()) {
