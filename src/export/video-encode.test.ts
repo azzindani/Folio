@@ -86,6 +86,14 @@ describe.skipIf(!hasFfmpeg)('VideoPipe with a real ffmpeg', () => {
     expect(probe(out)).toMatchObject({ codec_name: 'vp9', width: 64, height: 48 });
   });
 
+  it('lets go of the encoder\'s stderr once it exits — Bun 1.1.38 keeps that stream reachable', async () => {
+    const v = new VideoPipe({ type: 'mp4', width: 64, height: 48, fps: 10, outputPath: path.join(dir, 'tidy.mp4') });
+    await v.write(frame(64, 48, 3));
+    await v.finish();
+    const child = (v as unknown as { child: import('child_process').ChildProcess }).child;
+    expect(child.stderr?.listenerCount('data')).toBe(0);
+  });
+
   it('abort leaves no file behind', async () => {
     const v = new VideoPipe({ type: 'mp4', width: 64, height: 48, fps: 10, outputPath: path.join(dir, 'gone.mp4') });
     await v.write(frame(64, 48, 1));

@@ -67,7 +67,8 @@ export class VideoPipe {
     this.partial = `${opts.outputPath}.partial`;
     this.encoder = opts.type === 'mp4' ? h264Encoder(bin) : 'libvpx-vp9';
     this.child = spawn(bin, ffmpegArgs(opts, this.partial, this.encoder === 'libvpx-vp9' ? 'libx264' : this.encoder), { stdio: ['pipe', 'ignore', 'pipe'] });
-    this.child.stderr?.on('data', (d: Buffer) => { this.stderr = (this.stderr + d.toString()).slice(-STDERR_TAIL); });
+    const onData = (d: Buffer): void => { this.stderr = (this.stderr + d.toString()).slice(-STDERR_TAIL); };
+    this.child.stderr?.on('data', onData);
     // EPIPE when ffmpeg dies mid-write; without a listener it would crash the server.
     this.child.stdin?.on('error', (e: Error) => { if (!this.failure) this.failure = e; });
     this.exited = new Promise(resolve => {
@@ -78,6 +79,8 @@ export class VideoPipe {
         resolve(null);
       });
       this.child.on('close', (code: number | null) => {
+        // Bun 1.1.38 keeps a child's stderr reachable after it exits (video-pipe.ts): let go of this pipe.
+        this.child.stderr?.off('data', onData);
         this.gone = true;
         this.wake?.();
         resolve(code);
