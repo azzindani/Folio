@@ -133,3 +133,38 @@ describe('the Grade section', () => {
     expect(sec().classList.contains('collapsed')).toBe(false);
   });
 });
+
+describe('the Green screen section', () => {
+  const key = (id: string): Record<string, unknown> | undefined => video(id)['key'] as Record<string, unknown> | undefined;
+  const sliderOf = (k: string): HTMLInputElement => control(k) as HTMLInputElement;
+
+  it('stays shut and disabled until there is a key; choosing a colour keys the clip with the engine\'s defaults', () => {
+    expect(wrapper.querySelector('[data-clip-block="Green screen"]')?.classList.contains('collapsed')).toBe(true);
+    expect(sliderOf('similarity').disabled).toBe(true);
+    expect((wrapper.querySelector('[data-clip-act="remove"]') as HTMLButtonElement).disabled).toBe(true);
+    const swatch = control('color') as HTMLInputElement;
+    swatch.value = '#00ff00'; fire(swatch, 'change');
+    expect(key('b')).toEqual({ color: '#00ff00', similarity: 0.4, blend: 0.1 });
+    expect(sliderOf('similarity').disabled).toBe(false);
+  });
+
+  it('the sliders write the key — one undo step per drag — and Remove takes it off', () => {
+    const swatch = control('color') as HTMLInputElement;
+    swatch.value = '#00b140'; fire(swatch, 'change');
+    const sim = sliderOf('similarity');
+    for (const v of ['0.5', '0.6', '0.7']) { sim.value = v; fire(sim, 'input'); }
+    fire(sim, 'change');
+    expect(key('b')).toEqual({ color: '#00b140', similarity: 0.7, blend: 0.1 });
+    state.undo();
+    expect(key('b')?.['similarity']).toBe(0.4);
+    (wrapper.querySelector('[data-clip-act="remove"]') as HTMLButtonElement).click();
+    expect(video('b')).not.toHaveProperty('key');
+  });
+
+  it('a grey is refused by the engine\'s own reader and writes nothing', () => {
+    const swatch = control('color') as HTMLInputElement;
+    swatch.value = '#808080'; fire(swatch, 'change');
+    expect(video('b')).not.toHaveProperty('key');
+    expect(document.body.textContent).toContain('grey');
+  });
+});
