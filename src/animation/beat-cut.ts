@@ -13,7 +13,11 @@ import { clipPlays, JOIN_MS } from './clip-transition';
 export const MIN_CUT_CLIP_MS = 100;
 
 type Clip = Layer & { in?: number; out?: number; video?: { offset_ms?: number; duration_ms?: number; speed?: number; loop?: boolean } };
-export interface BeatCutOptions { every?: number; max_shift_ms?: number; end?: boolean; fileMs?: Record<string, number | null | undefined> }
+export interface BeatCutOptions {
+  every?: number; max_shift_ms?: number; end?: boolean; fileMs?: Record<string, number | null | undefined>;
+  /** Shot cuts in each clip's file (file clock, by clip id): a clip only runs on or starts sooner within its own shot, so no join flashes the next shot. */
+  shots?: Record<string, number[] | undefined>;
+}
 export interface CutMove { between: [string, string]; from_ms: number; to_ms: number }
 export interface CutKept { between: [string, string] | [string]; at_ms: number; reason: string }
 export interface BeatCutPlan { track: string[]; patches: Map<string, Record<string, unknown>>; moved: CutMove[]; kept: CutKept[] }
@@ -42,7 +46,7 @@ export function trackAround(clips: Layer[], id: string): Layer[] {
 }
 
 /** Where each clip sits while joins move: its start, its end, and the file part it plays. */
-interface Work { id: string; speed: number; from: number; until: number | null; offset: number; used: number | undefined; hasOut: boolean; loop: boolean; file: number | null }
+interface Work { id: string; speed: number; from: number; until: number | null; offset: number; used: number | undefined; hasOut: boolean; loop: boolean; file: number | null; shots: number[] }
 
 /** The track's joins (and, with `end`, its last frame) snapped onto `grid`. */
 export function planBeatCuts(track: Layer[], grid: number[], o: BeatCutOptions = {}): BeatCutPlan {
@@ -51,11 +55,18 @@ export function planBeatCuts(track: Layer[], grid: number[], o: BeatCutOptions =
   const maxShift = o.max_shift_ms ?? Infinity;
   const work: Work[] = track.map(l => {
     const c = l as Clip, p = clipPlays(c);
-    return { id: l.id, speed: speedOf(c), from: p.from, until: p.until, offset: num(c.video?.offset_ms) ?? 0, used: num(c.video?.duration_ms), hasOut: num(c.out) !== undefined, loop: c.video?.loop === true, file: o.fileMs?.[l.id] ?? null };
+    return { id: l.id, speed: speedOf(c), from: p.from, until: p.until, offset: num(c.video?.offset_ms) ?? 0, used: num(c.video?.duration_ms), hasOut: num(c.out) !== undefined, loop: c.video?.loop === true, file: o.fileMs?.[l.id] ?? null, shots: o.shots?.[l.id] ?? [] };
   });
   const moved: CutMove[] = [], kept: CutKept[] = [];
-  const tailRoom = (w: Work): number => (w.loop || w.file === null || w.used === undefined ? Infinity : Math.max(0, (w.file - w.offset - w.used) / w.speed));
-  const headRoom = (w: Work): number => w.offset / w.speed;
+  // Room in the file, and within the shot the edge sits in: the next cut after the clip's end, the last one at or before its start.
+  const tailRoom = (w: Work): number => {
+    if (w.loop || w.used === undefined) return Infinity;
+    const end = w.offset + w.used;
+    const shotEnd = Math.min(w.file ?? Infinity, ...w.shots.filter(c => c > end + 1));
+    return Math.max(0, (shotEnd - end) / w.speed);
+  };
+  const headRoom = (w: Work): number => (w.offset - Math.max(0, ...w.shots.filter(c => c <= w.offset + 1))) / w.speed;
+  const endsIn = (w: Work): string => (w.shots.some(c => c > w.offset + (w.used ?? 0) + 1 && c < (w.file ?? Infinity)) ? 'cuts to another shot' : 'ends');
   const near = (at: number): number[] => beats.filter(b => Math.abs(b - at) <= maxShift).sort((p, q) => Math.abs(p - at) - Math.abs(q - at)).slice(0, 4);
 
   for (let k = 0; k + 1 < work.length; k++) {
@@ -64,8 +75,8 @@ export function planBeatCuts(track: Layer[], grid: number[], o: BeatCutOptions =
     let why = 'no beat near it';
     const to = near(cut).find(b => {
       if (b - A.from < MIN_CUT_CLIP_MS || bEnd - b < MIN_CUT_CLIP_MS) { why = `a clip would be shorter than ${MIN_CUT_CLIP_MS}ms`; return false; }
-      if (b > cut && b - cut > tailRoom(A)) { why = `"${A.id}" has only ${Math.round(tailRoom(A))}ms of file left to run on`; return false; }
-      if (b < cut && cut - b > headRoom(B)) { why = `"${B.id}" has only ${Math.round(headRoom(B))}ms of file before its start`; return false; }
+      if (b > cut && b - cut > tailRoom(A)) { why = `"${A.id}" can run on only ${Math.round(tailRoom(A))}ms before its file ${endsIn(A)}`; return false; }
+      if (b < cut && cut - b > headRoom(B)) { why = `"${B.id}" can start only ${Math.round(headRoom(B))}ms sooner before its file ${B.shots.some(c => c <= B.offset + 1) ? 'shows the shot before' : 'begins'}`; return false; }
       return true;
     });
     if (to === undefined) { kept.push({ between: [A.id, B.id], at_ms: Math.round(cut), reason: why }); continue; }
