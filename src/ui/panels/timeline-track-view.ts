@@ -140,7 +140,7 @@ export function trackHTML(layer: Layer, timing: RowTiming | undefined, duration:
   const badges = [timing?.loop ? '⟲' : '', link ? `↳ ${link.to}` : '', timing?.clocks.length ? '⏱' : ''].filter(Boolean).join(' ');
   return `
       <div class="tl-track" style="display:flex;height:${TRACK_H}px;border-bottom:1px solid var(--color-border)">
-        <div style="width:${HEADER_W}px;flex-shrink:0;display:flex;align-items:center;gap:4px;
+        <div class="tl-label" data-layer-id="${esc(layer.id)}" style="width:${HEADER_W}px;flex-shrink:0;display:flex;align-items:center;gap:4px;
                     padding:0 8px 0 ${8 + depth * 12}px;font-size:11px;color:var(--color-text);overflow:hidden;white-space:nowrap"
              title="${esc(layer.id)}${link ? ` — follows ${esc(link.to)} +${link.lag}ms` : ''}">
           ${depth ? '<span style="opacity:.45">└</span>' : ''}<span style="overflow:hidden;text-overflow:ellipsis">${esc(layer.id)}</span>${badges ? `<span style="opacity:.5">${esc(badges)}</span>` : ''}
@@ -173,7 +173,7 @@ export function markerStripHTML(markers: TimeMarkers, duration: number): string 
   }).join('');
   return `
       <div class="tl-markers" style="display:flex;height:20px;border-bottom:1px solid var(--color-border)">
-        <div style="width:${HEADER_W}px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 4px 0 8px;font-size:10px;color:var(--color-text-muted)">Shots<button type="button" class="tl-marker-add" title="Add a shot marker at the playhead" aria-label="Add a shot marker at the playhead">+</button></div>
+        <div class="tl-label" style="width:${HEADER_W}px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 4px 0 8px;font-size:10px;color:var(--color-text-muted)">Shots<button type="button" class="tl-marker-add" title="Add a shot marker at the playhead" aria-label="Add a shot marker at the playhead">+</button></div>
         <div class="tl-marker-area" title="Double-click to add a shot marker" style="flex:1;position:relative;overflow:hidden">${hint}${ticks}</div>
       </div>`;
 }

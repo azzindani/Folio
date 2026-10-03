@@ -77,9 +77,16 @@ const hasMotion = playsInTime;
  * panel got wrong: a design with a full scene on it showed nothing at all.
  * Nothing animated yet → the top level, so a layer can still be picked up and
  * given its first keyframe. A selection always wins, at any depth.
+ *
+ * `onlySelected: false` is the sequence view: every layer that plays in time, plus any selected layer that
+ * does not yet (so it can be given its first keyframe) — selection highlights rows, it does not remove them.
  */
-export function timelineRows(layers: Layer[], selectedIds: string[]): Array<{ layer: Layer; depth: number }> {
+export function timelineRows(layers: Layer[], selectedIds: string[], onlySelected = true): Array<{ layer: Layer; depth: number }> {
   const all = flattenForTimeline(layers ?? []);
+  if (!onlySelected) {
+    const seq = all.filter(r => hasMotion(r.layer) || selectedIds.includes(r.layer.id));
+    return seq.length ? seq : all.filter(r => r.depth === 0);
+  }
   if (selectedIds.length) return all.filter(r => selectedIds.includes(r.layer.id));
   const animated = all.filter(r => hasMotion(r.layer));
   return animated.length ? animated : all.filter(r => r.depth === 0);

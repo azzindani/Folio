@@ -915,6 +915,27 @@ html, body {
    is 120px of dead chrome under a view that wants the height. */
 #app[data-mode='payload'] #page-strip-section,
 #app[data-mode='preview'] #page-strip-section { display: none !important; }
+
+/* ── TIMELINE DOCK (the sequence editor, under the canvas) ─── */
+/* The one timeline, moved here from the right panel on a desktop or tablet (editor/timeline-dock.ts). The height is
+   dragged like a panel's. Hidden in payload and preview, where the canvas is not on screen. */
+.timeline-dock {
+  flex-shrink: 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: var(--timeline-dock-height, 280px);
+  max-height: 70%;
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+}
+.timeline-dock > .panel-resize-handle--y { position: absolute; top: -4px; left: 0; right: 0; height: 8px; z-index: 30; margin: 0; }
+.timeline-dock-body { flex: 1; min-height: 0; display: flex; }
+.timeline-dock .timeline-content { flex: 1; min-width: 0; height: 100%; overflow: hidden; }
+#app[data-mode='payload'] #timeline-dock,
+#app[data-mode='preview'] #timeline-dock { display: none !important; }
+#status-timeline.active { color: var(--color-primary); }
+
 /* Same for the formula bar: it names and edits the selected LAYER, and neither
    of these views has a selection. */
 #app[data-mode='payload'] .formula-bar,
@@ -2957,6 +2978,35 @@ body.clip-reframing, body.clip-reframing * { cursor: grab !important; }
   font-size: 11px;
 }
 
+.timeline-toolbar .tl-group { display: flex; align-items: center; gap: 4px; }
+.timeline-toolbar .tl-view { margin-left: auto; }
+.tl-icon { min-width: 28px; }
+.tl-time { font: 11px var(--font-mono, monospace); color: var(--color-text); margin-left: 4px; white-space: nowrap; }
+.tl-total { color: var(--color-text-muted); }
+.tl-num {
+  width: 62px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 3px;
+  padding: 2px 4px;
+  color: var(--color-text);
+  font-size: 11px;
+}
+.timeline-options {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  padding: 4px 8px;
+  font-size: 11px;
+  color: var(--color-text-muted);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+.timeline-options[hidden] { display: none; }
+.timeline-options label { display: inline-flex; align-items: center; gap: 4px; }
+.tl-check { cursor: pointer; }
 .timeline-toolbar {
   display: flex;
   align-items: center;
@@ -2973,9 +3023,80 @@ body.clip-reframing, body.clip-reframing * { cursor: grab !important; }
 
 .timeline-body {
   flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
+  min-height: 0;
+  overflow: auto;
+  position: relative;
+  /* One finger pans the sheet; two are the pinch zoom (timeline-gestures.ts). */
+  touch-action: pan-x pan-y;
+  overscroll-behavior: contain;
 }
+
+/* The sheet: as wide as the time scale says (timeline-zoom.ts); labels stick left, the ruler sticks to the top. */
+.tl-sheet { position: relative; min-height: 100%; }
+.tl-label { position: sticky; left: 0; z-index: 6; box-sizing: border-box; background: var(--color-surface); }
+/* A row of the selected layer(s): its name lit, its lane tinted. */
+.tl-label.tl-selected { color: var(--color-text); background: color-mix(in srgb, var(--color-accent) 22%, var(--color-surface)); border-left: 2px solid var(--color-accent); }
+.tl-ruler-row {
+  display: flex;
+  position: sticky;
+  top: 0;
+  z-index: 7;
+  height: 24px;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+.tl-ruler-row .tl-scrub-area {
+  flex: 1;
+  position: relative;
+  height: 24px;
+  overflow: hidden;
+  cursor: ew-resize;
+  touch-action: none;
+  background: var(--color-surface-3);
+}
+.tl-tick { position: absolute; bottom: 0; width: 1px; height: 5px; background: var(--color-text-muted); opacity: .5; pointer-events: none; }
+.tl-tick-major { height: 10px; opacity: .9; }
+.tl-tick-label {
+  position: absolute;
+  top: 2px;
+  padding-left: 3px;
+  font: 9px/10px var(--font-mono, monospace);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  pointer-events: none;
+}
+/* The playhead: a head on the ruler and a line down through every row, both driven by --tl-p (0–1) on the sheet. */
+.tl-ruler-head {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--tl-p, 0) * 100%);
+  width: 2px;
+  margin-left: -1px;
+  background: var(--color-accent);
+  pointer-events: none;
+}
+.tl-ruler-head::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -4px;
+  border: 5px solid transparent;
+  border-top-color: var(--color-accent);
+}
+.tl-scrub-thumb {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--tl-w, 120px) + (100% - var(--tl-w, 120px)) * var(--tl-p, 0));
+  width: 2px;
+  margin-left: -1px;
+  background: var(--color-accent);
+  opacity: .85;
+  pointer-events: none;
+  z-index: 5;
+}
+.tl-zoom { display: inline-flex; gap: 2px; margin-left: 8px; }
 
 /* In/out handles — a windowed layer's band edges; on a layer that lives the
    whole scene they wait at the ends of its row and show on hover (always a

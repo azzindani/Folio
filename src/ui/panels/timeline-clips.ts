@@ -129,6 +129,14 @@ export function splitAtPlayhead(state: StateManager, playhead: number, rows: Map
   return false;
 }
 
+/** A click on a clip or a row's name: select that layer — or, with Shift / Ctrl / ⌘, add it to (or take it out of) the selection. */
+export function selectFromTimeline(state: StateManager, id: string, e: { shiftKey: boolean; ctrlKey: boolean; metaKey: boolean }): void {
+  if (!id) return;
+  const now = state.get().selectedLayerIds;
+  const many = e.shiftKey || e.ctrlKey || e.metaKey;
+  state.set('selectedLayerIds', many ? (now.includes(id) ? now.filter(x => x !== id) : [...now, id]) : [id], false);
+}
+
 /** Every clip in the tree, groups opened. */
 export function flatVideo(layers: Layer[]): Layer[] {
   return layers.flatMap(l => {
@@ -263,7 +271,7 @@ export function bindClipMoves(body: HTMLElement, ctx: ClipEditContext): void {
   body.querySelectorAll<HTMLElement>('.tl-clip').forEach(block => {
     const area = block.closest<HTMLElement>('.tl-track-area');
     const id = block.dataset['layerId'] ?? '';
-    block.addEventListener('click', e => e.stopPropagation());
+    block.addEventListener('click', e => { e.stopPropagation(); selectFromTimeline(ctx.state, id, e); });
     block.addEventListener('pointerdown', e => {
       if (e.button !== 0 || (e.target as HTMLElement).classList.contains('tl-clip-h') || !area) return;
       const grabPx = e.clientX - block.getBoundingClientRect().left;
