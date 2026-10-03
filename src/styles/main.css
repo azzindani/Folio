@@ -2193,6 +2193,10 @@ button:focus:not(:focus-visible) { outline: none; }
 /* The Clip inspector's rows (ui/panels/clip-controls.ts): label, control, value. */
 .clip-row { display: flex; align-items: center; gap: 6px; padding: 2px 0; min-height: 26px; }
 .clip-row .prop-label { min-width: 84px; }
+.clip-graph { width: 100%; height: 44px; display: block; margin: 4px 0; background: var(--color-bg); border: 1px solid var(--color-border); border-radius: var(--radius-sm); }
+.clip-graph-base { stroke: var(--color-border); stroke-dasharray: 3 3; stroke-width: 1; vector-effect: non-scaling-stroke; }
+.clip-graph-line { fill: none; stroke: var(--color-accent, var(--color-primary)); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+.clip-graph-key { fill: var(--color-accent, var(--color-primary)); }
 /* A row of buttons wraps instead of running out of the panel. */
 .clip-row:has(> .btn) { flex-wrap: wrap; }
 .clip-input {

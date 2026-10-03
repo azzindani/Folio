@@ -212,3 +212,47 @@ describe('the Reframe section', () => {
     expect(wrapper.textContent).toContain('Reframing applies to a clip that fills its box');
   });
 });
+
+describe('the Speed ramp section', () => {
+  const ramp = (): Array<{ at_ms: number; speed: number }> | undefined => video('b')['ramp'] as Array<{ at_ms: number; speed: number }> | undefined;
+  const act = (name: string): void => (wrapper.querySelector(`[data-clip-act="${name}"]`) as HTMLButtonElement).click();
+  const typed = (key: string, v: string): void => { const el = control(key) as HTMLInputElement; el.value = v; fire(el, 'change'); };
+
+  it('a speed key at the playhead pins the clip\'s start; the keys are typed, removed and cleared', async () => {
+    const { registerMotionPlayer } = await import('../../editor/motion-host');
+    registerMotionPlayer({ time: 3500, rows: () => null } as never);   // clip b starts at 2000: 1500 ms in
+    expect(wrapper.querySelector('.clip-graph')).toBeNull();
+    act('ramp-add');
+    expect(ramp()).toEqual([{ at_ms: 0, speed: 1 }, { at_ms: 1500, speed: 1 }]);
+    expect(wrapper.querySelector('.clip-graph')).not.toBeNull();
+    typed('ramp-speed:1', '0.25');
+    expect(ramp()).toEqual([{ at_ms: 0, speed: 1 }, { at_ms: 1500, speed: 0.25 }]);
+    typed('ramp-at:1', '1.0');
+    expect(ramp()?.[1]).toEqual({ at_ms: 1000, speed: 0.25 });
+    // A key a few frames from another is that key: adding there edits it.
+    act('ramp-add');
+    expect(ramp()?.length).toBe(3);
+    act('ramp-del:2');
+    act('ramp-del:0');
+    expect(ramp()).toEqual([{ at_ms: 1000, speed: 0.25 }]);
+    act('ramp-clear');
+    expect(video('b')).not.toHaveProperty('ramp');
+    registerMotionPlayer({ time: 0, rows: () => null } as never);
+  });
+
+  it('a speed outside 0.1–8 is refused by the engine\'s own rule; the hold is remembered; a freeze has no ramp', async () => {
+    const { registerMotionPlayer } = await import('../../editor/motion-host');
+    registerMotionPlayer({ time: 3500, rows: () => null } as never);
+    act('ramp-add');
+    typed('ramp-speed:1', '20');
+    expect(ramp()?.[1]?.speed).toBe(1);
+    typed('hold', '1800');
+    const { holdMs } = await import('./clip-freeze');
+    expect(holdMs()).toBe(1800);
+    state.set('design', design([clip('f', 0, { video: { offset_ms: 0, duration_ms: 500, still: true } })]), false);
+    state.set('selectedLayerIds', ['f'], false);
+    expect((wrapper.querySelector('[data-clip-act="ramp-add"]') as HTMLButtonElement).disabled).toBe(true);
+    expect((wrapper.querySelector('[data-clip-act="freeze"]') as HTMLButtonElement).disabled).toBe(true);
+    registerMotionPlayer({ time: 0, rows: () => null } as never);
+  });
+});

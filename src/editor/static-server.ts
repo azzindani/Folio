@@ -44,6 +44,7 @@ import { listAssets, listProjects, manageAssets, uploadAsset, createProjectRoute
 import { isRangedMedia, mediaResponse } from './server-media';
 import { proxyFor } from '../mcp/engine/video-proxy';
 import { exportRoute, attachmentHeader } from './server-export';
+import { clipRoute } from './server-clip';
 import { isLibraryPath, libraryAbsPath } from '../mcp/engine/asset-library';
 // Shared inline favicon so server-rendered pages get the same tab icon as the editor.
 import { FAVICON_LINK } from '../utils/favicon';
@@ -455,6 +456,9 @@ Bun.serve({
       // ── Video export (POST …/__export, GET …/__export/status): the MCP render queue.
       const exported = await exportRoute(req, url, { projectsDir: PROJECTS_DIR, resolve: safeJoinProject });
       if (exported) return exported;
+      // ── Clip edits the editor asks the engine for (POST …/__clip): a freeze, a cut to the beat.
+      const clipped = await clipRoute(req, url, { resolve: safeJoinProject });
+      if (clipped) return clipped;
 
       // ── GET /__project_files/<project>/__assets — asset listing for the
       // editor asset panel. Same manifest+disk merge the MCP asset_list op
