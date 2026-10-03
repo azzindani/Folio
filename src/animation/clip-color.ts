@@ -57,13 +57,16 @@ export function colorFilter(c: ClipColor, lutFile?: string | null): string {
   return parts.join(',');
 }
 
-/** The grade as an SVG <filter> (sRGB) for the editor's <video>. The LUT is not shown there. */
-export function colorSvgFilter(id: string, c: ClipColor): string {
-  const m = colorMatrix(c), { slope, intercept } = contrastLine(c);
-  const values = m.map(row => `${row.map(n).join(' ')} 0 0`).join(' ') + ' 0 0 0 1 0';
-  const line = `type="linear" slope="${n(slope)}" intercept="${n(intercept)}"`;
-  return `<filter id="${id}" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="${values}"/>`
-    + `<feComponentTransfer><feFuncR ${line}/><feFuncG ${line}/><feFuncB ${line}/></feComponentTransfer></filter>`;
+/** The grade as an SVG <filter> (sRGB) for the editor's <video>, after `first` (a key's primitive, animation/clip-key.ts). The LUT is not shown there. */
+export function colorSvgFilter(id: string, c: ClipColor | null, first = ''): string {
+  let grade = '';
+  if (c && (c.exposure || c.contrast || c.saturation || c.temperature || c.tint)) {
+    const m = colorMatrix(c), { slope, intercept } = contrastLine(c);
+    const values = m.map(row => `${row.map(n).join(' ')} 0 0`).join(' ') + ' 0 0 0 1 0';
+    const line = `type="linear" slope="${n(slope)}" intercept="${n(intercept)}"`;
+    grade = `<feColorMatrix type="matrix" values="${values}"/><feComponentTransfer><feFuncR ${line}/><feFuncG ${line}/><feFuncB ${line}/></feComponentTransfer>`;
+  }
+  return first || grade ? `<filter id="${id}" color-interpolation-filters="sRGB">${first}${grade}</filter>` : '';
 }
 
 /** A grade as asked for through op:video, checked. The reason as a string when unusable; null clears. */

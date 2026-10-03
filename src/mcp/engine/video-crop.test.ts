@@ -6,7 +6,7 @@ import { spawnSync } from 'child_process';
 import type { Layer } from '../../schema/types';
 import { FootageFeed } from './video-feed';
 import { plainClip } from './footage-bands';
-import { videoFrameUri } from './video-frame';
+import { videoFrameUri, frameRequest } from './video-frame';
 import type { ClipCrop } from '../../animation/clip-crop';
 import { colorMatrix, contrastLine } from '../../animation/clip-color';
 
@@ -103,4 +103,41 @@ describe.skipIf(!hasFfmpeg)('a clip graded while it decodes', () => {
     [255 - 0x80, 255 - 0x60, 255 - 0x40].forEach((v, i) => expect(Math.abs((got[i] ?? 0) - v)).toBeLessThanOrEqual(4));
     feed.close?.();
   }, 60_000);
+});
+
+describe.skipIf(!hasFfmpeg)('a green screen keyed while it decodes', () => {
+  let dir = '', file = '';
+  beforeAll(() => {
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), 'folio-key-'));
+    file = path.join(dir, 'screen.mp4');
+    // Green screen on the left, a red subject on the right.
+    spawnSync('ffmpeg', ['-v', 'error', '-f', 'lavfi', '-i', 'color=c=0x00ff00:s=80x90:d=1', '-f', 'lavfi', '-i', 'color=c=red:s=80x90:d=1',
+      '-filter_complex', '[0][1]hstack,format=yuv444p[v]', '-map', '[v]', '-r', '10', '-c:v', 'libx264', '-crf', '0', '-y', file], { timeout: 30_000 });
+  }, 60_000);
+  afterAll(() => { fs.rmSync(dir, { recursive: true, force: true }); });
+  const keyed = (extra: Record<string, unknown> = {}): Layer =>
+    ({ id: 'k', type: 'video', x: 0, y: 0, width: 160, height: 90, src: 'k.mp4', _video_file: file, _video_ms: 0, video: { offset_ms: 0, key: { color: '#00ff00' }, ...extra } }) as unknown as Layer;
+  const alphaAt = (px: Buffer, x: number, y: number): number => px[(y * 160 + x) * 4 + 3] ?? -1;
+
+  it('the screen comes out clear, the subject stays — with a grade on top', async () => {
+    const feed = new FootageFeed();
+    const slot = plainClip(keyed({ color: { exposure: 0.2 } }));
+    if (!slot) throw new Error('not plain');
+    expect(slot.grade?.indexOf('rgba64le')).toBeLessThan(slot.grade?.indexOf('colorchannelmixer=rr') ?? 0);
+    const px = (await feed.pixelsAt(slot, 160, 90)) ?? Buffer.alloc(160 * 90 * 4);
+    expect(alphaAt(px, 20, 45)).toBe(0);
+    expect(alphaAt(px, 140, 45)).toBe(255);
+    expect(px[(45 * 160 + 140) * 4] ?? 0).toBeGreaterThan(200);
+    feed.close?.();
+  }, 60_000);
+
+  it('a server render\'s frame keeps the alpha: a PNG, cut to the box', () => {
+    const req = frameRequest(keyed());
+    expect(req?.alpha).toBe(true);
+    const uri = videoFrameUri(file, 0, 160, 90, 'ffmpeg', { grade: req?.grade ?? null, fit: 'cover', alpha: true });
+    expect(uri).toMatch(/^data:image\/png;base64,/);
+    const png = Buffer.from((uri ?? '').split(',')[1] ?? '', 'base64');
+    const raw = spawnSync('ffmpeg', ['-v', 'error', '-i', 'pipe:0', '-f', 'rawvideo', '-pix_fmt', 'rgba', 'pipe:1'], { input: png }).stdout;
+    expect([alphaAt(raw, 20, 45), alphaAt(raw, 140, 45)]).toEqual([0, 255]);
+  });
 });

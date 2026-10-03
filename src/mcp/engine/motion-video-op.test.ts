@@ -72,6 +72,15 @@ describe.skipIf(!hasFfmpeg)('animation {op:"video"}', () => {
     expect((videoMotion({ design_path: fp, layer_id: 'take_2', clip_transition: null }) as unknown as R & { clips: Array<{ transition?: unknown }> }).clips[0]?.transition).toBeUndefined();
   });
 
+  it('keys a green screen out, keeps it on both halves of a split, and null clears', () => {
+    const r = videoMotion({ design_path: fp, layer_id: 'take', key: { color: '#00b140', similarity: 0.3 } }) as unknown as R & { clips: Array<{ key?: unknown }> };
+    expect(r.clips[0]?.key).toEqual({ color: '#00b140', similarity: 0.3, blend: 0.1 });
+    const halves = (videoMotion({ design_path: fp, layer_id: 'take', split_at: 1500 }) as unknown as { clips: Array<{ key?: unknown }> }).clips;
+    expect(halves.map(c => c.key !== undefined)).toEqual([true, true]);
+    expect((videoMotion({ design_path: fp, layer_id: 'take', key: { color: '#888888' } }) as unknown as R).error).toContain('grey');
+    expect((videoMotion({ design_path: fp, layer_id: 'take', key: null }) as unknown as R & { clips: Array<{ key?: unknown }> }).clips[0]?.key).toBeUndefined();
+  });
+
   it('refuses a cut outside the clip, an offset past the file, and a layer that is not a clip', () => {
     expect((videoMotion({ design_path: fp, layer_id: 'take', split_at: 9000 }) as unknown as R).success).toBe(false);
     expect((videoMotion({ design_path: fp, layer_id: 'take', offset_ms: 9000 }) as unknown as R).error).toContain('past the end');

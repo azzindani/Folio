@@ -15,7 +15,6 @@ import { videoFit } from '../../renderer/layer-renderers-video';
 import type { ClipFit } from './video-decode';
 import { clipRect, drawClip, overBand } from '../../export/footage-composite';
 import { baseCrop, cropAt, panKeys, type ClipCrop } from '../../animation/clip-crop';
-import { colorOf, colorFilter } from '../../animation/clip-color';
 
 /**
  * Fields a clip may carry and still be drawn as pixels. `_frame_pose` is the flipbook's readout
@@ -38,7 +37,7 @@ export interface FootageSlot {
   /** The crop moves (video.pan): decoded once at `zoomMax`, cut per frame. */
   panned: boolean;
   zoomMax: number;
-  /** The clip's grade as ffmpeg filters (animation/clip-color.ts), or null. */
+  /** The clip's key and grade as ffmpeg filters (animation/clip-key.ts, clip-color.ts), or null. */
   grade: string | null;
   opacity: number;
 }
@@ -56,9 +55,7 @@ export function plainClip(l: Layer): FootageSlot | null {
   const keys = panKeys(l);
   const zoomMax = Math.max(baseCrop(l).zoom, ...keys.map(k => k.zoom ?? 1));
   const opacity = l.visible === false ? 0 : typeof l.opacity === 'number' ? Math.max(0, Math.min(1, l.opacity)) : 1;
-  const color = colorOf(l);
-  const grade = color ? colorFilter(color, (l as Layer & { _video_lut?: string })._video_lut) : null;
-  return { req, x: l.x ?? 0, y: l.y ?? 0, w: req.w, h: req.h, fit, crop: cropAt(l, req.ms), panned: keys.length > 0, zoomMax, grade, opacity };
+  return { req, x: l.x ?? 0, y: l.y ?? 0, w: req.w, h: req.h, fit, crop: cropAt(l, req.ms), panned: keys.length > 0, zoomMax, grade: req.grade ?? null, opacity };
 }
 
 function holdsVideo(l: Layer): boolean {

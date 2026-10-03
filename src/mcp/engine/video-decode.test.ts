@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import { spawnSync } from 'child_process';
-import { pickFrame, showinfoTimes, jpegEnd, splitJpegs, frameEdge, decodeArgs } from './video-decode';
+import { pickFrame, showinfoTimes, jpegEnd, splitJpegs, frameEdge, decodeArgs, pngEnd, splitFrames } from './video-decode';
 
 const hasFfmpeg = spawnSync('ffmpeg', ['-version']).error === undefined;
 
@@ -52,6 +52,25 @@ describe('jpegEnd / splitJpegs', () => {
     expect(frames.map(f => f.equals(a) || f.equals(b))).toEqual([true, true]);
     expect(rest.length).toBe(9);
     expect(jpegEnd(Buffer.from([0x00, 0x01, 0x02, 0x03]))).toBe(-1);
+  });
+});
+
+describe('pngEnd / splitFrames', () => {
+  const chunk = (type: string, data: Buffer): Buffer => {
+    const len = Buffer.alloc(4); len.writeUInt32BE(data.length);
+    return Buffer.concat([len, Buffer.from(type, 'latin1'), data, Buffer.alloc(4)]);
+  };
+  // An IEND inside a data chunk is data, not the end: the chunks are walked by length.
+  const fakePng = (fill: number): Buffer => Buffer.concat([Buffer.from([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]),
+    chunk('IHDR', Buffer.alloc(13, fill)), chunk('IDAT', Buffer.concat([Buffer.from('IEND', 'latin1'), Buffer.alloc(7, fill)])), chunk('IEND', Buffer.alloc(0))]);
+  it('splits a pipe of PNGs by their chunks and keeps a partial one for later', () => {
+    const a = fakePng(1), b = fakePng(2);
+    expect(pngEnd(a)).toBe(a.length);
+    const { frames, rest } = splitFrames(Buffer.concat([a, b, b.subarray(0, 30)]), true);
+    expect(frames.map(f => f.equals(a) || f.equals(b))).toEqual([true, true]);
+    expect(rest.length).toBe(30);
+    expect(pngEnd(fakeJpeg(1))).toBe(-1);
+    expect(splitFrames(fakeJpeg(3), false).frames.length).toBe(1);
   });
 });
 

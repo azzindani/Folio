@@ -80,6 +80,30 @@ export function splitJpegs(buf: Buffer): { frames: Buffer[]; rest: Buffer } {
   return { frames, rest: at ? buf.subarray(at) : buf };
 }
 
+const PNG_SIG = Buffer.from([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
+
+/** Where the PNG starting at `start` ends (the index after its IEND chunk), or -1 when `buf` does not hold all of it yet. */
+export function pngEnd(buf: Buffer, start = 0): number {
+  if (buf.length < start + 8 || !buf.subarray(start, start + 8).equals(PNG_SIG)) return -1;
+  let i = start + 8;
+  while (i + 12 <= buf.length) {
+    const len = buf.readUInt32BE(i);
+    const type = buf.toString('latin1', i + 4, i + 8);
+    i += 12 + len;
+    if (type === 'IEND') return i <= buf.length ? i : -1;
+  }
+  return -1;
+}
+
+/** Every complete JPEG (or, with `png`, PNG) at the front of `buf`, and what is left over. */
+export function splitFrames(buf: Buffer, png: boolean): { frames: Buffer[]; rest: Buffer } {
+  if (!png) return splitJpegs(buf);
+  const frames: Buffer[] = [];
+  let at = 0;
+  for (let end = pngEnd(buf, at); end > 0; end = pngEnd(buf, at)) { frames.push(buf.subarray(at, end)); at = end; }
+  return { frames, rest: at ? buf.subarray(at) : buf };
+}
+
 /** Longest edge a frame is decoded at: the layer's box ×1.5, never past full HD. */
 export function frameEdge(boxW: number, boxH: number): number {
   return Math.max(16, Math.min(1920, Math.round(Math.max(boxW, boxH) * 1.5)));
@@ -100,6 +124,8 @@ function streamArgs(file: string, seekMs: number, vf: string, out: string[], lim
 }
 
 const jpegOut = ['-f', 'image2pipe', '-vcodec', 'mjpeg', '-q:v', '3'];
+/** A keyed clip's grab keeps its alpha: PNG, fast to encode. */
+export const pngOut = ['-f', 'image2pipe', '-vcodec', 'png', '-compression_level', '1'];
 const jpegScale = (edge: number): string => `scale=w=${edge}:h=${edge}:force_original_aspect_ratio=decrease`;
 
 /** MJPEG frames on stdout, no longer than `edge` on their longest side — the picture an SVG <image> embeds. */
@@ -107,9 +133,9 @@ export function decodeArgs(file: string, seekMs: number, edge: number, limit?: {
   return [...streamArgs(file, seekMs, jpegScale(edge), jpegOut, limit), 'pipe:1'];
 }
 
-/** decodeArgs for a cropped clip: JPEG frames already cut to the box (fitFilter's cover crop), so they draw unscaled. */
-export function cropDecodeArgs(file: string, seekMs: number, w: number, h: number, crop: ClipCrop | null, limit?: { frames?: number; ms?: number }, fit: ClipFit = 'cover', grade: string | null = null): string[] {
-  return [...streamArgs(file, seekMs, fitFilter(w, h, fit, crop, grade), jpegOut, limit), 'pipe:1'];
+/** decodeArgs for a cropped clip: JPEG frames (PNG with `png`, for a keyed clip's alpha) already cut to the box (fitFilter's cover crop), so they draw unscaled. */
+export function cropDecodeArgs(file: string, seekMs: number, w: number, h: number, crop: ClipCrop | null, limit?: { frames?: number; ms?: number }, fit: ClipFit = 'cover', grade: string | null = null, png = false): string[] {
+  return [...streamArgs(file, seekMs, fitFilter(w, h, fit, crop, grade), png ? pngOut : jpegOut, limit), 'pipe:1'];
 }
 
 export type ClipFit = 'cover' | 'contain' | 'fill';
@@ -125,7 +151,7 @@ export function focalAlign(v: number): number {
  * transparent; fill = stretched.
  */
 export function fitFilter(w: number, h: number, fit: ClipFit, crop: ClipCrop | null, grade: string | null = null): string {
-  // A clip's grade (animation/clip-color.ts) runs on the fitted frame, before it turns RGBA.
+  // A clip's key and grade (animation/clip-key.ts, clip-color.ts) run on the fitted frame, before it turns RGBA.
   const g = grade ? `${grade},` : '';
   if (fit === 'fill') return `scale=${w}:${h},${g}format=rgba`;
   if (fit === 'contain') {
