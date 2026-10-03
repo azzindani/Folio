@@ -221,7 +221,7 @@ export function projectAllowHosts(projectDir: string): string[] | null {
  * `url:` is the only form that bypasses a provider, so it is the only one held
  * to the allowlist; the rest were vouched for by an API we chose to trust.
  */
-export async function resolveRef(ref: string, opts: { projectDir: string; icon_px?: number; icon_color?: string; weight?: number; italic?: boolean })
+export async function resolveRef(ref: string, opts: { projectDir: string; icon_px?: number; icon_color?: string; weight?: number; italic?: boolean; hd?: boolean })
   : Promise<{ resolved: ResolvedAsset; allow?: string[] }> {
   const raw = String(ref ?? '').trim();
   const cut = raw.indexOf(':');
@@ -232,8 +232,8 @@ export async function resolveRef(ref: string, opts: { projectDir: string; icon_p
     case 'openverse': return { resolved: await resolveOpenverse(rest) };
     case 'openverse-audio': return { resolved: await resolveOpenverseAudio(rest) };
     case 'wikimedia': return { resolved: await resolveWikimedia(rest) };
-    case 'wikimedia-video': return { resolved: await resolveWikimediaVideo(rest) };
-    case 'nasa-video': return { resolved: await resolveNasaVideo(rest) };
+    case 'wikimedia-video': return { resolved: await resolveWikimediaVideo(rest, opts.hd === true) };
+    case 'nasa-video': return { resolved: await resolveNasaVideo(rest, opts.hd === true) };
     case 'pack':
       throw new NetError('Folio\'s bundled pack lives in the shared library', `Use src:"lib/folio/${rest}" directly, or fetch it without scope:"project".`);
     case 'iconify':   return { resolved: await resolveIconify(rest, opts.icon_px ?? 512, opts.icon_color) };
@@ -266,8 +266,9 @@ export async function resolveRef(ref: string, opts: { projectDir: string; icon_p
  * perfectly and reads as a colour bug days later. Every param that changes the
  * downloaded file belongs in the key.
  */
-function fetchSourceKey(ref: string, args: { icon_px?: number; icon_color?: string; weight?: number; italic?: boolean }): string {
+function fetchSourceKey(ref: string, args: { icon_px?: number; icon_color?: string; weight?: number; italic?: boolean; quality?: string }): string {
   const variant = [
+    args.quality === 'hd' ? 'hd' : '',
     args.icon_color ? `color=${String(args.icon_color).toLowerCase()}` : '',
     args.icon_px ? `px=${args.icon_px}` : '',
     args.weight ? `w=${args.weight}` : '',
@@ -330,6 +331,8 @@ function nextStep(entry: AssetEntry, stub: Record<string, unknown>, hint: string
 export async function assetFetch(args: {
   project_path?: string; ref?: string; url?: string; name?: string; scope?: string;
   folder?: string; alt?: string; kind?: string; icon_px?: number; icon_color?: string; weight?: number; italic?: boolean;
+  /** "hd": a clip at up to 1080p instead of the small default rendition. */
+  quality?: string;
 }): Promise<ToolResult> {
   const op = 'asset_fetch';
   const proj = requireProject(op, args.project_path);
@@ -370,7 +373,8 @@ export async function assetFetch(args: {
     });
   }
   try {
-    const opts: { projectDir: string; icon_px?: number; icon_color?: string; weight?: number; italic?: boolean } = { projectDir: proj.dir };
+    const opts: { projectDir: string; icon_px?: number; icon_color?: string; weight?: number; italic?: boolean; hd?: boolean } = { projectDir: proj.dir };
+    if (args.quality === 'hd') opts.hd = true;
     if (args.icon_px !== undefined) opts.icon_px = args.icon_px;
     if (args.icon_color !== undefined) opts.icon_color = args.icon_color;
     if (args.weight !== undefined) opts.weight = args.weight;

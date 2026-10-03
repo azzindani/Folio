@@ -47,6 +47,14 @@ describe('picking a rendition', () => {
       .toBe('https://images-assets.nasa.gov/video/X/X~mobile.mp4');
     expect(pickNasaMp4([`${base}~orig.mov`, `${base}~thumb.jpg`])).toBeNull();
   });
+
+  it('quality hd: up to 1080p from both — NASA large, else medium; Commons\' 1080p WebM', () => {
+    const base = 'https://images-assets.nasa.gov/video/X/X';
+    expect(pickNasaMp4([`${base}~orig.mp4`, `${base}~large.mp4`, `${base}~medium.mp4`, `${base}~mobile.mp4`], true)).toBe(`${base}~large.mp4`);
+    expect(pickNasaMp4([`${base}~medium.mp4`, `${base}~mobile.mp4`], true)).toBe(`${base}~medium.mp4`);
+    expect(pickNasaMp4([`${base}~mobile.mp4`], true)).toBe(`${base}~mobile.mp4`);
+    expect(pickWebm([webm(2160), webm(1080), webm(720)], 1080)).toMatchObject({ height: 1080 });
+  });
 });
 
 describe('Commons footage', () => {
