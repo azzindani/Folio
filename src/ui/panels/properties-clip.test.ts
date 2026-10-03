@@ -78,3 +78,58 @@ describe('the Clip inspector on a selected video layer', () => {
     expect(video('b')).not.toHaveProperty('audio_lead_ms');
   });
 });
+
+describe('the Grade section', () => {
+  const color = (id: string): Record<string, unknown> | undefined => video(id)['color'] as Record<string, unknown> | undefined;
+  const drag = (key: string, values: number[]): void => {
+    const el = control(key) as HTMLInputElement;
+    for (const v of values) { el.value = String(v); fire(el, 'input'); }
+    fire(el, 'change');
+  };
+
+  it('a slider drag writes the grade — one undo step — and a value back at zero leaves the file', () => {
+    drag('exposure', [0.5, 1, 1.5]);
+    drag('saturation', [0.2]);
+    expect(color('b')).toEqual({ exposure: 1.5, saturation: 0.2 });
+    drag('saturation', [0]);
+    expect(color('b')).toEqual({ exposure: 1.5 });
+    state.undo();
+    expect(color('b')).toEqual({ exposure: 1.5, saturation: 0.2 });
+    drag('exposure', [0]);
+    state.undo();
+    expect(color('b')).toEqual({ exposure: 1.5, saturation: 0.2 });
+  });
+
+  it('no grade at all leaves no color key; Reset takes the whole grade off in one step', () => {
+    expect(video('b')).not.toHaveProperty('color');
+    drag('contrast', [0.3]);
+    drag('temperature', [-0.4]);
+    const reset = wrapper.querySelector('[data-clip-act="reset"]') as HTMLButtonElement;
+    expect(reset.disabled).toBe(false);
+    reset.click();
+    expect(video('b')).not.toHaveProperty('color');
+    state.undo();
+    expect(color('b')).toEqual({ contrast: 0.3, temperature: -0.4 });
+  });
+
+  it('the LUT picker writes a stored .cube and None takes it off, keeping the sliders', () => {
+    drag('tint', [0.2]);
+    const lut = control('lut') as HTMLSelectElement;
+    lut.insertAdjacentHTML('beforeend', '<option value="assets/docs/night.cube">night.cube</option>');
+    lut.value = 'assets/docs/night.cube'; fire(lut, 'change');
+    expect(color('b')).toEqual({ tint: 0.2, lut: 'assets/docs/night.cube' });
+    const shown = control('lut') as HTMLSelectElement;
+    expect(shown.value).toBe('assets/docs/night.cube');
+    shown.value = ''; fire(shown, 'change');
+    expect(color('b')).toEqual({ tint: 0.2 });
+  });
+
+  it('the grade section stays shut until there is a grade, and stays as the person left it', () => {
+    const sec = (): HTMLElement => wrapper.querySelector('[data-clip-block="Grade"]') as HTMLElement;
+    expect(sec().classList.contains('collapsed')).toBe(true);
+    (sec().querySelector('.prop-section-header') as HTMLElement).click();
+    expect(sec().classList.contains('collapsed')).toBe(false);
+    drag('exposure', [0.4]);
+    expect(sec().classList.contains('collapsed')).toBe(false);
+  });
+});

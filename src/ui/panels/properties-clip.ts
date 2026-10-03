@@ -5,7 +5,8 @@
 import type { Layer } from '../../schema/types';
 import { summarize, type ClipLayer } from '../../animation/video-clip';
 import { writeClip, type ClipEnv } from './clip-commit';
-import { bindClip, block, check, esc, num, pick, range, button, type Section, type ClipSet } from './clip-controls';
+import { bindClip, block, check, esc, num, pick, range, button, rememberBlocks, type Section, type ClipSet } from './clip-controls';
+import { gradeSection } from './properties-clip-grade';
 
 const secs = (ms: number | null, open = 'end'): string => (ms === null ? open : `${(ms / 1000).toFixed(2)}s`);
 const info = (label: string, value: string): string => `<div class="prop-info-row"><span>${esc(label)}</span><span>${esc(value)}</span></div>`;
@@ -47,6 +48,7 @@ function soundEdges(layer: ClipLayer, env: ClipEnv): Section {
 /** Every Clip section for a video layer; null for any other layer. */
 export function clipPanel(layer: Layer, env: ClipEnv): Section | null {
   if (layer.type !== 'video') return null;
-  const parts = [basics(layer as ClipLayer, env), soundEdges(layer as ClipLayer, env)];
-  return { html: parts.map(p => p.html).join(''), bind: root => parts.forEach(p => p.bind(root)) };
+  const clip = layer as ClipLayer;
+  const parts = [basics(clip, env), gradeSection(clip, env), soundEdges(clip, env)];
+  return { html: parts.map(p => p.html).join(''), bind: root => { parts.forEach(p => p.bind(root)); rememberBlocks(root); } };
 }
