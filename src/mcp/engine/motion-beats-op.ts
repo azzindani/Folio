@@ -16,6 +16,7 @@ import { tryFfmpeg } from '../../export/animation-export';
 import { resolveSound } from './sound-resolve';
 import { soundTimeline } from './motion-audio-op';
 import { analyzeAudioFile } from './audio-analyze';
+import type { BeatMap } from '../../export/beat-detect';
 import { beatsOnPiece } from '../../export/beat-place';
 
 export type BeatsArgs = { design_path: string; project_path?: string; audio_id?: unknown; hold_ms?: number };
@@ -66,11 +67,11 @@ export function renderBeatsASCII(total: number, beats: number[], cuts: number[],
   return [`Beats over ${total}ms · | every 4th beat · ▼ scene cut`, `cuts  ${marks.join('')}`, `beats ${ruler.join('')}`].join('\n');
 }
 
-export async function beatsMotion(args: BeatsArgs): Promise<ToolResult> {
-  const dPath = resolveDesignPath(args.design_path, args.project_path);
-  if (!fs.existsSync(dPath)) return errResult(OP, `Design not found: ${dPath}`, 'Check design_path.');
-  if (!tryFfmpeg()) return errResult(OP, 'Measuring beats needs ffmpeg to decode the music, and this host has none.', 'Install ffmpeg (the Docker image ships it).');
-  const spec = readYAML<DesignSpec>(dPath);
+/** The music's beats as a grid on the piece, measured once — op:beats reads it, and so does op:video on_beats. */
+export interface MusicGrid { clip: SoundClipFile; map: BeatMap; pulse: 'steady' | 'weak' | 'none'; total_ms: number; unset: boolean; grid: number[]; file_ms: number }
+type SoundClipFile = ReturnType<typeof resolveSound>['clips'][number];
+
+export async function musicGrid(spec: DesignSpec, dPath: string, args: { project_path?: string; audio_id?: unknown; hold_ms?: number }): Promise<MusicGrid | { error: string; hint: string }> {
   let timeline = soundTimeline(spec, args.hold_ms);
   let sound = resolveSound(spec, dPath, timeline, args.project_path);
   // A piece with no length yet — music added before any motion, the natural
@@ -88,14 +89,14 @@ export async function beatsMotion(args: BeatsArgs): Promise<ToolResult> {
   const wanted = typeof args.audio_id === 'string' && args.audio_id ? args.audio_id : undefined;
   const clip = sound.clips.find(c => (wanted ? c.id === wanted : !c.scene)) ?? (wanted ? undefined : sound.clips[0]);
   if (!clip) {
-    return errResult(OP, wanted ? `No sound "${wanted}" plays in this piece.` : 'This piece has no sound to measure.',
-      'Add music with animation(op:audio, src:"assets/audio/…"). op:audio with no src lists what plays and its ids.');
+    return { error: wanted ? `No sound "${wanted}" plays in this piece.` : 'This piece has no sound to measure.',
+      hint: 'Add music with animation(op:audio, src:"assets/audio/…"). op:audio with no src lists what plays and its ids.' };
   }
   let map;
   try {
     map = await analyzeAudioFile(clip.file);
   } catch (e) {
-    return errResult(OP, `Could not measure "${clip.src}": ${(e as Error).message}`, 'animation(op:audio) lists each file with its length; store a file that plays.');
+    return { error: `Could not measure "${clip.src}": ${(e as Error).message}`, hint: 'animation(op:audio) lists each file with its length; store a file that plays.' };
   }
 
   const pulse = map.confidence >= 0.4 ? 'steady' : map.confidence >= 0.2 ? 'weak' : 'none';
@@ -104,6 +105,18 @@ export async function beatsMotion(args: BeatsArgs): Promise<ToolResult> {
   // last scene was told to SHRINK by 694 ms because the next beat sat past the piece's current end.
   const reach = clip.loop ? Math.max(clip.length_ms, timeline.total_ms) * 2 : Math.max(clip.length_ms, fileMs - clip.offset_ms);
   const grid = beatsOnPiece({ ...clip, length_ms: reach }, map.beats_ms, fileMs);
+  return { clip, map, pulse, total_ms: timeline.total_ms, unset, grid, file_ms: fileMs };
+}
+
+export async function beatsMotion(args: BeatsArgs): Promise<ToolResult> {
+  const dPath = resolveDesignPath(args.design_path, args.project_path);
+  if (!fs.existsSync(dPath)) return errResult(OP, `Design not found: ${dPath}`, 'Check design_path.');
+  if (!tryFfmpeg()) return errResult(OP, 'Measuring beats needs ffmpeg to decode the music, and this host has none.', 'Install ffmpeg (the Docker image ships it).');
+  const spec = readYAML<DesignSpec>(dPath);
+  const measured = await musicGrid(spec, dPath, args);
+  if ('error' in measured) return errResult(OP, measured.error, measured.hint);
+  const { clip, map, pulse, grid, unset, file_ms: fileMs } = measured;
+  const timeline = { total_ms: measured.total_ms };
   const beats = grid.filter(b => b <= clip.start_ms + clip.length_ms);
   const onsets = beatsOnPiece(clip, map.onsets_ms, fileMs).slice(0, 64);
   const scenes = (spec.pages?.length ?? 0) >= 2 ? planScenes(spec, { hold_ms: args.hold_ms }).scenes : [];
