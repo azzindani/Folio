@@ -2,7 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('../../utils/toast', () => ({ showToast: vi.fn() }));
 
-import { exportVideo, progressText, saveFromServer } from './video-export';
+import { exportVideo, saveFromServer } from './video-export';
+import { resetExportTray } from './export-tray';
 import { showToast } from '../../utils/toast';
 
 type Reply = { status: number; body?: unknown };
@@ -27,60 +28,32 @@ function recordClicks(): Array<{ href: string; download: string; attached: boole
   return seen;
 }
 
-beforeEach(() => { vi.restoreAllMocks(); vi.clearAllMocks(); document.body.innerHTML = ''; });
+beforeEach(() => { vi.restoreAllMocks(); vi.clearAllMocks(); resetExportTray(); document.body.innerHTML = ''; });
 
 describe('exportVideo — the editor side of a server render', () => {
-  // Found live: a 4.8 MB GIF rendered fine on the server and "failed to save" in the browser,
-  // when the file was pulled into a Blob and its object URL revoked straight after the click.
-  it('hands the finished file to the browser as a download link, never pulling it into the page', async () => {
+  // The user's ask: leave or close the tab and the export must not stop. So starting is all this
+  // page does; the server owns the render and the tray (export-tray.ts) follows the ledger.
+  it('starts the render, tells the user they can leave, and does not wait for the file', async () => {
     const clicks = recordClicks();
-    const file = '/__project_files/p/exports/folio-%E2%80%94-product-promo-960x540-20fps.gif';
     const io = scripted([
       { status: 202, body: { job_id: 'exp_1', state: 'queued', frames: 638 } },
-      { status: 200, body: { state: 'running', percent: 40 } },
-      { status: 200, body: { state: 'done', percent: 100, download: file } },
+      { status: 200, body: { jobs: [] } },
     ]);
-    const name = await exportVideo({ design: 'p/designs/promo.design.yaml', type: 'gif', scenes: true, scale: 0.5, fps: 20 }, { fetch: io.fetch, pollMs: 0 });
-    expect(name).toBe('folio-—-product-promo-960x540-20fps.gif');
+    const id = await exportVideo({ design: 'p/designs/promo.design.yaml', type: 'gif', scenes: true, scale: 0.5, fps: 20 }, { fetch: io.fetch, pollMs: 0 });
+    expect(id).toBe('exp_1');
     expect(JSON.parse(String(io.calls[0].init?.body))).toEqual({ design: 'p/designs/promo.design.yaml', type: 'gif', scenes: true, scale: 0.5, fps: 20 });
-    expect(io.calls.map(c => c.url)).not.toContain(file);
-    expect(clicks).toEqual([{ href: `${file}?download=1`, download: 'folio-—-product-promo-960x540-20fps.gif', attached: true }]);
-    expect(document.querySelector('a, .video-export-progress')).toBeNull();
+    expect(showToast).toHaveBeenCalledWith(expect.stringContaining('close this tab'), 'info');
+    expect(clicks).toHaveLength(0);
   });
 
-  it('says why a refused export failed and saves nothing', async () => {
-    const clicks = recordClicks();
+  it('says why a refused export failed and starts no tray', async () => {
     const io = scripted([{ status: 422, body: { error: 'scenes:true plays pages in order, and this design has none.', hint: 'Add pages.' } }]);
     expect(await exportVideo({ design: 'p/d.design.yaml', type: 'gif', scenes: true }, { fetch: io.fetch, pollMs: 0 })).toBeNull();
     expect(showToast).toHaveBeenCalledWith(expect.stringContaining('this design has none'), 'error');
-    expect(clicks).toHaveLength(0);
-    expect(document.querySelector('.video-export-progress')).toBeNull();
+    expect(io.calls).toHaveLength(1);
   });
 
-  it('stops when the render fails part way', async () => {
-    const io = scripted([
-      { status: 202, body: { job_id: 'exp_2' } },
-      { status: 409, body: { state: 'failed', error: 'Render failed: out of memory' } },
-    ]);
-    expect(await exportVideo({ design: 'p/d.design.yaml', type: 'mp4', scenes: false }, { fetch: io.fetch, pollMs: 0 })).toBeNull();
-    expect(showToast).toHaveBeenCalledWith(expect.stringContaining('out of memory'), 'error');
-  });
-
-  it('saves a file written with a warning, and shows the warning instead of "Exported"', async () => {
-    const clicks = recordClicks();
-    const io = scripted([
-      { status: 202, body: { job_id: 'exp_3' } },
-      { status: 200, body: { state: 'done', download: '/__project_files/p/exports/d.mp4', warning: 'The video was written WITHOUT its sound' } },
-    ]);
-    expect(await exportVideo({ design: 'p/d.design.yaml', type: 'mp4', scenes: true }, { fetch: io.fetch, pollMs: 0 })).toBe('d.mp4');
-    expect(clicks).toHaveLength(1);
-    expect(showToast).toHaveBeenCalledWith('d.mp4: The video was written WITHOUT its sound', 'warning');
-    expect(showToast).not.toHaveBeenCalledWith(expect.stringContaining('Exported'), 'success');
-  });
-
-  it('tells a queued job from a running one, and keeps a query string on the link', () => {
-    expect(progressText({ state: 'queued' })).toBe('waiting for the render ahead of it');
-    expect(progressText({ state: 'running', percent: 42, eta_ms: 9100 })).toBe('rendering 42% · about 10s left');
+  it('keeps a query string on the download link', () => {
     const clicks = recordClicks();
     saveFromServer('/__project_files/p/exports/x.mp4?v=2', 'x.mp4');
     expect(clicks[0]?.href).toBe('/__project_files/p/exports/x.mp4?v=2&download=1');

@@ -185,6 +185,7 @@ export abstract class EditorAppBase {
     this.wireThemeToggle();
     this.wireResizers();
     this.wireMobileNav();
+    this.watchServerExports();
     this.wireModeChrome();
   }
 
@@ -450,6 +451,11 @@ export abstract class EditorAppBase {
       this.payloadEditor?.setTheme(next);
       this.livePreview?.setTheme(next);
     });
+  }
+
+  /** Pick up server renders started earlier — a reopened tab (or phone) finds its files waiting. Lazy: outside the entry budget. */
+  protected watchServerExports(): void {
+    void import('../ui/export/export-tray').then(({ startExportTray }) => startExportTray()).catch(() => undefined);
   }
 
   protected wireMobileNav(): void {
