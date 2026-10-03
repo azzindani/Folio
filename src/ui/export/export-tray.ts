@@ -92,8 +92,10 @@ function ensureRoot(): HTMLElement {
   root.className = 'export-tray';
   root.setAttribute('role', 'status');
   root.setAttribute('aria-live', 'polite');
-  root.style.cssText = 'position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));' +
-    'margin-left:auto;max-width:420px;z-index:9500;display:flex;flex-direction:column;gap:8px;';
+  // Touch devices keep their controls in a bottom dock the tray must not cover, so it sits under the header there.
+  const touch = window.matchMedia?.('(pointer: coarse)').matches ?? false;
+  const edge = touch ? 'top:calc(56px + env(safe-area-inset-top,0px))' : 'bottom:calc(12px + env(safe-area-inset-bottom,0px))';
+  root.style.cssText = `position:fixed;left:12px;right:12px;${edge};margin-left:auto;max-width:420px;z-index:9500;display:flex;flex-direction:column;gap:8px;`;
   document.body.appendChild(root);
   return root;
 }
