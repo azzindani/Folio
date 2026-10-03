@@ -9,6 +9,7 @@ import { timelineRows, setKeyframeEasing, shiftKeyframes, flattenForTimeline } f
 import { bindTimelineEdits } from './timeline-edit';
 import { bindTimelineDrags } from './timeline-drag';
 import { bindClipEdits, bindClipMoves, splitAtPlayhead, type ClipEditContext } from './timeline-clips';
+import { freezeAtPlayhead, holdMs, setHoldMs } from './clip-freeze';
 import { soundLane, analyse, type SoundAnalysis, type SoundDeps } from './timeline-sound';
 import { stripTimes, clipWave, browserFrames, type ClipLook } from './timeline-filmstrip';
 import { summarize, type ClipLayer } from '../../animation/video-clip';
@@ -104,6 +105,9 @@ export class TimelinePanelManager {
           </label>
           <button class="btn btn-sm" id="tl-stagger-apply" style="margin-left:4px">Stagger</button>
           <button class="btn btn-sm" id="tl-split" style="margin-left:4px" title="Cut the selected clip — or the top clip under the playhead — in two at the playhead">✂ Split</button>
+          <button class="btn btn-sm" id="tl-freeze" style="margin-left:4px" title="Hold the frame at the playhead (Hold is set in the clip's Speed section) and move everything after it later">❄ Freeze</button>
+          <input id="tl-hold" type="number" min="100" max="10000" step="100" value="${holdMs()}" aria-label="Freeze hold, ms" title="How long ❄ Freeze holds the frame, ms"
+            style="width:58px;margin-left:2px;background:var(--color-bg);border:1px solid var(--color-border);border-radius:3px;padding:2px 4px;color:var(--color-text);font-size:11px">
           <label style="font-size:11px;color:var(--color-text-muted);margin-left:10px;display:flex;align-items:center;gap:4px;cursor:pointer"
                  title="Draw each animated layer's path on the canvas — spacing shows the easing.">
             <input id="tl-trails" type="checkbox"> Trails
@@ -132,6 +136,11 @@ export class TimelinePanelManager {
     });
     // Bound once, with the toolbar: bound per render, one click staggered once for every render so far.
     this.container.querySelector<HTMLElement>('#tl-stagger-apply')?.addEventListener('click', () => this.applyStagger());
+    const hold = this.container.querySelector<HTMLInputElement>('#tl-hold');
+    hold?.addEventListener('change', () => { setHoldMs(parseFloat(hold.value) || holdMs()); hold.value = String(holdMs()); });
+    this.container.querySelector<HTMLElement>('#tl-freeze')?.addEventListener('click', () => {
+      void freezeAtPlayhead(this.state, this.state.getSelectedLayers().find(l => l.type === 'video')?.id);
+    });
     this.container.querySelector<HTMLElement>('#tl-split')?.addEventListener('click', () => {
       const selected = this.state.getSelectedLayers().find(l => l.type === 'video');
       splitAtPlayhead(this.state, this.scrubMs, this.player.rows(), selected?.id);

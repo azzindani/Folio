@@ -1,4 +1,5 @@
 import { type StateManager, type EditorState } from '../../editor/state';
+import { registerServerHost } from '../../editor/server-host';
 import type { EditorApp } from '../../editor/app';
 import { playsAsScenes } from '../../editor/scene-deck';
 import { exportDesign } from '../../export/exporter';
@@ -18,6 +19,8 @@ export class ToolbarManager {
     this.container = container;
     this.state = state;
     this.app = app;
+    // Panels that ask the server to edit the design (a freeze, a cut to the beat) read its file and save from here.
+    registerServerHost({ rel: () => app.serverDesignRel, save: () => app.saveToActiveTarget() });
     this.build();
     this.state.subscribe(this.onStateChange.bind(this));
     // Motion is invisible in the chrome until a design HAS some — a play button

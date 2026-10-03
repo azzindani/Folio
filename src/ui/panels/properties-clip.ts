@@ -9,6 +9,7 @@ import { bindClip, block, check, esc, num, pick, range, button, rememberBlocks, 
 import { gradeSection } from './properties-clip-grade';
 import { keySection } from './properties-clip-key';
 import { reframeSection } from './properties-clip-reframe';
+import { rampSection } from './properties-clip-ramp';
 
 const secs = (ms: number | null, open = 'end'): string => (ms === null ? open : `${(ms / 1000).toFixed(2)}s`);
 const info = (label: string, value: string): string => `<div class="prop-info-row"><span>${esc(label)}</span><span>${esc(value)}</span></div>`;
@@ -51,6 +52,6 @@ function soundEdges(layer: ClipLayer, env: ClipEnv): Section {
 export function clipPanel(layer: Layer, env: ClipEnv): Section | null {
   if (layer.type !== 'video') return null;
   const clip = layer as ClipLayer;
-  const parts = [basics(clip, env), reframeSection(clip, env), gradeSection(clip, env), keySection(clip, env), soundEdges(clip, env)];
+  const parts = [basics(clip, env), rampSection(clip, env), reframeSection(clip, env), gradeSection(clip, env), keySection(clip, env), soundEdges(clip, env)];
   return { html: parts.map(p => p.html).join(''), bind: root => { parts.forEach(p => p.bind(root)); rememberBlocks(root); } };
 }
