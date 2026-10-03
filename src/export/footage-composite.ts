@@ -31,13 +31,17 @@ function rowOpaque(px: Buffer, from: number, to: number): boolean {
   return true;
 }
 
+/** A window in output pixels: what a clip is seen through (a wipe, a group's clip). */
+export interface PixelWindow { x0: number; y0: number; x1: number; y1: number }
+
 /**
  * Paint a straight-alpha w×h clip (ffmpeg's rgba) at (x, y) over premultiplied
- * `dst` (dw×dh) at `opacity`, source-over, cut to the frame.
+ * `dst` (dw×dh) at `opacity`, source-over, cut to the frame and to `win` when given.
  */
-export function drawClip(dst: Buffer, dw: number, dh: number, clip: Buffer, w: number, h: number, x: number, y: number, opacity: number): void {
+export function drawClip(dst: Buffer, dw: number, dh: number, clip: Buffer, w: number, h: number, x: number, y: number, opacity: number, win?: PixelWindow): void {
   const op = Math.round(Math.max(0, Math.min(1, opacity)) * 255);
-  const x0 = Math.max(0, x), y0 = Math.max(0, y), x1 = Math.min(dw, x + w), y1 = Math.min(dh, y + h);
+  const x0 = Math.max(0, x, win?.x0 ?? 0), y0 = Math.max(0, y, win?.y0 ?? 0);
+  const x1 = Math.min(dw, x + w, win?.x1 ?? dw), y1 = Math.min(dh, y + h, win?.y1 ?? dh);
   if (op === 0 || x1 <= x0 || y1 <= y0) return;
   for (let yy = y0; yy < y1; yy++) {
     let s = ((yy - y) * w + (x0 - x)) * 4;
