@@ -156,7 +156,7 @@ SVG-in-HTML — vector-native, pixel-perfect at any zoom.
 | **File tree** | Open `.design.yaml` / `.template.yaml` / `.component.yaml` |
 | **Assets** | Full file manager over the project store + shared library — folder tree, breadcrumb, sortable columns, details/icons views, multi-select (click · ctrl · shift · Ctrl+A), right-click menu, F2 rename, Del delete, drag files in to upload, drag rows onto a folder to move, ⛶ for a full window. Opens standalone (project picker) — no design needs to be loaded. Double-click places an image as a layer. Same store the MCP `manage_design {op:asset_*}` tools use |
 | **Page strip** | Page thumbnails — click to navigate; **+** adds a page; right-click for duplicate / move left·right / rename / delete. Paging starts from any design: adding a page to a single-page poster converts it to multi-page |
-| **Timeline** | Scrubber + per-layer tracks on the SCENE clock: keyframes where they play (delay and precomp clocks applied; a click on the ruler writes the keyframe in the track's own time), a band for a layer's in/out window, the stretch a track moves (dashed while it loops), a link follower's replayed keys as hollow diamonds, badges ⟲ loop · ↳ link · ⏱ clock, and a **Shots** strip of the page's markers. Time is editable (`timeline-edit.ts`): drag a band edge to move a layer's in/out point (a layer that lives the whole scene has its handles waiting at the ends of its row; back to the start / out to the end removes the point; a precomp child's point is written on its own clock); click a marker to jump, drag to move it, double-click to rename, right-click to remove; **+** in the Shots header adds one at the playhead (so does a double-click on empty strip). Labels stop at the next marker. Drags snap to 0, the end, the playhead and the markers; each edit is one undo step. A marker is a label — moving it retimes nothing. Rows cover every layer that plays in time: keyframes, a path, a window or a link. The panel class loads on its own chunk; its pure half (`timeline-model.ts`) stays in the main bundle for the player and canvas |
+| **Timeline** | See §5.1b — a dock under the canvas (a sheet on a phone). Scrubber + per-layer tracks on the SCENE clock: keyframes where they play (delay and precomp clocks applied; a click on the ruler writes the keyframe in the track's own time), a band for a layer's in/out window, the stretch a track moves (dashed while it loops), a link follower's replayed keys as hollow diamonds, badges ⟲ loop · ↳ link · ⏱ clock, and a **Shots** strip of the page's markers. Time is editable (`timeline-edit.ts`): drag a band edge to move a layer's in/out point (a layer that lives the whole scene has its handles waiting at the ends of its row; back to the start / out to the end removes the point; a precomp child's point is written on its own clock); click a marker to jump, drag to move it, double-click to rename, right-click to remove; **+** in the Shots header adds one at the playhead (so does a double-click on empty strip). Labels stop at the next marker. Drags snap to 0, the end, the playhead and the markers; each edit is one undo step. A marker is a label — moving it retimes nothing. Rows cover every layer that plays in time: keyframes, a path, a window or a link. The panel class loads on its own chunk; its pure half (`timeline-model.ts`) stays in the main bundle for the player and canvas |
 | **Payload (Monaco)** | VS Code's editor (lazy-loaded) over the raw YAML — inline validation, syntax highlighting, **bidirectional sync** with the canvas (300ms debounce, re-entrancy-guarded) |
 | **Command palette** | Ctrl+K or `/` — search and run any action by name |
 | **Align toolbar** | Align L/C/R · T/M/B; distribute H/V; match width/height |
@@ -172,6 +172,24 @@ bars (`viewport-fit=cover` + `100dvh` — nothing hides under the browser chrome
 or home indicator). Tablets (768–1023px): panels become slide-in overlays off
 the activity bars, collapsed by default so the canvas gets the full width.
 Touch targets in the toolbar are ≥40px on coarse pointers.
+
+### 5.1b The sequence editor (timeline)
+
+One timeline (`ui/panels/timeline-panel.ts`), shown where there is room for it:
+
+| Layout | Where it lives |
+|---|---|
+| **Desktop, tablet** | a **dock under the canvas** (`editor/timeline-dock.ts`): drag its top edge to resize (kept), **Shift+T** / the status bar's clock / the dock's ✕ hide it, the rail's clock tab shows it. A design with footage opens it the first time, unless the choice was already made |
+| **Phone** | a sheet: the bottom nav's **Timeline** slot opens it at half height over the canvas; tap it again to close. No dock (every control stays in the bottom dock) |
+
+The sheet is one wide surface: the **ruler** on top (marks follow the zoom), **row names** that stay put while it scrolls
+sideways, the **playhead** as a head on the ruler and a line through every row. A press or drag on the ruler moves it
+(touch too). **Zoom**: − / Fit / + in the toolbar, **Ctrl + wheel** about the pointer, **two-finger pinch** about the fingers
+(`timeline-zoom.ts` is the math; a pinch only resizes the sheet — a touch keeps delivering to the element it started on, so
+rebuilding it mid-gesture drops the pinch). A zoomed view follows the playhead while it plays. The sheet shows the **whole
+sequence**; the selection is highlighted, not a filter (⋯ → *Selected only* brings the old filter back). Click a row's name or a
+clip to select its layer (Shift / Ctrl adds). The toolbar is one line — transport + time / total, ✂ Split · ❄ Freeze + hold,
+⋯ options (duration, stagger, trails), zoom.
 
 ### 5.2 Editing a clip by hand
 
@@ -229,7 +247,7 @@ transforms and the Scripts panel manages report scripts. See [REPORT_ENGINE.md](
 | `G` | Toggle grid | `Ctrl+0` | Fit canvas to screen |
 | `Ctrl+K` / `/` | Command palette | `Ctrl+S` | Save (to server / library) |
 | `Ctrl+Alt+N` | New blank design | `Esc` | Clear selection / close palette |
-| `Delete` | Delete selection | | |
+| `Delete` | Delete selection | `Shift+T` | Show / hide the timeline |
 
 Clipboard copies layers **as YAML**, so you can paste between designs or into the
 Monaco panel.

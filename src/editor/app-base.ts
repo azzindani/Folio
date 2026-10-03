@@ -29,6 +29,8 @@ import { ToolboxManager } from '../ui/tools/toolbox';
 import { CommandPalette } from '../ui/palette/command-palette';
 import { KeyboardManager } from './keyboard';
 import { PanelResizer } from '../ui/resize/panel-resizer';
+import { hasVideoLayer } from './video-presence';
+import { wireTimelineDock, type TimelineDock } from './timeline-dock';
 import { TabBarManager } from '../ui/tabs/tab-bar';
 import { ViewportLayoutManager } from '../ui/viewport/viewport-layout';
 import { AutoSaveManager } from './auto-save';
@@ -88,6 +90,7 @@ export abstract class EditorAppBase {
   protected animationPanel!: AnimationPanel;
   protected imageImport!: ImageImportHandler;
   protected timelinePanel?: TimelinePanelManager;
+  protected timelineDock: TimelineDock | null = null;
   /** Playback shared by the timeline panel and the canvas toolbar's play button.
    *  Assigned by the subclass constructor, NOT initialised here: a field
    *  initializer runs before the subclass builds `state`, so it would capture
@@ -527,7 +530,11 @@ export abstract class EditorAppBase {
     wireLocalFolderPanel(this.container, this.imageImport);
   }
 
+  /** Show, hide or (no argument) flip the timeline dock; false on a phone, where the timeline is a sheet. */
+  toggleTimeline(open?: boolean): boolean { return this.timelineDock?.toggle(open) ?? false; }
+
   protected wireStatusBar(): void {
+    this.timelineDock = wireTimelineDock(this.container, this.state);
     const q = <T extends HTMLElement>(sel: string) =>
       this.container.querySelector<T>(sel);
 
@@ -651,13 +658,4 @@ export abstract class EditorAppBase {
     );
   }
 
-}
-
-/** Whether any page of a design holds a video layer. */
-function hasVideoLayer(d: { layers?: unknown[]; pages?: Array<{ layers?: unknown[] }> } | null | undefined): boolean {
-  const any = (ls: unknown[] | undefined): boolean => (ls ?? []).some(l => {
-    const o = l as { type?: string; layers?: unknown[] };
-    return o.type === 'video' || any(o.layers);
-  });
-  return any(d?.layers) || (d?.pages ?? []).some(p => any(p.layers));
 }

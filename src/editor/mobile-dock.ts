@@ -7,7 +7,7 @@
 // each other and ran off the right edge. This replaces all of it with one dock:
 //
 //   row 1 — [Visual | Payload | Preview] · undo · redo · play · export · more
-//   row 2 — places: Layers · Props · Tools · Panels · Find
+//   row 2 — places: Layers · Props · Tools · Timeline · Panels · Find
 //
 // The view switch is in the dock, not the More sheet: which view you are in is
 // the one piece of state a phone user checks constantly, and two taps to reach

@@ -180,6 +180,9 @@ export class TimelinePanelManager {
     if (!this.durationPinned) {
       const scene = this.player.duration;
       if (scene !== this.duration) {
+        // The scale is px per ms: a scene that turns out longer (the sampler loads after the panel) would shrink a zoom
+        // already chosen. Keep the sheet's width, so the view stays what the person set.
+        if (this.zoom !== null) this.zoom = clampZoom(this.zoom * this.duration / Math.max(1, scene), scene, this.viewPx());
         this.duration = scene;
         const durInput = this.container.querySelector<HTMLInputElement>('#tl-duration');
         if (durInput) durInput.value = String(scene);
@@ -331,9 +334,11 @@ export class TimelinePanelManager {
         if (e.button !== 0) return;
         e.preventDefault();
         scrub.setPointerCapture(e.pointerId);
+        // Marks the drag so a redraw (thumbnails keep landing for seconds) waits: replacing the ruler would drop the capture.
+        scrub.classList.add('tl-dragging');
         seek(e);
         scrub.addEventListener('pointermove', seek);
-        const done = (): void => { scrub.removeEventListener('pointermove', seek); };
+        const done = (): void => { scrub.removeEventListener('pointermove', seek); scrub.classList.remove('tl-dragging'); };
         scrub.addEventListener('pointerup', done, { once: true });
         scrub.addEventListener('pointercancel', done, { once: true });
       });
