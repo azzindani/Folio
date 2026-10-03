@@ -173,6 +173,41 @@ or home indicator). Tablets (768–1023px): panels become slide-in overlays off
 the activity bars, collapsed by default so the canvas gets the full width.
 Touch targets in the toolbar are ≥40px on coarse pointers.
 
+### 5.2 Editing a clip by hand
+
+A selected **video** layer gets a clip inspector under its Position & Size: every edit the engine's
+`animation(op:video)` makes, on the same arithmetic, no AI. The rules live ONCE in `animation/clip-edit.ts`
+(timing half + look half); `videoMotion` (MCP) and the inspector both call it, so a value one accepts the
+other accepts, with the same message when it does not. Sections are `ui/panels/properties-clip*.ts`; each
+binds only to its own block.
+
+| Section | What it does | Where it runs |
+|---|---|---|
+| **Clip** | Plays / From file readouts · speed (typed, 0.5×/1×/2×) · volume · mute · loop · fit | browser |
+| **Transition** | how the clip ENTERS from the clip ending where it starts: crossfade · dip (colour) · wipe/push (direction) · length. A **join marker** on the clip track (a bow-tie on the cut; filled when a transition plays) — one click adds a crossfade and opens this section. The preview paints a dip's colour behind the clips (`canvas-dip.ts`) | browser |
+| **Speed ramp & freeze** | speed keys at the playhead with a graph · **❄ Freeze** (+ hold length) on the timeline toolbar | ramp: browser · freeze: server |
+| **Reframe** | focus X/Y · zoom · **Reframe on canvas** (drag to pan, scroll to zoom, Esc ends) · **◆ Key here** pan keys on the file clock | browser |
+| **Grade** | exposure · contrast · saturation · warmth · tint · LUT (`.cube` from the project) · reset. The canvas previews the five sliders; a LUT is applied in the export | browser |
+| **Green screen** | screen colour · takes out · soft edge · **Pick from clip** (reads the video's RAW frame, not the screen, so the grade does not skew it) | browser |
+| **Sound edges** | fades · J-cut (sound leads) · L-cut (sound trails) | browser |
+| **Cut** | **Find shots & silences** (ffmpeg, cached by file mtime) → shot **ticks** on the clip block, edges snap to them · **Split at shots** · **Cut silences** (keeps a breath at each end) · **Cut the track to the beat** (every beat / 2 / bar; needs music) | measure + silences + beat: server · split: browser |
+
+One undo step per gesture: a slider's first `input` opens it, `change` closes it, and the panel does not
+rebuild under the pointer meanwhile (`clip-commit.ts`).
+
+**The server bridge.** Edits that need ffmpeg or ripple the whole scene (freeze, cut silences, cut to the
+beat) go through the editor server, like the export does: the editor saves the design, `POST
+/__project_files/__clip` (`editor/server-clip.ts`) runs `animation(op:video)` on the SAVED file through the
+MCP beside it, and the file it wrote replaces the design on screen as one undo step (`editor/clip-bridge.ts`).
+Allow-list only — `freeze`, `on_beats`, `cut`. `GET /__project_files/__clip/measure?design=&layer=`
+(`editor/server-clip-measure.ts`) reads the shots and silences of the part of the file a clip plays.
+These need the design in the library (a server file) and the Folio server running; a design opened from
+disk says so instead of failing silently.
+
+Known gaps: a clip with keyframes of its own takes a transition on a wrapper layer the editor canvas does
+not draw (the export is right; the inspector says so); a ramped or frozen clip shows no shot ticks and
+cannot be cut by its footage (no single file↔scene mapping); a LUT shows in the export, not the canvas.
+
 ### 5.1 Studio editing of flow-report layers
 
 Charts and tables render **real previews** on the canvas. Drag a component body to

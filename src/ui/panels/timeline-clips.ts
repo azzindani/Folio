@@ -54,7 +54,7 @@ function joinMarkup(l: Layer, join: ClipJoin, left: number): string {
   const title = t ? `${TYPE_NAME[t.type] ?? t.type} · ${t.duration_ms ?? DEFAULT_TRANSITION_MS} ms — click to edit it`
     : 'A hard cut — click to add a crossfade';
   return `<div class="tl-join${t ? ' tl-join-on' : ''}" data-layer-id="${esc(l.id)}" role="button" tabindex="0" aria-label="${esc(title)}" title="${esc(title)}"`
-    + ` style="position:absolute;top:50%;left:calc(${left}% - 11px)"></div>`;
+    + ` style="position:absolute;top:50%;left:${left}%"></div>`;
 }
 
 /** A clip block's thumbnails and waveform, asked for with how much of the ruler the block spans (%). */

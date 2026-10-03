@@ -11,6 +11,7 @@ import { videoSourceMs } from '../../animation/video-time';
 import { fromSceneTime } from '../../animation/clock-time';
 import { motionHost } from '../../editor/motion-host';
 import { beginGesture, endGesture, writeClip, type ClipEnv } from './clip-commit';
+import { canvasVideo } from './clip-pick';
 
 /** A key within this of a moment IS that moment's key — a drag edits it rather than stacking another beside it. */
 export const KEY_SNAP_MS = 40;
@@ -63,7 +64,7 @@ export const isReframing = (): boolean => stopMode !== null;
  */
 export function reframeOnCanvas(env: ClipEnv, onEnd: () => void): void {
   stopMode?.();
-  const video = (): HTMLVideoElement | null => Array.from(document.querySelectorAll<HTMLVideoElement>('video[data-video-layer]')).find(v => v.dataset['videoLayer'] === env.layerId) ?? null;
+  const video = (): HTMLVideoElement | null => canvasVideo(env.layerId);
   const layer = (): ClipLayer | null => (env.state.findLayer(env.layerId) as ClipLayer | undefined) ?? null;
   const inside = (e: { clientX: number; clientY: number }): boolean => {
     const r = video()?.getBoundingClientRect();
