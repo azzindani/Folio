@@ -266,7 +266,8 @@ describe('animation(op:frame)', () => {
     expect(end['poses']).toEqual([]);
     expect(end['at_rest']).toEqual(['a']);
     expect(end['_attachments']).toHaveLength(1);
-  });
+    // Two full renders, the first loading resvg and the font set cold: 60 ms warm here, 5.06 s on a macOS runner.
+  }, 60_000);
 
   it('leaves out what is not in the frame — a layer before its in point, and everything inside it', () => {
     const p = flat();

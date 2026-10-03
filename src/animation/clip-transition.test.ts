@@ -14,7 +14,7 @@ const pair = (t: Record<string, unknown>, bOffset = 3000): Layer[] =>
 const byId = (ls: Layer[], id: string): C => ls.find(l => l.id === id) as C;
 /** A track's keys back on the scene clock: they are written from the first at t 0, played from `delay`. */
 const onScene = (c: C): Array<Record<string, number | string>> | undefined =>
-  c.animation?.keyframes.map(k => ({ ...k, t: Number(k['t']) + Number(c.animation?.playback['delay'] ?? 0) }));
+  (c.animation?.keyframes as Array<Record<string, number | string>> | undefined)?.map(k => ({ ...k, t: Number(k['t']) + Number(c.animation?.playback['delay'] ?? 0) }));
 
 describe('which clip a transition comes from, and over what window', () => {
   it('the clip ending where it starts; the window centred on the cut when the file has footage before', () => {
