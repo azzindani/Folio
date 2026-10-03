@@ -12,6 +12,8 @@ import {
   alignCenterH, alignCenterV, distributeH, distributeV,
 } from '../../editor/interactions';
 import { groupSelected, ungroupSelected } from '../../editor/layer-actions';
+import { clipPanel } from './properties-clip';
+import { isClipGesture } from './clip-commit';
 import { sc, altKey, shiftKey } from '../../utils/shortcut';
 
 function deepClone<T>(obj: T): T {
@@ -33,6 +35,8 @@ export class PropertiesPanelManager extends PropertiesPanelBase {
   }
 
   private onStateChange(state: EditorState, changedKeys: (keyof EditorState)[]): void {
+    // A slider drag in the Clip inspector writes the design on every move; rebuilding under the pointer would end the drag.
+    if (isClipGesture() && !changedKeys.includes('selectedLayerIds')) return;
     if (changedKeys.some(k => ['selectedLayerIds', 'design', 'currentPageIndex'].includes(k))) {
       this.render();
     }
@@ -189,6 +193,9 @@ export class PropertiesPanelManager extends PropertiesPanelBase {
       appearance = renderReportFields(layer, this.reportDatasets());
     }
     if (appearance) html += this.section('Appearance', appearance);
+    // A video layer: the Clip inspector (timing, sound, and the engine's look controls).
+    const clip = clipPanel(layer, { state: this.state, layerId: layer.id, refresh: () => this.render() });
+    if (clip) html += clip.html;
 
     // Transform section
     const isLocked = !!(layer as { locked?: boolean }).locked;
@@ -242,6 +249,7 @@ export class PropertiesPanelManager extends PropertiesPanelBase {
     this.bindReportArrays(layer);
     this.bindPinControl(layer);
     this.bindAccordions();
+    clip?.bind(this.content);
     if (layer.type === 'image') this.bindSVGRecolor(layer as ImageLayer);
     this.restoreFocus(focus);
   }
