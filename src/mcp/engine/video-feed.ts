@@ -61,7 +61,8 @@ export class FootageFeed {
     const file = this.sizeOf(slot.req.file);
     if (!file) return null;
     const cover = Math.max(w / file.width, h / file.height);
-    const scale = Math.min(cover * slot.zoomMax, Math.max(cover, 1));
+    // Detail the closest zoom needs, but never more than the file has: smaller footage is enlarged by the resample, not by ffmpeg.
+    const scale = Math.min(cover * slot.zoomMax, 1);
     const dw = Math.max(2, Math.round((file.width * scale) / 2) * 2), dh = Math.max(2, Math.round((file.height * scale) / 2) * 2);
     const key = `${slot.req.id}|${slot.req.file}|pan|${dw}x${dh}`;
     const frame = await this.stream(key, slot.req.file, () => rgbaFormat(dw, dh, 'fill', null)).frameAt(slot.req.ms);
