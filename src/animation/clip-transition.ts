@@ -108,9 +108,14 @@ function tracksFor(t: ClipTransition, s: number, d: number, aTop: boolean, width
 }
 
 const channels = (tr: Track): string => [...new Set(tr.keyframes.flatMap(k => Object.keys(k).filter(c => c !== 't' && c !== 'easing')))].sort().join(',') + `|${tr.reveal_from ?? ''}`;
+/** A track in the players' form: keys from the first at t 0, played from `delay` (gif-frames valuesAt; the CSS route reads the same). */
 const spec = (tr: Track): AnimationSpec => {
   const keys = [...tr.keyframes].sort((p, q) => p.t - q.t);
-  return { keyframes: keys, playback: { duration: keys[keys.length - 1]?.t ?? 0, origin: 'offset', ...(tr.reveal_from ? { reveal_from: tr.reveal_from } : {}) } } as AnimationSpec;
+  const t0 = keys[0]?.t ?? 0, t1 = keys[keys.length - 1]?.t ?? t0;
+  return {
+    keyframes: keys.map(k => ({ ...k, t: k.t - t0 })),
+    playback: { delay: t0, duration: Math.max(1, t1 - t0), origin: 'offset', ...(tr.reveal_from ? { reveal_from: tr.reveal_from } : {}) },
+  } as AnimationSpec;
 };
 
 /** A clip with its transition tracks: tracks on one channel merge (in at its head, out at its tail); the first sits on the clip unless it moves already, the rest on wrappers. */

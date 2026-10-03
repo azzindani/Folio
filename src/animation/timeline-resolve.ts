@@ -44,6 +44,17 @@ export function resolveTimeline(layers: Layer[]): Layer[] {
   return out;
 }
 
+/**
+ * Forget what was resolved for these lists. A pass that writes onto their layers
+ * in place (asset resolution: `_video_file`, embedded image srcs) must call it —
+ * a tree with in/out points resolves to COPIES, and a cached copy made before
+ * the write would keep the old values (found live: op:frame drew every timed clip
+ * as the missing-image placeholder because the scene length was measured first).
+ */
+export function forgetResolved(...lists: Array<Layer[] | undefined>): void {
+  for (const l of lists) if (l) CACHE.delete(l);
+}
+
 /** True when any layer carries a clock, a link or an in/out point. */
 export function usesTimeFeatures(layers: Layer[]): boolean {
   return layers.some(l => {

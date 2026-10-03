@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import type { Layer } from '../schema/types';
+import type { DesignSpec, Layer } from '../schema/types';
+import { specAt } from '../export/gif-frames';
 import { applyClipTransitions, predecessorOf, transitionWindow } from './clip-transition';
 import { resolveTimeline } from './timeline-resolve';
 import { videoSoundClips } from '../export/video-sound';
@@ -11,6 +12,9 @@ const clip = (id: string, at: number, offset: number, len: number, extra: Record
 const pair = (t: Record<string, unknown>, bOffset = 3000): Layer[] =>
   [clip('a', 0, 1000, 2000), clip('b', 2000, bOffset, 2000, { video: { offset_ms: bOffset, duration_ms: 2000, transition: t } })];
 const byId = (ls: Layer[], id: string): C => ls.find(l => l.id === id) as C;
+/** A track's keys back on the scene clock: they are written from the first at t 0, played from `delay`. */
+const onScene = (c: C): Array<Record<string, number | string>> | undefined =>
+  c.animation?.keyframes.map(k => ({ ...k, t: Number(k['t']) + Number(c.animation?.playback['delay'] ?? 0) }));
 
 describe('which clip a transition comes from, and over what window', () => {
   it('the clip ending where it starts; the window centred on the cut when the file has footage before', () => {
@@ -29,7 +33,8 @@ describe('compiled into windows and keys', () => {
     const a = byId(out, 'a'), b = byId(out, 'b');
     expect([a.out, a.video.duration_ms, a.video.fade_out_ms]).toEqual([2250, 2250, 500]);
     expect([b.in, b.video.offset_ms, b.video.duration_ms, b.video.fade_in_ms]).toEqual([1750, 2750, 2250, 500]);
-    expect(b.animation?.keyframes).toEqual([{ t: 1750, opacity: 0 }, { t: 2250, opacity: 1 }]);
+    expect(onScene(b)).toEqual([{ t: 1750, opacity: 0 }, { t: 2250, opacity: 1 }]);
+    expect(b.animation?.playback).toMatchObject({ delay: 1750, duration: 500 });
     expect(a.animation).toBeUndefined();
   });
 
@@ -37,8 +42,8 @@ describe('compiled into windows and keys', () => {
     const out = applyClipTransitions(pair({ type: 'dip', duration_ms: 400, color: '#ffffff' }));
     expect(out.map(l => l.id)).toEqual(['b__dip', 'a', 'b']);
     expect(byId(out, 'b__dip')).toMatchObject({ type: 'rect', in: 1800, out: 2200, fill: { color: '#ffffff' } });
-    expect(byId(out, 'a').animation?.keyframes).toEqual([{ t: 1800, opacity: 1 }, { t: 2000, opacity: 0 }]);
-    expect(byId(out, 'b').animation?.keyframes).toEqual([{ t: 2000, opacity: 0 }, { t: 2200, opacity: 1 }]);
+    expect(onScene(byId(out, 'a'))).toEqual([{ t: 1800, opacity: 1 }, { t: 2000, opacity: 0 }]);
+    expect(onScene(byId(out, 'b'))).toEqual([{ t: 2000, opacity: 0 }, { t: 2200, opacity: 1 }]);
   });
 
   it('wipe: the top clip is uncovered from the side the edge leaves', () => {
@@ -66,6 +71,14 @@ describe('compiled into windows and keys', () => {
     expect(applyClipTransitions(plain)).toBe(plain);
     const lone = applyClipTransitions([clip('b', 5000, 0, 1000, { video: { offset_ms: 0, duration_ms: 1000, transition: { type: 'dip' } } })]);
     expect(byId(lone, 'b').in).toBe(5000);
+  });
+});
+
+describe('it plays at the times it says', () => {
+  it('sampled frames: the incoming clip is half in at the middle of a centred crossfade', () => {
+    const spec = { document: { width: 1920, height: 1080 }, layers: pair({ type: 'crossfade', duration_ms: 500 }) } as unknown as DesignSpec;
+    const op = (t: number): number => Number((specAt(spec, 0, t).layers ?? []).find(l => l.id === 'b')?.opacity ?? 1);
+    expect([op(1750), op(2000), op(2250), op(2400)].map(v => Math.round(v * 100) / 100)).toEqual([0, 0.5, 1, 1]);
   });
 });
 
