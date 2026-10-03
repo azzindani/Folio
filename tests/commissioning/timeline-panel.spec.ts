@@ -84,6 +84,8 @@ test('stagger shifts a selected layer into a sequence', async ({ page }) => {
   const before = await times();
   expect(before.length, 'the fixture should carry two keyframes').toBeGreaterThan(1);
 
+  // Stagger lives in the ⋯ options row.
+  if ((await page.getAttribute('#tl-options-toggle', 'aria-expanded')) !== 'true') await page.click('#tl-options-toggle');
   await page.fill('#tl-stagger', '200');
   await page.click('#tl-stagger-apply');
 
