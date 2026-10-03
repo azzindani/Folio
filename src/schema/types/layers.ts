@@ -235,6 +235,12 @@ export interface VideoLayer extends BaseLayer {
     audio_lead_ms?: number; audio_tail_ms?: number;
     /** How this clip enters from the clip that ends where it starts (animation/clip-transition.ts). */
     transition?: { type: 'crossfade' | 'dip' | 'wipe' | 'push'; duration_ms?: number; color?: string; direction?: 'left' | 'right' | 'up' | 'down' };
+    /** Which part of the footage a covering clip keeps: [0,0] top-left … [1,1] bottom-right (animation/clip-crop.ts). */
+    focus?: [number, number];
+    /** 1 = the footage just covers the box; up to 4. */
+    zoom?: number;
+    /** Focus/zoom keys over time, on the FILE clock. */
+    pan?: Array<{ at_ms: number; focus?: [number, number]; zoom?: number; easing?: string }>;
   };
 }
 

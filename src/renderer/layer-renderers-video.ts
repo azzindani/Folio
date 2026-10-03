@@ -11,6 +11,7 @@ import { createSVGElement } from './svg-utils';
 import { resolveAssetUrl } from './render-context';
 import { renderImage } from './layer-renderers-shapes';
 import { applyCommonAttributes } from './layer-renderers-shared';
+import { cropAt, cropCss, hasCrop } from '../animation/clip-crop';
 
 const XHTML = 'http://www.w3.org/1999/xhtml';
 
@@ -23,8 +24,10 @@ export function renderVideo(layer: VideoLayer, svg: SVGSVGElement): SVGElement {
   const frame = (layer as VideoLayer & { _video_frame?: string })._video_frame;
   if (typeof frame === 'string' || !layer.src) {
     // An <image> with no preserveAspectRatio letterboxes; the <video> covers, or stretches for fill.
-    const fit = videoFit(layer.fit);
-    const el = renderImage({ ...layer, type: 'image', src: frame ?? '', fit: fit === 'cover' || fit === 'contain' ? fit : undefined } as unknown as ImageLayer, svg);
+    // A frame already cut to the box (a clip panned or zoomed inside, video-frame.ts) draws unscaled.
+    const cut = (layer as VideoLayer & { _video_cut?: boolean })._video_cut === true;
+    const fit = cut ? 'fill' : videoFit(layer.fit);
+    const el = renderImage({ ...layer, ...(cut ? { focal: undefined } : {}), type: 'image', src: frame ?? '', fit: fit === 'cover' || fit === 'contain' ? fit : undefined } as unknown as ImageLayer, svg);
     if (fit === 'fill') (el.tagName.toLowerCase() === 'image' ? el : el.querySelector('image'))?.setAttribute('preserveAspectRatio', 'none');
     return el;
   }
@@ -38,7 +41,11 @@ export function renderVideo(layer: VideoLayer, svg: SVGSVGElement): SVGElement {
   video.setAttribute('playsinline', '');
   video.setAttribute('preload', 'auto');
   video.setAttribute('data-video-layer', layer.id);
-  video.setAttribute('style', `width:100%;height:100%;display:block;object-fit:${videoFit(layer.fit)}`);
+  // A pan or zoom inside the footage (animation/clip-crop.ts) as CSS: the resting crop here, the moving one per tick in canvas-video.
+  const fit = videoFit(layer.fit);
+  const offset = Number((layer as VideoLayer & { video?: { offset_ms?: unknown } }).video?.offset_ms) || 0;
+  const crop = fit === 'cover' && hasCrop(layer) ? `;${cropCss(cropAt(layer, offset))}` : '';
+  video.setAttribute('style', `width:100%;height:100%;display:block;object-fit:${fit}${crop}`);
   fo.appendChild(video);
   applyCommonAttributes(fo, layer);
   return fo;

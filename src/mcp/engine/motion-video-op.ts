@@ -13,6 +13,7 @@ import * as path from 'path';
 import type { DesignSpec, Layer } from '../../schema/types';
 import { readTransition, predecessorOf, TRANSITION_TYPES, MIN_TRANSITION_MS, MAX_TRANSITION_MS } from '../../animation/clip-transition';
 import { summarize, cutClip, type ClipLayer } from '../../animation/video-clip';
+import { readCropArgs } from '../../animation/clip-crop';
 import type { ToolResult, ProgressItem } from '../types';
 import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, pOk, pWarn } from './utils';
 import { resolveScope, commitScope } from './motion';
@@ -55,7 +56,7 @@ export interface VideoOpArgs {
   design_path: string; project_path?: string; page_id?: string; layer_id?: string;
   in?: unknown; out?: unknown; split_at?: unknown; cut?: unknown; ripple?: boolean;
   offset_ms?: number; duration_ms?: number; speed?: number; volume?: number; muted?: boolean; loop?: boolean;
-  fade_in?: unknown; fade_out?: unknown; audio_lead_ms?: unknown; audio_tail_ms?: unknown; clip_transition?: unknown;
+  fade_in?: unknown; fade_out?: unknown; audio_lead_ms?: unknown; audio_tail_ms?: unknown; clip_transition?: unknown; focus?: unknown; zoom?: unknown; pan?: unknown;
 }
 
 const FIELDS = ['offset_ms', 'duration_ms', 'speed', 'volume', 'muted', 'loop'] as const;
@@ -117,6 +118,14 @@ export function videoMotion(args: VideoOpArgs): ToolResult {
       return errResult(op, `No clip ends where "${clip.id}" starts (${Number(next.in) || 0} ms) — a transition joins a clip to the one before it on its track.`, 'Lay the clips end to end first (op:video in on this clip, or split_at on one clip), then add the transition.');
     }
     v.transition = t;
+  }
+
+  // Pan and zoom inside the footage (animation/clip-crop.ts): null clears each.
+  const crop = readCropArgs(args);
+  if (typeof crop === 'string') return errResult(op, crop, 'focus [x, y] 0–1 and zoom 1–4 set where the frame rests; pan:[{at_ms (file clock), focus?, zoom?, easing?}] moves it.');
+  for (const k of ['focus', 'zoom', 'pan'] as const) {
+    if (crop[k] === null) delete (v as Record<string, unknown>)[k];
+    else if (crop[k] !== undefined) (v as Record<string, unknown>)[k] = crop[k];
   }
 
   let result: ClipLayer[] = [next];

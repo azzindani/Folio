@@ -19,7 +19,11 @@ const clip = (extra: Record<string, unknown> = {}): Layer =>
 
 describe('plainClip — which clips are drawn as pixels', () => {
   it('a box, a fit, an opacity and its clock are plain', () => {
-    expect(plainClip(clip({ opacity: 0.5, focal: [0.1, 0.9] }))).toMatchObject({ x: 40, y: 20, w: 240, h: 135, fit: 'cover', opacity: 0.5, focal: [0.1, 0.9] });
+    // The older focal point reads in thirds, as it always rendered (animation/clip-crop.ts).
+    expect(plainClip(clip({ opacity: 0.5, focal: [0.1, 0.9] }))).toMatchObject({ x: 40, y: 20, w: 240, h: 135, fit: 'cover', opacity: 0.5, crop: { focus: [0, 1], zoom: 1 }, panned: false });
+    // A pan stays plain: its crop at the frame's file moment, decoded once at its closest zoom.
+    const panned = plainClip(clip({ video: { offset_ms: 0, pan: [{ at_ms: 0, focus: [0, 0.5], zoom: 2 }, { at_ms: 4000, focus: [1, 0.5] }] } }));
+    expect(panned).toMatchObject({ panned: true, zoomMax: 2, crop: { zoom: 2 } });
     expect(plainClip(clip({ fit: undefined }))?.fit).toBe('cover');
   });
   it('a fade posed by the flipbook stays plain; a move does not', () => {
