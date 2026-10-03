@@ -304,6 +304,13 @@ export function resolveImageAssets(spec: DesignSpec, designPath: string, project
         const file = typeof v.src === 'string' && v.src.trim() ? resolveAssetFile(v.src, designPath, projectPath) : null;
         if (file) v._video_file = file;
         else notes.push(`video "${l.id}": "${v.src ?? ''}" is not a stored clip — store it with manage_design {op:"asset_add"} and use src:"assets/video/…".`);
+        // A grade's LUT (animation/clip-color.ts) is a stored .cube, applied by ffmpeg.
+        const lut = (v as Layer & { video?: { color?: { lut?: unknown } } }).video?.color?.lut;
+        if (typeof lut === 'string' && lut.trim()) {
+          const lutFile = resolveAssetFile(lut.trim(), designPath, projectPath);
+          if (lutFile) (v as Layer & { _video_lut?: string })._video_lut = lutFile;
+          else notes.push(`video "${l.id}": its LUT "${lut}" is not stored — add the .cube with manage_design {op:"asset_add"} (it lands in assets/docs/).`);
+        }
       }
       const withFill = l as Layer & { fill?: Fill };
       if (withFill.fill) withFill.fill = resolveFill(withFill.fill, l.id, dirs, roots, notes) ?? withFill.fill;

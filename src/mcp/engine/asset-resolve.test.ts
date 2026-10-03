@@ -37,6 +37,19 @@ describe('resolveImageAssets', () => {
     expect((spec.layers![0] as Layer & { src: string }).src).toMatch(/^data:image\/png;base64,/);
   });
 
+  it('a clip resolves its file and its LUT separately; a missing one is named', () => {
+    fs.mkdirSync(path.join(proj, 'assets/video'), { recursive: true });
+    fs.mkdirSync(path.join(proj, 'assets/docs'), { recursive: true });
+    fs.writeFileSync(path.join(proj, 'assets/video/take.mp4'), 'x');
+    fs.writeFileSync(path.join(proj, 'assets/docs/look.cube'), 'LUT_3D_SIZE 2\n');
+    const clip = (lut?: string): Layer => ({ id: 'v', type: 'video', src: 'assets/video/take.mp4', video: lut ? { color: { lut } } : {} }) as unknown as Layer;
+    const ok = makeSpec([clip('assets/docs/look.cube')]);
+    expect(resolveImageAssets(ok, dPath, proj)).toEqual([]);
+    expect((ok.layers?.[0] as Layer & { _video_lut?: string })._video_lut).toMatch(/look\.cube$/);
+    expect(resolveImageAssets(makeSpec([clip()]), dPath, proj)).toEqual([]);
+    expect(resolveImageAssets(makeSpec([clip('assets/docs/gone.cube')]), dPath, proj)[0]).toContain('LUT');
+  });
+
   it('a timeline resolved BEFORE the assets does not keep the unresolved layers', () => {
     // Found live: op:frame measured the scene first; a timed image (in/out → resolved as copies)
     // then sampled the cached copy, still pointing at the relative path.

@@ -241,6 +241,8 @@ export interface VideoLayer extends BaseLayer {
     zoom?: number;
     /** Focus/zoom keys over time, on the FILE clock. */
     pan?: Array<{ at_ms: number; focus?: [number, number]; zoom?: number; easing?: string }>;
+    /** The clip's grade (animation/clip-color.ts): exposure in stops, the rest -1–1, and a stored .cube LUT. */
+    color?: { exposure?: number; contrast?: number; saturation?: number; temperature?: number; tint?: number; lut?: string };
   };
 }
 

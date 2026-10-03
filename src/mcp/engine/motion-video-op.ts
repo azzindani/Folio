@@ -15,6 +15,7 @@ import { readTransition, predecessorOf, TRANSITION_TYPES, MIN_TRANSITION_MS, MAX
 import { summarize, cutClip, type ClipLayer } from '../../animation/video-clip';
 import { readCropArgs } from '../../animation/clip-crop';
 import { MIN_SPEED, MAX_SPEED } from '../../animation/video-time';
+import { readColor } from '../../animation/clip-color';
 import type { ToolResult, ProgressItem } from '../types';
 import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, pOk, pWarn } from './utils';
 import { resolveScope, commitScope } from './motion';
@@ -57,7 +58,7 @@ export interface VideoOpArgs {
   design_path: string; project_path?: string; page_id?: string; layer_id?: string;
   in?: unknown; out?: unknown; split_at?: unknown; cut?: unknown; ripple?: boolean;
   offset_ms?: number; duration_ms?: number; speed?: number; volume?: number; muted?: boolean; loop?: boolean;
-  fade_in?: unknown; fade_out?: unknown; audio_lead_ms?: unknown; audio_tail_ms?: unknown; clip_transition?: unknown; focus?: unknown; zoom?: unknown; pan?: unknown; ramp?: unknown;
+  fade_in?: unknown; fade_out?: unknown; audio_lead_ms?: unknown; audio_tail_ms?: unknown; clip_transition?: unknown; focus?: unknown; zoom?: unknown; pan?: unknown; ramp?: unknown; color?: unknown;
 }
 
 const FIELDS = ['offset_ms', 'duration_ms', 'speed', 'volume', 'muted', 'loop'] as const;
@@ -137,6 +138,13 @@ export function videoMotion(args: VideoOpArgs): ToolResult {
     if (bad) return errResult(op, `ramp must be [{at_ms, speed}] — at_ms from the clip's start (ms), speed ${MIN_SPEED}–${MAX_SPEED}.`, 'ramp:[{at_ms:0, speed:1}, {at_ms:800, speed:0.25}, {at_ms:2000, speed:1}] slows into a moment and back out.');
     if (v.still) return errResult(op, `"${clip.id}" is a freeze; it has no speed to ramp.`, 'Ramp the clip it was frozen from.');
     v.ramp = keys.map(k => ({ at_ms: Math.round(k['at_ms'] as number), speed: k['speed'] as number })).sort((a, b) => a.at_ms - b.at_ms);
+  }
+
+  // A grade (animation/clip-color.ts); null clears.
+  if (args.color !== undefined) {
+    const grade = readColor(args.color);
+    if (typeof grade === 'string') return errResult(op, grade, 'color:{exposure -3–3 stops, contrast/saturation/temperature/tint -1–1, lut:"assets/docs/look.cube"}; null clears.');
+    if (grade === null || !Object.keys(grade).length) delete v.color; else v.color = grade;
   }
 
   let result: ClipLayer[] = [next];
