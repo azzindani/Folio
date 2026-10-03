@@ -198,6 +198,17 @@ export class ToolbarManager {
         });
         return;
       }
+      // A PDF renders on the server when the design lives in the library: it keeps going
+      // if the tab closes or the phone sleeps, and the Exports tray hands the file over.
+      if (format === 'pdf' && this.app.serverDesignRel) {
+        const rel = this.app.serverDesignRel;
+        void import('../export/video-export').then(async ({ exportVideo }) => {
+          await this.app.saveToActiveTarget();
+          if (this.state.get().dirty) return;
+          await exportVideo({ design: rel, type: 'pdf', scenes: false });
+        });
+        return;
+      }
       if (format === 'batch') {
         const { design, currentPageIndex } = this.state.get();
         if (design) batchExportDialog.open(design, currentPageIndex);

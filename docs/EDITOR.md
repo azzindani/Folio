@@ -260,8 +260,24 @@ Monaco panel.
 |---|---|
 | **SVG** | Vector, lossless, opens in any browser |
 | **PNG ×1 / ×2 / ×3** | Up to 3240×3240 px — retina quality |
-| **PDF** | Client-side via jsPDF (lazy) |
+| **PDF** | A design saved in the library renders on the server (vector PDF, survives a closed tab — see below); an unsaved one falls back to client-side jsPDF (lazy) |
 | **HTML** | Self-contained — SVG + design JSON + animation CSS inline, no external URLs |
+
+### Background exports (leave the tab, come back for the file)
+
+MP4, GIF and library-backed PDF render on the server, not in the page. Starting one only
+records a job in the **export ledger** (`<projects>/.export-ledger.json`, `src/editor/export-ledger.ts`);
+the **Exports tray** (`src/ui/export/export-tray.ts`) reads it:
+
+- close the tab or let the phone sleep — the render keeps going; reopen the editor (or open it on
+  another device) and the tray shows progress, or **Download** once it is done
+- a file that finishes while the page is open is saved at once; one found finished on return waits behind
+  a 44px Download button (phone browsers refuse downloads no tap asked for) until you tap it or dismiss it
+- the render-job registry is in memory: a server restart fails a running job with a clear message
+  rather than leaving it spinning (a finished file stays downloadable)
+
+Routes (behind `/__project_files` auth): `POST …/__export {design,type}` · `GET …/__export/jobs` ·
+`POST …/__export/ack {job_id}` · `GET …/__export/status?job_id=`. PNG, SVG and HTML stay client-side.
 
 Server-side export (without a browser) is the MCP `export_design` tool — it uses jsdom
 + the same renderer to write real `.svg` files. See [TOOLS.md](TOOLS.md).

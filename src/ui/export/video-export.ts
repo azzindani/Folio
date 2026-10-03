@@ -16,13 +16,17 @@
  */
 
 import { showToast } from '../../utils/toast';
+import { startExportTray } from './export-tray';
+
+export { saveFromServer } from './save-from-server';
 
 export type VideoFormat = 'mp4' | 'gif';
 
 export interface VideoExportRequest {
   /** The design's path inside the projects folder, as the editor opened it. */
   design: string;
-  type: VideoFormat;
+  /** pdf runs as a server job too, so a long document survives a closed tab. */
+  type: VideoFormat | 'pdf';
   /** Play every page as one piece (a deck) instead of the first page alone. */
   scenes: boolean;
   /** Output size as a fraction of the canvas, 0.1–1. */
@@ -30,46 +34,16 @@ export interface VideoExportRequest {
   fps?: number;
 }
 
-interface StatusReply { state?: string; percent?: number; eta_ms?: number; download?: string; error?: string; warning?: string }
-
 export interface VideoExportIO { fetch?: typeof fetch; pollMs?: number }
 
-const wait = (ms: number): Promise<void> => new Promise(done => setTimeout(done, ms));
 
-function progressStrip(label: string): { set(text: string): void; remove(): void } {
-  const el = document.createElement('div');
-  el.className = 'video-export-progress';
-  el.setAttribute('role', 'status');
-  el.style.cssText = 'position:fixed;right:16px;bottom:16px;z-index:9500;background:#141416;color:#EDEDED;' +
-    'border:1px solid #2A2A2E;border-radius:6px;padding:10px 14px;font:13px system-ui,sans-serif;min-width:240px;';
-  document.body.appendChild(el);
-  const set = (text: string): void => { el.textContent = `${label}: ${text}`; };
-  set('starting');
-  return { set, remove: () => el.remove() };
-}
-
-/** What the strip says about a job still running. */
-export function progressText(s: StatusReply): string {
-  if (s.state === 'queued') return 'waiting for the render ahead of it';
-  const eta = s.eta_ms ? ` · about ${Math.ceil(s.eta_ms / 1000)}s left` : '';
-  return `rendering ${s.percent ?? 0}%${eta}`;
-}
-
-/** Hand a server file to the browser's download: an attached link, clicked, with ?download. */
-export function saveFromServer(url: string, name: string): void {
-  const a = document.createElement('a');
-  a.href = `${url}${url.includes('?') ? '&' : '?'}download=1`;
-  a.download = name;
-  a.style.display = 'none';
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-}
-
-/** Start the server render, follow it, save the file. Resolves with the file name, or null on failure. */
+/**
+ * Start the server render and hand it to the Exports tray. Resolves with the job
+ * id, or null when the server refused. The page does not wait for the file: the
+ * render is the server's, the tray follows it, and a closed tab loses nothing.
+ */
 export async function exportVideo(req: VideoExportRequest, io: VideoExportIO = {}): Promise<string | null> {
   const call = io.fetch ?? ((input: RequestInfo | URL, init?: RequestInit) => fetch(input, init));
-  const strip = progressStrip(`Exporting ${req.type.toUpperCase()}${req.scenes ? ' (all pages)' : ''}`);
   try {
     const started = await call('/__project_files/__export', {
       method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
@@ -77,24 +51,11 @@ export async function exportVideo(req: VideoExportRequest, io: VideoExportIO = {
     });
     const job = await started.json() as { job_id?: string; error?: string; hint?: string };
     if (!started.ok || !job.job_id) throw new Error([job.error, job.hint].filter(Boolean).join(' ') || `HTTP ${started.status}`);
-
-    for (;;) {
-      await wait(io.pollMs ?? 1500);
-      const r = await call(`/__project_files/__export/status?job_id=${encodeURIComponent(job.job_id)}`, { credentials: 'include', cache: 'no-store' });
-      const s = await r.json() as StatusReply;
-      if (!r.ok || s.state === 'failed') throw new Error(s.error ?? `HTTP ${r.status}`);
-      if (s.state !== 'done') { strip.set(progressText(s)); continue; }
-      if (!s.download) throw new Error('the render finished but the file is outside the projects folder');
-      const name = decodeURIComponent(s.download.split('/').pop() ?? `export.${req.type}`);
-      saveFromServer(s.download, name);
-      // Written, but with something missing (a sound mix that failed): say so, not "Exported".
-      showToast(s.warning ? `${name}: ${s.warning}` : `Exported ${name}`, s.warning ? 'warning' : 'success');
-      return name;
-    }
+    showToast(`${req.type.toUpperCase()} is rendering on the server. You can close this tab; the file will be waiting here.`, 'info');
+    startExportTray({ fetch: io.fetch, pollMs: io.pollMs });
+    return job.job_id;
   } catch (e) {
     showToast(`Video export failed: ${(e as Error).message}`, 'error');
     return null;
-  } finally {
-    strip.remove();
   }
 }
