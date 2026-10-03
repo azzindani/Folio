@@ -10,6 +10,7 @@ import { bindTimelineEdits } from './timeline-edit';
 import { bindTimelineDrags } from './timeline-drag';
 import { bindClipEdits, bindClipMoves, bindClipJoins, clipJoins, splitAtPlayhead, type ClipEditContext } from './timeline-clips';
 import { freezeAtPlayhead, holdMs, setHoldMs } from './clip-freeze';
+import { onMeasured, shotsOnScene } from './clip-measure';
 import { soundLane, analyse, type SoundAnalysis, type SoundDeps } from './timeline-sound';
 import { stripTimes, clipWave, browserFrames, type ClipLook } from './timeline-filmstrip';
 import { summarize, type ClipLayer } from '../../animation/video-clip';
@@ -60,6 +61,7 @@ export class TimelinePanelManager {
     this.player = player ?? new MotionPlayer(state);
     this.build();
     state.subscribe(this.onStateChange.bind(this));
+    onMeasured(() => this.render());
     this.player.subscribe(s => {
       // The sampler loads after the panel: redraw once, so rows move onto the scene clock.
       if ((this.player.rows() !== null) !== this.drawnWithRows) this.render();
@@ -196,7 +198,7 @@ export class TimelinePanelManager {
     const joins = clipJoins(authored);
     this.measure(sound.unmeasured);
     body.innerHTML = markerStripHTML(markersOf(design, currentPageIndex), this.duration) + sound.html
-      + rows.map(r => trackHTML(r.layer, timing?.get(r.layer.id), this.duration, r.depth, this.lookFor, l => joins.get(l.id))).join('');
+      + rows.map(r => trackHTML(r.layer, timing?.get(r.layer.id), this.duration, r.depth, this.lookFor, l => ({ join: joins.get(l.id), shots: shotsOnScene(l) }))).join('');
 
     // Scrubber
     body.insertAdjacentHTML('beforeend', `
@@ -314,6 +316,7 @@ export class TimelinePanelManager {
       markers: () => { const { design, currentPageIndex } = this.state.get(); return markersOf(design, currentPageIndex); },
       preview: ms => { const tc = this.container.querySelector<HTMLElement>('#tl-timecode'); if (tc) tc.textContent = fmtMs(ms); },
       beats: () => this.beats,
+      shots: id => { const l = this.state.findLayer(id); return l?.type === 'video' ? shotsOnScene(l) : []; },
     };
     bindClipEdits(body, clipCtx);
     bindClipMoves(body, clipCtx);

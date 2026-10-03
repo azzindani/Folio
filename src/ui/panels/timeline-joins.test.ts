@@ -28,15 +28,15 @@ describe('clipJoins', () => {
 
 describe('the join marker on the track', () => {
   it('sits on the cut: filled with a transition, hollow without, absent on a clip with no join', () => {
-    const plain = clipMarkup(clip('b', 2000), undefined, 10_000, 32, undefined, {});
+    const plain = clipMarkup(clip('b', 2000), undefined, 10_000, 32, undefined, { join: {} });
     expect(plain).toContain('tl-join"');
     expect(plain).toContain('left:calc(20% - 11px)');
     expect(plain).toContain('A hard cut');
-    const on = clipMarkup(clip('b', 2000), undefined, 10_000, 32, undefined, { transition: { type: 'wipe', duration_ms: 800 } });
+    const on = clipMarkup(clip('b', 2000), undefined, 10_000, 32, undefined, { join: { transition: { type: 'wipe', duration_ms: 800 } } });
     expect(on).toContain('tl-join tl-join-on');
     expect(on).toContain('Wipe · 800 ms');
     expect(clipMarkup(clip('a', 0), undefined, 10_000, 32)).not.toContain('tl-join');
-    expect(trackHTML(clip('b', 2000), undefined, 10_000, 0, undefined, () => ({}))).toContain('tl-join');
+    expect(trackHTML(clip('b', 2000), undefined, 10_000, 0, undefined, () => ({ join: {} }))).toContain('tl-join');
   });
 });
 
@@ -48,7 +48,7 @@ describe('clicking a join', () => {
     host = document.createElement('div');
     const joins = clipJoins(layers);
     host.innerHTML = '<button class="rpanel-tab" data-tab="properties"></button><div id="body">'
-      + layers.map(l => clipMarkup(l, undefined, 10_000, 32, undefined, joins.get(l.id))).join('') + '</div>';
+      + layers.map(l => clipMarkup(l, undefined, 10_000, 32, undefined, { join: joins.get(l.id) })).join('') + '</div>';
     document.body.appendChild(host);
     const tabClicks: number[] = [];
     host.querySelector('.rpanel-tab')?.addEventListener('click', () => tabClicks.push(1));

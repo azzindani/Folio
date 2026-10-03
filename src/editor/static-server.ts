@@ -45,6 +45,7 @@ import { isRangedMedia, mediaResponse } from './server-media';
 import { proxyFor } from '../mcp/engine/video-proxy';
 import { exportRoute, attachmentHeader } from './server-export';
 import { clipRoute } from './server-clip';
+import { measureRoute } from './server-clip-measure';
 import { isLibraryPath, libraryAbsPath } from '../mcp/engine/asset-library';
 // Shared inline favicon so server-rendered pages get the same tab icon as the editor.
 import { FAVICON_LINK } from '../utils/favicon';
@@ -459,6 +460,8 @@ Bun.serve({
       // ── Clip edits the editor asks the engine for (POST …/__clip): a freeze, a cut to the beat.
       const clipped = await clipRoute(req, url, { resolve: safeJoinProject });
       if (clipped) return clipped;
+      const measured = await measureRoute(req, url, { resolve: safeJoinProject });
+      if (measured) return measured;
 
       // ── GET /__project_files/<project>/__assets — asset listing for the
       // editor asset panel. Same manifest+disk merge the MCP asset_list op
