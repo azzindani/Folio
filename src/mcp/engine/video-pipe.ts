@@ -30,6 +30,8 @@ export class FramePipe {
   private eof = false;
   private wake: (() => void) | null = null;
   private exitCode: number | null | undefined = undefined;
+  /** The FIFO read in flight: the handle closes only after it settles (closing under it left it pending forever on Bun 1.1.38). */
+  private reading: Promise<unknown> = Promise.resolve();
   readonly exited: Promise<number | null>;
 
   /** `args` end where the output goes: FramePipe appends the FIFO path or pipe:1. */
@@ -73,14 +75,17 @@ export class FramePipe {
   close(): void {
     this.proc.kill('SIGKILL');
     this.unblock();
-    void this.fh?.then(fh => fh.close()).catch(() => undefined);
+    // The writer is dead, so a read in flight ends (EOF) — then the handle closes.
+    void this.fh?.then(async fh => { await this.reading.catch(() => undefined); await fh.close(); }).catch(() => undefined);
     if (this.fifo) fs.rm(this.fifo, { force: true }, () => undefined);
   }
 
   private async readInto(buf: Buffer, at: number, len: number): Promise<number> {
     if (this.fh) {
       const fh = await this.fh;
-      try { return (await fh.read(buf, at, len, null)).bytesRead; } catch { return 0; }
+      const read = fh.read(buf, at, len, null);
+      this.reading = read;
+      try { return (await read).bytesRead; } catch { return 0; }
     }
     while (!this.queued && !this.eof) {
       this.proc.stdout?.resume();

@@ -175,6 +175,11 @@ export class ClipStream {
     const pipe = this.pipe;
     this.pipe = null;
     pipe?.close();
+    // Frames let go at once: a read still settling (or never settling, Bun 1.1.38) keeps this object, not 8 MB frames.
+    this.ahead = [];
+    this.shown = null;
+    this.spare = [];
+    this.carry = null;
     this.signal();
   }
 }
