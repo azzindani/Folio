@@ -5,9 +5,10 @@
  * where it stops, with a grip on each end: drag the start to skip (or bring
  * back) footage — in point, file offset and length move together, so the frames
  * that stay keep their place — and the end to change its length. ✂ Split cuts
- * the clip under the playhead in two. Every edit goes through the same
- * arithmetic animation(op:video) uses (animation/video-clip.ts) and is one undo
- * step.
+ * the clip under the playhead in two (S); Del takes a clip off its main track and
+ * closes the gap. Edges snap to the playhead, markers, beats and the other clips'
+ * edges. Every edit goes through the same arithmetic animation(op:video) uses
+ * (animation/video-clip.ts) and is one undo step.
  */
 
 import type { StateManager } from '../../editor/state';
@@ -17,6 +18,10 @@ import type { RowTiming } from '../../editor/motion-pose';
 import { fromSceneTime, toSceneTime } from '../../animation/clock-time';
 import { summarize, trimClip, splitClip, type ClipLayer } from '../../animation/video-clip';
 import { follow } from './timeline-edit';
+import { lookHTML, type ClipLook } from './timeline-filmstrip';
+
+/** A clip block's thumbnails and waveform, asked for with how much of the ruler the block spans (%). */
+export type LookFor = (l: Layer, widthPct: number) => ClipLook | undefined;
 
 export interface ClipEditContext {
   state: StateManager;
@@ -38,8 +43,8 @@ export function clipSpan(l: Layer, row: Pick<RowTiming, 'clocks'> | undefined, d
   return { from: toSceneTime(s.plays.from, clocks), until: s.plays.until === null ? duration : toSceneTime(s.plays.until, clocks) };
 }
 
-/** A video row's clip block with its two trim grips. */
-export function clipMarkup(l: Layer, row: RowTiming | undefined, duration: number, trackH: number): string {
+/** A video row's clip block with its two trim grips, dressed with its footage and sound when `look` gives them. */
+export function clipMarkup(l: Layer, row: RowTiming | undefined, duration: number, trackH: number, look?: LookFor): string {
   const { from, until } = clipSpan(l, row, duration);
   const s = summarize(l as ClipLayer);
   const file = `file ${(s.file.from / 1000).toFixed(1)}–${s.file.to === null ? 'end' : `${(s.file.to / 1000).toFixed(1)}s`}${s.speed !== 1 ? ` at ${s.speed}×` : ''}`;
@@ -49,7 +54,7 @@ export function clipMarkup(l: Layer, row: RowTiming | undefined, duration: numbe
     + ` style="${edge === 'start' ? 'left:0' : 'right:0'}"></div>`;
   return `<div class="tl-clip" data-layer-id="${esc(l.id)}" title="${esc(`${l.id} — ${file}`)}"`
     + ` style="position:absolute;top:3px;height:${trackH - 6}px;left:${left}%;width:${width}%">`
-    + `<span class="tl-clip-label">${esc(file)}</span>${grip('start')}${grip('end')}</div>`;
+    + `${lookHTML(look?.(l, width))}<span class="tl-clip-label">${esc(file)}</span>${grip('start')}${grip('end')}</div>`;
 }
 
 /** The clip trimmed so `edge` lands on scene time `ms` — through the clip's clocks. */
@@ -77,7 +82,8 @@ export function splitAtPlayhead(state: StateManager, playhead: number, rows: Map
   return false;
 }
 
-function flatVideo(layers: Layer[]): Layer[] {
+/** Every clip in the tree, groups opened. */
+export function flatVideo(layers: Layer[]): Layer[] {
   return layers.flatMap(l => {
     const kids = (l as Layer & { layers?: Layer[] }).layers;
     return l.type === 'video' ? [l] : Array.isArray(kids) ? flatVideo(kids) : [];
@@ -85,7 +91,8 @@ function flatVideo(layers: Layer[]): Layer[] {
 }
 
 export function bindClipEdits(body: HTMLElement, ctx: ClipEditContext): void {
-  const snaps = (): number[] => [0, ctx.duration(), ctx.playhead(), ...Object.values(ctx.markers()), ...(ctx.beats?.() ?? [])];
+  const snaps = (id: string): number[] => [0, ctx.duration(), ctx.playhead(), ...Object.values(ctx.markers()), ...(ctx.beats?.() ?? []),
+    ...clipEdges(ctx.state.getCurrentLayers(), id, ctx.rows(), ctx.duration())];
   body.querySelectorAll<HTMLElement>('.tl-clip-h').forEach(h => {
     const area = h.closest<HTMLElement>('.tl-track-area');
     const block = h.closest<HTMLElement>('.tl-clip');
@@ -97,7 +104,7 @@ export function bindClipEdits(body: HTMLElement, ctx: ClipEditContext): void {
       if (!area || !block || !layer) return;
       const row = ctx.rows()?.get(id);
       const span = clipSpan(layer, row, ctx.duration());
-      follow(e, h, area, ctx, snaps(),
+      follow(e, h, area, ctx, snaps(id),
         ms => {
           const a = edge === 'start' ? ms : span.from, b = edge === 'end' ? ms : span.until;
           block.style.left = `${pct(Math.min(a, b), ctx.duration())}%`;
@@ -153,6 +160,39 @@ export function moveClip(clips: Layer[], id: string, dropMs: number): Map<string
   return out;
 }
 
+/**
+ * Clips taken off their main track with the gap closed — a video editor's ripple delete.
+ * The in/out patches that move the rest of each run up by what left it; a clip alone on
+ * its track leaves its gap (nothing follows it). Only the track moves: what plays of
+ * each file is untouched, and the rest of the scene keeps its times.
+ */
+export function rippleDelete(clips: Layer[], ids: readonly string[]): Map<string, Record<string, unknown>> {
+  const out = new Map<string, Record<string, unknown>>();
+  const gone = new Set(ids), done = new Set<string>();
+  for (const id of ids) {
+    const run = mainTrackOf(clips, id);
+    if (run.length < 2 || done.has(run[0]?.id ?? '')) continue;
+    done.add(run[0]?.id ?? '');
+    let shift = 0;
+    for (const c of run) {
+      const s = summarize(c as ClipLayer);
+      if (gone.has(c.id)) { shift += Math.max(0, (s.plays.until ?? s.plays.from) - s.plays.from); continue; }
+      if (!shift) continue;
+      const out_ = (c as ClipLayer).out;
+      out.set(c.id, { in: Math.max(0, s.plays.from - shift), ...(typeof out_ === 'number' ? { out: Math.max(0, out_ - shift) } : {}) });
+    }
+  }
+  return out;
+}
+
+/** Where the other clips start and stop on the scene clock — what a clip's edges snap to. */
+export function clipEdges(layers: Layer[], except: string, rows: Map<string, RowTiming> | null, duration: number): number[] {
+  return flatVideo(layers).filter(l => l.id !== except).flatMap(l => {
+    const { from, until } = clipSpan(l, rows?.get(l.id), duration);
+    return [from, until];
+  });
+}
+
 /** Drag a clip block by its body: reorder on its main track, or move it (timeline row clocks are ignored — top-level clips). */
 export function bindClipMoves(body: HTMLElement, ctx: ClipEditContext): void {
   body.querySelectorAll<HTMLElement>('.tl-clip').forEach(block => {
@@ -162,7 +202,7 @@ export function bindClipMoves(body: HTMLElement, ctx: ClipEditContext): void {
     block.addEventListener('pointerdown', e => {
       if (e.button !== 0 || (e.target as HTMLElement).classList.contains('tl-clip-h') || !area) return;
       const grabPx = e.clientX - block.getBoundingClientRect().left;
-      follow(e, block, area, ctx, [0, ctx.playhead(), ...Object.values(ctx.markers())],
+      follow(e, block, area, ctx, [0, ctx.playhead(), ...Object.values(ctx.markers()), ...clipEdges(ctx.state.getCurrentLayers(), id, ctx.rows(), ctx.duration())],
         ms => { block.style.left = `${pct(ms, ctx.duration())}%`; },
         ms => {
           if (ms === null) return;

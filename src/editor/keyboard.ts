@@ -63,7 +63,7 @@ export class KeyboardManager {
       {
         key: 'Delete',
         action: () => this.deleteSelected(),
-        description: 'Delete selected layers',
+        description: 'Delete selected layers (a clip closes its gap on its track)',
       },
       {
         key: 'Backspace',
@@ -116,6 +116,8 @@ export class KeyboardManager {
       { key: 'F5', action: () => this.app.presentation?.open(), description: 'Start presentation (F5)' },
       // Print
       { key: 'p', ctrl: true, action: () => this.app.printDesign?.(), description: 'Print design (Ctrl+P)' },
+      // Clips — S cuts at the playhead, as the timeline's ✂ Split does.
+      { key: 's', action: () => { actions.splitClipAt(this.state, this.app.motionPlayer.time, this.app.motionPlayer.rows()); }, description: 'Split clip at playhead' },
       // Tool shortcuts
       { key: 'v', action: () => this.state.set('activeTool', 'select', false), description: 'Select tool' },
       { key: 'r', action: () => this.state.set('activeTool', 'rect',   false), description: 'Rectangle tool' },

@@ -4,12 +4,14 @@ import type { Layer } from '../../schema/types';
 import { MotionPlayer } from '../../editor/motion-player';
 import type { Keyframe } from '../../animation/types';
 import { fromSceneTime } from '../../animation/clock-time';
-import { trackHTML, markerStripHTML, markersOf, fmtMs, HEADER_W } from './timeline-track-view';
+import { trackHTML, markerStripHTML, markersOf, fmtMs, HEADER_W, TRACK_H } from './timeline-track-view';
 import { timelineRows, setKeyframeEasing, shiftKeyframes, flattenForTimeline } from './timeline-model';
 import { bindTimelineEdits } from './timeline-edit';
 import { bindTimelineDrags } from './timeline-drag';
 import { bindClipEdits, bindClipMoves, splitAtPlayhead, type ClipEditContext } from './timeline-clips';
 import { soundLane, analyse, type SoundAnalysis, type SoundDeps } from './timeline-sound';
+import { stripTimes, clipWave, browserFrames, type ClipLook } from './timeline-filmstrip';
+import { summarize, type ClipLayer } from '../../animation/video-clip';
 import { resolveAssetUrl } from '../../renderer/render-context';
 
 // The pure API lives in timeline-model.ts; re-exported for existing importers.
@@ -40,6 +42,11 @@ export class TimelinePanelManager {
   /** The soundtrack's beats on the ruler as last drawn — snap points for every drag. */
   private beats: number[] = [];
   private asked = new Set<string>();
+  /** Clip thumbnails by `file|ms` (null: could not be grabbed); `grabbing` holds the ones asked for. */
+  private frames = new Map<string, string | null>();
+  private grabbing = new Set<string>();
+  private readonly frameDeps = browserFrames(src => resolveAssetUrl(src));
+  private redraw: ReturnType<typeof setTimeout> | null = null;
   /** Set by the app so the checkbox can reach the canvas. */
   onTrailsToggle?: (on: boolean) => void;
 
@@ -179,7 +186,7 @@ export class TimelinePanelManager {
     this.beats = sound.beats;
     this.measure(sound.unmeasured);
     body.innerHTML = markerStripHTML(markersOf(design, currentPageIndex), this.duration) + sound.html
-      + rows.map(r => trackHTML(r.layer, timing?.get(r.layer.id), this.duration, r.depth)).join('');
+      + rows.map(r => trackHTML(r.layer, timing?.get(r.layer.id), this.duration, r.depth, this.lookFor)).join('');
 
     // Scrubber
     body.insertAdjacentHTML('beforeend', `
@@ -195,12 +202,38 @@ export class TimelinePanelManager {
     this.bindTracks(body, layers, trackAreaW);
   }
 
+  /** A clip block's thumbnails and waveform from what has arrived; what has not is asked for, and the timeline redraws as it lands. */
+  private lookFor = (l: Layer, widthPct: number): ClipLook => {
+    const src = typeof (l as { src?: unknown }).src === 'string' ? (l as { src: string }).src : '';
+    const thumbs = stripTimes(l, widthPct).map(ms => {
+      const key = `${src}|${ms}`;
+      if (src && !this.grabbing.has(key)) {
+        this.grabbing.add(key);
+        // Twice the block's height, so the strip stays sharp on a dense screen.
+        void this.frameDeps.grab(src, ms, (TRACK_H - 6) * 2).then(uri => { this.frames.set(key, uri); this.redrawSoon(); });
+      }
+      return this.frames.get(key);
+    });
+    if (src && !summarize(l as ClipLayer).muted) this.measure([src]);
+    return { thumbs, wave: clipWave(l, this.sounds.get(src)) };
+  };
+
+  /** One redraw for a burst of arrivals — and never under a drag, which a redraw would cut short. */
+  private redrawSoon(): void {
+    if (this.redraw) return;
+    this.redraw = setTimeout(() => {
+      this.redraw = null;
+      if (this.container.querySelector('.tl-dragging')) { this.redrawSoon(); return; }
+      this.render();
+    }, 150);
+  }
+
   /** Measure sound files not yet measured; redraw as each arrives, so its waveform and beats appear. */
   private measure(srcs: string[]): void {
     for (const src of srcs) {
       if (this.asked.has(src)) continue;   // asked once: a failure stays a failure, never a loop of retries
       this.asked.add(src);
-      void analyse(src, SOUND_DEPS).then(a => { this.sounds.set(src, a); this.render(); });
+      void analyse(src, SOUND_DEPS).then(a => { this.sounds.set(src, a); this.redrawSoon(); });
     }
   }
 

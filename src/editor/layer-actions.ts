@@ -5,14 +5,26 @@ import { StateManager } from './state';
 import type { Layer } from '../schema/types';
 import { serializeYAML, parseYAML } from '../schema/parser';
 import { resolveLayers, sourceOptions, carriesRule } from '../renderer/resolve-source';
+import { flatVideo, rippleDelete, splitAtPlayhead } from '../ui/panels/timeline-clips';
+import type { RowTiming } from './motion-pose';
 
 let duplicateCounter = 0;
 let groupCounter = 0;
 
+/** Delete the selection — one undo step. A clip on a main track takes its gap with it (timeline-clips.ts rippleDelete). */
 export function deleteSelected(state: StateManager): void {
   const ids = state.get().selectedLayerIds;
-  for (const id of ids) state.removeLayer(id);
+  const ripple = rippleDelete(flatVideo(state.getCurrentLayers()), ids);
+  state.removeLayers(ids);
+  // Recorded with the removal: one undo puts the clip back and the track where it was.
+  if (ripple.size) state.updateLayers(ripple, false);
   state.set('selectedLayerIds', []);
+}
+
+/** S: cut the selected clip — or the top clip under the playhead — at the playhead. */
+export function splitClipAt(state: StateManager, playhead: number, rows: Map<string, RowTiming> | null): boolean {
+  const selected = state.getSelectedLayers().find(l => l.type === 'video');
+  return splitAtPlayhead(state, playhead, rows, selected?.id);
 }
 
 export function duplicateSelected(state: StateManager): void {

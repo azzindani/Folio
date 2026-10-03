@@ -1,7 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { StateManager } from '../../editor/state';
 import type { DesignSpec, Layer } from '../../schema/types';
-import { clipSpan, clipMarkup, trimmedAt, splitAtPlayhead, moveClip, mainTrackOf } from './timeline-clips';
+import { clipSpan, clipMarkup, trimmedAt, splitAtPlayhead, moveClip, mainTrackOf, rippleDelete, clipEdges } from './timeline-clips';
+import { stripTimes, clipWave } from './timeline-filmstrip';
+import { deleteSelected, splitClipAt } from '../../editor/layer-actions';
 import { trackHTML } from './timeline-track-view';
 
 const take = (extra: Record<string, unknown> = {}): Layer =>
@@ -72,5 +74,56 @@ describe('reordering the main track', () => {
   it('an out point moves with its clip', () => {
     const p = moveClip([clip('x', 0, 1000, { out: 1000 }), clip('y', 1000, 1000)], 'x', 1600);
     expect(Object.fromEntries(p)).toEqual({ y: { in: 0 }, x: { in: 1000, out: 2000 } });
+  });
+});
+
+describe('ripple delete and the edges clips snap to', () => {
+  // Three clips end to end on the main track (0–2000, 2000–5000, 5000–6000) and a lone one over them.
+  const clip = (id: string, at: number, len: number): Layer =>
+    ({ id, type: 'video', x: 0, y: 0, width: 320, height: 180, z: 0, src: `assets/video/${id}.mp4`, in: at, out: at + len, video: { offset_ms: 0, duration_ms: len } }) as unknown as Layer;
+  const track = (): Layer[] => [clip('a', 0, 2000), clip('b', 2000, 3000), clip('c', 5000, 1000), clip('pip', 1000, 1500)];
+
+  it('closes the gap a clip leaves on its track; a lone clip leaves its gap', () => {
+    expect([...rippleDelete(track(), ['b'])]).toEqual([['c', { in: 2000, out: 3000 }]]);
+    expect([...rippleDelete(track(), ['a', 'b'])]).toEqual([['c', { in: 0, out: 1000 }]]);
+    expect(rippleDelete(track(), ['pip']).size).toBe(0);
+  });
+  it('Del through the editor: one undo puts the clip back and the track where it was', () => {
+    const state = stateWith(track());
+    state.set('selectedLayerIds', ['b'], false);
+    deleteSelected(state);
+    expect(state.getCurrentLayers().map(l => [l.id, (l as { in?: number }).in])).toEqual([['a', 0], ['c', 2000], ['pip', 1000]]);
+    state.undo();
+    expect(state.getCurrentLayers().map(l => [l.id, (l as { in?: number }).in])).toEqual([['a', 0], ['b', 2000], ['c', 5000], ['pip', 1000]]);
+  });
+  it('S cuts the selected clip at the playhead', () => {
+    const state = stateWith(track());
+    state.set('selectedLayerIds', ['b'], false);
+    expect(splitClipAt(state, 3000, null)).toBe(true);
+    expect(state.getCurrentLayers().map(l => l.id)).toEqual(['a', 'b', 'b_2', 'c', 'pip']);
+  });
+  it('the other clips\' starts and ends are snap points', () => {
+    expect(clipEdges(track(), 'b', null, 10_000).sort((x, y) => x - y)).toEqual([0, 1000, 2000, 2500, 5000, 6000]);
+  });
+});
+
+describe('the block\'s footage and sound', () => {
+  it('a thumbnail per ~5% of the ruler, at file moments rounded to 100 ms', () => {
+    expect(stripTimes(take(), 40)).toEqual([2300, 2800, 3300, 3800, 4300, 4800, 5300, 5800]);
+    expect(stripTimes(take(), 2)).toEqual([4000]);
+  });
+  it('the waveform covers the part of the file it plays; muted or unmeasured shows none', () => {
+    const samples = new Float32Array(11_025 * 8).map((_, i) => (i < 11_025 * 4 ? 0.1 : 0.9));
+    const a = { samples, duration_ms: 8000, beats_ms: [], bpm: 0 };
+    const w = clipWave(take(), a, 4) ?? [];
+    expect(w.map(v => +v.toFixed(1))).toEqual([0.1, 0.1, 0.9, 0.9]);
+    expect(clipWave(take({ video: { offset_ms: 2000, duration_ms: 4000, muted: true } }), a)).toBeNull();
+    expect(clipWave(take(), null)).toBeNull();
+  });
+  it('dresses the block under its label: thumbnails (a gap while one loads) and the waveform', () => {
+    const html = clipMarkup(take(), undefined, 10_000, 32, () => ({ thumbs: ['data:image/jpeg;base64,AA', undefined], wave: [0.5, 1] }));
+    expect(html).toContain('<div class="tl-clip-strip"><img src="data:image/jpeg;base64,AA" alt=""><span></span></div>');
+    expect(html).toContain('class="tl-clip-wave"');
+    expect(html.indexOf('tl-clip-strip')).toBeLessThan(html.indexOf('tl-clip-label'));
   });
 });
