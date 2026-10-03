@@ -3186,6 +3186,15 @@ body.clip-reframing, body.clip-reframing * { cursor: grab !important; }
   white-space: nowrap;
   pointer-events: none;
 }
+.tl-shot {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: #fff;
+  opacity: .75;
+  pointer-events: none;
+}
 .tl-join {
   width: 22px;
   height: 22px;

@@ -25,7 +25,9 @@ import { lookHTML, type ClipLook } from './timeline-filmstrip';
 
 /** A clip that starts where another ends — a join — with the transition into it, if any. */
 export interface ClipJoin { transition?: ClipTransition }
-export type JoinOf = (l: Layer) => ClipJoin | undefined;
+/** What dresses a clip block beyond the clip itself: the join into it, and the shot cuts measured in its footage (scene ms). */
+export interface ClipExtras { join?: ClipJoin; shots?: number[] }
+export type ExtrasOf = (l: Layer) => ClipExtras | undefined;
 
 /** Every join in the tree: for each list of layers, the video layers that start where another one in it stops. */
 export function clipJoins(layers: Layer[]): Map<string, ClipJoin> {
@@ -66,6 +68,8 @@ export interface ClipEditContext {
   markers: () => TimeMarkers;
   preview: (ms: number) => void;
   beats?: () => number[];
+  /** Shot cuts measured in a clip's footage, scene ms — its edges snap to them. */
+  shots?: (id: string) => number[];
 }
 
 const esc = (s: string): string => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c] ?? c);
@@ -78,8 +82,15 @@ export function clipSpan(l: Layer, row: Pick<RowTiming, 'clocks'> | undefined, d
   return { from: toSceneTime(s.plays.from, clocks), until: s.plays.until === null ? duration : toSceneTime(s.plays.until, clocks) };
 }
 
+/** A tick on the block at each shot cut inside it (scene ms → % of the block). */
+function shotTicks(shots: number[] | undefined, from: number, until: number): string {
+  const span = Math.max(1, until - from);
+  return (shots ?? []).filter(ms => ms > from && ms < until)
+    .map(ms => `<i class="tl-shot" style="left:${(((ms - from) / span) * 100).toFixed(3)}%" title="${esc(`A shot cut at ${(ms / 1000).toFixed(2)}s`)}"></i>`).join('');
+}
+
 /** A video row's clip block with its two trim grips, dressed with its footage and sound when `look` gives them. */
-export function clipMarkup(l: Layer, row: RowTiming | undefined, duration: number, trackH: number, look?: LookFor, join?: ClipJoin): string {
+export function clipMarkup(l: Layer, row: RowTiming | undefined, duration: number, trackH: number, look?: LookFor, extras?: ClipExtras): string {
   const { from, until } = clipSpan(l, row, duration);
   const s = summarize(l as ClipLayer);
   const file = `file ${(s.file.from / 1000).toFixed(1)}–${s.file.to === null ? 'end' : `${(s.file.to / 1000).toFixed(1)}s`}${s.speed !== 1 ? ` at ${s.speed}×` : ''}`;
@@ -89,8 +100,8 @@ export function clipMarkup(l: Layer, row: RowTiming | undefined, duration: numbe
     + ` style="${edge === 'start' ? 'left:0' : 'right:0'}"></div>`;
   return `<div class="tl-clip" data-layer-id="${esc(l.id)}" title="${esc(`${l.id} — ${file}`)}"`
     + ` style="position:absolute;top:3px;height:${trackH - 6}px;left:${left}%;width:${width}%">`
-    + `${lookHTML(look?.(l, width))}<span class="tl-clip-label">${esc(file)}</span>${grip('start')}${grip('end')}</div>`
-    + (join ? joinMarkup(l, join, left) : '');
+    + `${lookHTML(look?.(l, width))}${shotTicks(extras?.shots, from, until)}<span class="tl-clip-label">${esc(file)}</span>${grip('start')}${grip('end')}</div>`
+    + (extras?.join ? joinMarkup(l, extras.join, left) : '');
 }
 
 /** The clip trimmed so `edge` lands on scene time `ms` — through the clip's clocks. */
@@ -128,7 +139,7 @@ export function flatVideo(layers: Layer[]): Layer[] {
 
 export function bindClipEdits(body: HTMLElement, ctx: ClipEditContext): void {
   const snaps = (id: string): number[] => [0, ctx.duration(), ctx.playhead(), ...Object.values(ctx.markers()), ...(ctx.beats?.() ?? []),
-    ...clipEdges(ctx.state.getCurrentLayers(), id, ctx.rows(), ctx.duration())];
+    ...clipEdges(ctx.state.getCurrentLayers(), id, ctx.rows(), ctx.duration()), ...(ctx.shots?.(id) ?? [])];
   body.querySelectorAll<HTMLElement>('.tl-clip-h').forEach(h => {
     const area = h.closest<HTMLElement>('.tl-track-area');
     const block = h.closest<HTMLElement>('.tl-clip');

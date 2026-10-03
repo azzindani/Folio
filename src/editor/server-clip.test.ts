@@ -10,11 +10,18 @@ describe('clipArgs — what the editor may ask the engine', () => {
     expect(clipArgs({ layer_id: 'a', freeze: { at: 2000, duration_ms: 800, evil: 1 } }, abs)).toEqual({ op: 'video', design_path: abs, layer_id: 'a', freeze: { at: 2000, duration_ms: 800 } });
     expect(clipArgs({ layer_id: 'a', freeze: { at: 'later', duration_ms: 800 } }, abs)).toContain('freeze needs');
   });
+  it('cut is a list of file-clock spans, and only numbers get through', () => {
+    expect(clipArgs({ layer_id: 'a', cut: [[1000, 2000], [3500, 4000]] }, abs)).toEqual({ op: 'video', design_path: abs, layer_id: 'a', cut: [[1000, 2000], [3500, 4000]] });
+    for (const bad of [[], 'x', 5, [[1]], [[1, 'b']], [[1, Infinity]], Array.from({ length: 201 }, () => [0, 1])]) {
+      expect(clipArgs({ layer_id: 'a', cut: bad }, abs), JSON.stringify(bad).slice(0, 30)).toContain('cut must be');
+    }
+  });
   it('on_beats is true or the four options the engine reads — and exactly one of the two ops', () => {
     expect(clipArgs({ layer_id: 'a', page_id: 'p1', on_beats: true }, abs)).toMatchObject({ page_id: 'p1', on_beats: true });
     expect(clipArgs({ layer_id: 'a', on_beats: { every: 4, end: false, audio_id: 'x', max_shift_ms: 200 } }, abs)).toMatchObject({ on_beats: { every: 4, end: false, max_shift_ms: 200 } });
     expect((clipArgs({ layer_id: 'a', on_beats: { every: 4, audio_id: 'x' } }, abs) as { on_beats: object }).on_beats).not.toHaveProperty('audio_id');
     expect(clipArgs({ layer_id: 'a' }, abs)).toContain('exactly one');
+    expect(clipArgs({ layer_id: 'a', cut: [[0, 1]], on_beats: true }, abs)).toContain('exactly one');
     expect(clipArgs({ layer_id: 'a', freeze: { at: 1, duration_ms: 1 }, on_beats: true }, abs)).toContain('exactly one');
     expect(clipArgs({ freeze: { at: 1, duration_ms: 1 } }, abs)).toContain('layer_id');
   });

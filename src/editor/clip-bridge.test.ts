@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { StateManager } from './state';
 import { serializeYAML } from '../schema/parser';
 import { registerServerHost } from './server-host';
-import { runClipOp } from './clip-bridge';
+import { runClipOp, measureClip } from './clip-bridge';
 import type { DesignSpec } from '../schema/types';
 
 const design = (ids: string[], pages = false): DesignSpec => {
@@ -59,3 +59,22 @@ describe('runClipOp — the engine edits the saved file, the editor shows what i
     expect(state.getCurrentLayers().map(l => l.id)).toEqual(['a']);
   });
 });
+
+describe('measureClip', () => {
+  it('saves first, asks for the clip by design and layer, and returns what was read', async () => {
+    let asked = '';
+    state.set('dirty', true, false);
+    const call = (async (u: string) => { asked = u; return new Response(JSON.stringify({ ok: true, from: 1000, to: 6000, shots: [1500], silences: [[2000, 2600]] })); }) as unknown as typeof fetch;
+    expect(await measureClip(state, 'a', call)).toEqual({ from: 1000, to: 6000, shots: [1500], silences: [[2000, 2600]] });
+    expect(saved).toBe(1);
+    expect(asked).toBe('/__project_files/__clip/measure?design=proj%2Fdesigns%2Fd.design.yaml&layer=a');
+  });
+  it('says why it could not: no server file, a refusal, a dead server', async () => {
+    registerServerHost({ rel: () => null, save: async () => false });
+    expect(await measureClip(state, 'a', reply({}))).toMatchObject({ error: expect.stringContaining('save the design to the library') });
+    registerServerHost({ rel: () => 'p/d.design.yaml', save: async () => true });
+    expect(await measureClip(state, 'a', reply({ ok: false, error: 'not in the project' }, 404))).toEqual({ error: 'not in the project' });
+    expect(await measureClip(state, 'a', (async () => { throw new Error('offline'); }) as typeof fetch)).toMatchObject({ error: expect.stringContaining('did not answer') });
+  });
+});
+
