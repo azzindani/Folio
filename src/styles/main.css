@@ -3163,6 +3163,9 @@ body.clip-reframing, body.clip-reframing * { cursor: grab !important; }
      matters. Rows carry the whole verb list on touch, so they get the height
      rather than the icons inside them. */
   .ax-row .c-name { min-height: 44px; }
+  /* The clip inspector and the clip track's join marker: a finger, not a cursor. */
+  .clip-row .btn, .clip-input, .clip-swatch { min-height: 44px; }
+  .clip-range { min-height: 32px; }
   .ax-crumb { min-height: 44px; }
   .ax-menu-item { min-height: 44px; }
 }
@@ -3195,10 +3198,11 @@ body.clip-reframing, body.clip-reframing * { cursor: grab !important; }
   opacity: .75;
   pointer-events: none;
 }
+
 .tl-join {
   width: 22px;
   height: 22px;
-  margin-top: -11px;
+  transform: translate(-50%, -50%);
   z-index: 2;
   cursor: pointer;
   touch-action: none;
@@ -3213,6 +3217,11 @@ body.clip-reframing, body.clip-reframing * { cursor: grab !important; }
 }
 .tl-join:hover::after, .tl-join:focus-visible::after { opacity: 1; }
 .tl-join:focus-visible { outline: none; }
+/* A finger: the marker is a button on the cut itself. After the base rules above, or they win. */
+@media (pointer: coarse) {
+  .tl-join { width: 36px; height: 36px; }
+  .tl-join::after { inset: 8px; }
+}
 .tl-join-on::after { background: var(--color-accent); opacity: .95; }
 .tl-clip-h {
   position: absolute;

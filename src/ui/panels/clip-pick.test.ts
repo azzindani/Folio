@@ -24,3 +24,15 @@ describe('mapping a click on the box back to the clip\'s own picture', () => {
     expect(sourcePoint(0.5, 0.5, A, W, H, 'none', [0.5, 0.5])).toBeNull();
   });
 });
+
+describe('canvasVideo', () => {
+  it('finds the clip on the canvas, not its copy in the minimap that comes first in the document', async () => {
+    const { canvasVideo } = await import('./clip-pick');
+    document.body.innerHTML = '<div class="properties-panel"><video data-video-layer="a" id="mini"></video></div><div class="canvas-svg-container"><video data-video-layer="a" id="main"></video></div>';
+    expect(canvasVideo('a')?.id).toBe('main');
+    expect(canvasVideo('missing')).toBeNull();
+    document.body.innerHTML = '<video data-video-layer="a" id="alone"></video>';
+    expect(canvasVideo('a')?.id).toBe('alone');
+    document.body.innerHTML = '';
+  });
+});

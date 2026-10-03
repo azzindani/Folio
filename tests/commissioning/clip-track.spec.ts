@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';
-import { FIXTURE_PROJECTS, TEST_TOKEN } from './lib/harness';
+import { FIXTURE_PROJECTS, TEST_TOKEN, scrubBox } from './lib/harness';
 
 /**
  * THE CLIP TRACK — footage edited by hand in the timeline.
@@ -47,9 +47,7 @@ test('a clip splits at the playhead and trims by its grip', async ({ page }) => 
 
   // Playhead to the middle of the scene, then ✂ Split with nothing selected:
   // it cuts the clip under the playhead.
-  const scrub = page.locator('.tl-scrub-area');
-  const box = await scrub.boundingBox();
-  if (!box) throw new Error('no scrubber');
+  const box = await scrubBox(page);
   await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
   await page.click('#tl-split');
 

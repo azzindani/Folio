@@ -21,6 +21,16 @@ export function sourcePoint(
   return x < 0 || y < 0 || x >= vw || y >= vh ? null : { x, y };
 }
 
+/**
+ * The clip's <video> ON THE CANVAS. The minimap in the properties panel draws a copy of every clip too, a fifth the
+ * size: a lookup by layer id alone finds whichever comes first in the document, and a click on the canvas would be
+ * mapped through the wrong box.
+ */
+export function canvasVideo(layerId: string): HTMLVideoElement | null {
+  const scope = document.querySelector('.canvas-svg-container') ?? document;
+  return Array.from(scope.querySelectorAll<HTMLVideoElement>('video[data-video-layer]')).find(v => v.dataset['videoLayer'] === layerId) ?? null;
+}
+
 /** "37% 80%" → [0.37, 0.8]; anything else is the middle. */
 function position(css: string): [number, number] {
   const m = /(-?[\d.]+)%\s+(-?[\d.]+)%/.exec(css);
@@ -31,7 +41,7 @@ const hex = (n: number): string => Math.round(n).toString(16).padStart(2, '0');
 
 /** The colour of the clip's raw picture under a click (a 5×5 average, steadier than one pixel); null off the picture. */
 export function sampleClip(layerId: string, clientX: number, clientY: number): string | null {
-  const v = Array.from(document.querySelectorAll<HTMLVideoElement>('video[data-video-layer]')).find(e => e.dataset['videoLayer'] === layerId);
+  const v = canvasVideo(layerId);
   if (!v || !v.videoWidth || v.readyState < 2) return null;
   const r = v.getBoundingClientRect();
   if (!r.width || !r.height || clientX < r.left || clientX > r.right || clientY < r.top || clientY > r.bottom) return null;

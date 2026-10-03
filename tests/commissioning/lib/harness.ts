@@ -14,6 +14,21 @@ import type { Page } from '@playwright/test';
 
 // Playwright loads these as ES modules, where __dirname does not exist; the
 // runner's cwd is the repo root.
+/**
+ * The timeline's scrubber, measured. The panel redraws as thumbnails and waveforms land and replaces its
+ * nodes, so a handle resolved a moment ago can be detached by the time it is asked for its box (null, "no
+ * scrubber" — it failed one CI run in five): ask again until a live one answers.
+ */
+export async function scrubBox(page: Page): Promise<{ x: number; y: number; width: number; height: number }> {
+  const deadline = Date.now() + 15_000;
+  for (;;) {
+    const box = await page.locator('.tl-scrub-area').boundingBox();
+    if (box) return box;
+    if (Date.now() > deadline) throw new Error('the timeline has no scrubber');
+    await page.waitForTimeout(100);
+  }
+}
+
 export const REPO_ROOT = path.resolve(process.cwd());
 export const FIXTURE_PROJECTS = path.join(REPO_ROOT, 'tests/commissioning/fixtures/projects');
 export const FIXTURE_PROJECT = path.join(FIXTURE_PROJECTS, 'commissioning');

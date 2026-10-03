@@ -30,7 +30,7 @@ describe('the join marker on the track', () => {
   it('sits on the cut: filled with a transition, hollow without, absent on a clip with no join', () => {
     const plain = clipMarkup(clip('b', 2000), undefined, 10_000, 32, undefined, { join: {} });
     expect(plain).toContain('tl-join"');
-    expect(plain).toContain('left:calc(20% - 11px)');
+    expect(plain).toContain('left:20%');
     expect(plain).toContain('A hard cut');
     const on = clipMarkup(clip('b', 2000), undefined, 10_000, 32, undefined, { join: { transition: { type: 'wipe', duration_ms: 800 } } });
     expect(on).toContain('tl-join tl-join-on');

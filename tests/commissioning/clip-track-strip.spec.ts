@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';
 import { spawnSync } from 'child_process';
-import { FIXTURE_PROJECTS, TEST_TOKEN } from './lib/harness';
+import { FIXTURE_PROJECTS, TEST_TOKEN, scrubBox } from './lib/harness';
 
 /**
  * THE CLIP TRACK, DRESSED AND KEYED — what only a browser with real footage shows.
@@ -63,8 +63,7 @@ test('clip blocks show their footage and sound; S splits; Delete closes the gap'
   await expect(page.locator('.tl-clip[data-layer-id="one"] .tl-clip-wave'), 'the clip\'s sound drew no waveform').toHaveCount(1, { timeout: 30_000 });
 
   // Playhead into the second clip, then S: it cuts the clip under the playhead.
-  const scrub = await page.locator('.tl-scrub-area').boundingBox();
-  if (!scrub) throw new Error('no scrubber');
+  const scrub = await scrubBox(page);
   await page.mouse.click(scrub.x + scrub.width * 0.75, scrub.y + scrub.height / 2);
   await page.locator('body').press('s');
   await expect(page.locator('.tl-clip'), 'S did not cut the clip under the playhead').toHaveCount(3);
