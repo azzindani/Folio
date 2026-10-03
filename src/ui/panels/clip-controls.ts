@@ -46,9 +46,20 @@ export function button(act: string, label: string, title = '', disabled = false)
 
 export function note(text: string): string { return `<div class="clip-note">${esc(text)}</div>`; }
 
-/** A titled block, collapsible like every other section of the panel. */
+/** Which blocks the person opened or closed — the panel redraws on every edit and must not undo that. */
+const toggled = new Map<string, boolean>();
+
+/** A titled block, collapsible like every other section of the panel; `collapsed` is only the first answer. */
 export function block(title: string, body: string, collapsed = false): string {
-  return `<div class="prop-section${collapsed ? ' collapsed' : ''}"><div class="prop-section-header">${esc(title)}</div><div class="prop-section-body">${body}</div></div>`;
+  const shut = toggled.get(title) ?? collapsed;
+  return `<div class="prop-section${shut ? ' collapsed' : ''}" data-clip-block="${esc(title)}"><div class="prop-section-header">${esc(title)}</div><div class="prop-section-body">${body}</div></div>`;
+}
+
+/** Remember each block's open/closed state as it is clicked (after the panel's own accordion has flipped it). */
+export function rememberBlocks(root: HTMLElement): void {
+  root.querySelectorAll<HTMLElement>('[data-clip-block]').forEach(sec => {
+    sec.querySelector('.prop-section-header')?.addEventListener('click', () => toggled.set(sec.dataset['clipBlock'] ?? '', sec.classList.contains('collapsed')));
+  });
 }
 
 export type ClipValue = number | string | boolean;
