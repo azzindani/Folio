@@ -104,7 +104,7 @@ describe('the Grade section', () => {
     expect(video('b')).not.toHaveProperty('color');
     drag('contrast', [0.3]);
     drag('temperature', [-0.4]);
-    const reset = wrapper.querySelector('[data-clip-act="reset"]') as HTMLButtonElement;
+    const reset = wrapper.querySelector('[data-clip-block="Grade"] [data-clip-act="reset"]') as HTMLButtonElement;
     expect(reset.disabled).toBe(false);
     reset.click();
     expect(video('b')).not.toHaveProperty('color');
