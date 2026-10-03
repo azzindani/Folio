@@ -8,6 +8,8 @@
 //   NASA Image and Video Library — NASA media is generally not copyrighted
 //     (third-party material in a video is the exception, noted). The fetch takes
 //     the smallest MP4 rendition: NASA videos run long and heavy.
+// `hd` (asset_fetch quality:"hd") asks for up to 1080p from both — footage a
+// tall frame crops into (9:16 out of 16:9) needs the lines.
 
 import type { AssetCandidate } from './asset-search';
 import { slugify, type ResolvedAsset } from './asset-fetch';
@@ -23,9 +25,9 @@ interface WMVideoInfo {
 const text = (v: unknown): string => String(v ?? '').replace(/<[^>]*>/g, ' ').replace(/&[a-z]+;/gi, ' ').replace(/\s+/g, ' ').trim().slice(0, 160);
 const WM_API = 'https://commons.wikimedia.org/w/api.php';
 
-/** The VP9 WebM rendition to store: the tallest at or under 720 lines. */
-export function pickWebm(derivatives: WMVideoInfo['derivatives']): { src: string; width?: number; height?: number } | null {
-  const webm = (derivatives ?? []).filter(d => d.src && /video\/webm/.test(d.type ?? '') && (d.height ?? 0) > 0 && (d.height ?? 0) <= 720);
+/** The VP9 WebM rendition to store: the tallest at or under `maxLines` (720; 1080 for hd). */
+export function pickWebm(derivatives: WMVideoInfo['derivatives'], maxLines = 720): { src: string; width?: number; height?: number } | null {
+  const webm = (derivatives ?? []).filter(d => d.src && /video\/webm/.test(d.type ?? '') && (d.height ?? 0) > 0 && (d.height ?? 0) <= maxLines);
   webm.sort((a, b) => (b.height ?? 0) - (a.height ?? 0));
   const best = webm[0];
   return best?.src ? { src: best.src, ...(best.width ? { width: best.width } : {}), ...(best.height ? { height: best.height } : {}) } : null;
@@ -56,7 +58,7 @@ export async function searchWikimediaVideo(query: string, limit: number): Promis
   return rows.sort((a, b) => (a.duration_ms ?? Infinity) - (b.duration_ms ?? Infinity)).slice(0, limit);
 }
 
-export async function resolveWikimediaVideo(title: string): Promise<ResolvedAsset> {
+export async function resolveWikimediaVideo(title: string, hd = false): Promise<ResolvedAsset> {
   const file = title.replace(/^File:/i, '');
   const qs = new URLSearchParams({
     action: 'query', format: 'json', origin: '*', titles: `File:${file}`,
@@ -64,7 +66,7 @@ export async function resolveWikimediaVideo(title: string): Promise<ResolvedAsse
   });
   const data = await httpJSON<{ query?: { pages?: Record<string, { videoinfo?: WMVideoInfo[] }> } }>(`${WM_API}?${qs}`);
   const info = Object.values(data.query?.pages ?? {})[0]?.videoinfo?.[0];
-  const pick = pickWebm(info?.derivatives);
+  const pick = pickWebm(info?.derivatives, hd ? 1080 : 720);
   if (!info || !pick) throw new NetError(`Wikimedia Commons has no playable rendition of "${file}"`, 'Re-run asset_search with what:"clip" and pick another result.');
   const license = text(info.extmetadata?.['LicenseShortName']?.value) || 'see file page';
   const artist = text(info.extmetadata?.['Artist']?.value);
@@ -98,18 +100,19 @@ export async function searchNasaVideo(query: string, limit: number): Promise<Ass
   }).slice(0, limit);
 }
 
-/** The smallest MP4 rendition NASA lists — mobile, then small, then preview, then medium. */
-export function pickNasaMp4(hrefs: string[]): string | null {
-  for (const tag of ['~mobile.mp4', '~small.mp4', '~preview.mp4', '~medium.mp4']) {
+/** The smallest MP4 rendition NASA lists — mobile, then small, then preview, then medium; with `hd`, large (1080p) then medium (720p) first. */
+export function pickNasaMp4(hrefs: string[], hd = false): string | null {
+  const order = ['~mobile.mp4', '~small.mp4', '~preview.mp4', '~medium.mp4'];
+  for (const tag of hd ? ['~large.mp4', '~medium.mp4', ...order] : order) {
     const hit = hrefs.find(h => h.endsWith(tag));
     if (hit) return hit.replace(/^http:/, 'https:');
   }
   return null;
 }
 
-export async function resolveNasaVideo(id: string): Promise<ResolvedAsset> {
+export async function resolveNasaVideo(id: string, hd = false): Promise<ResolvedAsset> {
   const data = await httpJSON<{ collection?: { items?: Array<{ href?: string }> } }>(`${NASA}/asset/${encodeURIComponent(id)}`);
-  const url = pickNasaMp4((data.collection?.items ?? []).map(i => String(i.href ?? '')));
+  const url = pickNasaMp4((data.collection?.items ?? []).map(i => String(i.href ?? '')), hd);
   if (!url) throw new NetError(`NASA lists no MP4 for "${id}"`, 'Pick another result from asset_search what:"clip".');
   return {
     url, kind: 'video', ext: 'mp4', suggestedName: slugify(id, 'nasa-clip'), license: NASA_LICENSE, creator: 'NASA', title: id,
