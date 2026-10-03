@@ -9,7 +9,7 @@ import { renderToSVGString } from './svg-export';
 import { resvgFontOption } from './fonts';
 import { specAt } from '../../export/gif-frames';
 import { rasterize } from '../../utils/resvg-isolate';
-import { bandedFrame, paintBanded, plainClip } from './footage-bands';
+import { bandedFrame, paintBanded, plainClip, placedRect, decodeSize } from './footage-bands';
 import { FootageFeed } from './video-feed';
 
 const hasFfmpeg = spawnSync('ffmpeg', ['-version']).error === undefined;
@@ -61,10 +61,50 @@ describe('bandedFrame — cut at the clips in paint order', () => {
     expect(typeof b?.bands[0]).toBe('string');
     expect(b?.bands[1]).toBeNull();
   });
-  it('a clip inside a group, or a treated clip, sends the frame down the embedded path', () => {
-    expect(bandedFrame(spec([{ id: 'g', type: 'group', x: 0, y: 0, width: 320, height: 180, z: 0, layers: [clip()] } as unknown as Layer]))).toBeNull();
+  const group = (extra: Record<string, unknown>, layers: Layer[]): Layer =>
+    ({ id: 'g', type: 'group', x: 0, y: 0, width: 320, height: 180, z: 1, layers, ...extra }) as unknown as Layer;
+  const a = { id: 'a', type: 'rect', x: 10, y: 10, width: 50, height: 50, z: 0, fill: '#AA0000' } as unknown as Layer;
+  const c = { id: 'c', type: 'rect', x: 200, y: 10, width: 50, height: 50, z: 2, fill: '#00AA00' } as unknown as Layer;
+
+  it('cuts inside a group: its paint order around the clip, the group kept on both sides', () => {
+    const b = bandedFrame(spec([under, group({ transform: 'translate(20 10) scale(1.5)' }, [c, clip(), a]), over]));
+    expect(b?.slots.map(s => [s.req.id, s.canvas])).toEqual([['take', { x: 80, y: 40, width: 360, height: 202.5 }]]);
+    expect(b?.bands[0]).toContain('data-layer-id="a"');
+    expect(b?.bands[0]).not.toContain('data-layer-id="c"');
+    expect(b?.bands[1]).toContain('data-layer-id="c"');
+    expect(b?.bands[1]).toContain('data-layer-id="over"');
+    // The group's transform rides on both halves.
+    expect(b?.bands.filter(x => x?.includes('translate(20 10) scale(1.5)')).length).toBe(2);
+    expect(b?.bands.join('')).not.toContain('data-layer-id="take"');
+  });
+  it('a wipe and a fade on the way are read into the clip; a faded wrapper is fine only around the clip alone', () => {
+    const wiped = bandedFrame(spec([group({ clip_rect: { x: 0, y: 0, width: 100, height: 180 }, opacity: 0.5 }, [clip({ transform: 'translate(-30 0)' })])]));
+    expect(wiped?.slots[0]).toMatchObject({ opacity: 0.5, canvas: { x: 10, y: 20 }, window: { x: 0, y: 0, width: 100, height: 180 } });
+    expect(bandedFrame(spec([group({ opacity: 0.5 }, [a, clip()])]))).toBeNull();
+  });
+  it('a turn, a flip, an effect or a layout on the way — or a treated clip — sends the frame down the embedded path', () => {
+    expect(bandedFrame(spec([group({ transform: 'rotate(5 160 90)' }, [clip()])]))).toBeNull();
+    expect(bandedFrame(spec([group({ transform: 'scale(-1 1)' }, [clip()])]))).toBeNull();
+    expect(bandedFrame(spec([group({ effects: { blur: 4 } }, [clip()])]))).toBeNull();
+    expect(bandedFrame(spec([{ ...group({}, [clip()]), type: 'auto_layout' } as unknown as Layer]))).toBeNull();
     expect(bandedFrame(spec([under, clip({ rotation: 5 })]))).toBeNull();
     expect(bandedFrame(spec([under]))).toBeNull();
+  });
+});
+
+describe('placedRect / decodeSize — a scaled clip keeps one decoder per zoom step', () => {
+  const at = (canvas: { x: number; y: number; width: number; height: number }) => {
+    const slot = plainClip(clip());
+    if (!slot) throw new Error('not plain');
+    return { ...slot, canvas };
+  };
+  it('moved by a fraction it keeps its own size; scaled it decodes at the next step, the same size all through the step', () => {
+    expect(placedRect(at({ x: 40.4, y: 19.6, width: 240, height: 135 }), 1)).toEqual({ x: 40, y: 20, w: 240, h: 135 });
+    const size = (k: number): { w: number; h: number } => { const s = at({ x: 0, y: 0, width: 240 * k, height: 135 * k }); return decodeSize(s, placedRect(s, 1), 1); };
+    expect(size(1.05)).toEqual({ w: 300, h: 169 });
+    expect(size(1.2)).toEqual(size(1.05));
+    expect(size(1.3)).toEqual({ w: 360, h: 203 });
+    expect(size(0.5)).toEqual({ w: 240, h: 135 });
   });
 });
 
@@ -102,6 +142,42 @@ describe.skipIf(!hasFfmpeg)('paintBanded matches the embedded path', () => {
         clip: (slot, w, h) => feed.pixelsAt(slot, w, h),
       }) : null;
       expect(got?.width).toBe(want.width);
+      let se = 0;
+      for (let i = 0; i < want.pixels.length; i++) { const d = (want.pixels[i] ?? 0) - (got?.pixels[i] ?? 0); se += d * d; }
+      const psnr = 10 * Math.log10((255 * 255) / Math.max(1e-9, se / want.pixels.length));
+      expect(psnr).toBeGreaterThanOrEqual(bar);
+    } finally { feed.close(); }
+  }, 30_000);
+
+  // A clip placed by what is above it: moved by a group, scaled by a camera, wiped, pushed by its own pose.
+  const placements: Array<[string, number, (take: Layer) => Layer[]]> = [
+    ['moved by a group', 38, t => [{ id: 'g', type: 'group', x: 0, y: 0, width: 320, height: 180, z: 1, transform: 'translate(23 7)', layers: [t] } as unknown as Layer]],
+    ['scaled by a camera', 37, t => [{ id: 'g', type: 'group', x: 0, y: 0, width: 320, height: 180, z: 1, transform: 'translate(160 90) scale(1.3) translate(-160 -90)', layers: [t] } as unknown as Layer]],
+    ['wiped', 39, t => [{ ...t, clip_rect: { x: 40, y: 20, width: 121, height: 150 } } as unknown as Layer]],
+    ['pushed', 35, t => [{ ...t, transform: 'translate(-61.4 0)' } as unknown as Layer]],
+  ];
+  it.each(placements)('%s: PSNR ≥ %i dB against the embedded frame', async (_name, bar, place) => {
+    const layers = [
+      { id: 'under', type: 'rect', x: 0, y: 0, width: 320, height: 180, z: 0, fill: '#223344' },
+      { id: 'take', type: 'video', src: 'assets/video/take.mp4', x: 40, y: 20, width: 240, height: 150, z: 1, video: { offset_ms: 300 } },
+      { id: 'over', type: 'rect', x: 0, y: 140, width: 320, height: 40, z: 2, fill: '#F0E0D0', opacity: 0.7 },
+    ];
+    const s = { meta: { name: 'b', version: '1' }, document: { width: 320, height: 180, unit: 'px' }, layers } as unknown as DesignSpec;
+    resolveImageAssets(s, path.join(dir, 'designs', 'd.design.yaml'), dir);
+    const sampled = specAt(s, 0, 400);
+    const [u, take, o] = sampled.layers ?? [];
+    if (!u || !take || !o) throw new Error('no layers');
+    const frame = { ...sampled, layers: [u, ...place(take), o] };
+    const opts = (ground: boolean): { font: ReturnType<typeof resvgFontOption>; background?: string } => ({ font: resvgFontOption(dir), ...(ground ? { background: '#FFFFFF' } : {}) });
+    const want = rasterize({ svg: renderToSVGString(frame), opts: opts(true), want: 'pixels' }, { isolate: false });
+    const b = bandedFrame(frame);
+    expect(b).not.toBeNull();
+    const feed = new FootageFeed();
+    try {
+      const got = b ? await paintBanded(b, 1, {
+        render: async (svg, ground) => rasterize({ svg, opts: opts(ground), want: 'pixels' }, { isolate: false }),
+        clip: (slot, w, h) => feed.pixelsAt(slot, w, h),
+      }) : null;
       let se = 0;
       for (let i = 0; i < want.pixels.length; i++) { const d = (want.pixels[i] ?? 0) - (got?.pixels[i] ?? 0); se += d * d; }
       const psnr = 10 * Math.log10((255 * 255) / Math.max(1e-9, se / want.pixels.length));
