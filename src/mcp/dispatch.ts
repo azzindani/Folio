@@ -157,7 +157,10 @@ export function dispatchAnimation(a: Args): ToolResult | Promise<ToolResult> {
     case 'camera':   return engine.cameraMotion(a as unknown as Parameters<typeof engine.cameraMotion>[0]);
     case 'morph':    return engine.morphMotion(a as unknown as Parameters<typeof engine.morphMotion>[0]);
     case 'audio':    return engine.audioMotion(a as unknown as Parameters<typeof engine.audioMotion>[0]);
-    case 'video':    return a['cut'] !== undefined ? engine.cutVideo(a as unknown as Parameters<typeof engine.cutVideo>[0]) : engine.videoMotion(a as unknown as Parameters<typeof engine.videoMotion>[0]);
+    case 'video':
+      if (a['cut'] !== undefined) return engine.cutVideo(a as unknown as Parameters<typeof engine.cutVideo>[0]);
+      if (a['on_beats'] !== undefined) return engine.beatCutVideo(a as unknown as Parameters<typeof engine.beatCutVideo>[0]);
+      return engine.videoMotion(a as unknown as Parameters<typeof engine.videoMotion>[0]);
     case 'beats':    return engine.beatsMotion(a as unknown as Parameters<typeof engine.beatsMotion>[0]);
     case 'captions': return engine.captionsMotion(a as unknown as Parameters<typeof engine.captionsMotion>[0]);
     case 'markers':  return engine.markersMotion(a as unknown as Parameters<typeof engine.markersMotion>[0]);

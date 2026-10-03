@@ -29,7 +29,8 @@ const num = (v: unknown): number | undefined => (typeof v === 'number' && Number
 const speedOf = (c: Clip): number => ((num(c.video?.speed) ?? 0) > 0 ? (num(c.video?.speed) ?? 1) : 1);
 
 /** Where a clip plays on its list's clock: [from, until); until null when it plays on unbounded. */
-export function clipPlays(c: Clip): { from: number; until: number | null } {
+export function clipPlays(layer: Layer): { from: number; until: number | null } {
+  const c = layer as Clip;
   const from = num(c.in) ?? 0;
   const used = num(c.video?.duration_ms);
   const natural = used !== undefined && !c.video?.loop ? from + used / speedOf(c) : null;
