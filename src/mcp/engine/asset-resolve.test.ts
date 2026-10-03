@@ -4,6 +4,7 @@ import * as path from 'path';
 import * as os from 'os';
 import { resolveImageAssets, assetBaseDirs, auditImageAssets } from './asset-resolve';
 import type { DesignSpec, Layer } from '../../schema/types';
+import { resolveTimeline } from '../../animation/timeline-resolve';
 
 const PNG_B64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=';
 
@@ -34,6 +35,15 @@ describe('resolveImageAssets', () => {
     const notes = resolveImageAssets(spec, dPath, proj);
     expect(notes).toEqual([]);
     expect((spec.layers![0] as Layer & { src: string }).src).toMatch(/^data:image\/png;base64,/);
+  });
+
+  it('a timeline resolved BEFORE the assets does not keep the unresolved layers', () => {
+    // Found live: op:frame measured the scene first; a timed image (in/out → resolved as copies)
+    // then sampled the cached copy, still pointing at the relative path.
+    const spec = makeSpec([{ ...img('a', 'assets/images/dot.png'), in: 0, out: 1000 } as Layer]);
+    resolveTimeline(spec.layers ?? []);
+    resolveImageAssets(spec, dPath, proj);
+    expect((resolveTimeline(spec.layers ?? [])[0] as Layer & { src: string }).src).toMatch(/^data:image\/png;base64,/);
   });
 
   it('blanks a missing file and says how to fix it', () => {

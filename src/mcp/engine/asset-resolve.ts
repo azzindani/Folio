@@ -14,6 +14,7 @@ import type { Fill } from '../../schema/types';
 import { parseDimensions } from './reference';
 import { readAssetManifest } from './assets';
 import { isLibraryPath, libraryAbsPath, libraryRoot } from './asset-library';
+import { forgetResolved } from '../../animation/timeline-resolve';
 
 const EXT_MIME: Record<string, string> = {
   png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp',
@@ -285,6 +286,8 @@ export function resolveImageAssets(spec: DesignSpec, designPath: string, project
   const notes: string[] = [];
 
   const visit = (layers: Layer[] | undefined): void => {
+    // These layers are about to change in place: a timeline resolved from them earlier is stale.
+    forgetResolved(layers);
     for (const l of layers ?? []) {
       if (l.type === 'image') {
         const img = l as Layer & { src?: string };
