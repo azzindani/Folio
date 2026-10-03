@@ -4,6 +4,8 @@
 // with ONE rule, so op:frame and the exported video show the same frame.
 
 /** How far before a moment decoding starts, so the frame already showing at it is decoded too. */
+import type { ClipCrop } from '../../animation/clip-crop';
+
 export const SEEK_LEAD_MS = 250;
 /** Timestamp slack: a frame at 33.3333 ms counts as showing at 33.333 ms. */
 const EPS_MS = 0.5;
@@ -105,6 +107,11 @@ export function decodeArgs(file: string, seekMs: number, edge: number, limit?: {
   return [...streamArgs(file, seekMs, jpegScale(edge), jpegOut, limit), 'pipe:1'];
 }
 
+/** decodeArgs for a cropped clip: JPEG frames already cut to the box (fitFilter's cover crop), so they draw unscaled. */
+export function cropDecodeArgs(file: string, seekMs: number, w: number, h: number, crop: ClipCrop, limit?: { frames?: number; ms?: number }): string[] {
+  return [...streamArgs(file, seekMs, fitFilter(w, h, 'cover', crop), jpegOut, limit), 'pipe:1'];
+}
+
 export type ClipFit = 'cover' | 'contain' | 'fill';
 
 /** The SVG preserveAspectRatio third (Min/Mid/Max) a focal value falls in, as a 0 / 0.5 / 1 alignment. */
@@ -117,13 +124,15 @@ export function focalAlign(v: number): number {
  * cover = slice, aligned to the focal third; contain = meet, centred, the rest
  * transparent; fill = stretched.
  */
-export function fitFilter(w: number, h: number, fit: ClipFit, focal: readonly [number, number] | null): string {
+export function fitFilter(w: number, h: number, fit: ClipFit, crop: ClipCrop | null): string {
   if (fit === 'fill') return `scale=${w}:${h},format=rgba`;
   if (fit === 'contain') {
     return `scale=${w}:${h}:force_original_aspect_ratio=decrease,format=rgba,pad=${w}:${h}:(ow-iw)/2:(oh-ih)/2:color=black@0`;
   }
-  const fx = focal ? focalAlign(focal[0]) : 0.5, fy = focal ? focalAlign(focal[1]) : 0.5;
-  return `scale=${w}:${h}:force_original_aspect_ratio=increase,crop=${w}:${h}:(iw-ow)*${fx}:(ih-oh)*${fy},format=rgba`;
+  // Cover, enlarged by the crop's zoom and aligned by its focus (animation/clip-crop.ts) — CSS object-position's reading.
+  const c = crop ?? { focus: [0.5, 0.5], zoom: 1 };
+  const even = (n: number): number => Math.max(2, Math.ceil(n / 2) * 2);
+  return `scale=${even(w * c.zoom)}:${even(h * c.zoom)}:force_original_aspect_ratio=increase,crop=${w}:${h}:(iw-ow)*${+c.focus[0].toFixed(4)}:(ih-oh)*${+c.focus[1].toFixed(4)},format=rgba`;
 }
 
 /** How a stream turns a file into frames: the ffmpeg arguments up to the output, and where one frame ends. */
@@ -139,11 +148,11 @@ export function jpegFormat(edge: number): DecodeFormat {
 }
 
 /** Straight-alpha RGBA frames of exactly w×h, fitted like the layer's <image>. */
-export function rgbaFormat(w: number, h: number, fit: ClipFit, focal: readonly [number, number] | null): DecodeFormat {
+export function rgbaFormat(w: number, h: number, fit: ClipFit, crop: ClipCrop | null): DecodeFormat {
   const size = w * h * 4;
   return {
     frameBytes: size,
-    args: (file, seekMs) => streamArgs(file, seekMs, fitFilter(w, h, fit, focal), ['-f', 'rawvideo', '-pix_fmt', 'rgba']),
+    args: (file, seekMs) => streamArgs(file, seekMs, fitFilter(w, h, fit, crop), ['-f', 'rawvideo', '-pix_fmt', 'rgba']),
     split: buf => {
       const frames: Buffer[] = [];
       let at = 0;

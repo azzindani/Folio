@@ -7,6 +7,7 @@
 import type { Layer } from '../schema/types';
 import type { VideoTiming } from './video-time';
 import type { ClipTransition } from './clip-transition';
+import { baseCrop, hasCrop, panKeys } from './clip-crop';
 
 export type ClipLayer = Layer & {
   in?: number; out?: number; src?: string; layers?: Layer[];
@@ -34,6 +35,8 @@ export interface ClipSummary {
   /** Edge sound when any is set: fades, and how far the sound leads or trails the picture, ms. */
   sound?: { fade_in_ms?: number; fade_out_ms?: number; lead_ms?: number; tail_ms?: number };
   transition?: ClipTransition;
+  /** Pan and zoom inside the footage when set: where it rests, and how many pan keys move it. */
+  crop?: { focus: [number, number]; zoom: number; pan_keys?: number };
 }
 
 /** Shortest a trim leaves a clip, ms on the scene clock. */
@@ -52,6 +55,7 @@ export function summarize(l: ClipLayer): ClipSummary {
     file: { from: offset, to: used === null ? null : offset + used },
     speed, volume: Math.min(1, Math.max(0, Number(v.volume ?? 1))), muted: v.muted === true, loop: v.loop === true,
     ...edgeSound(v), ...(v.transition ? { transition: v.transition } : {}),
+    ...(hasCrop(l) ? { crop: { ...baseCrop(l), ...(panKeys(l).length ? { pan_keys: panKeys(l).length } : {}) } } : {}),
   };
 }
 

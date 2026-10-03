@@ -7,6 +7,8 @@ import { ClipStream } from './video-stream';
 import { frameRequest, primeVideoFrame, type FrameRequest } from './video-frame';
 import { frameEdge, jpegFormat, rgbaFormat, type DecodeFormat } from './video-decode';
 import type { FootageSlot } from './footage-bands';
+import { probeVideo } from './asset-video';
+import { cropWindow, resampleRegion } from '../../export/footage-crop';
 
 function collect(layers: Layer[] | undefined, out: FrameRequest[]): void {
   for (const l of layers ?? []) {
@@ -26,6 +28,7 @@ export function frameRequests(spec: DesignSpec): FrameRequest[] {
 
 export class FootageFeed {
   private readonly streams = new Map<string, ClipStream>();
+  private readonly sizes = new Map<string, { width: number; height: number } | null>();
 
   constructor(private readonly bin = 'ffmpeg') {}
 
@@ -43,8 +46,37 @@ export class FootageFeed {
 
   /** A plain clip's picture for this frame: straight-alpha RGBA of exactly w×h, fitted as its <image> would draw. */
   pixelsAt(slot: FootageSlot, w: number, h: number): Promise<Buffer | null> {
-    const key = `${slot.req.id}|${slot.req.file}|${w}x${h}|${slot.fit}|${slot.focal?.join(',') ?? ''}`;
-    return this.stream(key, slot.req.file, () => rgbaFormat(w, h, slot.fit, slot.focal)).frameAt(slot.req.ms);
+    if (slot.panned && slot.fit === 'cover') return this.pannedAt(slot, w, h);
+    const c = slot.crop;
+    const key = `${slot.req.id}|${slot.req.file}|${w}x${h}|${slot.fit}|${c.focus.map(v => v.toFixed(4)).join(',')}|${c.zoom.toFixed(4)}`;
+    return this.stream(key, slot.req.file, () => rgbaFormat(w, h, slot.fit, c)).frameAt(slot.req.ms);
+  }
+
+  /**
+   * A moving crop: the stream decodes the footage whole, large enough for the clip's
+   * closest zoom but never past the file's own size, and each frame takes its window
+   * (footage-crop.ts) — one decoder for the whole move instead of one per crop.
+   */
+  private async pannedAt(slot: FootageSlot, w: number, h: number): Promise<Buffer | null> {
+    const file = this.sizeOf(slot.req.file);
+    if (!file) return null;
+    const cover = Math.max(w / file.width, h / file.height);
+    const scale = Math.min(cover * slot.zoomMax, Math.max(cover, 1));
+    const dw = Math.max(2, Math.round((file.width * scale) / 2) * 2), dh = Math.max(2, Math.round((file.height * scale) / 2) * 2);
+    const key = `${slot.req.id}|${slot.req.file}|pan|${dw}x${dh}`;
+    const frame = await this.stream(key, slot.req.file, () => rgbaFormat(dw, dh, 'fill', null)).frameAt(slot.req.ms);
+    if (!frame) return null;
+    const win = cropWindow(file.width, file.height, w, h, slot.crop.focus, slot.crop.zoom, dw / file.width);
+    return resampleRegion(frame, dw, dh, win.rx, win.ry, win.rw, win.rh, w, h);
+  }
+
+  /** The file's frame size, probed once per export. */
+  private sizeOf(file: string): { width: number; height: number } | null {
+    if (!this.sizes.has(file)) {
+      const p = probeVideo(file);
+      this.sizes.set(file, p && p !== 'not-video' && p.width > 0 && p.height > 0 ? { width: p.width, height: p.height } : null);
+    }
+    return this.sizes.get(file) ?? null;
   }
 
   private stream(key: string, file: string, format: () => DecodeFormat): ClipStream {

@@ -21,13 +21,15 @@ import type { MotionPlayer, PlayerSnapshot } from './motion-player';
 import type { Layer } from '../schema/types';
 import { videoSourceMs, type VideoTiming } from '../animation/video-time';
 import { resolveTimeline } from '../animation/timeline-resolve';
+import { cropAt, panKeys } from '../animation/clip-crop';
+import { videoFit } from '../renderer/layer-renderers-video';
 
 /** How far an element may stray from the clock before it is re-seeked, ms. */
 const DRIFT_MS = 250;
 /** While resting, a seek smaller than this is not worth a decode, ms. */
 const REST_MS = 40;
 
-interface Timing { in: number; out: number; video?: VideoTiming }
+interface Timing { in: number; out: number; video?: VideoTiming; panned?: Layer }
 
 /** The URL a canvas <video> plays: a project clip's 720p proxy (the server falls back to the clip without one). */
 export function proxiedSrc(src: string): string {
@@ -91,6 +93,12 @@ export class CanvasVideo {
         if (!v.paused) v.pause();
         if (Math.abs(v.currentTime - target) * 1000 > REST_MS) v.currentTime = target;
       }
+      // A pan inside the footage moves with the file's clock, frame by frame (animation/clip-crop.ts).
+      if (tm.panned) {
+        const c = cropAt(tm.panned, target * 1000);
+        const at = `${+(c.focus[0] * 100).toFixed(3)}% ${+(c.focus[1] * 100).toFixed(3)}%`;
+        v.style.objectPosition = at; v.style.transformOrigin = at; v.style.transform = `scale(${+c.zoom.toFixed(4)})`;
+      }
     }
   }
 
@@ -110,7 +118,8 @@ export class CanvasVideo {
     const walk = (ls: Layer[]): void => {
       for (const l of ls) {
         const o = l as unknown as { in?: number; out?: number; video?: VideoTiming; layers?: Layer[] };
-        if (l.type === 'video') this.timings.set(l.id, { in: Number(o.in) || 0, out: typeof o.out === 'number' ? o.out : Infinity, ...(o.video ? { video: o.video } : {}) });
+        const panned = l.type === 'video' && videoFit((l as Layer & { fit?: unknown }).fit) === 'cover' && panKeys(l).length > 0;
+        if (l.type === 'video') this.timings.set(l.id, { in: Number(o.in) || 0, out: typeof o.out === 'number' ? o.out : Infinity, ...(o.video ? { video: o.video } : {}), ...(panned ? { panned: l } : {}) });
         if (Array.isArray(o.layers)) walk(o.layers);
       }
     };
