@@ -14,22 +14,23 @@
 import { spawnSync } from 'child_process';
 import * as fs from 'fs';
 import type { DesignSpec, Layer } from '../../schema/types';
-import { decodeArgs, cropDecodeArgs, fitFilter, frameEdge, pickFrame, showinfoTimes, splitJpegs, SEEK_LEAD_MS } from './video-decode';
+import { decodeArgs, cropDecodeArgs, fitFilter, frameEdge, pickFrame, showinfoTimes, splitFrames, pngOut, SEEK_LEAD_MS } from './video-decode';
 import { cropAt, hasCrop, type ClipCrop } from '../../animation/clip-crop';
 import { colorOf, colorFilter } from '../../animation/clip-color';
+import { keyOf, keyFilter } from '../../animation/clip-key';
 import type { ClipFit } from './video-decode';
 import { videoFit } from '../../renderer/layer-renderers-video';
 
-/** How a cut grab looks: the crop inside the footage, the fit, and the grade (ffmpeg filters). */
-export interface FrameLook { crop?: ClipCrop | null; fit?: ClipFit; grade?: string | null }
-/** A grab already fitted to its box (capped at 1920 px), cropped and graded by ffmpeg. */
-interface Cut { w: number; h: number; crop: ClipCrop | null; fit: ClipFit; grade: string | null }
+/** How a cut grab looks: the crop inside the footage, the fit, the key and grade (ffmpeg filters), and whether it keeps alpha (a key). */
+export interface FrameLook { crop?: ClipCrop | null; fit?: ClipFit; grade?: string | null; alpha?: boolean }
+/** A grab already fitted to its box (capped at 1920 px), cropped, keyed and graded by ffmpeg — a PNG when keyed. */
+interface Cut { w: number; h: number; crop: ClipCrop | null; fit: ClipFit; grade: string | null; alpha: boolean }
 const cutOf = (boxW: number, boxH: number, look: FrameLook): Cut => {
   const k = Math.min(1, 1920 / Math.max(boxW, boxH, 1));
-  return { w: Math.max(2, Math.round(boxW * k)), h: Math.max(2, Math.round(boxH * k)), crop: look.crop ?? null, fit: look.fit ?? 'cover', grade: look.grade ?? null };
+  return { w: Math.max(2, Math.round(boxW * k)), h: Math.max(2, Math.round(boxH * k)), crop: look.crop ?? null, fit: look.fit ?? 'cover', grade: look.grade ?? null, alpha: look.alpha === true };
 };
 const cutKey = (c: Cut | null): string =>
-  (c ? `|${c.w}x${c.h}|${c.fit}|${c.crop ? `${c.crop.focus.map(v => v.toFixed(4)).join(',')}|${c.crop.zoom.toFixed(4)}` : ''}|${c.grade ?? ''}` : '');
+  (c ? `|${c.w}x${c.h}|${c.fit}|${c.crop ? `${c.crop.focus.map(v => v.toFixed(4)).join(',')}|${c.crop.zoom.toFixed(4)}` : ''}|${c.grade ?? ''}|${c.alpha ? 'a' : ''}` : '');
 
 const cache = new Map<string, string | null>();
 const MAX_CACHED = 240;
@@ -37,10 +38,10 @@ const MAX_CACHED = 240;
 function grab(file: string, ms: number, edge: number, bin: string, cut: Cut | null = null): Buffer | null {
   const seekMs = Math.max(0, ms - SEEK_LEAD_MS);
   const limit = { ms: ms - seekMs + 100 };
-  const args = cut ? cropDecodeArgs(file, seekMs, cut.w, cut.h, cut.crop, limit, cut.fit, cut.grade) : decodeArgs(file, seekMs, edge, limit);
+  const args = cut ? cropDecodeArgs(file, seekMs, cut.w, cut.h, cut.crop, limit, cut.fit, cut.grade, cut.alpha) : decodeArgs(file, seekMs, edge, limit);
   const r = spawnSync(bin, args, { timeout: 20_000, maxBuffer: 64 * 1024 * 1024 });
   if (r.error || r.status !== 0 || !r.stdout?.length) return null;
-  const { frames } = splitJpegs(r.stdout);
+  const { frames } = splitFrames(r.stdout, cut?.alpha === true);
   const starts = showinfoTimes(r.stderr.toString()).slice(0, frames.length).map(s => seekMs + s * 1000);
   return frames[pickFrame(starts, ms)] ?? null;
 }
@@ -49,7 +50,7 @@ function grab(file: string, ms: number, edge: number, bin: string, cut: Cut | nu
 function grabLast(file: string, edge: number, bin: string, cut: Cut | null = null): Buffer | null {
   const r = spawnSync(bin, ['-v', 'error', '-sseof', '-0.25', '-i', file, '-frames:v', '1',
     '-vf', cut ? fitFilter(cut.w, cut.h, cut.fit, cut.crop, cut.grade) : `scale=w=${edge}:h=${edge}:force_original_aspect_ratio=decrease`,
-    '-f', 'image2pipe', '-vcodec', 'mjpeg', '-q:v', '3', 'pipe:1'], { timeout: 20_000, maxBuffer: 32 * 1024 * 1024 });
+    ...(cut?.alpha ? pngOut : ['-f', 'image2pipe', '-vcodec', 'mjpeg', '-q:v', '3']), 'pipe:1'], { timeout: 20_000, maxBuffer: 32 * 1024 * 1024 });
   return !r.error && r.status === 0 && r.stdout && r.stdout.length > 0 ? r.stdout : null;
 }
 
@@ -57,8 +58,8 @@ function keyFor(file: string, ms: number, edge: number): string | null {
   try { return `${file}|${fs.statSync(file).mtimeMs}|${Math.round(ms)}|${edge}`; } catch { return null; }
 }
 
-function remember(key: string, jpeg: Buffer | null): string | null {
-  const uri = jpeg ? `data:image/jpeg;base64,${jpeg.toString('base64')}` : null;
+function remember(key: string, jpeg: Buffer | null, png = false): string | null {
+  const uri = jpeg ? `data:image/${png ? 'png' : 'jpeg'};base64,${jpeg.toString('base64')}` : null;
   cache.set(key, uri);
   if (cache.size > MAX_CACHED) cache.delete(cache.keys().next().value ?? key);
   return uri;
@@ -75,7 +76,7 @@ export function videoFrameUri(file: string, ms: number, boxW: number, boxH: numb
   const key = base + cutKey(cut);
   const hit = cache.get(key);
   if (hit !== undefined) return hit;
-  return remember(key, grab(file, ms, edge, bin, cut) ?? (ms > 0 ? grabLast(file, edge, bin, cut) : null));
+  return remember(key, grab(file, ms, edge, bin, cut) ?? (ms > 0 ? grabLast(file, edge, bin, cut) : null), cut?.alpha === true);
 }
 
 /** Store a frame decoded elsewhere (an export's stream) where videoFrameUri finds it. */
@@ -87,7 +88,7 @@ export function primeVideoFrame(file: string, ms: number, boxW: number, boxH: nu
 type VideoNode = Layer & { _video_file?: string; _video_ms?: number; _video_frame?: string; _video_cut?: boolean; video?: { offset_ms?: number } };
 
 /** What a video layer needs drawn: its file, the moment and its box. Null without a stored file. */
-export interface FrameRequest { id: string; file: string; ms: number; w: number; h: number; crop?: ClipCrop; grade?: string; fit?: ClipFit }
+export interface FrameRequest { id: string; file: string; ms: number; w: number; h: number; crop?: ClipCrop; grade?: string; fit?: ClipFit; alpha?: true }
 
 export function frameRequest(l: Layer): FrameRequest | null {
   const v = l as VideoNode;
@@ -98,8 +99,10 @@ export function frameRequest(l: Layer): FrameRequest | null {
   const fit = videoFit((l as Layer & { fit?: unknown }).fit);
   const crop = fit === 'cover' && hasCrop(l) ? cropAt(l, ms) : undefined;
   // A clip drawn at its own size (fit none) is never cut: the renderer places it.
-  const color = fit === 'none' ? null : colorOf(l);
-  const grade = color && fit !== 'none' ? { grade: colorFilter(color, (l as Layer & { _video_lut?: string })._video_lut), fit } : null;
+  const color = fit === 'none' ? null : colorOf(l), key = fit === 'none' ? null : keyOf(l);
+  // The key runs on the source, before the grade (animation/clip-key.ts).
+  const filters = [key ? keyFilter(key) : '', color ? colorFilter(color, (l as Layer & { _video_lut?: string })._video_lut) : ''].filter(Boolean).join(',');
+  const grade = filters && fit !== 'none' ? { grade: filters, fit, ...(key ? { alpha: true as const } : {}) } : null;
   return { id: l.id, file: v._video_file, ms, w, h, ...(crop ? { crop } : {}), ...(grade ?? {}) };
 }
 
@@ -115,7 +118,7 @@ function withFrames(layers: Layer[]): Layer[] {
     // No stored file (asset-resolve left a note): an empty frame draws the
     // image placeholder, where a <video> would draw nothing at all in resvg.
     const req = frameRequest(l);
-    const look: FrameLook | null = req && (req.crop || req.grade) ? { crop: req.crop ?? null, grade: req.grade ?? null, fit: req.fit ?? 'cover' } : null;
+    const look: FrameLook | null = req && (req.crop || req.grade) ? { crop: req.crop ?? null, grade: req.grade ?? null, fit: req.fit ?? 'cover', alpha: req.alpha === true } : null;
     const frame = req ? videoFrameUri(req.file, req.ms, req.w, req.h, 'ffmpeg', look) : null;
     return { ...l, _video_frame: frame ?? '', ...(look && frame ? { _video_cut: true } : {}) } as Layer;
   });

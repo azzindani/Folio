@@ -9,6 +9,7 @@ import { naturalLength, rampKeys, fileOffsetAt, edgeRates, shiftRamp, type Video
 import type { ClipTransition } from './clip-transition';
 import { baseCrop, hasCrop, panKeys } from './clip-crop';
 import { colorOf, type ClipColor } from './clip-color';
+import { keyOf, type ClipKey } from './clip-key';
 
 export type ClipLayer = Layer & {
   in?: number; out?: number; src?: string; layers?: Layer[];
@@ -42,6 +43,8 @@ export interface ClipSummary {
   still?: true;
   /** The clip's grade when it has one. */
   color?: ClipColor;
+  /** The green screen it takes out, when keyed. */
+  key?: ClipKey;
   /** Speed keys when the clip ramps. */
   ramp?: Array<{ at_ms: number; speed: number }>;
 }
@@ -66,7 +69,7 @@ export function summarize(l: ClipLayer): ClipSummary {
     ...edgeSound(v), ...(v.transition ? { transition: v.transition } : {}),
     ...(hasCrop(l) ? { crop: { ...baseCrop(l), ...(panKeys(l).length ? { pan_keys: panKeys(l).length } : {}) } } : {}),
     ...(v.still ? { still: true as const } : {}), ...(rampKeys(v).length ? { ramp: rampKeys(v) } : {}),
-    ...(colorOf(l) ? { color: colorOf(l) as ClipColor } : {}),
+    ...(colorOf(l) ? { color: colorOf(l) as ClipColor } : {}), ...(keyOf(l) ? { key: keyOf(l) as ClipKey } : {}),
   };
 }
 

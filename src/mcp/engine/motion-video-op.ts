@@ -16,6 +16,7 @@ import { summarize, cutClip, type ClipLayer } from '../../animation/video-clip';
 import { readCropArgs } from '../../animation/clip-crop';
 import { MIN_SPEED, MAX_SPEED } from '../../animation/video-time';
 import { readColor } from '../../animation/clip-color';
+import { readKey } from '../../animation/clip-key';
 import type { ToolResult, ProgressItem } from '../types';
 import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, pOk, pWarn } from './utils';
 import { resolveScope, commitScope } from './motion';
@@ -58,7 +59,7 @@ export interface VideoOpArgs {
   design_path: string; project_path?: string; page_id?: string; layer_id?: string;
   in?: unknown; out?: unknown; split_at?: unknown; cut?: unknown; ripple?: boolean;
   offset_ms?: number; duration_ms?: number; speed?: number; volume?: number; muted?: boolean; loop?: boolean;
-  fade_in?: unknown; fade_out?: unknown; audio_lead_ms?: unknown; audio_tail_ms?: unknown; clip_transition?: unknown; focus?: unknown; zoom?: unknown; pan?: unknown; ramp?: unknown; color?: unknown;
+  fade_in?: unknown; fade_out?: unknown; audio_lead_ms?: unknown; audio_tail_ms?: unknown; clip_transition?: unknown; focus?: unknown; zoom?: unknown; pan?: unknown; ramp?: unknown; color?: unknown; key?: unknown;
 }
 
 const FIELDS = ['offset_ms', 'duration_ms', 'speed', 'volume', 'muted', 'loop'] as const;
@@ -145,6 +146,12 @@ export function videoMotion(args: VideoOpArgs): ToolResult {
     const grade = readColor(args.color);
     if (typeof grade === 'string') return errResult(op, grade, 'color:{exposure -3–3 stops, contrast/saturation/temperature/tint -1–1, lut:"assets/docs/look.cube"}; null clears.');
     if (grade === null || !Object.keys(grade).length) delete v.color; else v.color = grade;
+  }
+  // A green screen taken out (animation/clip-key.ts); null clears.
+  if (args.key !== undefined) {
+    const key = readKey(args.key);
+    if (typeof key === 'string') return errResult(op, key, 'key:{color:"#00ff00" (the screen), similarity? 0–1 (default 0.4: more takes out more), blend? 0–1 (default 0.1: the soft edge)}; null clears.');
+    if (key === null) delete v.key; else v.key = key;
   }
 
   let result: ClipLayer[] = [next];

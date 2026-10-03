@@ -13,6 +13,7 @@ import { renderImage } from './layer-renderers-shapes';
 import { applyCommonAttributes } from './layer-renderers-shared';
 import { cropAt, cropCss, hasCrop } from '../animation/clip-crop';
 import { colorOf, colorSvgFilter } from '../animation/clip-color';
+import { keyOf, keySvgPrimitive } from '../animation/clip-key';
 
 const XHTML = 'http://www.w3.org/1999/xhtml';
 
@@ -46,14 +47,15 @@ export function renderVideo(layer: VideoLayer, svg: SVGSVGElement): SVGElement {
   const fit = videoFit(layer.fit);
   const offset = Number((layer as VideoLayer & { video?: { offset_ms?: unknown } }).video?.offset_ms) || 0;
   const crop = fit === 'cover' && hasCrop(layer) ? `;${cropCss(cropAt(layer, offset))}` : '';
-  // A grade (animation/clip-color.ts) as an SVG filter in sRGB — the export's own numbers; a LUT shows only in the export.
-  const color = colorOf(layer);
+  // A key, then a grade (animation/clip-key.ts, clip-color.ts) as an SVG filter in sRGB — the export's own numbers; a LUT shows only in the export.
+  const id = `clip-color-${layer.id.replace(/[^A-Za-z0-9_-]/g, '_')}`;
+  const key = keyOf(layer);
+  const filter = colorSvgFilter(id, colorOf(layer), key ? keySvgPrimitive(key) : '');
   let grade = '';
-  if (color && (color.exposure || color.contrast || color.saturation || color.temperature || color.tint)) {
-    const id = `clip-color-${layer.id.replace(/[^A-Za-z0-9_-]/g, '_')}`;
+  svg.querySelector(`#${id}`)?.remove();
+  if (filter) {
     const defs = svg.querySelector('defs') ?? svg.insertBefore(createSVGElement('defs', {}), svg.firstChild);
-    svg.querySelector(`#${id}`)?.remove();
-    defs.insertAdjacentHTML('beforeend', colorSvgFilter(id, color));
+    defs.insertAdjacentHTML('beforeend', filter);
     grade = `;filter:url(#${id})`;
   }
   video.setAttribute('style', `width:100%;height:100%;display:block;object-fit:${fit}${crop}${grade}`);

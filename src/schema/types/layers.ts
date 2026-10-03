@@ -243,6 +243,8 @@ export interface VideoLayer extends BaseLayer {
     pan?: Array<{ at_ms: number; focus?: [number, number]; zoom?: number; easing?: string }>;
     /** The clip's grade (animation/clip-color.ts): exposure in stops, the rest -1–1, and a stored .cube LUT. */
     color?: { exposure?: number; contrast?: number; saturation?: number; temperature?: number; tint?: number; lut?: string };
+    /** A green screen taken out (animation/clip-key.ts): the screen colour, how much near it goes, how soft the edge. */
+    key?: { color: string; similarity?: number; blend?: number };
   };
 }
 
