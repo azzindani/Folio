@@ -39,10 +39,14 @@ export class FramePipe {
     this.fifo = canFifo() ? path.join(os.tmpdir(), `folio-clip-${process.pid}-${++fifoSeq}.fifo`) : null;
     if (this.fifo) spawnSync('mkfifo', [this.fifo]);
     this.proc = spawn(bin, [...args, '-y', this.fifo ?? 'pipe:1'], { stdio: ['ignore', this.fifo ? 'ignore' : 'pipe', 'pipe'] });
-    this.proc.stderr?.on('data', (c: Buffer) => onStderr(c.toString()));
+    const onData = (c: Buffer): void => onStderr(c.toString());
+    this.proc.stderr?.on('data', onData);
+    // Bun 1.1.38 keeps a child's stderr reachable after it exits: a listener left on it
+    // kept this pipe — and its last frame — alive for the life of the server.
+    const detach = (): void => { this.proc.stderr?.off('data', onData); };
     this.exited = new Promise(resolve => {
-      this.proc.on('close', (code: number | null) => { this.exitCode = code; this.unblock(); resolve(code); });
-      this.proc.on('error', () => { this.exitCode = null; this.unblock(); resolve(null); });
+      this.proc.on('close', (code: number | null) => { this.exitCode = code; detach(); this.unblock(); resolve(code); });
+      this.proc.on('error', () => { this.exitCode = null; detach(); this.unblock(); resolve(null); });
     });
     if (this.fifo) {
       this.fh = fs.promises.open(this.fifo, 'r');
@@ -84,7 +88,8 @@ export class FramePipe {
     if (this.fh) {
       const fh = await this.fh;
       const read = fh.read(buf, at, len, null);
-      this.reading = read;
+      // Settled to nothing: the result object holds the buffer read into.
+      this.reading = read.then(() => undefined, () => undefined);
       try { return (await read).bytesRead; } catch { return 0; }
     }
     while (!this.queued && !this.eof) {

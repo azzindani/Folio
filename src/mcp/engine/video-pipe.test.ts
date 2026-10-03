@@ -17,6 +17,15 @@ describe.skipIf(process.platform === 'win32')('FramePipe', () => {
     } finally { p.close(); }
   });
 
+  it('lets go of its stderr listener once the writer exits — Bun 1.1.38 keeps that stream reachable', async () => {
+    const p = writer('echo hi >&2; head -c 10 /dev/zero > "$2"');
+    try {
+      while (await p.read(4)) { /* drain */ }
+      await p.exited;
+      expect(p.proc.stderr?.listenerCount('data')).toBe(0);
+    } finally { p.close(); }
+  });
+
   it('a writer that dies before opening its output reads as the end, not a hang', async () => {
     const p = writer('exit 3');
     try {
