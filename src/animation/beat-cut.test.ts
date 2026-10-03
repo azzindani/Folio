@@ -35,7 +35,15 @@ describe('snapping joins to the beat', () => {
     const plan = planBeatCuts(tight, grid, { fileMs: { a: 2100, b: 10_000 }, end: false });
     expect(plan.moved).toEqual([]);
     expect(plan.kept[0]).toMatchObject({ between: ['a', 'b'], at_ms: 2100 });
-    expect(plan.kept[0]?.reason).toMatch(/file/);
+    expect(plan.kept[0]?.reason).toMatch(/file (ends|begins)/);
+  });
+
+  it('a join never runs a clip into the next shot of its file, nor starts one in the shot before', () => {
+    // a's used part ends at file 3100 and its file cuts to a new shot at 3150: it may run on 50 ms, not 100.
+    // b starts at file 3000 with a cut at 2950: it may start 50 ms sooner, not 100. So the 2100 join cannot reach 2000 or 2200.
+    const plan = planBeatCuts([a, b], [0, 1000, 2000, 2200, 3000], { fileMs: { a: 10_000, b: 10_000 }, shots: { a: [3150], b: [2950] }, end: false });
+    expect(plan.moved).toEqual([]);
+    expect(plan.kept[0]?.reason).toMatch(/another shot|shot before/);
   });
 
   it('every:4 snaps to bar lines only; max_shift_ms leaves joins that would travel too far', () => {

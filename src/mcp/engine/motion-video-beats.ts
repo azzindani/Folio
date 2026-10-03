@@ -16,20 +16,22 @@ import { trackAround, planBeatCuts } from '../../animation/beat-cut';
 import { summarize, replaceClip, projectOf, type ClipLayer } from './motion-video-op';
 import { resolveAssetFile } from './asset-resolve';
 import { clipFileLength } from './video-length';
+import { editPoints } from './video-edit-points';
+import { proxyFor } from './video-proxy';
 
 export interface BeatCutArgs { design_path: string; project_path?: string; page_id?: string; layer_id?: string; on_beats?: unknown }
 const OP = 'video';
 
 /** on_beats: true, or {every?: 1|2|4…, max_shift_ms?, end?: boolean, audio_id?}. */
-function readOnBeats(raw: unknown): { every: number; max_shift_ms?: number; end: boolean; audio_id?: string } | string {
-  if (raw === true) return { every: 1, end: true };
+function readOnBeats(raw: unknown): { every: number; max_shift_ms?: number; end: boolean; within_shots: boolean; audio_id?: string } | string {
+  if (raw === true) return { every: 1, end: true, within_shots: true };
   if (!raw || typeof raw !== 'object') return 'on_beats must be true or {every?, max_shift_ms?, end?, audio_id?}.';
   const r = raw as Record<string, unknown>;
   const every = r['every'] === undefined ? 1 : Number(r['every']);
   if (!Number.isInteger(every) || every < 1 || every > 16) return 'on_beats.every must be a whole number of beats, 1–16 (4 = on the bar).';
   const shift = r['max_shift_ms'];
   if (shift !== undefined && !(typeof shift === 'number' && shift > 0)) return 'on_beats.max_shift_ms must be a positive number of ms.';
-  return { every, end: r['end'] !== false, ...(typeof shift === 'number' ? { max_shift_ms: shift } : {}), ...(typeof r['audio_id'] === 'string' ? { audio_id: r['audio_id'] } : {}) };
+  return { every, end: r['end'] !== false, within_shots: r['within_shots'] !== false, ...(typeof shift === 'number' ? { max_shift_ms: shift } : {}), ...(typeof r['audio_id'] === 'string' ? { audio_id: r['audio_id'] } : {}) };
 }
 
 /** The list a layer sits in — its siblings are the track it can belong to. */
@@ -42,6 +44,28 @@ function siblingsOf(layers: Layer[], id: string): Layer[] | null {
   }
   return null;
 }
+
+/** Each file's shot cuts over the part the track around layer_id plays (± a few seconds), measured on its proxy when built. */
+async function shotCuts(spec: DesignSpec, args: BeatCutArgs, dPath: string, project: string): Promise<Record<string, number[]>> {
+  const scoped = resolveScope(spec, args.page_id);
+  if ('error' in scoped || !args.layer_id) return {};
+  const reach = new Map<string, [number, number]>();
+  for (const l of trackAround(siblingsOf(scoped.scope, args.layer_id) ?? [], args.layer_id) as ClipLayer[]) {
+    const s = summarize(l);
+    if (!l.src) continue;
+    const [a, b] = reach.get(l.src) ?? [Infinity, 0];
+    reach.set(l.src, [Math.min(a, s.file.from), Math.max(b, s.file.to ?? s.file.from)]);
+  }
+  const out: Record<string, number[]> = {};
+  await Promise.all([...reach].map(async ([src, [from, to]]) => {
+    const file = resolveAssetFile(src, dPath, project);
+    if (!file) return;
+    const len = clipFileLength(file) ?? to + SHOT_MARGIN_MS;
+    try { out[src] = (await editPoints(proxyFor(file) ?? file, Math.max(0, from - SHOT_MARGIN_MS), Math.min(len, to + SHOT_MARGIN_MS), false)).shots; } catch { /* no shots known: file room only */ }
+  }));
+  return out;
+}
+const SHOT_MARGIN_MS = 4000;
 
 export async function beatCutVideo(args: BeatCutArgs): Promise<ToolResult> {
   const dPath = resolveDesignPath(args.design_path, args.project_path);
@@ -58,19 +82,22 @@ export async function beatCutVideo(args: BeatCutArgs): Promise<ToolResult> {
     return errResult(OP, `"${music.clip.id}" has no steady pulse (confidence ${music.map.confidence}) — there is no grid to cut on.`,
       'Cut on the music\'s onsets by hand (op:beats lists them), or put music with a beat under the piece (op:audio).');
   }
+  // Shot cuts in each file the track plays, so no join flashes a frame of the next shot (on by default; within_shots:false skips).
+  const project = projectOf(dPath, args.project_path);
+  const shotsBySrc = opts.within_shots ? await shotCuts(readYAML<DesignSpec>(dPath), args, dPath, project) : {};
   // From here to the write, nothing yields.
   const spec = readYAML<DesignSpec>(dPath);
   const scoped = resolveScope(spec, args.page_id);
   if ('error' in scoped) return errResult(OP, scoped.error, 'Check page_id.');
   const track = trackAround(siblingsOf(scoped.scope, args.layer_id) ?? [], args.layer_id);
   if (!track.length) return errResult(OP, `"${args.layer_id}" is not a video layer on this page.`, 'manage_design {op:"inspect"} lists the layers.');
-  const project = projectOf(dPath, args.project_path);
-  const fileMs: Record<string, number | null> = {};
+  const fileMs: Record<string, number | null> = {}, shots: Record<string, number[]> = {};
   for (const l of track as ClipLayer[]) {
     const file = l.src ? resolveAssetFile(l.src, dPath, project) : null;
     fileMs[l.id] = file ? clipFileLength(file) : null;
+    if (l.src && shotsBySrc[l.src]) shots[l.id] = shotsBySrc[l.src] ?? [];
   }
-  const plan = planBeatCuts(track, music.grid, { every: opts.every, end: opts.end, fileMs, ...(opts.max_shift_ms ? { max_shift_ms: opts.max_shift_ms } : {}) });
+  const plan = planBeatCuts(track, music.grid, { every: opts.every, end: opts.end, fileMs, shots, ...(opts.max_shift_ms ? { max_shift_ms: opts.max_shift_ms } : {}) });
   let scope = scoped.scope;
   for (const [id, patch] of plan.patches) {
     const l = track.find(c => c.id === id);
