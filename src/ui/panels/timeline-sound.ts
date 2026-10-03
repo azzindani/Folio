@@ -118,7 +118,7 @@ export function soundRowHTML(lanes: Array<{ clip: LaneClip; analysis: SoundAnaly
     + `background:var(--color-text-muted);opacity:${i % 4 === 0 ? 0.55 : 0.22};pointer-events:none"></div>`).join('');
   return `
       <div class="tl-sound" style="display:flex;height:26px;border-bottom:1px solid var(--color-border)">
-        <div style="width:${headerW}px;flex-shrink:0;display:flex;align-items:center;gap:6px;padding:0 8px;font-size:10px;color:var(--color-text-muted)"
+        <div class="tl-label" style="width:${headerW}px;flex-shrink:0;display:flex;align-items:center;gap:6px;padding:0 8px;font-size:10px;color:var(--color-text-muted)"
              title="${esc(beats.length ? 'Beats of the soundtrack — every drag on the ruler snaps to them' : 'No steady beat to snap to')}">Sound${bpm ? `<span style="opacity:.7">${Math.round(bpm)} bpm</span>` : ''}</div>
         <div class="tl-sound-area" style="flex:1;position:relative;overflow:hidden">${lanes.map(l => waveHTML(l.clip, l.analysis, pageMs)).join('')}${ticks}</div>
       </div>`;

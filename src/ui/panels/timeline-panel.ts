@@ -8,9 +8,13 @@ import { trackHTML, markerStripHTML, markersOf, fmtMs, HEADER_W, TRACK_H } from 
 import { timelineRows, setKeyframeEasing, shiftKeyframes, flattenForTimeline } from './timeline-model';
 import { bindTimelineEdits } from './timeline-edit';
 import { bindTimelineDrags } from './timeline-drag';
-import { bindClipEdits, bindClipMoves, bindClipJoins, clipJoins, splitAtPlayhead, type ClipEditContext } from './timeline-clips';
+import { bindClipEdits, bindClipMoves, bindClipJoins, clipJoins, splitAtPlayhead, selectFromTimeline, type ClipEditContext } from './timeline-clips';
 import { freezeAtPlayhead, holdMs, setHoldMs } from './clip-freeze';
 import { onMeasured, shotsOnScene } from './clip-measure';
+import { rulerHTML } from './timeline-ruler';
+import { trackWidth, stepZoom, clampZoom, scrollAfterZoom } from './timeline-zoom';
+import { bindPinch } from './timeline-gestures';
+import { toolbarHTML } from './timeline-toolbar';
 import { soundLane, analyse, type SoundAnalysis, type SoundDeps } from './timeline-sound';
 import { stripTimes, clipWave, browserFrames, type ClipLook } from './timeline-filmstrip';
 import { summarize, type ClipLayer } from '../../animation/video-clip';
@@ -49,6 +53,16 @@ export class TimelinePanelManager {
   private grabbing = new Set<string>();
   private readonly frameDeps = browserFrames(src => resolveAssetUrl(src));
   private redraw: ReturnType<typeof setTimeout> | null = null;
+  /** px per ms, or null: the scene exactly fills the view (timeline-zoom.ts). */
+  private zoom: number | null = null;
+  private resizeWatch: ResizeObserver | null = null;
+  private lastViewW = 0;
+  /** The ⋯ row (duration, stagger, trails) is open. */
+  private optionsOpen = false;
+  /** Two fingers are on the sheet: it is resized, never rebuilt (timeline-gestures.ts). */
+  private pinching = false;
+  /** Rows for the selected layers alone (the old behaviour); off: the whole sequence, selection highlighted. */
+  private onlySelected = false;
   /** Set by the app so the checkbox can reach the canvas. */
   onTrailsToggle?: (on: boolean) => void;
 
@@ -68,8 +82,8 @@ export class TimelinePanelManager {
       this.scrubMs = s.time;
       const tc = this.container.querySelector<HTMLElement>('#tl-timecode');
       if (tc) tc.textContent = fmtMs(s.time);
-      const thumb = this.container.querySelector<HTMLElement>('.tl-scrub-thumb');
-      if (thumb) thumb.style.left = `${(s.time / Math.max(1, s.duration)) * 100}%`;
+      this.setPlayhead(s.time, s.duration);
+      if (s.playing) this.follow(s.time);
       const pb = this.container.querySelector<HTMLButtonElement>('#tl-play');
       if (pb) pb.textContent = s.playing ? '⏸' : '▶';
     });
@@ -85,38 +99,7 @@ export class TimelinePanelManager {
 
   private build(): void {
     this.container.innerHTML = `
-      <div class="timeline-panel">
-        <div class="timeline-toolbar">
-          <button class="btn btn-sm" id="tl-play">▶</button>
-          <button class="btn btn-sm" id="tl-stop">■</button>
-          <label style="font-size:11px;color:var(--color-text-muted);margin-left:8px">
-            Duration
-            <input id="tl-duration" type="number" min="100" max="30000" step="100"
-              value="${this.duration}"
-              style="width:70px;margin-left:4px;background:var(--color-bg);border:1px solid var(--color-border);
-                     border-radius:3px;padding:2px 4px;color:var(--color-text);font-size:11px">
-            ms
-          </label>
-          <label style="font-size:11px;color:var(--color-text-muted);margin-left:8px"
-                 title="Offset each SELECTED layer's keyframes by this much more than the one before — the panel's op:sequence.">
-            Stagger
-            <input id="tl-stagger" type="number" min="0" max="5000" step="10" value="80"
-              style="width:60px;margin-left:4px;background:var(--color-bg);border:1px solid var(--color-border);
-                     border-radius:3px;padding:2px 4px;color:var(--color-text);font-size:11px">
-            ms
-          </label>
-          <button class="btn btn-sm" id="tl-stagger-apply" style="margin-left:4px">Stagger</button>
-          <button class="btn btn-sm" id="tl-split" style="margin-left:4px" title="Cut the selected clip — or the top clip under the playhead — in two at the playhead">✂ Split</button>
-          <button class="btn btn-sm" id="tl-freeze" style="margin-left:4px" title="Hold the frame at the playhead (Hold is set in the clip's Speed section) and move everything after it later">❄ Freeze</button>
-          <input id="tl-hold" type="number" min="100" max="10000" step="100" value="${holdMs()}" aria-label="Freeze hold, ms" title="How long ❄ Freeze holds the frame, ms"
-            style="width:58px;margin-left:2px;background:var(--color-bg);border:1px solid var(--color-border);border-radius:3px;padding:2px 4px;color:var(--color-text);font-size:11px">
-          <label style="font-size:11px;color:var(--color-text-muted);margin-left:10px;display:flex;align-items:center;gap:4px;cursor:pointer"
-                 title="Draw each animated layer's path on the canvas — spacing shows the easing.">
-            <input id="tl-trails" type="checkbox"> Trails
-          </label>
-          <span id="tl-timecode" style="font-size:11px;font-family:var(--font-mono);
-                color:var(--color-text-muted);margin-left:auto">${fmtMs(this.scrubMs)}</span>
-        </div>
+      <div class="timeline-panel">${toolbarHTML({ duration: this.duration, hold: holdMs(), time: fmtMs(this.scrubMs), total: fmtMs(this.duration), optionsOpen: this.optionsOpen, onlySelected: this.onlySelected })}
         <div class="timeline-body" id="tl-body"></div>
       </div>`;
     this.bindToolbar();
@@ -147,6 +130,18 @@ export class TimelinePanelManager {
       const selected = this.state.getSelectedLayers().find(l => l.type === 'video');
       splitAtPlayhead(this.state, this.scrubMs, this.player.rows(), selected?.id);
     });
+    const toggle = this.container.querySelector<HTMLElement>('#tl-options-toggle');
+    toggle?.addEventListener('click', () => {
+      this.optionsOpen = !this.optionsOpen;
+      toggle.setAttribute('aria-expanded', String(this.optionsOpen));
+      this.container.querySelector<HTMLElement>('#tl-options')?.toggleAttribute('hidden', !this.optionsOpen);
+    });
+    this.container.querySelector<HTMLElement>('#tl-zoom-out')?.addEventListener('click', () => this.zoomBy(-1));
+    this.container.querySelector<HTMLElement>('#tl-zoom-in')?.addEventListener('click', () => this.zoomBy(1));
+    this.container.querySelector<HTMLElement>('#tl-zoom-fit')?.addEventListener('click', () => this.zoomTo(null));
+    this.bindView();
+    const only = this.container.querySelector<HTMLInputElement>('#tl-selected-only');
+    only?.addEventListener('change', () => { this.onlySelected = only.checked; this.render(); });
     const trails = this.container.querySelector<HTMLInputElement>('#tl-trails');
     trails?.addEventListener('change', () => {
       this.onTrailsToggle?.(trails.checked);
@@ -167,7 +162,7 @@ export class TimelinePanelManager {
     const { selectedLayerIds, design, currentPageIndex } = this.state.get();
     // The AUTHORED tree: while a frame is posed, the state holds that frame.
     const authored = this.player.authoredLayers();
-    const rows = timelineRows(authored, selectedLayerIds);
+    const rows = timelineRows(authored, selectedLayerIds, this.onlySelected);
     const layers = rows.map(r => r.layer);
     const timing = this.player.rows();
     this.drawnWithRows = timing !== null;
@@ -188,30 +183,28 @@ export class TimelinePanelManager {
         this.duration = scene;
         const durInput = this.container.querySelector<HTMLInputElement>('#tl-duration');
         if (durInput) durInput.value = String(scene);
+        const total = this.container.querySelector<HTMLElement>('#tl-total');
+        if (total) total.textContent = ` / ${fmtMs(scene)}`;
       }
     }
-
-    const trackAreaW = body.clientWidth - HEADER_W || 400;
 
     const sound = soundLane(design, currentPageIndex, this.duration, this.sounds, HEADER_W);
     this.beats = sound.beats;
     const joins = clipJoins(authored);
     this.measure(sound.unmeasured);
-    body.innerHTML = markerStripHTML(markersOf(design, currentPageIndex), this.duration) + sound.html
-      + rows.map(r => trackHTML(r.layer, timing?.get(r.layer.id), this.duration, r.depth, this.lookFor, l => ({ join: joins.get(l.id), shots: shotsOnScene(l) }))).join('');
+    // One sheet: its width is the time scale (fit, or px per ms), the rows inside position in % of it.
+    const view = Math.max(0, body.clientWidth - HEADER_W);
+    const px = trackWidth(this.duration, this.zoom, view);
+    const width = this.zoom === null ? `width:100%;min-width:${HEADER_W + 40}px` : `width:${HEADER_W + px}px`;
+    body.innerHTML = `<div class="tl-sheet" style="${width};--tl-w:${HEADER_W}px;--tl-p:${Math.min(1, this.scrubMs / Math.max(1, this.duration))}">`
+      + rulerHTML(this.duration, px / Math.max(1, this.duration))
+      + markerStripHTML(markersOf(design, currentPageIndex), this.duration) + sound.html
+      + rows.map(r => trackHTML(r.layer, timing?.get(r.layer.id), this.duration, r.depth, this.lookFor, l => ({ join: joins.get(l.id), shots: shotsOnScene(l) }))).join('')
+      + '<div class="tl-scrub-thumb"></div></div>';
 
-    // Scrubber
-    body.insertAdjacentHTML('beforeend', `
-      <div class="tl-scrubber-row" style="display:flex">
-        <div style="width:${HEADER_W}px;flex-shrink:0"></div>
-        <div class="tl-scrub-area" style="flex:1;height:8px;position:relative;background:var(--color-surface-3);
-             border-radius:4px;cursor:pointer;margin:4px 8px">
-          <div class="tl-scrub-thumb" style="position:absolute;width:2px;background:var(--color-accent);
-               height:100%;left:${(this.scrubMs / this.duration) * 100}%;top:0"></div>
-        </div>
-      </div>`);
-
-    this.bindTracks(body, layers, trackAreaW);
+    const picked = new Set(selectedLayerIds);
+    body.querySelectorAll<HTMLElement>('.tl-label[data-layer-id]').forEach(l => l.classList.toggle('tl-selected', picked.has(l.dataset['layerId'] ?? '')));
+    this.bindTracks(body, layers);
   }
 
   /** A clip block's thumbnails and waveform from what has arrived; what has not is asked for, and the timeline redraws as it lands. */
@@ -235,7 +228,7 @@ export class TimelinePanelManager {
     if (this.redraw) return;
     this.redraw = setTimeout(() => {
       this.redraw = null;
-      if (this.container.querySelector('.tl-dragging')) { this.redrawSoon(); return; }
+      if (this.pinching || this.container.querySelector('.tl-dragging')) { this.redrawSoon(); return; }
       this.render();
     }, 150);
   }
@@ -249,7 +242,7 @@ export class TimelinePanelManager {
     }
   }
 
-  private bindTracks(body: HTMLElement, layers: Layer[], trackAreaW: number): void {
+  private bindTracks(body: HTMLElement, layers: Layer[]): void {
     // Click track area to add a keyframe — at the SCENE time clicked, written
     // in the track's own time (its delay and any precomp clocks taken off).
     body.querySelectorAll<HTMLElement>('.tl-track-area').forEach(area => {
@@ -322,17 +315,30 @@ export class TimelinePanelManager {
     bindClipMoves(body, clipCtx);
     bindClipJoins(body, clipCtx);
 
-    // Scrubber click
+    // A row's name selects its layer (Shift / Ctrl adds); the selection is highlighted, not a filter.
+    body.querySelectorAll<HTMLElement>('.tl-label[data-layer-id]').forEach(label => {
+      label.addEventListener('click', e => selectFromTimeline(this.state, label.dataset['layerId'] ?? '', e));
+    });
+
+    // The ruler: a press puts the playhead there, and dragging carries it.
     const scrub = body.querySelector<HTMLElement>('.tl-scrub-area');
     if (scrub) {
-      scrub.addEventListener('click', (e) => {
+      const seek = (e: PointerEvent): void => {
         const rect = scrub.getBoundingClientRect();
-        const pct = (e.clientX - rect.left) / rect.width;
-        this.scrubTo(Math.round(pct * this.duration));
+        this.scrubTo(Math.round(((e.clientX - rect.left) / Math.max(1, rect.width)) * this.duration));
+      };
+      scrub.addEventListener('pointerdown', e => {
+        if (e.button !== 0) return;
+        e.preventDefault();
+        scrub.setPointerCapture(e.pointerId);
+        seek(e);
+        scrub.addEventListener('pointermove', seek);
+        const done = (): void => { scrub.removeEventListener('pointermove', seek); };
+        scrub.addEventListener('pointerup', done, { once: true });
+        scrub.addEventListener('pointercancel', done, { once: true });
       });
     }
 
-    void trackAreaW;
   }
 
   /**
@@ -418,12 +424,82 @@ export class TimelinePanelManager {
     } as Partial<Layer>);
   }
 
+  /** Put the playhead line at `ms` — one CSS variable on the sheet, no layout. */
+  private setPlayhead(ms: number, duration = this.duration): void {
+    this.container.querySelector<HTMLElement>('.tl-sheet')?.style.setProperty('--tl-p', String(Math.min(1, Math.max(0, ms / Math.max(1, duration)))));
+  }
+
+  /** While it plays, a zoomed sheet scrolls to keep the playhead in sight (a fitted one shows it all already). */
+  private follow(ms: number): void {
+    const body = this.bodyEl();
+    if (!body || this.zoom === null) return;
+    const x = ms * this.pxPerMs(), view = this.viewPx();
+    if (x < body.scrollLeft || x > body.scrollLeft + view - 24) body.scrollLeft = Math.max(0, x - view * 0.2);
+  }
+
+  private bodyEl(): HTMLElement | null { return this.container.querySelector<HTMLElement>('#tl-body'); }
+
+  private viewPx(): number { return Math.max(0, (this.bodyEl()?.clientWidth ?? 0) - HEADER_W); }
+
+  /** The time scale as drawn, px per ms. */
+  private pxPerMs(): number { return trackWidth(this.duration, this.zoom, this.viewPx()) / Math.max(1, this.duration); }
+
+  /** Change the scale, keeping the moment `anchorPx` from the track's left edge in the view (default: the middle) where it was. */
+  private zoomTo(next: number | null, anchorPx?: number): void {
+    const body = this.bodyEl();
+    if (!body) return;
+    const before = this.pxPerMs(), scroll = body.scrollLeft;
+    this.zoom = next;
+    this.render();
+    body.scrollLeft = next === null ? 0 : scrollAfterZoom(scroll, anchorPx ?? this.viewPx() / 2, before, this.pxPerMs());
+  }
+
+  /** The scale changes under the fingers: only the sheet's width moves (rows are in %), so no node is replaced. */
+  private zoomLive(next: number | null, anchorPx: number): void {
+    const body = this.bodyEl(), sheet = body?.querySelector<HTMLElement>('.tl-sheet');
+    if (!body || !sheet) return;
+    const before = this.pxPerMs(), scroll = body.scrollLeft;
+    this.zoom = next;
+    const px = trackWidth(this.duration, next, this.viewPx());
+    sheet.style.width = next === null ? '100%' : `${HEADER_W + px}px`;
+    body.scrollLeft = next === null ? 0 : scrollAfterZoom(scroll, anchorPx, before, px / Math.max(1, this.duration));
+  }
+
+  private zoomBy(dir: 1 | -1, anchorPx?: number): void {
+    this.zoomTo(stepZoom(this.zoom, dir, this.duration, this.viewPx()), anchorPx);
+  }
+
+  /** Ctrl + wheel and pinch zoom the scale; a change of the panel's own width (the dock dragged, the window resized) redraws the ruler. */
+  private bindView(): void {
+    const body = this.bodyEl();
+    if (!body) return;
+    body.addEventListener('wheel', e => {
+      if (!e.ctrlKey && !e.metaKey) return;
+      e.preventDefault();
+      const factor = Math.min(2, Math.max(0.5, Math.exp(-e.deltaY * 0.004)));
+      this.zoomTo(clampZoom(this.pxPerMs() * factor, this.duration, this.viewPx()), Math.max(0, e.clientX - body.getBoundingClientRect().left - HEADER_W));
+    }, { passive: false });
+    bindPinch(body, {
+      labelW: HEADER_W,
+      scale: () => this.pxPerMs(),
+      begin: () => { this.pinching = true; },
+      end: () => { this.pinching = false; this.render(); },
+      setScale: (px, anchor) => this.zoomLive(clampZoom(px, this.duration, this.viewPx()), anchor),
+    });
+    if (typeof ResizeObserver === 'undefined') return;
+    this.resizeWatch = new ResizeObserver(() => {
+      if (Math.abs(body.clientWidth - this.lastViewW) < 2) return;
+      this.lastViewW = body.clientWidth;
+      this.redrawSoon();
+    });
+    this.resizeWatch.observe(body);
+  }
+
   private scrubTo(ms: number): void {
     this.scrubMs = Math.max(0, Math.min(this.duration, ms));
     const timecode = this.container.querySelector<HTMLElement>('#tl-timecode');
     if (timecode) timecode.textContent = fmtMs(this.scrubMs);
-    const thumb = this.container.querySelector<HTMLElement>('.tl-scrub-thumb');
-    if (thumb) thumb.style.left = `${(this.scrubMs / this.duration) * 100}%`;
+    this.setPlayhead(this.scrubMs);
     this.player.seek(this.scrubMs);
   }
 }
