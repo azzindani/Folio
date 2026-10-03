@@ -92,6 +92,7 @@ Stateful editor/UI classes were split with an **abstract base class** the public
 class `extends`: `editor/canvas.ts` → `canvas-{base,interactions,draw}.ts`;
 `editor/app.ts` → `app-base.ts` + `sample-design.ts`;
 `ui/panels/properties-panel.ts` → `-base`; `ui/dialogs/catalog.ts` → `catalog-base` + `catalog-utils`.
+Sequence editor: `ui/panels/timeline-panel.ts` (+ `timeline-{zoom,ruler,gestures,toolbar}.ts`) · `editor/timeline-dock.ts` (the dock; `video-presence.ts`).
 Clip inspector (editor parity with `animation(op:video)`): `animation/clip-edit.ts` (the shared patch core) · `ui/panels/properties-clip.ts` + `properties-clip-{transition,ramp,reframe,grade,key,cut}.ts` (one section each) · `clip-commit.ts` (undo gestures) · `clip-controls.ts` · `clip-pick.ts` (raw-frame eyedropper, canvas video lookup) · `clip-reframe.ts` · `clip-freeze.ts` · `clip-measure.ts` (shots/silences store) · `editor/clip-bridge.ts` + `server-clip.ts` + `server-clip-measure.ts` (server bridge) · `editor/canvas-dip.ts` (dip colour in the preview).
 
 ---

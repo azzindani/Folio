@@ -37,6 +37,7 @@ export function shellMarkup(): string {
         <button class="mob-nav-btn" data-mob="layers" title="Layers">${chromeIcon('layers', 18)}<span>Layers</span></button>
         <button class="mob-nav-btn" data-mob="props" title="Properties">${chromeIcon('sliders', 18)}<span>Props</span></button>
         <button class="mob-nav-btn" data-mob="tools" title="Drawing tools">${chromeIcon('component', 18)}<span>Tools</span></button>
+        <button class="mob-nav-btn" data-mob="timeline" title="Timeline">${chromeIcon('clock', 18)}<span>Timeline</span></button>
         <button class="mob-nav-btn" data-mob="panels" title="All panels">${chromeIcon('frame', 18)}<span>Panels</span></button>
         <button class="mob-nav-btn" data-mob="cmd" title="Command palette">${chromeIcon('search', 18)}<span>Find</span></button>
       </nav>
@@ -91,6 +92,11 @@ export function shellMarkup(): string {
         <div class="page-strip-section" id="page-strip-section" style="display:none">
           <div class="page-strip-resize-handle" data-resize="page-strip"></div>
           <div class="page-strip-content"></div>
+        </div>
+        <div class="timeline-dock" id="timeline-dock" style="display:none">
+          <div class="timeline-dock-handle" data-resize="timeline-dock"></div>
+          <div class="timeline-dock-head"><span>Timeline</span><button type="button" id="timeline-dock-close" aria-label="Hide the timeline" title="Hide the timeline (Shift+T)">✕</button></div>
+          <div class="timeline-dock-body"></div>
         </div>
       </div>
 
@@ -162,6 +168,7 @@ export function shellMarkup(): string {
         <div class="status-sep"></div>
         <!-- Not a third ▶. This opens PRESENTATION mode (full-screen pages you
              click through) — a different verb from Play, so a different mark. -->
+        <button class="sb-btn" id="status-timeline" title="Timeline (Shift+T)" aria-label="Timeline">${chromeIcon('clock', 15)}</button>
         <button class="sb-btn" id="status-preview" title="Present full screen (F5)"
           aria-label="Present full screen">${chromeIcon('present', 15)}</button>
         <div class="status-spacer"></div>

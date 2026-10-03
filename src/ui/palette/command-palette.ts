@@ -66,6 +66,7 @@ export class CommandPalette {
       { id: 'zoom-100', label: 'Zoom to 100%', category: 'View', shortcut: 'Ctrl+1', action: () => state.set('zoom', 1, false) },
       { id: 'zoom-in', label: 'Zoom In', category: 'View', action: () => state.set('zoom', Math.min(5, state.get().zoom * 1.25), false) },
       { id: 'zoom-out', label: 'Zoom Out', category: 'View', action: () => state.set('zoom', Math.max(0.1, state.get().zoom / 1.25), false) },
+      { id: 'toggle-timeline', label: 'Show / Hide Timeline', category: 'View', shortcut: 'Shift+T', action: () => { app.toggleTimeline(); } },
 
       // Mode
       { id: 'mode-visual', label: 'Switch to Visual Mode', category: 'Mode', action: () => state.set('mode', 'visual', false) },

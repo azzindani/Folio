@@ -112,6 +112,8 @@ export class KeyboardManager {
       // Shift+Space forces the scene stage even on a single page — the piece the
       // video export writes, previewed before rendering it.
       { key: ' ', shift: true, action: () => { void this.app.openSceneStage({ play: true }); }, description: 'Play all scenes' },
+      // The timeline dock under the canvas (a phone has none: its timeline is a sheet).
+      { key: 'T', shift: true, action: () => { this.app.toggleTimeline(); }, description: 'Show / hide the timeline' },
       // Presentation
       { key: 'F5', action: () => this.app.presentation?.open(), description: 'Start presentation (F5)' },
       // Print

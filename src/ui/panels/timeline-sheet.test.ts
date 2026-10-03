@@ -75,7 +75,9 @@ describe('the timeline as one sheet', () => {
     expect(half).toBeLessThan(0.6);
     area.dispatchEvent(new PointerEvent('pointermove', { clientX: 20, bubbles: true }));
     expect(Number(sheet().style.getPropertyValue('--tl-p'))).toBeLessThan(0.2);
+    expect(area.classList.contains('tl-dragging'), 'a drag on the ruler is not marked, so a redraw can replace it').toBe(true);
     area.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
+    expect(area.classList.contains('tl-dragging')).toBe(false);
     area.dispatchEvent(new PointerEvent('pointermove', { clientX: 190, bubbles: true }));
     expect(Number(sheet().style.getPropertyValue('--tl-p'))).toBeLessThan(0.2);
   });
@@ -142,5 +144,18 @@ describe('a pinch does not rebuild the sheet under the fingers', () => {
     body.dispatchEvent(touch('touchend', []));
     expect(sheet()).not.toBe(first);
     expect(sheet().style.width).toMatch(/px$/);
+  });
+});
+
+describe('a zoom survives the scene turning out longer', () => {
+  it('keeps the sheet\'s width when the scene length changes under it', () => {
+    click('#tl-zoom-in'); click('#tl-zoom-in');
+    const before = parseInt(sheet().style.width, 10);
+    expect(before).toBeGreaterThan(700);
+    // A layer that plays to 9 s: the scene was 3 s.
+    const d = design();
+    (d.layers as unknown as Array<Record<string, unknown>>).push({ id: 'late', type: 'rect', z: 3, x: 0, y: 0, width: 10, height: 10, in: 0, out: 9000 });
+    state.set('design', d, false);
+    expect(parseInt(sheet().style.width, 10)).toBe(before);
   });
 });

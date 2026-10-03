@@ -48,7 +48,7 @@ export interface SheetOptions {
 /**
  * Wire the mobile nav, the popovers, the backdrop and both sheet grips.
  *
- * The nav is five fixed buttons — Layers, Properties, Tools, Panels, Search.
+ * The nav is six fixed buttons — Layers, Properties, Tools, Timeline, Panels, Search.
  * Everything else the desktop offers is behind Tools and Panels, which are
  * labelled grids generated from the desktop controls themselves (see
  * mobile-panels.ts), so nothing is reachable on a desktop and missing here.
@@ -130,7 +130,7 @@ export function wireMobileSheets(container: HTMLElement, opts: SheetOptions): vo
   };
 
   /** Show one of the desktop's right-panel tabs inside the right sheet. */
-  const showRightTab = (tabId: string): void => {
+  const showRightTab = (tabId: string, nav = 'props', detent: SheetDetent = 'peek'): void => {
     const tab = container.querySelector<HTMLElement>(`.r-activity-bar .rpanel-tab[data-tab="${tabId}"]`);
     // Switch the pane BEFORE opening, and only when it needs switching. The
     // tab's own handler reads a click on the ALREADY-ACTIVE tab as "slide the
@@ -139,7 +139,7 @@ export function wireMobileSheets(container: HTMLElement, opts: SheetOptions): vo
     // Panels → Properties, the most obvious route in the popover, do nothing.
     setTitle(rightPanel, nameOf(tab, tabId));
     if (tab && !tab.classList.contains('active')) tab.click();
-    open(rightPanel, navFor('props'));
+    open(rightPanel, navFor(nav), detent);
   };
 
   /** A control's own title, minus its keyboard hint — the phone has no keys. */
@@ -171,7 +171,7 @@ export function wireMobileSheets(container: HTMLElement, opts: SheetOptions): vo
       onPick: (e) => {
         const [kind, id] = e.key.split(':');
         if (kind === 'panel' && id) showLeftView(id);
-        else if (kind === 'tab' && id) showRightTab(id);
+        else if (kind === 'tab' && id) showRightTab(id, 'props', id === 'timeline' ? 'half' : 'peek');
         else e.source.click();  // theme toggle and anything else picked up later
       },
     });
@@ -191,6 +191,12 @@ export function wireMobileSheets(container: HTMLElement, opts: SheetOptions): vo
       if (target === 'panels') { openPanelsPop(); return; }
       if (target === 'tools') { openToolsPop(); return; }
       if (target === 'assets') { showLeftView('project-assets'); return; }
+      // The timeline is a sheet of its own: tall enough to read rows, canvas still above it. Tapping it again closes it.
+      if (target === 'timeline') {
+        if (rightPanel.classList.contains('mob-open') && container.querySelector('.r-activity-bar .rpanel-tab[data-tab="timeline"].active')) closeAll();
+        else showRightTab('timeline', 'timeline', 'half');
+        return;
+      }
       const panel = target === 'layers' ? leftPanel : rightPanel;
       if (panel.classList.contains('mob-open')) { closeAll(); return; }
       if (target === 'layers') { showLeftView('layers'); return; }
