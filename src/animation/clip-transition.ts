@@ -11,6 +11,7 @@
 
 import type { Layer } from '../schema/types';
 import type { AnimationSpec, Keyframe } from './types';
+import { naturalLength, edgeRates, shiftRamp } from './video-time';
 
 export type ClipTransitionType = 'crossfade' | 'dip' | 'wipe' | 'push';
 export interface ClipTransition { type: ClipTransitionType; duration_ms?: number; color?: string; direction?: 'left' | 'right' | 'up' | 'down' }
@@ -26,14 +27,13 @@ type Clip = Layer & {
 };
 
 const num = (v: unknown): number | undefined => (typeof v === 'number' && Number.isFinite(v) ? v : undefined);
-const speedOf = (c: Clip): number => ((num(c.video?.speed) ?? 0) > 0 ? (num(c.video?.speed) ?? 1) : 1);
 
 /** Where a clip plays on its list's clock: [from, until); until null when it plays on unbounded. */
 export function clipPlays(layer: Layer): { from: number; until: number | null } {
   const c = layer as Clip;
   const from = num(c.in) ?? 0;
-  const used = num(c.video?.duration_ms);
-  const natural = used !== undefined && !c.video?.loop ? from + used / speedOf(c) : null;
+  const length = naturalLength(c.video);
+  const natural = length !== null ? from + length : null;
   const out = num(c.out);
   const until = natural !== null && out !== undefined ? Math.min(natural, out) : natural ?? out ?? null;
   return { from, until };
@@ -64,19 +64,26 @@ export function transitionWindow(a: Layer, b: Layer, t: ClipTransition): { cut: 
   const cut = B.from;
   const d = Math.min(Math.max(MIN_TRANSITION_MS, num(t.duration_ms) ?? DEFAULT_TRANSITION_MS), cut - A.from, (B.until ?? Infinity) - cut);
   if (!(d >= MIN_TRANSITION_MS)) return null;
-  const before = Math.round(Math.min(d / 2, (num((b as Clip).video?.offset_ms) ?? 0) / speedOf(b as Clip)));
+  // Footage ahead of the incoming clip's offset, in scene ms (a still's one frame has no limit).
+  const rate = edgeRates((b as Clip).video, 0).file;
+  const head = rate > 0 ? (num((b as Clip).video?.offset_ms) ?? 0) / rate : Infinity;
+  const before = Math.round(Math.min(d / 2, head));
   return { cut, before, after: Math.round(d - before) };
 }
 
 /** The outgoing clip plays on `after` ms, the incoming starts `before` ms early — same frames at the cut; sounds crossfade over the window. */
 function widen(a: Clip, b: Clip, w: { cut: number; before: number; after: number }): void {
   const d = w.before + w.after;
-  const va = { ...(a.video ?? {}) }, vb = { ...(b.video ?? {}) };
-  if (num(va.duration_ms) !== undefined) va.duration_ms = (num(va.duration_ms) ?? 0) + w.after * speedOf(a);
+  // At each edge the clip runs at the speed it has there (a ramp), or holds its frame (a still): video-time.ts edgeRates.
+  const ra = edgeRates(a.video, w.cut - (num(a.in) ?? 0)), rb = edgeRates(b.video, 0);
+  const va = { ...(a.video ?? {}) };
+  let vb = { ...(b.video ?? {}) };
+  if (num(va.duration_ms) !== undefined) va.duration_ms = (num(va.duration_ms) ?? 0) + w.after * ra.length;
   if (num(a.out) !== undefined) a.out = Math.max(num(a.out) ?? 0, w.cut + w.after);
   b.in = w.cut - w.before;
-  vb.offset_ms = Math.max(0, (num(vb.offset_ms) ?? 0) - w.before * speedOf(b));
-  if (num(vb.duration_ms) !== undefined) vb.duration_ms = (num(vb.duration_ms) ?? 0) + w.before * speedOf(b);
+  vb.offset_ms = Math.max(0, (num(vb.offset_ms) ?? 0) - w.before * rb.file);
+  if (num(vb.duration_ms) !== undefined) vb.duration_ms = (num(vb.duration_ms) ?? 0) + w.before * rb.length;
+  vb = shiftRamp(vb, w.before);
   va.fade_out_ms = Math.max(num(va.fade_out_ms) ?? 0, d);
   vb.fade_in_ms = Math.max(num(vb.fade_in_ms) ?? 0, d);
   a.video = va; b.video = vb;
