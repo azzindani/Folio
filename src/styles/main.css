@@ -2193,6 +2193,8 @@ button:focus:not(:focus-visible) { outline: none; }
 /* The Clip inspector's rows (ui/panels/clip-controls.ts): label, control, value. */
 .clip-row { display: flex; align-items: center; gap: 6px; padding: 2px 0; min-height: 26px; }
 .clip-row .prop-label { min-width: 84px; }
+/* A row of buttons wraps instead of running out of the panel. */
+.clip-row:has(> .btn) { flex-wrap: wrap; }
 .clip-input {
   flex: 1; min-width: 0; padding: 3px 6px; border: 1px solid var(--color-border); border-radius: var(--radius-sm);
   background: var(--color-bg); color: var(--color-text); font-size: 11px; font-family: var(--font-sans); outline: none;
@@ -2203,6 +2205,7 @@ button:focus:not(:focus-visible) { outline: none; }
 .clip-unit { font-size: 11px; color: var(--color-text-muted); }
 .clip-swatch { width: 28px; height: 22px; padding: 0; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: none; cursor: pointer; }
 body.clip-picking, body.clip-picking * { cursor: crosshair !important; }
+body.clip-reframing, body.clip-reframing * { cursor: grab !important; }
 .clip-note { font-size: 10px; line-height: 1.4; color: var(--color-text-muted); padding: 4px 2px; }
 
 .color-well {

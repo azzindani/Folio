@@ -168,3 +168,47 @@ describe('the Green screen section', () => {
     expect(document.body.textContent).toContain('grey');
   });
 });
+
+describe('the Reframe section', () => {
+  const v = (id: string): Record<string, unknown> => video(id);
+  const sliderOf = (k: string): HTMLInputElement => control(k) as HTMLInputElement;
+  const drag = (key: string, ...values: number[]): void => { const el = sliderOf(key); for (const x of values) { el.value = String(x); fire(el, 'input'); } fire(el, 'change'); };
+  const act = (name: string): void => (wrapper.querySelector(`[data-clip-act="${name}"]`) as HTMLButtonElement).click();
+
+  it('with no keys the sliders set the resting crop — one undo step — and back at the centre they leave the file', () => {
+    drag('fx', 0.7, 0.2);
+    drag('zoom', 1.5, 2);
+    expect(v('b')['focus']).toEqual([0.2, 0.5]);
+    expect(v('b')['zoom']).toBe(2);
+    state.undo();
+    expect(v('b')['zoom']).toBeUndefined();
+    drag('fx', 0.5);
+    expect(v('b')).not.toHaveProperty('focus');
+  });
+
+  it('◆ Key here pins the start and the playhead; the sliders then edit the key at the playhead; × removes one; Reset clears all', async () => {
+    const { registerMotionPlayer } = await import('../../editor/motion-host');
+    registerMotionPlayer({ time: 3500, rows: () => null } as never);
+    drag('zoom', 1.4);
+    act('key-add');
+    // The clip is `in: 2000, offset 1000`: the playhead at 3.5 s is file 2.5 s, and 2.5 s − 1 s of footage precedes it.
+    expect((v('b')['pan'] as Array<{ at_ms: number }>).map(k => k.at_ms)).toEqual([1000, 2500]);
+    drag('fx', 0.9);
+    const keys = v('b')['pan'] as Array<{ at_ms: number; focus: number[]; zoom: number }>;
+    expect(keys.length).toBe(2);
+    expect(keys[1]).toMatchObject({ at_ms: 2500, focus: [0.9, 0.5], zoom: 1.4 });
+    expect(keys[0]).toMatchObject({ at_ms: 1000, focus: [0.5, 0.5], zoom: 1.4 });
+    act('key-del:0');
+    expect((v('b')['pan'] as unknown[]).length).toBe(1);
+    act('reset');
+    expect(v('b')).not.toHaveProperty('pan');
+    expect(v('b')).not.toHaveProperty('zoom');
+    registerMotionPlayer({ time: 0, rows: () => null } as never);
+  });
+
+  it('says so when the clip does not fill its box', () => {
+    const fit = control('fit') as HTMLSelectElement;
+    fit.value = 'contain'; fire(fit, 'change');
+    expect(wrapper.textContent).toContain('Reframing applies to a clip that fills its box');
+  });
+});
