@@ -209,6 +209,8 @@ export async function exportRasterMotion(
     try {
       for (const [i, t] of times.entries()) {
         await scripts?.ahead(i);
+        // Decoders of clips that have left the screen are closed once no frame in flight can still ask them.
+        feed.tick(window + 2);
         launch(t);
         if (inflight.length >= window) await writeOldest();
         await yieldToServer();
@@ -247,6 +249,8 @@ export async function exportRasterMotion(
     try {
       for (const [i, t] of times.entries()) {
         await scripts?.ahead(i);
+        // Decoders of clips that have left the screen are closed once no frame in flight can still ask them.
+        feed.tick(window + 2);
         launch(t);
         if (inflight.length >= window) await addOldest();
         await yieldToServer();

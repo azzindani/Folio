@@ -29,6 +29,11 @@ export function frameRequests(spec: DesignSpec): FrameRequest[] {
 export class FootageFeed {
   private readonly streams = new Map<string, ClipStream>();
   private readonly sizes = new Map<string, { width: number; height: number } | null>();
+  /** The export's frame count, and the frame each stream was last asked for on. */
+  private frame = 0;
+  private readonly lastUse = new Map<string, number>();
+  private opened = 0;
+  private closedSeeks = 0;
 
   constructor(private readonly bin = 'ffmpeg') {}
 
@@ -85,19 +90,38 @@ export class FootageFeed {
     if (!stream) {
       stream = new ClipStream(file, format(), this.bin);
       this.streams.set(key, stream);
+      this.opened++;
     }
+    this.lastUse.set(key, this.frame);
     return stream;
   }
 
-  /** Clips decoded, and decoders started across them (a seek each). */
+  /**
+   * The export moved on a frame. A decoder no frame has asked for in more than `idle`
+   * frames is closed: its clip has left the screen, and a 1080p decoder holds ~250 MB.
+   * Asked for again, it starts afresh at a seek. `idle` must outlast the frames in flight.
+   */
+  tick(idle: number): void {
+    this.frame++;
+    for (const [key, at] of this.lastUse) {
+      if (this.frame - at <= idle) continue;
+      const s = this.streams.get(key);
+      if (s) { this.closedSeeks += s.starts; s.close(); }
+      this.streams.delete(key);
+      this.lastUse.delete(key);
+    }
+  }
+
+  /** Decoders opened, and decoders started across them (a seek each). */
   stats(): { clips: number; seeks: number } {
-    let seeks = 0;
+    let seeks = this.closedSeeks;
     for (const s of this.streams.values()) seeks += s.starts;
-    return { clips: this.streams.size, seeks };
+    return { clips: this.opened, seeks };
   }
 
   close(): void {
     for (const s of this.streams.values()) s.close();
     this.streams.clear();
+    this.lastUse.clear();
   }
 }
