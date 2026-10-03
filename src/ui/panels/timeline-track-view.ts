@@ -12,7 +12,7 @@
 import type { DesignSpec, Layer } from '../../schema/types';
 import type { Keyframe, TimeMarkers } from '../../animation/types';
 import type { RowTiming } from '../../editor/motion-pose';
-import { clipMarkup } from './timeline-clips';
+import { clipMarkup, type LookFor } from './timeline-clips';
 
 export const TRACK_H = 32;       // px per track row
 export const HEADER_W = 120;     // px left-side label area
@@ -50,15 +50,15 @@ const diamond = (left: number, extra: string, attrs: string, title: string): str
   + `top:${TRACK_H / 2 - KF_RADIUS}px;width:${KF_RADIUS * 2}px;height:${KF_RADIUS * 2}px;box-sizing:border-box;`
   + `border-radius:2px;transform:rotate(45deg);${extra}"></div>`;
 
-/** One layer's row. `timing` is absent until the sampler loads; the row then draws keyframes at their raw t. */
-export function trackHTML(layer: Layer, timing: RowTiming | undefined, duration: number, depth: number): string {
+/** One layer's row. `timing` is absent until the sampler loads; the row then draws keyframes at their raw t. `look` dresses a clip block (timeline-filmstrip.ts). */
+export function trackHTML(layer: Layer, timing: RowTiming | undefined, duration: number, depth: number, look?: LookFor): string {
   const keyframes = (layer.animation?.keyframes ?? []) as Keyframe[];
   const ruled = layer.animation?.rule !== undefined;
   const parts: string[] = [];
 
   // A clip is a block with trim grips (timeline-clips.ts), not a window with in/out handles.
   const clip = layer.type === 'video';
-  if (clip) parts.push(clipMarkup(layer, timing, duration, TRACK_H));
+  if (clip) parts.push(clipMarkup(layer, timing, duration, TRACK_H, look));
   const w = timing?.window;
   if (w && !clip) {
     const out = Number.isFinite(w.out) ? w.out : duration;

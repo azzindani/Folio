@@ -3175,3 +3175,29 @@ button:focus:not(:focus-visible) { outline: none; }
   touch-action: none;
 }
 .tl-clip-h:hover, .tl-clip-h.tl-dragging { opacity: .95; }
+/* Its footage along the block and its sound under it (timeline-filmstrip.ts). */
+.tl-clip-strip {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  opacity: .62;
+  pointer-events: none;
+}
+.tl-clip-strip > img, .tl-clip-strip > span { flex: 1 1 0; min-width: 0; height: 100%; object-fit: cover; }
+.tl-clip-wave {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 45%;
+  pointer-events: none;
+}
+.tl-clip-wave path { stroke: #fff; stroke-width: .6; opacity: .8; fill: none; }
+.tl-clip-strip ~ .tl-clip-label {
+  top: 2px;
+  transform: none;
+  padding: 0 4px;
+  border-radius: 2px;
+  color: #fff;
+  background: rgba(0, 0, 0, .55);
+}

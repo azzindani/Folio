@@ -5,6 +5,8 @@ import type { DesignSpec, Layer } from '../schema/types';
 // KeyboardManager depends on EditorApp (canvas.fitToScreen). Stub it.
 const mockApp = {
   canvas: { fitToScreen: vi.fn() },
+  // The playhead S cuts at.
+  motionPlayer: { time: 1500, rows: () => null },
 } as unknown as import('./app').EditorApp;
 
 function makeDesign(layers: Layer[]): DesignSpec {
@@ -49,6 +51,17 @@ describe('KeyboardManager — shortcut dispatch', () => {
     state.set('selectedLayerIds', ['a']);
     fireKey('Escape');
     expect(state.get().selectedLayerIds).toEqual([]);
+  });
+
+  it('S cuts the clip under the playhead; Delete takes a clip off its track and closes the gap', () => {
+    const clip = (id: string, at: number): Layer =>
+      ({ id, type: 'video', z: 1, x: 0, y: 0, width: 100, height: 100, src: `assets/video/${id}.mp4`, in: at, out: at + 1000, video: { offset_ms: 0, duration_ms: 1000 } }) as unknown as Layer;
+    state.set('design', makeDesign([clip('a', 0), clip('b', 1000), clip('c', 2000)]));
+    fireKey('s');
+    expect(state.getCurrentLayers().map(l => l.id)).toEqual(['a', 'b', 'b_2', 'c']);
+    state.set('selectedLayerIds', ['a']);
+    fireKey('Delete');
+    expect(state.getCurrentLayers().map(l => [l.id, (l as { in?: number }).in])).toEqual([['b', 0], ['b_2', 500], ['c', 1000]]);
   });
 
   it('g toggles gridVisible', () => {

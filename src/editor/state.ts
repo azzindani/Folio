@@ -405,6 +405,24 @@ export class StateManager {
     }
   }
 
+  /** Take several layers out — one undo step. */
+  removeLayers(ids: readonly string[]): void {
+    if (!this.state.design || !ids.length) return;
+    this.pushUndo();
+    const gone = new Set(ids);
+    const strip = (layers: Layer[]): Layer[] => layers.filter(l => !gone.has(l.id)).map(l => {
+      const kids = (l as Layer & { layers?: Layer[] }).layers;
+      return Array.isArray(kids) ? ({ ...l, layers: strip(kids) } as Layer) : l;
+    });
+    const design = this.state.design;
+    if (design.pages && design.pages.length > 0) {
+      const pages = design.pages.map((page, i) => (i === this.state.currentPageIndex && page.layers ? { ...page, layers: strip(page.layers) } : page));
+      this.set('design', { ...design, pages }, false);
+    } else if (design.layers) {
+      this.set('design', { ...design, layers: strip(design.layers) }, false);
+    }
+  }
+
   removeLayer(layerId: string): void {
     if (!this.state.design) return;
     this.pushUndo();
