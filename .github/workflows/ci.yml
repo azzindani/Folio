@@ -116,7 +116,7 @@ jobs:
     name: Visual Regression Tests
     timeout-minutes: 25
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04  # Playwright ships no Chromium for the newer ubuntu-latest image
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -144,7 +144,7 @@ jobs:
     name: E2E Tests (chromium)
     timeout-minutes: 25
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04  # Playwright ships no Chromium for the newer ubuntu-latest image
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -189,7 +189,7 @@ jobs:
     name: Commissioning (artifact fidelity)
     timeout-minutes: 25
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04  # Playwright ships no Chromium for the newer ubuntu-latest image
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
